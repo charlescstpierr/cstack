@@ -1,6 +1,6 @@
 ---
 name: why
-description: "Use for $why, 'why does X work this way', design rationale, regressions, postmortems, or data-backed thresholds. Uses available native read-only tools across source control and connected evidence sources, then returns a cited read on decisions and tradeoffs. Use $how for runtime behavior."
+description: "Use for $cstack:why, 'why does X work this way', design rationale, regressions, postmortems, or data-backed thresholds. Uses available native read-only tools across source control and connected evidence sources, then returns a cited read on decisions and tradeoffs. Use $cstack:how for runtime behavior."
 ---
 
 # Why

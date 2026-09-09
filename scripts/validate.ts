@@ -96,6 +96,7 @@ export function validate(root: string): { skills: number; sourceFiles: number } 
     const policy: unknown = Bun.YAML.parse(readFileSync(join(dirname(path), "agents/openai.yaml"), "utf8"));
     requireValue(record(policy) && record(policy.policy) && policy.policy.allow_implicit_invocation === false, `${path}: skill must be explicit-only`);
     requireValue(record(policy.interface) && typeof policy.interface.display_name === "string" && typeof policy.interface.short_description === "string", `${path}: missing skill UI metadata`);
+    requireValue(typeof policy.interface.default_prompt === "string" && policy.interface.default_prompt.includes(`$cstack:${name}`), `${path}: default prompt must use its canonical invocation`);
     requireValue(text.includes("codex-runtime.md"), `${path}: missing runtime contract link`);
   }
 

@@ -1,6 +1,6 @@
 ---
 name: setup-cstack
-description: "Configure optional per-role model choices for cstack in the current Codex project. Use for $setup-cstack or requests to change cstack model choices."
+description: "Configure optional per-role model choices for cstack in the current Codex project. Use for $cstack:setup-cstack or requests to change cstack model choices."
 ---
 
 # Set up cstack

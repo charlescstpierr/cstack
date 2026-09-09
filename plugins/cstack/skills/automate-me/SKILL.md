@@ -1,6 +1,6 @@
 ---
 name: automate-me
-description: "Use for $automate-me, \"automate me\", \"create/update/refresh my -mode skill\", or turning the user's preferences and working style into a skill. Drafts or revises a personal -mode skill with $unslop, optionally using recent project-scoped task history."
+description: "Use for $cstack:automate-me, \"automate me\", \"create/update/refresh my -mode skill\", or turning the user's preferences and working style into a skill. Drafts or revises a personal -mode skill with $cstack:unslop, optionally using recent project-scoped task history."
 ---
 
 # Automate me

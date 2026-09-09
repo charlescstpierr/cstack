@@ -14,7 +14,7 @@ Les lancements réels de `watch-pr/watch-pr --help` et `orch/orch.ts --help` pas
 
 ## Configuration de modèles
 
-Une évaluation indépendante dans un dossier isolé a demandé `$setup-cstack` avec le modèle fictif `cstack-fictional-model-999`. Le skill a refusé la sélection non vérifiable, sans dispatch ni écriture ni substitution. L'empreinte du fichier existant est restée identique.
+Une évaluation indépendante dans un dossier isolé a demandé `$cstack:setup-cstack` avec le modèle fictif `cstack-fictional-model-999`. Le skill a refusé la sélection non vérifiable, sans dispatch ni écriture ni substitution. L'empreinte du fichier existant est restée identique.
 
 ## Workflow de correction
 
@@ -32,4 +32,14 @@ Les 53 tests des helpers, les 3 tests Bun du paquet et du plan, et les 11 tests 
 
 Les régressions de revue vérifient notamment qu'une PR fermée reste la première PR non fusionnée, qu'un état Git illisible ne devient pas « propre », et qu'aucun cache exécutable préplanté dans le projet n'est réutilisé.
 
-La publication et l'installation GitHub sont vérifiées lors de la livraison. Les tests App utilisent les outils natifs de sous-agents avec chargement explicite des skills ; ils ne constituent pas une observation de l'interface graphique du gestionnaire de plugins. Les limites de connecteurs, planification et webhooks sont documentées dans PORTING.md.
+Le dépôt GitHub est privé, sur `main`. La première publication a passé [GitHub Actions](https://github.com/charlescstpierr/cstack/actions/runs/34301423576). L'installation depuis GitHub a été réalisée avec le gestionnaire de plugins Codex ; les 192 fichiers du plugin installé correspondent aux fichiers suivis du dépôt, sans `node_modules` ajouté au cache du plugin.
+
+## Invocation native App et CLI
+
+Le serveur natif Codex expose les 47 skills activés, sans erreur de chargement, sous des noms tels que `cstack:cstack` et `cstack:architect`. Une session CLI éphémère avec configuration utilisateur ignorée et uniquement cstack activé a confirmé le chargement du skill installé par `$cstack:cstack`.
+
+Un second essai a utilisé la sélection structurée `UserInput::Skill` du sélecteur App/CLI dans une session éphémère en lecture seule, avec les autres plugins, serveurs MCP et hooks désactivés. Le mode a chargé son playbook et son contrat, puis lancé exactement deux sous-agents natifs, un par module synthétique. Chaque sous-agent a trouvé et reproduit le défaut prévu, et le parent a vérifié les résultats. Les empreintes des trois fichiers du projet sont restées identiques.
+
+L'essai a aussi révélé une différence de syntaxe : du texte brut `$cstack` ne désigne pas le skill qualifié d'un plugin. La version 0.1.1 utilise des invocations complètes dans ses prompts et exemples ; un test de paquet rejette désormais un prompt de skill non qualifié. La recherche puis sélection de **cstack** dans le sélecteur reste disponible.
+
+Ces essais vérifient le protocole et le moteur partagés par App et CLI. Ils ne constituent pas une observation visuelle de l'interface du gestionnaire de plugins. Les limites de connecteurs, planification et webhooks restent documentées dans PORTING.md.

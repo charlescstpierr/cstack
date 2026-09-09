@@ -4,7 +4,9 @@ Read this when a cstack skill is explicitly invoked. It applies to the current t
 
 ## Activation and routing
 
-`$cstack` activates the main workflow in this task until the user says to stop cstack. A specific `$skill` runs only that capability. Every bundled skill has `policy.allow_implicit_invocation: false` in its `agents/openai.yaml`; installation alone does not activate the mode. If the interface requires disambiguation, select the skill from the cstack plugin.
+Codex registers plugin skills as `cstack:<skill-name>`. Literal prompt text must use the full identifier, for example `$cstack:cstack` or `$cstack:architect`. In an interactive skill picker, typing `$cstack` and selecting the displayed **cstack** skill supplies a structured selection with its actual name and path. An unselected shorthand in raw text is not equivalent to that selection.
+
+`$cstack:cstack` activates the main workflow in this task until the user says to stop cstack. A specific `$skill` runs only that capability. Every bundled skill has `policy.allow_implicit_invocation: false` in its `agents/openai.yaml`; installation alone does not activate the mode. If the interface requires disambiguation, select the skill from the cstack plugin.
 
 Read a routed skill's SKILL.md from the same installed bundle. From the main skill, a sibling is `../<skill-name>/SKILL.md`. Follow its relevant references. Do not require a slash-command dispatcher or another plugin. Persist an active mode only in the current conversation/checkpoint, never in global AGENTS.md or config. In Plan mode, investigate and produce a plan without implementing or publishing it.
 

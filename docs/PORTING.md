@@ -8,8 +8,8 @@ Source : pstack 0.15.0, commit `27e2a62ff94f9af4b5e68435e41cdceacadb840c` de `cu
 
 | Ensemble | Traitement |
 | --- | --- |
-| Mode principal | `poteto-mode` devient `$cstack`, avec routage à la demande et instructions natives. |
-| Configuration | `setup-pstack` devient `$setup-cstack`, sans réglages globaux ni modèle imposé. |
+| Mode principal | `poteto-mode` devient `$cstack:cstack`, avec routage à la demande et instructions natives. |
+| Configuration | `setup-pstack` devient `$cstack:setup-cstack`, sans réglages globaux ni modèle imposé. |
 | 23 principes | Texte de fond conservé, application limitée à la tâche explicitement activée. |
 | Skills spécialisés | Architecture, explication, investigation, revue, tests, personnalisation et vérification adaptés avec leurs références. |
 | 23 playbooks | Procédures conservées, outils et règles de livraison adaptés à Codex. |
@@ -22,6 +22,8 @@ Source : pstack 0.15.0, commit `27e2a62ff94f9af4b5e68435e41cdceacadb840c` de `cu
 Les 47 entrées du catalogue incluent la notice `make-bot-ui`. Il s'agit donc de 46 skills utilisables et d'une limite explicitement consultable, pas de 47 intégrations exécutables.
 
 ## Différences de fonctionnement
+
+Codex qualifie les skills de plugin avec leur namespace. Le nom complet du mode principal est `$cstack:cstack` ; `$cstack` suffit pour chercher puis sélectionner ce skill dans le sélecteur interactif. Les prompts embarqués utilisent les noms complets pour fonctionner aussi dans `codex exec`. Ce comportement a été confirmé dans le [code natif de sélection des skills](https://github.com/openai/codex/blob/main/codex-rs/skills/src/selection.rs) et par un essai CLI réel.
 
 - Les skills utilisent les outils réellement exposés par Codex. Aucun appel `Task` de Cursor, chemin de transcript Cursor ou nom de modèle propre à un fournisseur n'est requis.
 - La délégation est native et limitée à la capacité de la session. Une exécution séquentielle faute de sous-agents est signalée. Une revue sur le même modèle n'est pas présentée comme une comparaison de modèles différents.

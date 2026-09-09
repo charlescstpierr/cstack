@@ -2,7 +2,7 @@
 
 Les workflows de [pstack](https://github.com/cursor/plugins/tree/27e2a62ff94f9af4b5e68435e41cdceacadb840c/pstack), adaptés à **Codex App et CLI**. Investigation, architecture, implémentation, revue et vérification, avec les sous-agents natifs de Codex.
 
-cstack s'active dans une tâche avec `$cstack`. L'installation seule ne modifie pas le comportement de Codex dans vos projets. Aucun runtime d'orchestration supplémentaire n'est nécessaire.
+cstack s'active dans une tâche avec `$cstack:cstack`. L'installation seule ne modifie pas le comportement de Codex dans vos projets. Aucun runtime d'orchestration supplémentaire n'est nécessaire.
 
 ## Installation depuis le dépôt privé
 
@@ -26,17 +26,25 @@ Le catalogue contient un seul plugin, `cstack`. Choisissez son skill dans le sé
 
 ## Utilisation
 
+Dans le sélecteur App ou CLI interactif, tapez `$cstack` puis choisissez le skill **cstack**. Si vous saisissez une commande en texte brut, notamment avec `codex exec`, utilisez son nom complet `$cstack:cstack`. Les autres skills suivent le même format, par exemple `$cstack:architect`.
+
 ```text
-$cstack Corrige ce bug et vérifie le résultat.
-$cstack Examine cette modification avant livraison.
-$architect Propose la structure de cette fonctionnalité.
-$interrogate Fais une revue contradictoire de ce diff.
-$setup-cstack
+$cstack:cstack Corrige ce bug et vérifie le résultat.
+$cstack:cstack Examine cette modification avant livraison.
+$cstack:architect Propose la structure de cette fonctionnalité.
+$cstack:interrogate Fais une revue contradictoire de ce diff.
+$cstack:setup-cstack
 ```
 
 Le mode reste actif dans la tâche jusqu'à une demande de désactivation, par exemple « arrête cstack ». Les skills spécialisés restent utilisables à la demande. Le mode Plan, les instructions du projet et les autorisations Codex restent prioritaires.
 
-Le modèle de la session est hérité par défaut. `$setup-cstack` permet des choix locaux par rôle parmi les modèles effectivement disponibles. Aucune clé API ni configuration globale n'est nécessaire. Un modèle demandé mais indisponible est signalé, sans substitution silencieuse.
+Exemple sans interface interactive :
+
+```sh
+codex exec '$cstack:cstack Examine cette modification sans changer les fichiers.'
+```
+
+Le modèle de la session est hérité par défaut. `$cstack:setup-cstack` permet des choix locaux par rôle parmi les modèles effectivement disponibles. Aucune clé API ni configuration globale n'est nécessaire. Un modèle demandé mais indisponible est signalé, sans substitution silencieuse.
 
 ## Prérequis et limites
 

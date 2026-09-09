@@ -5,26 +5,26 @@
 ## Déclarer la condition de fin
 
 ```text
-$cstack ajoute la sortie JSON. La sortie texte reste identique, le JSON se parse et les deux fonctionnent sur le projet exemple. Montre les preuves.
+$cstack:cstack ajoute la sortie JSON. La sortie texte reste identique, le JSON se parse et les deux fonctionnent sur le projet exemple. Montre les preuves.
 ```
 
-[`principle-prove-it-works`](../../skills/principle-prove-it-works/SKILL.md) et [`$blast-radius`](../../skills/blast-radius/SKILL.md) ramènent la vérification au produit, à la commande, aux valeurs écrites ou au profil réel.
+[`principle-prove-it-works`](../../skills/principle-prove-it-works/SKILL.md) et [`$cstack:blast-radius`](../../skills/blast-radius/SKILL.md) ramènent la vérification au produit, à la commande, aux valeurs écrites ou au profil réel.
 
 ## Créer une compétence de vérification du projet
 
 ```text
-$create-verification-skill
+$cstack:create-verification-skill
 ```
 
-[`$create-verification-skill`](../../skills/create-verification-skill/SKILL.md) décrit comment lancer l'application, la piloter comme un utilisateur et capturer une preuve. Il peut s'appuyer sur un harnais existant, un navigateur, un terminal ou HTTP selon le projet.
+[`$cstack:create-verification-skill`](../../skills/create-verification-skill/SKILL.md) décrit comment lancer l'application, la piloter comme un utilisateur et capturer une preuve. Il peut s'appuyer sur un harnais existant, un navigateur, un terminal ou HTTP selon le projet.
 
 ## Garder cette vérification honnête
 
 ```text
-$maintain-verification-skill audite la carte des fonctionnalités et corrige seulement les écarts prouvés.
+$cstack:maintain-verification-skill audite la carte des fonctionnalités et corrige seulement les écarts prouvés.
 ```
 
-[`$maintain-verification-skill`](../../skills/maintain-verification-skill/SKILL.md) relit les sources puis exécute une passe réelle. Il signale un produit défectueux au lieu de masquer le problème dans la compétence.
+[`$cstack:maintain-verification-skill`](../../skills/maintain-verification-skill/SKILL.md) relit les sources puis exécute une passe réelle. Il signale un produit défectueux au lieu de masquer le problème dans la compétence.
 
 ## Ouvrir une PR
 

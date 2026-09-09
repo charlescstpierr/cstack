@@ -1,6 +1,6 @@
 ---
 name: architect
-description: "Sketch types, signatures, and module structure before code, then stay in the loop while implementation fills in. Use for $architect, 'architect this', 'design this', or non-trivial work where jumping to code would lock in the wrong shape."
+description: "Sketch types, signatures, and module structure before code, then stay in the loop while implementation fills in. Use for $cstack:architect, 'architect this', 'design this', or non-trivial work where jumping to code would lock in the wrong shape."
 ---
 
 # Architect
@@ -45,7 +45,7 @@ Arena returns one synthesized design package. The synthesis decision populates t
 
 If the concrete task already authorizes implementation, proceed with the synthesized design without a redundant checkpoint. For a design-only request or Codex Plan mode, return the design and stop before implementation.
 
-Opt in to a checkpoint when the invoker explicitly asks: "$architect with checkpoint," "stop and show me before implementing," or similar. Then surface the synthesized design and pause for sign-off.
+Opt in to a checkpoint when the invoker explicitly asks: "$cstack:architect with checkpoint," "stop and show me before implementing," or similar. Then surface the synthesized design and pause for sign-off.
 
 During already-authorized implementation, the synthesis can be its own commit, as the "scaffold first" mode of the **foundational-thinking** principle skill. A design-only or Plan-mode invocation does not create commits. For adversarial pressure before implementation, run the **interrogate** skill on the synthesized sketch within the same scope.
 

@@ -1,6 +1,6 @@
 interface:
   display_name: "why"
-  short_description: "Use for $why, 'why does X work this way', design rationale,"
-  default_prompt: "Use $why for this task."
+  short_description: "Use for $cstack:why, 'why does X work this way', design"
+  default_prompt: "Use $cstack:why for this task."
 policy:
   allow_implicit_invocation: false

@@ -1,6 +1,6 @@
 ---
 name: reflect
-description: "Spawn three parallel review subagents over the active task history, surface durable learnings, and route each to a concrete skill edit or local proposal. Use for $reflect or when the user says reflect."
+description: "Spawn three parallel review subagents over the active task history, surface durable learnings, and route each to a concrete skill edit or local proposal. Use for $cstack:reflect or when the user says reflect."
 ---
 
 # Reflect
@@ -11,7 +11,7 @@ Mine the current task for durable learnings, then route them into skill edits or
 
 ## When to invoke
 
-Invoke for `$reflect` or when the user says "reflect". Skip trivial, off-topic, and one-off observations. Skip lessons already covered by a skill the parent followed correctly.
+Invoke for `$cstack:reflect` or when the user says "reflect". Skip trivial, off-topic, and one-off observations. Skip lessons already covered by a skill the parent followed correctly.
 
 ## Process
 

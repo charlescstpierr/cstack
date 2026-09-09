@@ -1,11 +1,11 @@
 # Piloter avec les noms de principes
 
-cstack fournit 23 principes sous forme de compétences explicites. Dans une tâche activée par `$cstack`, ils cadrent la décision au moment où elle compte. Ils respectent le périmètre et les permissions de l'utilisateur et n'autorisent aucun message externe automatique.
+cstack fournit 23 principes sous forme de compétences explicites. Dans une tâche activée par `$cstack:cstack`, ils cadrent la décision au moment où elle compte. Ils respectent le périmètre et les permissions de l'utilisateur et n'autorisent aucun message externe automatique.
 
 ## Utiliser un principe
 
 ```text
-$cstack applique « Subtract Before You Add ». Supprime les chemins morts avant d'ajouter la nouvelle forme.
+$cstack:cstack applique « Subtract Before You Add ». Supprime les chemins morts avant d'ajouter la nouvelle forme.
 ```
 
 Le nom donne une contrainte précise. La réponse doit dire quelle décision il a changée. Chaque fiche contient son [contrat runtime Codex](../../skills/cstack/references/codex-runtime.md).

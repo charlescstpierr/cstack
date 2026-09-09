@@ -1,6 +1,6 @@
 # cstack port
 
-Approved target: private GitHub repository `charlescstpierr/cstack`, full port of `cursor/plugins/pstack` commit `27e2a62ff94f9af4b5e68435e41cdceacadb840c`, Codex App and CLI, explicit activation with `$cstack`, no external orchestration runtime.
+Approved target: private GitHub repository `charlescstpierr/cstack`, full port of `cursor/plugins/pstack` commit `27e2a62ff94f9af4b5e68435e41cdceacadb840c`, Codex App and CLI, explicit activation with `$cstack:cstack`, no external orchestration runtime.
 
 ## Delivery checklist
 
@@ -12,7 +12,7 @@ Approved target: private GitHub repository `charlescstpierr/cstack`, full port o
 - [x] Stage helper scripts in writable project state instead of mutating plugin caches.
 - [x] Validate manifests, skill metadata, reference paths and upstream coverage.
 - [x] Run existing and targeted tests, typecheck, independent review and realistic skill checks.
-- [ ] Publish privately, verify clean GitHub installation and new-session discovery.
+- [x] Publish privately, verify clean GitHub installation and new-session discovery.
 
 ## Shared contracts
 

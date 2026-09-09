@@ -1,6 +1,6 @@
 ---
 name: interrogate
-description: "Use for $interrogate, \"adversarial review\", \"multi-model review\", \"challenge this\", \"stress test this code\", \"find blind spots\", or \"tear this apart\". Independent reviewers challenge changes from several angles."
+description: "Use for $cstack:interrogate, \"adversarial review\", \"multi-model review\", \"challenge this\", \"stress test this code\", \"find blind spots\", or \"tear this apart\". Independent reviewers challenge changes from several angles."
 ---
 
 # Interrogate

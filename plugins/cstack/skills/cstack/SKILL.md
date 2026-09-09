@@ -1,11 +1,11 @@
 ---
 name: cstack
-description: "Explicit cstack workflow router for concise prose, deliberate native Codex subagents, simple code, and verified work. Use only when the user invokes $cstack."
+description: "Explicit cstack workflow router for concise prose, deliberate native Codex subagents, simple code, and verified work. Use only when the user invokes $cstack:cstack."
 ---
 
 # cstack
 
-Apply cstack to the task that explicitly invoked `$cstack` until the task completes or the user stops cstack. Do not persist these instructions into unrelated work.
+Apply cstack to the task that explicitly invoked `$cstack:cstack` until the task completes or the user stops cstack. Do not persist these instructions into unrelated work.
 
 Read [the Codex runtime contract](references/codex-runtime.md) before choosing tools, subagents, models, state, or continuation behavior. Resolve paths in this skill relative to this file. Use the native tools that the current session exposes. Do not assume that a named agent role, scheduler, browser driver, model, or external integration exists.
 

@@ -11,15 +11,15 @@ Donnez :
 - les actions externes interdites ou explicitement permises ;
 - la condition d'arrêt et la forme du rapport.
 
-Pour les migrations ou tâches longues, utilisez [`$figure-it-out`](../../skills/figure-it-out/SKILL.md) et [`$show-me-your-work`](../../skills/show-me-your-work/SKILL.md). Le journal reste dans le workspace afin d'être relu.
+Pour les migrations ou tâches longues, utilisez [`$cstack:figure-it-out`](../../skills/figure-it-out/SKILL.md) et [`$cstack:show-me-your-work`](../../skills/show-me-your-work/SKILL.md). Le journal reste dans le workspace afin d'être relu.
 
 ## Ce que fait la boucle
 
 ```text
-$cstack continue jusqu'à ce que chaque fixture passe. N'envoie aucun message externe. Journalise les décisions et arrête-toi sur un blocage.
+$cstack:cstack continue jusqu'à ce que chaque fixture passe. N'envoie aucun message externe. Journalise les décisions et arrête-toi sur un blocage.
 ```
 
-Le travail avance par unités vérifiables. `$swarm` peut répartir des tranches indépendantes, avec une vérification par tranche. Les erreurs, les permissions manquantes et les ambiguïtés matérielles deviennent des blocages explicites.
+Le travail avance par unités vérifiables. `$cstack:swarm` peut répartir des tranches indépendantes, avec une vérification par tranche. Les erreurs, les permissions manquantes et les ambiguïtés matérielles deviennent des blocages explicites.
 
 Une planification récurrente n'est utilisée que si un planificateur natif est disponible et demandé explicitement. cstack ne simule pas de webhook, de cron ou d'agent persistant.
 

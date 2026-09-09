@@ -1,6 +1,6 @@
 ---
 name: make-bot-ui
-description: "Use for $make-bot-ui or when asked to build the upstream Cursor Grok Bot webhook UI. Reports the integration limit in Codex App and CLI."
+description: "Use for $cstack:make-bot-ui or when asked to build the upstream Cursor Grok Bot webhook UI. Reports the integration limit in Codex App and CLI."
 ---
 
 # Make Bot UI
