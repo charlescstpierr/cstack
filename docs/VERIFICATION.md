@@ -2,6 +2,50 @@
 
 Environnement de référence : Linux, Codex CLI 0.153.4, Bun 1.4.0, Python 3.13. Vérifications réalisées le 9 septembre 2026. Ce fichier décrit les preuves observées ; une validation de manifeste ne constitue pas une validation de comportement.
 
+## Intégration 0.3.0
+
+Base de comparaison : `a373eca2e003a9bd2e4b2e90ac7f28a250108f6c` (0.2.0). Les quatre nouveaux skills sont explicites. Les playbooks de correction et de développement, `how`, `why`, et le helper `models.py` conservent leurs sources. Les 23 principes concernés changent seulement leur phrase décrivant le setup passif.
+
+### Vérifications déterministes
+
+Les **90 tests automatisés** passent : 34 Python, 3 Bun de paquet/plan et 53 Bun des helpers. TypeScript, le validateur système du plugin, les métadonnées des 51 skills, les liens, les 158 fichiers de provenance pstack et `git diff --check` passent.
+
+Le setup est exercé sur des répertoires temporaires : preview sans écriture, application puis no-op, conservation des octets manuels et CRLF, de `CLAUDE.md` et des modèles non sélectionnés. Les tests couvrent aussi les plans périmés ou altérés, les conflits de marqueurs, les liens symboliques, les erreurs d’écriture et la reprise après interruption. La revue a conduit à corriger l’écriture de bytecode dans le bundle, l’absence d’exclusion Git avant le premier état Horizon et l’écrasement d’une édition manuelle survenue pendant la préparation des fichiers. Une relecture avant chaque remplacement protège cette dernière fenêtre ; plusieurs remplacements ne constituent pas une transaction atomique globale.
+
+Le CLI de modèles résout les 19 rôles à l’identique. Sur 30 mesures entrelacées par version, sa médiane passe de 84,8 à 79,6 ms ; les sources du helper sont identiques. Le seuil fixé avant la mesure était une régression maximale de 25 % plus 20 ms. Cette observation ne démontre pas un gain de vitesse ou de tokens des workflows.
+
+### Essais natifs reproductibles
+
+Le générateur crée des dépôts Git séparés et des copies des deux bundles hors des projets. Le lanceur utilise des sessions Codex natives, enregistre demandes, commandes, réponses, dispatchs, éventuelles lacunes de métadonnées et empreintes des fichiers. Les catalogues viennent d’une découverte réelle ; Luna max est un choix explicite pour ces essais.
+
+```sh
+codex debug models > /tmp/cstack-model-catalog.json
+python3 scripts/behavior-scenarios.py --baseline /chemin/plugin-0.2.0 --proposed /chemin/plugin-0.3.0 --catalog /tmp/cstack-model-catalog.json --output /tmp/cstack-cases
+python3 scripts/verify-behavior.py --cases /tmp/cstack-cases/cases.json --output /tmp/cstack-results --model gpt-5.6-luna --effort max --turn-timeout 900
+```
+
+Ces commandes lancent des modèles. `--case-id` permet de ne rejouer qu’un scénario dans un nouveau répertoire de résultats ; un répertoire non vide est refusé. Une sortie `completed` indique la fin du tour, même si sa réponse pose une question ; l’acceptation exige toujours de lire les réponses, les questions enregistrées et de vérifier les artefacts. Les métadonnées d’un dispatch accepté sont distinguées d’une lecture effective de l’enfant ; la fermeture d’un enfant éphémère peut rendre cette dernière indisponible.
+
+Les [résultats détaillés](evidence/0.3.0.json) retiennent **13 scénarios, 15 tours parents et 9 sous-agents terminés** :
+
+| Parcours | Observation vérifiée |
+| --- | --- |
+| Correction et `how`, ancien/nouveau | Même comportement de bornes ; assertions réexécutées par le parent. Explications correctes et lecture seule. Aucun nouveau sous-agent dans ces demandes explicitement solo. |
+| `interrogate`, ancien/nouveau | Exactement trois reviewers dans chaque version. Les deux détectent les garanties absentes du README. La nouvelle version sépare Standards, Spec et adversarial et conserve le défaut Spec dans le verdict. |
+| `clarify` | Une décision ouverte produit des questions et recommandations sans décision imposée. Une demande entièrement définie termine sans question inventée. Aucun fichier modifié. |
+| `domain` | Brouillon en lecture seule ; ajout autorisé de Member dans le glossaire en conservant son préfixe manuel. Aucun ADR ou code ajouté. |
+| `horizon` | Deux chercheurs terminés, citations vérifiées, tickets 001/002 résolus. Au tour suivant, seule la décision fournie pour 003 est enregistrée ; 004 reste ouverte, sans réponse humaine inventée. Aucun code, spec ou goal créé. |
+| `audit-architecture` | Un explorateur, trois symboles correctement cités, proposition qualifiée de spéculative. Aucun fichier modifié. |
+| Setup répété | Création du bloc AGENTS, des deux guides et de l’exclusion Git ; seconde application sans modification. Octets manuels, CRLF, CLAUDE et modèles préservés. |
+
+Une comparaison indépendante, sans identité des variantes, n’a relevé aucune régression dans les sorties correction/explication ; le parent a vérifié leurs fichiers et assertions séparément. Le cas de revue porte sur le README staged : les modifications unstaged et untracked sont volontairement hors périmètre et leur conservation est vérifiée. Le panel natif observé a trois membres ; les autres tailles relèvent des tests de compatibilité du helper et des instructions révisées.
+
+Les neuf créations d’enfants transmettent `gpt-5.6-luna` et `max`, et leurs terminaisons sont enregistrées. Leur fermeture éphémère empêche ensuite `thread/read` : ce résultat prouve les champs transmis et les travaux terminés, pas une mesure indépendante du modèle effectif de chaque enfant. Le test natif du setup précède la dernière garde contre une édition concurrente ; cette garde est couverte par son test de régression et la suite Python complète.
+
+Les premiers essais invalidés par le banc (questions nulles, héritage du mauvais dépôt Git, lecture d’un enfant déjà fermé) et les interruptions à 300 secondes sont conservés localement, mais exclus de ces 13 résultats. Les essais longs retenus utilisent une limite explicite de 900 secondes par tour. Ces scénarios synthétiques ne garantissent pas l’absence de toute régression et ne démontrent aucun gain général de tokens. Les traces brutes et le journal de décisions restent sous `.cstack/tasks/horizon-project-setup/` ; le JSON publié contient leurs empreintes.
+
+## Historique des versions précédentes
+
 ## Base upstream
 
 Avant modification des helpers : `bun run test` passe 52 tests, puis `bun run typecheck` passe. Le commit source est enregistré dans `UPSTREAM.json`.

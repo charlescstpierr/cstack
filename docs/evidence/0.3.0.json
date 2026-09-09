@@ -1,0 +1,282 @@
+{
+  "date": "2026-09-09",
+  "baseline_commit": "a373eca2e003a9bd2e4b2e90ac7f28a250108f6c",
+  "codex_cli": "0.153.4",
+  "automated_tests": {
+    "python": 34,
+    "bun_package": 3,
+    "bun_helpers": 53,
+    "total": 90
+  },
+  "native_cases": [
+    {
+      "id": "clear_python_correction_baseline",
+      "fixture_revision": "r3",
+      "turns": 1,
+      "wall_seconds": 141.205,
+      "children": 0,
+      "child_completion_observed": 0,
+      "dispatch_model": null,
+      "dispatch_effort": null,
+      "effective_child_metadata_observed": 0,
+      "metadata_gaps": 0,
+      "before_sha256": "074e59732068382db5bf08b9f74d19b808d554fb7b784660e22392ded95136ef",
+      "after_sha256": "7f0e42edbca06a1ddf5c20c4d8fed948e09c88f0dc6929223d5fcfab5bc4d210",
+      "source_sha256": {
+        "bundle": "1a825ffd6030686f2cd9d4faaa156399ba98981b9ec62dcd174e1c9863d718fc",
+        "skill": "8f1eacb9cbda8649ff457f503f2c29aad55b63dce733c1a5433b6c9f44c68a47"
+      },
+      "raw_stream_sha256": "1ab319c71e0c1658a578da2e76b4aedcef339cc3c065dc8f4ea152c4512b0f7a",
+      "result": "Inclusive lower bound and future exclusion verified independently; only requested Python files changed."
+    },
+    {
+      "id": "clear_python_correction_proposed",
+      "fixture_revision": "r3",
+      "turns": 1,
+      "wall_seconds": 123.486,
+      "children": 0,
+      "child_completion_observed": 0,
+      "dispatch_model": null,
+      "dispatch_effort": null,
+      "effective_child_metadata_observed": 0,
+      "metadata_gaps": 0,
+      "before_sha256": "074e59732068382db5bf08b9f74d19b808d554fb7b784660e22392ded95136ef",
+      "after_sha256": "43fd9e0365cb08999a5f3df861ad2659266a290ddab6806902e2aa3e0bc83003",
+      "source_sha256": {
+        "bundle": "1f76c2ba6a7e593adbfd0c1feb37b9e2bd07d22c44d570927dba6d687abbe6d9",
+        "skill": "b9ab7733c465d64849d4b0d05f138733be944006b07b516cf05b923206c017cb"
+      },
+      "raw_stream_sha256": "f356f6d008aa9b8db6cdf2f27bc13c1ccc8acd476731aa16e117e011c6d326f9",
+      "result": "Same boundary behavior and assertions; no added question or delegate in explicitly solo request."
+    },
+    {
+      "id": "readonly_explanation_baseline",
+      "fixture_revision": "r3",
+      "turns": 1,
+      "wall_seconds": 59.689,
+      "children": 0,
+      "child_completion_observed": 0,
+      "dispatch_model": null,
+      "dispatch_effort": null,
+      "effective_child_metadata_observed": 0,
+      "metadata_gaps": 0,
+      "before_sha256": "9883ef41f5c4aaada51fed5990fa3e4a0b742b0291dac76ad5280ec0ec83eec1",
+      "after_sha256": "9883ef41f5c4aaada51fed5990fa3e4a0b742b0291dac76ad5280ec0ec83eec1",
+      "source_sha256": {
+        "bundle": "1a825ffd6030686f2cd9d4faaa156399ba98981b9ec62dcd174e1c9863d718fc",
+        "skill": "daa4b7476b2bbdc465e541dc191791657fb7dcec63e8f2218f18871008005cc0"
+      },
+      "raw_stream_sha256": "d62200d6cbd191c0fc3d19ea8d92530cd51df8d88c9e000596edd035e6de6d66",
+      "result": "Correct function and bound explanation; project hash unchanged."
+    },
+    {
+      "id": "readonly_explanation_proposed",
+      "fixture_revision": "r3",
+      "turns": 1,
+      "wall_seconds": 40.095,
+      "children": 0,
+      "child_completion_observed": 0,
+      "dispatch_model": null,
+      "dispatch_effort": null,
+      "effective_child_metadata_observed": 0,
+      "metadata_gaps": 0,
+      "before_sha256": "9883ef41f5c4aaada51fed5990fa3e4a0b742b0291dac76ad5280ec0ec83eec1",
+      "after_sha256": "9883ef41f5c4aaada51fed5990fa3e4a0b742b0291dac76ad5280ec0ec83eec1",
+      "source_sha256": {
+        "bundle": "1f76c2ba6a7e593adbfd0c1feb37b9e2bd07d22c44d570927dba6d687abbe6d9",
+        "skill": "daa4b7476b2bbdc465e541dc191791657fb7dcec63e8f2218f18871008005cc0"
+      },
+      "raw_stream_sha256": "063ebe8589ebceab5fb2bfd99f4c5a72f1602caf8513ac99faa0b287ce8e1eb2",
+      "result": "Correct function and bound explanation; project hash unchanged."
+    },
+    {
+      "id": "clarify_overwrite",
+      "fixture_revision": "r3",
+      "turns": 1,
+      "wall_seconds": 112.822,
+      "children": 0,
+      "child_completion_observed": 0,
+      "dispatch_model": null,
+      "dispatch_effort": null,
+      "effective_child_metadata_observed": 0,
+      "metadata_gaps": 0,
+      "before_sha256": "b16a8c13e91b55896553d509001ba7b1632bf3c2f20ad4fc56658b8e1f51201d",
+      "after_sha256": "b16a8c13e91b55896553d509001ba7b1632bf3c2f20ad4fc56658b8e1f51201d",
+      "source_sha256": {
+        "bundle": "1f76c2ba6a7e593adbfd0c1feb37b9e2bd07d22c44d570927dba6d687abbe6d9",
+        "skill": "0db21625fd45c5c923b260a0b50b7e85740d2218554c77d8b011773d07079264"
+      },
+      "raw_stream_sha256": "d7d6019625f368f828956124a74757e56db4071a7dfea9abb891c20a38f6c7ee",
+      "result": "Asks collision policy and absence representation, recommends without deciding; no writes."
+    },
+    {
+      "id": "domain_readonly",
+      "fixture_revision": "r3",
+      "turns": 1,
+      "wall_seconds": 54.343,
+      "children": 0,
+      "child_completion_observed": 0,
+      "dispatch_model": null,
+      "dispatch_effort": null,
+      "effective_child_metadata_observed": 0,
+      "metadata_gaps": 0,
+      "before_sha256": "b3c70694bbbddac123af0afe2244cdf52a334455ff01feb1e8b7ec6db08e7aa4",
+      "after_sha256": "b3c70694bbbddac123af0afe2244cdf52a334455ff01feb1e8b7ec6db08e7aa4",
+      "source_sha256": {
+        "bundle": "1f76c2ba6a7e593adbfd0c1feb37b9e2bd07d22c44d570927dba6d687abbe6d9",
+        "skill": "42d4581be1b073964b37929ba60f3cee98d24b788e238c8c4712c0c439495ab4"
+      },
+      "raw_stream_sha256": "c30ede71dbe2fc69ef659c95141977335229cdd8c393686c2862c2aafe5fd070",
+      "result": "Draft terminology with source citations and explicit human choice; no writes."
+    },
+    {
+      "id": "domain_authorized_write",
+      "fixture_revision": "r3",
+      "turns": 1,
+      "wall_seconds": 98.312,
+      "children": 0,
+      "child_completion_observed": 0,
+      "dispatch_model": null,
+      "dispatch_effort": null,
+      "effective_child_metadata_observed": 0,
+      "metadata_gaps": 0,
+      "before_sha256": "b3c70694bbbddac123af0afe2244cdf52a334455ff01feb1e8b7ec6db08e7aa4",
+      "after_sha256": "626a710ed2ee0be61b77c92467eaa95607dc9ab7536b21a158d60f1f7d94d804",
+      "source_sha256": {
+        "bundle": "1f76c2ba6a7e593adbfd0c1feb37b9e2bd07d22c44d570927dba6d687abbe6d9",
+        "skill": "42d4581be1b073964b37929ba60f3cee98d24b788e238c8c4712c0c439495ab4"
+      },
+      "raw_stream_sha256": "2a43a90acbbd810581287068278765ea0252a4344263bafaf5fbe9387087453d",
+      "result": "Member entry appended; original CONTEXT.md bytes preserved; no code or ADR edits."
+    },
+    {
+      "id": "clarify_complete",
+      "fixture_revision": "r4",
+      "turns": 1,
+      "wall_seconds": 37.008,
+      "children": 0,
+      "child_completion_observed": 0,
+      "dispatch_model": null,
+      "dispatch_effort": null,
+      "effective_child_metadata_observed": 0,
+      "metadata_gaps": 0,
+      "before_sha256": "62581c42c41ec08a1d6f651e4bc8409b15edb23a77375b51e4fe2ddfdb494e47",
+      "after_sha256": "62581c42c41ec08a1d6f651e4bc8409b15edb23a77375b51e4fe2ddfdb494e47",
+      "source_sha256": {
+        "bundle": "bc132a1ab30459f4e5e94a5ceb4d76c43c5271b806f5c66017b0c29cbb5bf66a",
+        "skill": "0db21625fd45c5c923b260a0b50b7e85740d2218554c77d8b011773d07079264"
+      },
+      "raw_stream_sha256": "190b48bbf7584159b906a2932825cdaaf73067a24edff05d02ed05d3c27249ba",
+      "result": "Existing missing-ID error inspected; no material ambiguity or invented question; no writes."
+    },
+    {
+      "id": "setup_project_twice",
+      "fixture_revision": "r4",
+      "turns": 2,
+      "wall_seconds": 237.429,
+      "children": 0,
+      "child_completion_observed": 0,
+      "dispatch_model": null,
+      "dispatch_effort": null,
+      "effective_child_metadata_observed": 0,
+      "metadata_gaps": 0,
+      "before_sha256": "3b622ede6141d8c2d9da63ace9dcf0ab214f3f67834238da7693ce8b6a317811",
+      "after_sha256": "bd3c065e0c09e33a4e3fbf15a140685472f2c74032e63452b427d7ab8085758e",
+      "source_sha256": {
+        "bundle": "bc132a1ab30459f4e5e94a5ceb4d76c43c5271b806f5c66017b0c29cbb5bf66a",
+        "skill": "9b8b888cedfac3c4e5d736b1c11a80433ce253c7d2071e9fc4e01b6c85349756"
+      },
+      "raw_stream_sha256": "4be5be12c4cfc9c6bd2259a0dbda864d1eb4d793c138dc8414f3029e6b3173c8",
+      "result": "Authorized managed block, guides and ignore entry applied; second apply noop; manual CRLF, CLAUDE and saved model bytes preserved."
+    },
+    {
+      "id": "interrogate_current_work_baseline",
+      "fixture_revision": "r4",
+      "turns": 1,
+      "wall_seconds": 166.796,
+      "children": 3,
+      "child_completion_observed": 3,
+      "dispatch_model": "gpt-5.6-luna",
+      "dispatch_effort": "max",
+      "effective_child_metadata_observed": 0,
+      "metadata_gaps": 3,
+      "before_sha256": "a504974f5ff81e41bac479c1886c2e75c342b88a790b946d65ef184a1a6b3ff9",
+      "after_sha256": "a504974f5ff81e41bac479c1886c2e75c342b88a790b946d65ef184a1a6b3ff9",
+      "source_sha256": {
+        "bundle": "1a825ffd6030686f2cd9d4faaa156399ba98981b9ec62dcd174e1c9863d718fc",
+        "skill": "e023784c5a8f6691bdf98cf976ac441187cd2e1a1d293b8ecc56c3ed71035677"
+      },
+      "raw_stream_sha256": "2ca073e5237d1472e3181179eaf10bdce6b304fa33fe2cabf5f5d5f34b5b883f",
+      "result": "Three reviewers find missing approved README guarantees; requested staged scope only; all files preserved."
+    },
+    {
+      "id": "interrogate_current_work_proposed",
+      "fixture_revision": "r4",
+      "turns": 1,
+      "wall_seconds": 206.876,
+      "children": 3,
+      "child_completion_observed": 3,
+      "dispatch_model": "gpt-5.6-luna",
+      "dispatch_effort": "max",
+      "effective_child_metadata_observed": 0,
+      "metadata_gaps": 3,
+      "before_sha256": "a504974f5ff81e41bac479c1886c2e75c342b88a790b946d65ef184a1a6b3ff9",
+      "after_sha256": "a504974f5ff81e41bac479c1886c2e75c342b88a790b946d65ef184a1a6b3ff9",
+      "source_sha256": {
+        "bundle": "bc132a1ab30459f4e5e94a5ceb4d76c43c5271b806f5c66017b0c29cbb5bf66a",
+        "skill": "b8223af308c75e42e6ea92e80c6b5c6af8cc4424c52c449640c569dd4dab9929"
+      },
+      "raw_stream_sha256": "b80622e3152e42647a5d7e06253566577968e06cf4a3f6ddace1efd15ba45c87",
+      "result": "Three distinct primary axes; missing approved README guarantees retained as Spec finding; all files preserved."
+    },
+    {
+      "id": "audit_architecture_username_scope",
+      "fixture_revision": "r4",
+      "turns": 1,
+      "wall_seconds": 248.17,
+      "children": 1,
+      "child_completion_observed": 1,
+      "dispatch_model": "gpt-5.6-luna",
+      "dispatch_effort": "max",
+      "effective_child_metadata_observed": 0,
+      "metadata_gaps": 1,
+      "before_sha256": "7bc678fed041c856d5f460f692a3fb3d33153bebc965cc35b3fc3791a1b508d3",
+      "after_sha256": "7bc678fed041c856d5f460f692a3fb3d33153bebc965cc35b3fc3791a1b508d3",
+      "source_sha256": {
+        "bundle": "bc132a1ab30459f4e5e94a5ceb4d76c43c5271b806f5c66017b0c29cbb5bf66a",
+        "skill": "6c8c483fbea093765e49638b67a73791078fc667b5277a24eb0a0e29186096c9"
+      },
+      "raw_stream_sha256": "3d9096c15e6a7d2d512bfd194ebedcdd3f558379f5a1c052b6ba70843c95303b",
+      "result": "One explorer; cited three source symbols; speculative normalization proposal, no automatic refactor; all files preserved."
+    },
+    {
+      "id": "horizon_two_research_then_policy",
+      "fixture_revision": "r4",
+      "turns": 2,
+      "wall_seconds": 517.33,
+      "children": 2,
+      "child_completion_observed": 2,
+      "dispatch_model": "gpt-5.6-luna",
+      "dispatch_effort": "max",
+      "effective_child_metadata_observed": 0,
+      "metadata_gaps": 2,
+      "before_sha256": "5188f8e6146703d9a7ae66733dfd3ba93c3fbf640518987b26fca3fbef19405d",
+      "after_sha256": "a4c8266470a5f08883c1fc51d8fe389d0e463c075e6509b207c6fef0fbc0190a",
+      "source_sha256": {
+        "bundle": "bc132a1ab30459f4e5e94a5ceb4d76c43c5271b806f5c66017b0c29cbb5bf66a",
+        "skill": "60ff5b145d217e6e11101209db67b4bc0e52b3401f2e91f2ba84619cf9e00dc0"
+      },
+      "raw_stream_sha256": "772e418c8a4f37e742380ffc0f0c70199642ca5b44697e6c9f0fb96f5a5416f0",
+      "result": "Two research children completed. Research 001/002 and supplied human decision 003 resolved; 004 open and unanswered; no product edits or automatic goal."
+    }
+  ],
+  "limits": [
+    "Finite synthetic scenarios; no guarantee against all regressions or token-saving claim.",
+    "Native review uses a configured panel of three. Other panel lengths are preserved by model-helper compatibility tests and reviewed instructions.",
+    "Review scenario scopes staged README; dirty implementation and untracked notes are explicitly excluded and preserved.",
+    "Accepted dispatch model/effort and completed child execution are observed. Closed ephemeral children prevented subsequent effective thread/read metadata for nine child lookups.",
+    "Native setup uses the r4 source snapshot; the later pre-replace concurrent-edit guard is verified by its regression test and the complete Python suite.",
+    "Invalid early harness runs and 300-second timeouts are excluded. Final long trials use an explicit 900-second limit per turn."
+  ],
+  "implementation_commit": "95df6b48c7c86142567c2ebf0ddab2083fa562e9"
+}
