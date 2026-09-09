@@ -27,7 +27,7 @@ Codex qualifie les skills de plugin avec leur namespace. Le nom complet du mode 
 
 - Les skills utilisent les outils réellement exposés par Codex. Aucun appel `Task` de Cursor, chemin de transcript Cursor ou nom de modèle propre à un fournisseur n'est requis.
 - La délégation est native et limitée à la capacité de la session. Une exécution séquentielle faute de sous-agents est signalée. Une revue sur le même modèle n'est pas présentée comme une comparaison de modèles différents.
-- Les modèles sont hérités par défaut. La configuration locale de rôles est vérifiée à chaque utilisation ; une sélection explicite indisponible ne déclenche pas de substitution silencieuse.
+- Les modèles et efforts sont hérités par défaut. Le setup présente sept recommandations facultatives, validées dans le catalogue courant, et conserve les réglages non sélectionnés. Les objets `model` / `reasoning_effort` et les anciennes chaînes sont pris en charge. Chaque délégation transmet les deux champs sélectionnés ; si l’outil natif ne le permet pas, cstack signale la limite sans substitution ni instruction de prompt présentée comme configuration. La session principale reste inchangée.
 - Les assistants sont exécutés depuis une copie inscriptible dans le projet. Le contenu du plugin installé reste immuable.
 - La reprise repose sur les tâches accessibles, le contexte courant et des checkpoints locaux. Aucune lecture d'historiques d'autres projets ni promesse de survie de processus après fermeture de Codex.
 - Un suivi périodique requiert une capacité de planification native disponible et une demande explicite. cstack n'ajoute pas de service permanent.

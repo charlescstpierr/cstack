@@ -29,7 +29,25 @@ Pour inspecter ou préparer la configuration locale, invoquez [`$cstack:setup-cs
 $cstack:setup-cstack
 ```
 
-Le setup prépare seulement ce qui est nécessaire au workspace. Les sous-agents héritent du modèle de la session, sauf choix explicite disponible dans votre environnement. Aucun nom de modèle n'est imposé par le plugin.
+Le setup affiche les réglages existants et ces recommandations, avec leur disponibilité vérifiée dans le catalogue courant :
+
+| Travail | Modèle | Effort |
+| --- | --- | --- |
+| Exploration | `gpt-5.6-luna` | `max` |
+| Petites modifications | `gpt-5.6-luna` | `max` |
+| Développement | `gpt-6-astra` | `low` |
+| Débogage difficile | `gpt-6-astra` | `medium` |
+| Revue de code | `gpt-6-astra` | `low` |
+| Architecture complexe | `gpt-6-astra` | `xhigh` |
+| Documentation | `gpt-5.6-luna` | `max` |
+
+Le setup vérifie aussi que l'outil de délégation peut transmettre le modèle et l'effort. Une paire présente dans le catalogue mais impossible à transmettre est signalée avant tout choix ; utilisez alors l'héritage ou une sélection supportée.
+
+Choisissez d'accepter les recommandations disponibles, de personnaliser les rôles, d'hériter de la session ou d'annuler. Seuls les rôles sélectionnés changent ; annuler ne crée ni ne modifie de fichier. Sans choix, les sous-agents héritent du modèle et de l'effort de la session. Un cache ancien ne prouve pas qu'un modèle est disponible.
+
+Les choix sont enregistrés dans `.cstack/models.json` sous forme d'objets `model` et `reasoning_effort`. Les anciennes chaînes de modèle et les listes de panels restent compatibles. Un ancien modèle sans effort conserve les règles d'effort de l'hôte. Les rôles absents `simple edits` et `documentation` reprennent respectivement `feature, refactoring` et `judgment and prose`.
+
+La configuration concerne les délégations suivantes, pas le modèle de la session principale. Elle ne nécessite ni clé API ni changement global. Si l'outil natif ne permet pas de transmettre l'effort choisi, cstack signale cette limite et demande un choix supporté ou l'héritage. Il ne remplace pas le réglage par une instruction dans le prompt.
 
 Le setup ne promet pas de planification persistante, de messages externes, de PR, de merge ou de déploiement. Ces opérations restent conditionnées par les outils présents et votre autorisation.
 

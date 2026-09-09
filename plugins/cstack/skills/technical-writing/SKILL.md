@@ -7,6 +7,8 @@ description: "Layered technical-writing standard: Diátaxis structure, Google de
 
 Runtime: [`../cstack/references/codex-runtime.md`](../cstack/references/codex-runtime.md).
 
+If delegating documentation-only work, use the `documentation` role under that contract, preserving the complete model and effort selection. Direct writing keeps the current session settings.
+
 The goal is writing a tired engineer understands on the first read. Four layers get you there, one question each: what kind of document is this, how do sentences address the reader, how much does each sentence carry, and can any sentence be read two ways. Apply all four.
 
 Three rules sit above the layers:

@@ -9,16 +9,37 @@ Read the [native Codex runtime contract](../cstack/references/codex-runtime.md).
 
 ## Configure
 
-1. Locate the target workspace, normally the current git root or current directory outside git. Read `.cstack/models.json` if present. Require a JSON object with only the roles below. Simple roles take non-empty strings; panels take non-empty lists of non-empty strings. The `architect runners` panel requires at least two entries for distinct design attempts. Report invalid keys/values and preserve the existing file on error.
-2. Inspect the native model-selection schema or an authoritative session model list. Offer only confirmed available models and `inherit-parent`. Never guess slugs, inspect credentials or require an API account. Without model discovery, inheritance remains available.
-3. Show effective choices briefly. Apply valid choices already requested; otherwise ask which roles to change. Missing roles inherit. Missing panels default to three independent inherited-model passes, bounded by native concurrency. The cross-judge pool chooses one judge, not three.
-4. Validate all selected model names against the available set and any known compatible reasoning settings. Reject an unavailable explicit choice; do not silently substitute. Preserve roles the user did not ask to change. Write validated JSON to a sibling temporary file, then atomically replace `.cstack/models.json`. If the user chooses defaults and no file exists, no file is needed.
-5. Keep `.cstack/` untracked without replacing existing ignore rules. Read back and validate the file. Report the local path and effective settings. The next cstack dispatch reads them; do not change global configuration, install agents, activate other tasks or require a restart.
+1. Locate the target workspace, normally the current git root or current directory outside git. Resolve this installed plugin's absolute path. Use its trusted `scripts/models.py` directly with Python 3, never a project-local executable copy.
+2. Discover models and supported reasoning efforts from the current native tool schema or authoritative session catalog. Save that evidence as JSON: raw `codex debug models` output when that command is supported, or a map of confirmed model slugs to supported effort lists transcribed from the current schema. A stale local cache is not entitlement. Without discovery use an empty map; inheritance remains available. Never inspect credentials or require an API account.
+3. Inspect the actual native spawn schema during setup: confirm it can express both `model` and `reasoning_effort`, including any fork or agent-type restrictions in the shared runtime contract. Show any capability gap before offering acceptance; catalog availability alone does not make a pair usable. If this host cannot dispatch explicit efforts, offer inheritance or a supported custom selection instead of accepting those pairs. Run the preview command below. Show the saved choices and all seven recommendation groups, including unavailable reasons. In interactive setup offer **accept recommendations**, **customize**, **inherit parent**, and **cancel**. Accept applies only available groups the user selects; unavailable groups require an explicit supported alternative or inheritance. Customize offers confirmed model/effort pairs per group or role. Inherit replaces only selected roles with `inherit-parent`, keeping panel counts. Cancel writes nothing. Do not apply recommendations merely because setup was invoked. Apply choices already explicitly requested without asking again.
+4. Write a temporary JSON file containing only selected role changes. Group `choices` from the preview provide the exact role maps and panel sizes. Apply with the preview's `sha256`; a stale preview requires rereading and showing the changed settings before applying. The helper validates pairs, merges untouched roles and atomically saves `.cstack/models.json`. Invalid configuration or choices leave the file intact. With no saved file and no changes, leave inheritance implicit.
+5. Keep `.cstack/` untracked without replacing existing ignore rules. Read back with `show`, report the local path and effective settings. These settings affect subsequent delegates, not the parent session. No global configuration, role installation, restart or paid model test is needed. At dispatch, check the runtime's ability to express both fields as described in the shared contract.
+
+```sh
+python3 <absolute-plugin>/skills/setup-cstack/scripts/models.py --workspace <workspace> --catalog <live-catalog.json> show
+python3 <absolute-plugin>/skills/setup-cstack/scripts/models.py --workspace <workspace> --catalog <live-catalog.json> apply --choices <selected-role-map.json> --expected-sha256 <show.sha256>
+```
+
+## Recommendations
+
+These are optional choices, validated against the live catalog before selection:
+
+| Work | Model | Reasoning effort | Rationale |
+| --- | --- | --- | --- |
+| Exploration | `gpt-5.6-luna` | `max` | Bounded searches and explanations. |
+| Simple changes | `gpt-5.6-luna` | `max` | Small edits with clear acceptance checks. |
+| Development | `gpt-6-astra` | `low` | Implementation with design judgment. |
+| Difficult debugging | `gpt-6-astra` | `medium` | Diagnosis across interacting causes. |
+| Code review | `gpt-6-astra` | `low` | Judgment about correctness and risk. |
+| Complex architecture | `gpt-6-astra` | `xhigh` | Cross-cutting design and tradeoffs. |
+| Documentation | `gpt-5.6-luna` | `max` | Focused prose from established facts. |
 
 ## Roles
 
 Simple roles:
 
+- `simple edits`
+- `documentation`
 - `feature, refactoring`
 - `bug-fix`
 - `perf-issue`
@@ -41,6 +62,8 @@ Panel roles:
 - `interrogate reviewers`
 
 The cross-judge pool supplies one judge, preferably different from the author when available. Without a pool, use one independent inherited-model judge. Other panel list lengths set the requested number of attempts. Never claim different model families when every pass used the same model.
+
+Values may be legacy model strings, `inherit-parent`, or `{ "model": "confirmed-slug", "reasoning_effort": "supported-effort" }`; panels contain these values. Missing `simple edits` falls back to `feature, refactoring`; missing `documentation` falls back to `judgment and prose`. Other missing roles inherit. Missing panels use three attempts, except the cross-judge pool uses one.
 
 Example requiring no particular model:
 

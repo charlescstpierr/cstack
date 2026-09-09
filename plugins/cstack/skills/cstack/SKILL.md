@@ -93,9 +93,9 @@ For coverage across independent areas, read and apply `../swarm/SKILL.md`. For c
 
 Bound panels to native capacity. A panel with no `.cstack/models.json` entry defaults to three independent inherited-model attempts. A cross-judge pool defaults to one inherited-model judge. Run excess attempts in waves. If a playbook asks for more lanes than the work justifies, preserve each distinct scenario and mark redundant lanes `n/a` with a reason.
 
-Models inherit from the parent by default. If `.cstack/models.json` supplies a role or panel override, validate that explicit model against models already known to the current session. If the model is unavailable, stop that selection and report it. Never guess a substitute or invent a model-list command.
+Follow the runtime contract's direct inheritance path when unconfigured; otherwise resolve the delegate's role with its trusted helper and preserve both `model` and `reasoning_effort` through the final native dispatch. Missing settings inherit. Report unsupported selections or dispatch capabilities without silently substituting or dropping effort.
 
-Use `judgment and prose` for generic prose or judgment delegates that are not assigned a specialized skill role. Use `hardest tasks` for explicitly identified cross-cutting designs, difficult concurrency fixes, or subtle algorithmic code delegates; that classification replaces the ordinary code-role selection for that delegate. Other code delegates use the matched playbook's role. Specialized investigators, synthesizers and panels use their named setup roles.
+Use `simple edits` for small bounded implementation changes and `documentation` for documentation-only delegates. Generic review or judgment uses `judgment and prose`. Use `hardest tasks` only for explicitly complex architecture, not difficult bugs or algorithms. Other implementation uses `feature, refactoring`; debugging uses `bug-fix`, `perf-issue` or `hillclimb` as appropriate. Specialized investigators, synthesizers and panels use their named setup roles. Pass the selected role into Swarm so its generic `swarm workers` default cannot replace it.
 
 ### Keep state local
 

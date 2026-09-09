@@ -9,6 +9,8 @@ Runtime: [`../cstack/references/codex-runtime.md`](../cstack/references/codex-ru
 
 Mine the current task for durable learnings, then route them into skill edits or a local proposal.
 
+Follow the runtime contract's direct inheritance path when unconfigured; otherwise resolve each named role with its helper and pass the complete selection, including reasoning effort, to each native spawn. Report host capability gaps rather than dropping a selected field.
+
 ## When to invoke
 
 Invoke for `$cstack:reflect` or when the user says "reflect". Skip trivial, off-topic, and one-off observations. Skip lessons already covered by a skill the parent followed correctly.

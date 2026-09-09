@@ -16,6 +16,14 @@ Les lancements réels de `watch-pr/watch-pr --help` et `orch/orch.ts --help` pas
 
 Une évaluation indépendante dans un dossier isolé a demandé `$cstack:setup-cstack` avec le modèle fictif `cstack-fictional-model-999`. Le skill a refusé la sélection non vérifiable, sans dispatch ni écriture ni substitution. L'empreinte du fichier existant est restée identique.
 
+### Setup 0.2.0 : modèle et effort
+
+Les six tests de `tests/test_models.py` couvrent les sept recommandations, leur résolution pour les 19 rôles, les panels, les anciennes chaînes de modèle, l'héritage explicite, les choix indisponibles, le JSON invalide, les prévisualisations périmées, les échecs de sauvegarde et les répertoires d'état liés par symlink. Le parcours CLI réel `show` → `apply` → `resolve` a également été exécuté pour chaque rôle dans un dossier temporaire. Une revue indépendante n'a relevé aucun problème majeur ; le séparateur manquant dans le tableau de recommandations a été corrigé.
+
+Un essai comportemental avec Codex CLI 0.153.4 via son serveur natif a chargé le nouveau skill depuis les sources et enregistré les sept groupes explicitement acceptés dans un projet isolé. Une vérification séparée a résolu `documentation` puis lancé un unique sous-agent. La lecture native `thread/read` confirme `model: gpt-5.6-luna` et `reasoningEffort: max` pour l'enfant, avec un parent `gpt-6-astra` / `low`. L'enfant a lu le README du projet et terminé sa tâche. Cela vérifie une transmission réelle des deux réglages ; les autres paires recommandées sont validées contre le catalogue courant et par les tests, sans lancer un modèle pour chaque rôle.
+
+Pour cette version, les 17 tests Python, les 3 tests Bun du paquet et du plan, et les 53 tests des helpers passent : **73 tests automatisés**. Les contrôles TypeScript, le validateur de plugin, les métadonnées des skills modifiés, les 47 entrées du paquet et la couverture des 158 fichiers upstream passent également. La configuration de test reste dans un projet temporaire ; la mise à jour du plugin ne remplace pas les choix d'un projet utilisateur.
+
 ## Workflow de correction
 
 Un agent indépendant a utilisé le skill principal pour corriger un filtre Python dans un projet isolé. Le cas fourni excluait à tort la borne inférieure et incluait des événements futurs. L'agent a reproduit l'échec, corrigé le filtre et ajouté un test passant. Le parent a ensuite exécuté une vérification indépendante couvrant les deux bornes, les dates futures, la fenêtre nulle, une liste vide, l'ordre et la conservation des données d'entrée. Ces assertions passent. L'exécution était volontairement séquentielle, sans sous-agents ni accès GitHub.

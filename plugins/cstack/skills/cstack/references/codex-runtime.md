@@ -23,11 +23,21 @@ Use the actual tools exposed in the current session. Native tool names differ be
 
 ## Models
 
-No model name is required. Inherit the parent model and effort unless the user configured an available override. Do not force a model family, provider, plan, API key or custom role installation.
+The parent session keeps its own model. Delegates inherit model and effort unless the user selects a project override. Setup offers optional recommendations, never mandatory model names, providers, plans, API keys or global custom roles.
 
-Optional project configuration: `.cstack/models.json`, a JSON object mapping role labels to model strings, or lists of strings for panels. The role labels match the setup skill. Missing roles and `inherit-parent` inherit. Panel list length is the requested number of attempts, bounded by native concurrency. The `architect runners` panel requires at least two entries. Distinct independent perspectives remain useful on one model, but do not call them a cross-model review.
+`.cstack/models.json` maps the setup skill's role labels to legacy model strings, `inherit-parent`, or objects with exactly `model` and `reasoning_effort`. Panels are nonempty lists of those selections. Missing `simple edits` falls back to `feature, refactoring`; missing `documentation` falls back to `judgment and prose`. Other missing roles inherit. Missing panels default to three attempts, except `arena cross-judge pool` defaults to one judge. `architect runners` requires at least two entries. Queue attempts beyond native concurrency; do not claim model diversity from independent passes on one model.
 
-Use only names confirmed by the current tool schema or authoritative session model list. A local stale cache is not proof of entitlement. If an override cannot be verified or the session rejects it, report the specific unavailable selection and request a supported choice or permission to inherit; continue independent work. Never silently substitute a different explicitly requested model. If model discovery is unavailable, inheritance still works. Read configuration before spawning; malformed JSON or invalid value shapes are configuration errors, not permission to ignore a requested override.
+When `.cstack/models.json` is absent and the caller supplied no override, inherit directly using the panel defaults above; no helper, Python or model discovery is needed. With configuration present, resolve the role using the trusted installed helper. Discover the catalog from the current tool schema or authoritative session model list once per task and reuse it while the session capabilities remain unchanged:
+
+```sh
+python3 <absolute-plugin>/skills/setup-cstack/scripts/models.py --workspace <workspace> --catalog <live-catalog.json> resolve '<role>'
+```
+
+Catalog formats and setup are documented in [setup-cstack](../../setup-cstack/SKILL.md). The result is a list of native selections: `{}` for inheritance, `{ "model": "..." }` for a legacy string, or `{ "model": "...", "reasoning_effort": "..." }` for an explicit pair. Forward each complete selection through every caller, panel and final spawn. Legacy strings leave effort to host rules; never invent an effort for them. An explicitly supplied specialized role or panel takes precedence over generic Swarm or Arena defaults.
+
+Inspect the actual spawn schema before applying overrides. On native App collaboration, use an available generic agent type whose settings are not locked, and `fork_turns: "none"` or a supported partial fork when supplying `model` or `reasoning_effort`; full-history forks cannot take these overrides. Supply the necessary context explicitly. Other hosts, including CLI, must expose a real way to configure the selected fields. If an explicit effort cannot be expressed, report that capability gap and request a supported selection or permission to inherit. Prompt text is not model configuration. Never silently drop effort, inherit or substitute a requested model. Inheritance uses the host's normal fork behavior.
+
+Use only model/effort pairs confirmed available now; a stale cache or saved choice does not prove entitlement. Malformed configuration, unknown explicit choices and rejected dispatches are errors to report, not permission to ignore an override. Continue independent work while a selection is blocked. Without discovery inheritance still works. Setup does not launch model tests or modify global configuration.
 
 ## State, helper scripts and resumption
 

@@ -11,6 +11,8 @@ Spawn independent native reviewers to adversarially review code changes. Each re
 
 The deliverable is a synthesized verdict. Do NOT auto-apply changes.
 
+Follow the runtime contract's direct inheritance path when unconfigured; otherwise resolve each named role with its helper and pass the complete selection, including reasoning effort, to each native spawn. Report host capability gaps rather than dropping a selected field.
+
 ## Step 1, Determine Scope
 
 Identify what to review from context:

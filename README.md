@@ -44,7 +44,7 @@ Exemple sans interface interactive :
 codex exec '$cstack:cstack Examine cette modification sans changer les fichiers.'
 ```
 
-Le modèle de la session est hérité par défaut. `$cstack:setup-cstack` permet des choix locaux par rôle parmi les modèles effectivement disponibles. Aucune clé API ni configuration globale n'est nécessaire. Un modèle demandé mais indisponible est signalé, sans substitution silencieuse.
+Les sous-agents héritent du modèle de la session par défaut. `$cstack:setup-cstack` affiche sept recommandations de modèle et d'effort à accepter, personnaliser ou remplacer par l'héritage ; vous pouvez aussi annuler. Les choix existants restent préservés sauf sélection explicite. Les paires sont vérifiées dans le catalogue courant et enregistrées dans `.cstack/models.json`, sans modifier la session principale ni la configuration globale. Voir le [tableau de recommandations](plugins/cstack/docs/guide/01-setup.md#configurer-cstack). Un choix indisponible ou un effort non configurable par l'hôte est signalé, sans substitution silencieuse.
 
 ## Prérequis et limites
 

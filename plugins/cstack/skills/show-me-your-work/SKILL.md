@@ -65,7 +65,7 @@ Fix the log, not the story. If the work diverged from what a row claims, the row
 
 ## Independent review of the trail
 
-Before handing back, use an independent native reviewer when delegation is available and permitted. It inherits the parent model, reads the audit trail and task record, and flags weak evidence or risk. When delegation is unavailable or prohibited, perform the scan directly and disclose that no independent review occurred.
+Before handing back, use an independent native reviewer when delegation is available and permitted. Resolve `judgment and prose` under the runtime contract and preserve both selected fields at dispatch. The reviewer reads the audit trail and task record, and flags weak evidence or risk. When delegation is unavailable or prohibited, perform the scan directly and disclose that no independent review occurred.
 
 - Decisions logged with weak or absent evidence.
 - Verification steps skipped or claimed without proof in the task record.
