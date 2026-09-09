@@ -5,7 +5,7 @@ description: "Apply before writing logic: choosing core types and data structure
 
 # Foundational Thinking
 
-Apply this principle when it is explicitly invoked or an active cstack workflow routes here. Installation alone does not activate it; setup only configures model choices. Respect the user's scope and permissions. This principle never authorizes automatic external messaging. See the [Codex runtime contract](../cstack/references/codex-runtime.md).
+Apply this principle when it is explicitly invoked or an active cstack workflow routes here. Installation alone does not activate it; setup does not activate workflows. Respect the user's scope and permissions. This principle never authorizes automatic external messaging. See the [Codex runtime contract](../cstack/references/codex-runtime.md).
 
 **Structural decisions** protect option value. **Code-level decisions** protect simplicity.
 

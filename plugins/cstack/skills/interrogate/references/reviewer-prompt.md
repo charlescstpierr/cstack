@@ -12,7 +12,33 @@ The author's stated intent for this change:
 
 > {INTENT}
 
-You are reviewing whether the code achieves this intent well. Do NOT question the intent itself. Assume the goal is correct and challenge the execution.
+You are reviewing whether the code achieves this intent well. Do NOT replace approved requirements with your own interpretation of the code. Challenge the execution and report an evidence gap when the approved requirements are missing or incomplete.
+
+## Review Assignment
+
+Primary axis: {PRIMARY_AXIS}
+
+Every reviewer may report another axis's high-impact correctness, security, or scope finding when the evidence supports it. Keep the primary axis first and label every finding as `Standards`, `Spec`, or `Cross-cutting`.
+
+The configured reviewer count and assignments are fixed by the parent. Do not start another reviewer or delegate this review.
+
+## Frozen Scope
+
+Base SHA: `{BASE_SHA}`
+
+Head SHA: `{HEAD_SHA}`
+
+Scope mode: `{SCOPE_MODE}`
+
+{SCOPE_SNAPSHOT}
+
+Review only the supplied snapshot. For current-work scope, staged, unstaged, and untracked content is included only where the parent supplied it. For branch, commit-range, or PR scope, review only the frozen commit-to-commit content. Treat a changing worktree as a snapshot limitation and state it when relevant.
+
+## Approved Requirements Evidence
+
+{REQUIREMENTS_EVIDENCE}
+
+Use only this approved spec, issue, or conversation evidence for Spec findings. If it says `Spec evidence gap`, report that gap and do not infer requirements from code, commit messages, or apparent behavior.
 
 ## Code Under Review
 
@@ -28,17 +54,18 @@ You are reviewing whether the code achieves this intent well. Do NOT question th
 
 ## Instructions
 
-Review the code through every lens in the rubric and the code-quality lens above that you find relevant. Do not force lenses that don't apply. A simple bug fix does not need paragraphs about architectural integrity.
+Review the supplied code through the rubric and code-quality lens above, prioritizing the assigned axis. Use only the supplied scope, approved requirements evidence, standards sources, and relevant surrounding context. Do not force lenses that don't apply. A simple bug fix does not need paragraphs about architectural integrity.
 
 For each finding, provide:
 
-1. **Severity**: `critical` | `warning` | `nit`
+1. **Axis**: `Standards` | `Spec` | `Cross-cutting`
+2. **Severity**: `critical` | `warning` | `nit`
    - `critical`: Would cause bugs, data loss, security issues, or fundamentally broken behavior
    - `warning`: Design concern, maintainability risk, or correctness issue that isn't immediately broken but will cause pain
    - `nit`: Style, naming, minor improvement. Only include nits if they're genuinely useful, not to pad your review.
-2. **Finding**: What the problem is, in concrete terms. Reference specific lines/functions.
-3. **Evidence**: Why you believe this is a problem. Show your reasoning. Don't just assert.
-4. **Suggestion** (optional): What you'd do instead, if you have a concrete alternative. Skip this if you don't have a clear fix.
+3. **Finding**: What the problem is, in concrete terms. Reference specific lines/functions.
+4. **Evidence**: Why you believe this is a problem. Cite the supplied code, standard, or approved requirement. Don't just assert.
+5. **Suggestion** (optional): What you'd do instead, if you have a concrete alternative. Skip this if you don't have a clear fix.
 
 ## What Makes a Good Finding
 
@@ -62,11 +89,13 @@ Return your findings as a structured list. If you have zero findings, say so. An
 ## Findings
 
 ### 1. [Severity] Short title
+**Axis**: Standards | Spec | Cross-cutting
 **Location**: file:line or function name
 **Finding**: What's wrong
 **Evidence**: Why this matters
 **Suggestion**: (optional) What to do instead
 
 ### 2. [Severity] Short title
+**Axis**: Standards | Spec | Cross-cutting
 ...
 ```

@@ -1,0 +1,6 @@
+interface:
+  display_name: "domain"
+  short_description: "Settle vocabulary and durable domain decisions"
+  default_prompt: "Use $cstack:domain to settle project vocabulary and durable domain decisions."
+policy:
+  allow_implicit_invocation: false

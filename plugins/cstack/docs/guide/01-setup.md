@@ -51,6 +51,16 @@ La configuration concerne les délégations suivantes, pas le modèle de la sess
 
 Le setup ne promet pas de planification persistante, de messages externes, de PR, de merge ou de déploiement. Ces opérations restent conditionnées par les outils présents et votre autorisation.
 
+## Préparer les instructions du projet
+
+Le setup propose aussi un aperçu des fichiers du projet avant application. `AGENTS.md` reçoit un bloc cstack délimité, qui renvoie au guide `docs/agents/cstack.md`. Le texte autour de ce bloc reste intact. Si `CLAUDE.md` existe, son contenu reste intact ; les conventions communes peuvent être référencées sans copie. Aucune règle globale n'est écrite et la présence du bloc n'active pas cstack.
+
+Pour Horizon, le setup reprend le document de suivi `docs/agents/issue-tracker.md` s'il existe, ou présente le choix entre les fichiers locaux et GitHub. Un choix GitHub enregistre le dépôt ciblé sans créer d'issue, de label ou de dépendance distante. Les termes et ADRs suivent les conventions du projet ; le setup ne crée pas de glossaire vide.
+
+L'aperçu indique les rôles réutilisés et la règle de nombre d'agents : `clarify` et `domain` n'en ajoutent aucun par défaut ; l'audit d'architecture utilise au plus un explorateur initial ; Horizon utilise un enfant par recherche indépendante prête, en vagues si nécessaire. Un besoin de synthèse ou de conception complexe conserve son rôle configuré. Le modèle de la session principale reste inchangé.
+
+Une demande de configuration des modèles seulement conserve ce périmètre. Une demande d'aperçu, d'annulation, de lecture seule ou en mode Plan ne modifie pas les fichiers du projet.
+
 ## Accepter la vérification du projet, ou non
 
 Si le projet n'a pas encore de moyen fiable de vérifier le comportement réel, utilisez [`$cstack:create-verification-skill`](../../skills/create-verification-skill/SKILL.md). Cette compétence produit des instructions locales pour lancer, piloter et inspecter l'application. Elle est facultative et reste limitée au dépôt courant.

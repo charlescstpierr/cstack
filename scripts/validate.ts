@@ -77,9 +77,31 @@ export function validate(root: string): { skills: number; sourceFiles: number } 
   }
   requireValue(covered.size === sourcePaths.size, "source coverage is incomplete");
 
+  const additions = json(join(plugin, "sources/matt-pocock.json"));
+  requireValue(additions.repository === "https://github.com/mattpocock/skills"
+    && additions.commit === "3cca18b368ae95cdbdebbff572ccafa662551015", "Matt source provenance mismatch");
+  requireValue(additions.license === "LICENSE-MATT-POCOCK"
+    && readFileSync(join(plugin, "LICENSE-MATT-POCOCK"), "utf8").includes("Copyright (c) 2026 Matt Pocock"), "Matt license missing");
+  requireValue(Array.isArray(additions.adaptations) && additions.adaptations.length > 0, "missing Matt adaptations");
+  const adaptedTargets = new Set<string>();
+  for (const item of additions.adaptations) {
+    requireValue(record(item) && typeof item.target === "string" && !adaptedTargets.has(item.target), "invalid or duplicate Matt adaptation");
+    const target = resolve(plugin, item.target);
+    requireValue(existsSync(target) && inside(plugin, target), "missing or escaping Matt adaptation target");
+    requireValue(Array.isArray(item.sources) && item.sources.length > 0, "missing Matt source references");
+    for (const source of item.sources) {
+      requireValue(record(source) && typeof source.path === "string" && source.path.startsWith("skills/")
+        && typeof source.sha256 === "string" && /^[a-f0-9]{64}$/.test(source.sha256), "invalid Matt source reference");
+    }
+    adaptedTargets.add(item.target);
+  }
+  for (const name of ["clarify", "domain", "horizon", "audit-architecture"]) {
+    requireValue(adaptedTargets.has(`skills/${name}/SKILL.md`), `missing provenance for ${name}`);
+  }
+
   const all = files(plugin);
   const skills = all.filter((path) => path.endsWith("/SKILL.md") && relative(plugin, path).startsWith("skills/"));
-  requireValue(skills.length === 47, `expected 47 skill entrypoints, got ${skills.length}`);
+  requireValue(skills.length === 51, `expected 51 skill entrypoints, got ${skills.length}`);
   const names = new Set<string>();
   for (const path of skills) {
     const text = readFileSync(path, "utf8");

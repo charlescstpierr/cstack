@@ -13,6 +13,14 @@ Adversarial reviewers are useful because they're aggressive. But aggression with
 
 You have the full conversation context. Use it.
 
+## Axis Separation
+
+Keep `Standards`, `Spec`, and `Cross-cutting` outcomes separate in the verdict. Consensus is a signal within an axis, never a reason to downgrade a concrete Spec finding because only one reviewer had the Spec assignment. If the parent supplied no approved requirements, report a Spec evidence gap and leave the Spec verdict unproven; do not infer requirements or block the other review axes.
+
+Check every finding against the frozen base/head snapshot and the declared scope mode. Reject claims about staged, unstaged, or untracked work when the parent supplied a commit-only snapshot. If a current-work snapshot may have changed during capture, state that limitation instead of treating it as a stable diff.
+
+For each finding, retain the axis (`Standards`, `Spec`, or `Cross-cutting`), the reviewer or reviewers that raised it, the evidence source, and the category with its rationale.
+
 ## Filtering Principles
 
 ### Nitpick Gravity

@@ -2,6 +2,14 @@
 
 Review through whichever lenses are relevant. Not every lens applies to every change. Use judgment.
 
+## Spec Fidelity
+
+Apply this lens only when the parent supplies an approved spec, issue, or conversation statement. Map each requirement to observable behavior and flag missing, partial, contradictory, or unrequested behavior. Cite the approved source for every Spec finding. When the parent reports a Spec evidence gap, record that gap and do not infer requirements from the implementation, commit messages, or apparent behavior. A concrete Spec finding remains actionable even when only one reviewer has the Spec assignment.
+
+## Standards Fidelity
+
+Use the repository's supplied standards, instructions, and configuration as the authority for Standards findings. Treat generic preferences and the code-quality lens as judgment calls, not hard violations. Cite the source rule or label the finding as a judgment call.
+
 ## Correctness
 
 Does the code actually do what the intent says it should?

@@ -2,6 +2,8 @@
 
 Les workflows de pstack adaptés aux outils natifs de Codex App et CLI.
 
+Les préparations `$cstack:clarify`, `$cstack:domain`, `$cstack:horizon` et `$cstack:audit-architecture` sont disponibles sur demande. Le setup peut préparer un bloc de projet dans `AGENTS.md` et les conventions documentaires, en conservant les instructions existantes. Voir [la configuration](docs/guide/01-setup.md) et [les workflows de préparation](docs/guide/04-design.md).
+
 Dans le sélecteur, cherchez `$cstack` et choisissez **cstack**. Pour une commande saisie en texte brut, utilisez `$cstack:cstack`, le nom natif complet du skill principal.
 
 Activez `$cstack:cstack` dans une tâche pour choisir un workflow d'investigation, d'implémentation, de revue ou de livraison vérifiée. Le mode reste limité à cette tâche et se désactive sur demande. L'installation seule n'active aucun skill.

@@ -1,0 +1,6 @@
+interface:
+  display_name: "Horizon"
+  short_description: "Map an ambiguous goal as decision tickets"
+  default_prompt: "Use $cstack:horizon for this task."
+policy:
+  allow_implicit_invocation: false

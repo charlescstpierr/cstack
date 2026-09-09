@@ -38,6 +38,8 @@ $cstack:setup-cstack
 
 Le mode reste actif dans la tâche jusqu'à une demande de désactivation, par exemple « arrête cstack ». Les skills spécialisés restent utilisables à la demande. Le mode Plan, les instructions du projet et les autorisations Codex restent prioritaires.
 
+Quatre compétences de préparation sont facultatives : `$cstack:clarify` pour clarifier les exigences, `$cstack:domain` pour le vocabulaire et les décisions du projet, `$cstack:horizon` pour cartographier un objectif incertain sur plusieurs sessions, et `$cstack:audit-architecture` pour repérer des simplifications dans le code existant. Elles ne s'ajoutent pas automatiquement aux corrections et aux développements ordinaires. Voir le [guide de conception](plugins/cstack/docs/guide/04-design.md).
+
 Exemple sans interface interactive :
 
 ```sh
@@ -45,6 +47,8 @@ codex exec '$cstack:cstack Examine cette modification sans changer les fichiers.
 ```
 
 Les sous-agents héritent du modèle de la session par défaut. `$cstack:setup-cstack` affiche sept recommandations de modèle et d'effort à accepter, personnaliser ou remplacer par l'héritage ; vous pouvez aussi annuler. Les choix existants restent préservés sauf sélection explicite. Les paires sont vérifiées dans le catalogue courant et enregistrées dans `.cstack/models.json`, sans modifier la session principale ni la configuration globale. Voir le [tableau de recommandations](plugins/cstack/docs/guide/01-setup.md#configurer-cstack). Un choix indisponible ou un effort non configurable par l'hôte est signalé, sans substitution silencieuse.
+
+Le setup peut aussi préparer les conventions du projet : un bloc cstack dans `AGENTS.md`, un guide local et le suivi de tickets choisi. Il montre les changements avant application et conserve les instructions extérieures au bloc. Il ne modifie pas `CLAUDE.md`, n'active pas cstack automatiquement et ne crée aucun ticket distant. La configuration des modèles seule reste disponible.
 
 ## Prérequis et limites
 

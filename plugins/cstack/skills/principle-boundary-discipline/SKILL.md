@@ -5,7 +5,7 @@ description: "Apply when wiring validation, error handling, or framework adapter
 
 # Boundary Discipline
 
-Apply this principle when it is explicitly invoked or an active cstack workflow routes here. Installation alone does not activate it; setup only configures model choices. Respect the user's scope and permissions. This principle never authorizes automatic external messaging. See the [Codex runtime contract](../cstack/references/codex-runtime.md).
+Apply this principle when it is explicitly invoked or an active cstack workflow routes here. Installation alone does not activate it; setup does not activate workflows. Respect the user's scope and permissions. This principle never authorizes automatic external messaging. See the [Codex runtime contract](../cstack/references/codex-runtime.md).
 
 Place validation, type narrowing, and error handling at system boundaries. Trust internal code unconditionally. Business logic lives in pure functions. The shell is thin and mechanical.
 

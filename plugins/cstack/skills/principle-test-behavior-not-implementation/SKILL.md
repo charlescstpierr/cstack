@@ -5,7 +5,7 @@ description: "Apply when you write, change, or keep a test. Call the code the wa
 
 # Test Behavior, Not Implementation
 
-Apply this principle when it is explicitly invoked or an active cstack workflow routes here. Installation alone does not activate it; setup only configures model choices. Respect the user's scope and permissions. This principle never authorizes automatic external messaging. See the [Codex runtime contract](../cstack/references/codex-runtime.md).
+Apply this principle when it is explicitly invoked or an active cstack workflow routes here. Installation alone does not activate it; setup does not activate workflows. Respect the user's scope and permissions. This principle never authorizes automatic external messaging. See the [Codex runtime contract](../cstack/references/codex-runtime.md).
 
 A test calls the code the way its users do and asserts the result they observe against a literal expected value. A test that asserts which calls the code made, or restates a constant the code contains, does neither.
 

@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { validate } from "../scripts/validate.ts";
 
-test("the distributable loads 47 skills and rejects unsafe or incomplete packaging", () => {
+test("the distributable loads 51 skills and rejects unsafe or incomplete packaging", () => {
   const root = resolve(import.meta.dir, "..");
   const copy = mkdtempSync(join(tmpdir(), "cstack-package-"));
   try {
@@ -14,7 +14,7 @@ test("the distributable loads 47 skills and rejects unsafe or incomplete packagi
         filter: (source) => !source.split("/").some((part) => ["node_modules", "__pycache__"].includes(part)),
       });
     }
-    expect(validate(copy)).toEqual({ skills: 47, sourceFiles: 158 });
+    expect(validate(copy)).toEqual({ skills: 51, sourceFiles: 158 });
     const cases = [
       ["plugins/cstack/.codex-plugin/plugin.json", (text: string) => text.replace('"name": "cstack"', '"name": "other"'), /manifest identity/],
       ["plugins/cstack/skills/cstack/agents/openai.yaml", (text: string) => text.replace("allow_implicit_invocation: false", "allow_implicit_invocation: true"), /explicit-only/],
@@ -25,6 +25,8 @@ test("the distributable loads 47 skills and rejects unsafe or incomplete packagi
         value.files.pop();
         return JSON.stringify(value);
       }, /coverage is incomplete/],
+      ["plugins/cstack/sources/matt-pocock.json", (text: string) => text.replace("3cca18b368ae95cdbdebbff572ccafa662551015", "unknown"), /Matt source provenance/],
+      ["plugins/cstack/skills/horizon/agents/openai.yaml", (text: string) => text.replace("allow_implicit_invocation: false", "allow_implicit_invocation: true"), /explicit-only/],
     ] satisfies [string, (text: string) => string, RegExp][];
     for (const [path, change, error] of cases) {
       const target = join(copy, path);

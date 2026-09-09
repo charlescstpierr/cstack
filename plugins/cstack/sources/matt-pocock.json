@@ -1,0 +1,87 @@
+{
+  "repository": "https://github.com/mattpocock/skills",
+  "commit": "3cca18b368ae95cdbdebbff572ccafa662551015",
+  "version": "1.2.3",
+  "license": "LICENSE-MATT-POCOCK",
+  "adaptations": [
+    {
+      "target": "skills/clarify/SKILL.md",
+      "sources": [
+        {
+          "path": "skills/productivity/grilling/SKILL.md",
+          "sha256": "10ff989e7498b23b5acb49d5048f11dcd906757d2f79c5cdf8a00001381296f2"
+        }
+      ]
+    },
+    {
+      "target": "skills/domain/SKILL.md",
+      "sources": [
+        {
+          "path": "skills/engineering/domain-modeling/SKILL.md",
+          "sha256": "327a2b50620e2fd70abc6893cd6965e76b20f8d0adb0dc2c8d5eb3845efb643e"
+        }
+      ]
+    },
+    {
+      "target": "skills/horizon/SKILL.md",
+      "sources": [
+        {
+          "path": "skills/engineering/wayfinder/SKILL.md",
+          "sha256": "fee6e1d0c50f0e736b4ef8a599060c959afae904c9a97d82c97f049fcc3aa0f1"
+        },
+        {
+          "path": "skills/engineering/to-spec/SKILL.md",
+          "sha256": "43ad9cf318e5e7d3d1fa360253a37021796dc87a0c2e595ad262661a10f85088"
+        },
+        {
+          "path": "skills/engineering/to-tickets/SKILL.md",
+          "sha256": "5c9fba69845c2519b9b35b9af42ae5142c21f8ca15ac2123dc2722002c8058ae"
+        },
+        {
+          "path": "skills/engineering/research/SKILL.md",
+          "sha256": "985569f15739c713d6784887c3d186d4ef9ac85bec5ad9c068d25bf0739928e4"
+        }
+      ]
+    },
+    {
+      "target": "skills/audit-architecture/SKILL.md",
+      "sources": [
+        {
+          "path": "skills/engineering/improve-codebase-architecture/SKILL.md",
+          "sha256": "d1ac25511a936ff4250a48dbcefda363837d6bb9321b3cba73df99fa37270a75"
+        },
+        {
+          "path": "skills/engineering/codebase-design/SKILL.md",
+          "sha256": "2c20617f87ec8af6a434859f381b2f061a69b530444e74eb39e78bb016a6d1e2"
+        }
+      ]
+    },
+    {
+      "target": "skills/interrogate/SKILL.md",
+      "sources": [
+        {
+          "path": "skills/engineering/code-review/SKILL.md",
+          "sha256": "47f4e52c21694def9c7c11cbfbf891ca35eac7a93e395797515be3c8a409ae50"
+        }
+      ]
+    },
+    {
+      "target": "skills/cstack/playbooks/authoring-a-skill.md",
+      "sources": [
+        {
+          "path": "skills/productivity/writing-for-agents/SKILL.md",
+          "sha256": "551adca942227b44192edba88acd4e8db911f0121ce58ad16944ccf6a896a74a"
+        }
+      ]
+    },
+    {
+      "target": "skills/setup-cstack/SKILL.md",
+      "sources": [
+        {
+          "path": "skills/engineering/setup-matt-pocock-skills/SKILL.md",
+          "sha256": "2bcd89e97777cdb705914424e39c97d5db524c8eb4eafac8120778a07774f0ec"
+        }
+      ]
+    }
+  ]
+}

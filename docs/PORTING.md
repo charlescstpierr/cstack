@@ -19,7 +19,15 @@ Source : pstack 0.15.0, commit `27e2a62ff94f9af4b5e68435e41cdceacadb840c` de `cu
 | `make-bot-ui` | Entrée explicite expliquant l'absence d'un service natif de webhooks Grok Bot. |
 | Pack Benny | Notice documentaire uniquement ; aucune installation ni automatisation événementielle active. |
 
-Les 47 entrées du catalogue incluent la notice `make-bot-ui`. Il s'agit donc de 46 skills utilisables et d'une limite explicitement consultable, pas de 47 intégrations exécutables.
+Les 47 entrées issues du premier portage incluent la notice `make-bot-ui`. La version 0.3.0 ajoute quatre préparations explicites : 51 entrées au total, dont 50 skills utilisables et une notice de limite.
+
+## Compléments de Matt Pocock
+
+Les ajouts adaptent le dépôt `mattpocock/skills` au commit `3cca18b368ae95cdbdebbff572ccafa662551015`, version 1.2.3. Leur inventaire et leurs empreintes sont dans `plugins/cstack/sources/matt-pocock.json` ; le copyright et la licence restent dans `plugins/cstack/LICENSE-MATT-POCOCK`. L'inventaire pstack original conserve ses 158 fichiers et son commit.
+
+`grilling` devient `clarify`, `domain-modeling` devient `domain`, Wayfinder devient `horizon`, et le diagnostic d'architecture devient `audit-architecture`. Les méthodes de revue Standards/Spec enrichissent le panel existant d'`interrogate` ; les règles d'écriture pour agents enrichissent le playbook d'auteur. Aucun second routeur, modèle d'implémentation, setup global ou moteur de tickets n'est ajouté.
+
+Les adaptations natives sont explicites : chemins locaux sous `.cstack/`, références de skills du même bundle, règles de modèles existantes, instruction de projet dans un bloc géré de `AGENTS.md`, pas de dépendance implicite aux skills installés de Matt. Horizon conserve ses portes de décision humaine et son arrêt avant l'implémentation. Le protocole exact de fichiers du setup est décrit dans le guide ; plusieurs remplacements de fichiers ne constituent pas une transaction atomique globale.
 
 ## Différences de fonctionnement
 

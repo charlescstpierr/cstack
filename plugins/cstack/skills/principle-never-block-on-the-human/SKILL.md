@@ -5,7 +5,7 @@ description: "Apply when tempted to ask 'should I do X?' on reversible work. Pro
 
 # Never Block on the Human
 
-Apply this principle when it is explicitly invoked or an active cstack workflow routes here. Installation alone does not activate it; setup only configures model choices. Respect the user's scope and permissions. This principle never authorizes automatic external messaging. See the [Codex runtime contract](../cstack/references/codex-runtime.md).
+Apply this principle when it is explicitly invoked or an active cstack workflow routes here. Installation alone does not activate it; setup does not activate workflows. Respect the user's scope and permissions. This principle never authorizes automatic external messaging. See the [Codex runtime contract](../cstack/references/codex-runtime.md).
 
 The human supervises asynchronously. Agents must stay unblocked. Make reasonable decisions, proceed, and let the human course-correct after the fact.
 

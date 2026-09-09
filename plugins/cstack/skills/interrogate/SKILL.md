@@ -7,7 +7,7 @@ description: "Use for $cstack:interrogate, \"adversarial review\", \"multi-model
 
 Runtime: [`../cstack/references/codex-runtime.md`](../cstack/references/codex-runtime.md).
 
-Spawn independent native reviewers to adversarially review code changes. Each reviewer gets the same prompt and rubric. The adversarial signal comes from independent passes and, when verified model overrides are available, model diversity.
+Spawn exactly the configured number of independent native reviewers to adversarially review code changes. Each reviewer gets the same scope snapshot, approved requirements evidence, prompt, and rubric, with a primary axis assignment. The adversarial signal comes from independent passes and, when verified model overrides are available, model diversity. Do not add reviewers beyond the configured panel.
 
 The deliverable is a synthesized verdict. Do NOT auto-apply changes.
 
@@ -18,31 +18,42 @@ Follow the runtime contract's direct inheritance path when unconfigured; otherwi
 Identify what to review from context:
 
 - If the user points at specific files or a diff, use that
-- If on a feature branch, run `git diff main...HEAD` (or the appropriate base branch) for the full changeset
-- If the user's message references recent work, gather the relevant files
+- If the user asks for current work or work in progress, freeze the actual base and `HEAD` commit SHAs once. Capture `git diff <base-sha>...<head-sha>`, `git diff --cached`, and `git diff` for committed, staged, and unstaged tracked changes, then list untracked files with `git ls-files --others --exclude-standard` and snapshot their contents with native reads. Never run `git add`, `git stash`, `git checkout`, `git reset`, or another command that changes the worktree. Record the snapshot time; if the worktree changes while it is being read, state that the file-content snapshot may be non-atomic.
+- If the user asks for a branch, commit range, or PR review, freeze the resolved base and head SHAs once and review only that commit-to-commit scope. Do not silently include dirty worktree changes.
+- If the user's message references recent work, gather the relevant files and preserve the requested scope.
 
-Package the diff (or file contents) plus any surrounding context files the reviewers need to understand the code.
+Package the frozen scope (or file-content snapshot) plus only the surrounding context files the reviewers need to understand the code. A three-dot comparison is valid only for the frozen commit SHAs; it does not prove coverage of staged, unstaged, or untracked work.
 
 ## Step 2, State the Intent
 
-Before spawning reviewers, state the intent explicitly. Derive this from:
+Before spawning reviewers, state the intent and the requirements evidence explicitly. Requirements come only from a user-approved spec, issue, or conversation statement. Do not infer requirements from the implementation, commit messages, or the code's apparent behavior. If no approved requirements source exists, record a Spec evidence gap and continue the Standards and adversarial review without inventing or blocking on requirements.
+
+Derive the intent from:
 
 - The user's message
-- Commit messages
-- PR description if one exists
-- The code itself
+- An approved spec or issue supplied by the user
+- An approved PR description or conversation statement
 
-Write one clear paragraph. If you're unsure about the intent, ask the user before proceeding.
+Write one clear paragraph and name every supplied requirements source. If the approved source is incomplete, report the gap instead of filling it from the code.
 
 ## Step 3, Spawn Reviewers
 
-Launch three review-only native subagents concurrently by default. They inherit the parent model. If `.cstack/models.json` defines `interrogate reviewers`, the panel length sets the reviewer count, bounded by native concurrency. Follow the runtime contract: use only verified available names and report an unavailable explicit override without silently substituting another model. Missing entries and `inherit-parent` inherit.
+Resolve `interrogate reviewers` once under the runtime contract. Its panel length is the exact reviewer count, bounded only by native concurrency; queue excess attempts in waves. Preserve the complete model and reasoning-effort selection for every position. The default panel has three reviewers with these responsibilities:
+
+- Reviewer 1: Standards, using the repository's supplied standards sources.
+- Reviewer 2: Spec, using only the approved requirements evidence. With no approved source, report the evidence gap and do not invent requirements.
+- Reviewer 3: Adversarial, covering correctness, security, root cause, verification, and maintainability.
+
+For a two-reviewer panel, combine Adversarial with Standards and keep Spec separate. For a one-reviewer panel, cover all axes in one pass and disclose that there are no independent axis reviews. For a panel larger than three, keep these first three assignments and give every additional reviewer full coverage. Every reviewer may report another axis's high-impact finding when the evidence supports it, while keeping the assigned axis primary. This preserves the configured count; do not add a second "Matt" panel.
 
 Read `references/reviewer-prompt.md` and fill in the template with:
 1. The stated intent
-2. The diff or file contents
-3. The review rubric from `references/rubric.md`
-4. The code-quality lens from `references/code-quality-review.md`
+2. The frozen scope snapshot, including its base and head SHAs and whether dirty worktree files are included
+3. The approved requirements evidence, or the explicit Spec evidence gap
+4. The reviewer's primary axis and the other axes it may report when high impact
+5. The diff or file contents
+6. The review rubric from `references/rubric.md`
+7. The code-quality lens from `references/code-quality-review.md`
 
 The same filled template goes to all reviewers, so every pass applies the code-quality lens.
 
@@ -50,11 +61,13 @@ The same filled template goes to all reviewers, so every pass applies the code-q
 
 As results come back, build a unified picture:
 
-1. **Parse all findings** from the reviewers
-2. **Identify consensus**. Findings raised by 2+ reviewers independently are highest signal.
-3. **Identify lone-reviewer findings**. Still worth reading, but weight accordingly.
-4. **Deduplicate**. Reviewers may describe the same issue differently. Merge these and note which reviewers raised it.
-5. **Note disagreements**. If one reviewer flags something and another explicitly says the opposite, that is useful context for the verdict.
+1. **Parse all findings** from the reviewers and retain each finding's primary axis.
+2. **Keep Standards and Spec outcomes separate.** Consensus is evidence within an axis, not a reason to downgrade a unique Spec requirement finding because only one reviewer had the Spec assignment.
+3. **Identify consensus**. Findings raised by two or more reviewers independently are highest signal within their axis.
+4. **Identify lone-reviewer findings**. Still worth reading, especially concrete Spec, security, or correctness findings; weight them by evidence, not by reviewer count alone.
+5. **Deduplicate**. Reviewers may describe the same issue differently. Merge these only when they share the same axis and mechanism, and note which reviewers raised them.
+6. **Note disagreements**. If one reviewer flags something and another explicitly says the opposite, keep the disagreement under the relevant axis.
+7. **Reject scope drift**. Discard findings based on files or requirements outside the frozen snapshot, and call out any unverified claim about changing worktree content.
 
 ## Step 5, Lead Judgment
 
@@ -71,6 +84,7 @@ Categorize every finding using these buckets:
 
 For each finding, include:
 - Which reviewer or reviewers raised it
+- The axis: Standards, Spec, or Cross-cutting
 - The category (act on / consider / noted / dismissed)
 - A one-line rationale for the categorization
 
@@ -84,11 +98,20 @@ Present the verdict in this structure:
 ### Reviewers
 - Reviewer [label]: [model name when known, otherwise inherited], [N findings] (one bullet per reviewer)
 
+### Standards
+[Standards findings, categorized as act on / consider / noted / dismissed. Cite the supplied standard or label a baseline judgement call.]
+
+### Spec
+[Spec findings, categorized as act on / consider / noted / dismissed. Cite the approved requirement. If no approved source exists, state the evidence gap and do not manufacture findings.]
+
+### Cross-cutting and adversarial
+[High-impact findings that cross axes or came from the adversarial assignment. Keep their original axis labels.]
+
 ### Act On
-[Findings that should be addressed. For each: description, which reviewers raised it, why it matters.]
+[Cross-cutting findings that should be addressed. For each: description, which reviewers raised it, why it matters.]
 
 ### Consider
-[Findings worth thinking about. For each: description, which reviewers raised it, tradeoff involved.]
+[Cross-cutting findings worth thinking about. For each: description, which reviewers raised it, tradeoff involved.]
 
 ### Noted
 [Valid but low-priority. Brief list.]

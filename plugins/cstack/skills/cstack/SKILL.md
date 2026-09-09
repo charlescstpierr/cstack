@@ -39,6 +39,17 @@ Read the matched playbook in full and copy its steps into the current plan befor
 
 If no playbook fits, read and apply `../figure-it-out/SKILL.md`. Use `playbooks/orchestrate.md` only when the work is a continuing program rather than one session-sized task.
 
+### Optional preparation
+
+These routes run only when the user selects the named skill or asks for its specific preparation activity. An ordinary implementation, review, or bug request keeps its existing playbook; do not add an interview, domain-writing phase, or decision map to it.
+
+- Read and apply `../clarify/SKILL.md` for an explicitly requested requirements discussion.
+- Read and apply `../domain/SKILL.md` for explicitly requested vocabulary or domain-decision work. Read-only requests produce drafts without changing project documents.
+- Read and apply `../horizon/SKILL.md` when the user explicitly asks to map a large uncertain objective over multiple sessions. Its human decision gates remain in force; it does not automatically start implementation or a native goal.
+- Read and apply `../audit-architecture/SKILL.md` for an explicitly requested read-only survey of architectural improvement opportunities.
+
+If `docs/agents/cstack.md` exists, consult its project conventions while cstack is active. It is optional and must not activate cstack or override the current request, mode, or permissions. A configured issue tracker describes where authorized work is recorded, not permission to create or change remote issues.
+
 ## Apply the common rules
 
 ### Understand before editing

@@ -5,7 +5,7 @@ description: "Apply when reviewing or shaping code that's hard to trace. Count l
 
 # Minimize Reader Load
 
-Apply this principle when it is explicitly invoked or an active cstack workflow routes here. Installation alone does not activate it; setup only configures model choices. Respect the user's scope and permissions. This principle never authorizes automatic external messaging. See the [Codex runtime contract](../cstack/references/codex-runtime.md).
+Apply this principle when it is explicitly invoked or an active cstack workflow routes here. Installation alone does not activate it; setup does not activate workflows. Respect the user's scope and permissions. This principle never authorizes automatic external messaging. See the [Codex runtime contract](../cstack/references/codex-runtime.md).
 
 Maintainability is the work a reader must do to understand code. Track two axes:
 1. **Layers to trace.** How many indirections sit between the question and the answer.

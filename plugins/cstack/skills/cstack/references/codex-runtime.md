@@ -10,6 +10,10 @@ Codex registers plugin skills as `cstack:<skill-name>`. Literal prompt text must
 
 Read a routed skill's SKILL.md from the same installed bundle. From the main skill, a sibling is `../<skill-name>/SKILL.md`. Follow its relevant references. Do not require a slash-command dispatcher or another plugin. Persist an active mode only in the current conversation/checkpoint, never in global AGENTS.md or config. In Plan mode, investigate and produce a plan without implementing or publishing it.
 
+Project setup may create a passive, delimited cstack block in the project's `AGENTS.md` and project guidance in `docs/agents/cstack.md`. Read that guidance only when cstack is explicitly selected. Setup preserves surrounding instructions and does not activate cstack, create native goals or change global files. Existing `CLAUDE.md` is preserved; a project may reference its shared instructions without duplicating them. The project's documentation conventions may place an authorized glossary or ADR outside `.cstack/`; operational maps, checkpoints and transient evidence remain inside `.cstack/`.
+
+The optional preparation skills `clarify`, `domain`, `horizon` and `audit-architecture` do not become mandatory stages of ordinary code work. `clarify` and `domain` may compose each other from an explicitly selected preparation workflow such as `horizon`. Their Plan/read-only branches return drafts in the conversation and write no files.
+
 ## Tools and delegation
 
 Use the actual tools exposed in the current session. Native tool names differ between App and CLI; inspect the available schema rather than constructing a Cursor Task call or inventing a tool.

@@ -1,6 +1,6 @@
 {
   "name": "cstack",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "pstack workflows adapted for native Codex App and CLI: investigation, implementation, review and verified delivery.",
   "author": {
     "name": "charlescstpierr",
