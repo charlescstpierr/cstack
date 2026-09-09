@@ -1,10 +1,11 @@
 ---
 name: why
-description: "Use for 'why does X work this way', 'why we picked Y', design rationale, regressions, postmortems, or data-backed thresholds. Discovers available MCPs and queries each evidence category (source control, issue tracker, long-form docs, real-time chat, infrastructure observability, error tracking, product analytics warehouse) in parallel, then returns a cited read on decisions and tradeoffs. Use how for runtime behavior."
-disable-model-invocation: true
+description: "Use for $why, 'why does X work this way', design rationale, regressions, postmortems, or data-backed thresholds. Uses available native read-only tools across source control and connected evidence sources, then returns a cited read on decisions and tradeoffs. Use $how for runtime behavior."
 ---
 
 # Why
+
+Runtime: [`../cstack/references/codex-runtime.md`](../cstack/references/codex-runtime.md).
 
 Investigate the motivation and intent behind code.
 
@@ -18,7 +19,7 @@ Operate as a **careful, cautious, and precise investigator**. Be honest about wh
 
 Parse what the user is asking. The **target** is usually a chunk of code, a pattern, a feature, or a named design decision. The **question** is usually a design rationale, a tradeoff, a motivating edge case, an external constraint, dead code, or a broad history sweep.
 
-If the target is vague ("why do we do it this way?" with no clear referent), make your best guess from conversation context (open files, recent edits, cursor location, what was just discussed). State your interpretation briefly so the user can redirect if you're off, then proceed.
+If the target is vague ("why do we do it this way?" with no clear referent), make your best guess from conversation context, open files, and recent edits. State your interpretation briefly so the user can redirect if needed, then proceed.
 
 ## Step 2. Establish the Code Anchor
 
@@ -59,9 +60,9 @@ Capture this as seed context (file paths, symbols, commits, PR numbers, linked t
 
 ### Discovery
 
-Before spawning investigators, list the available MCPs from the Cursor environment. Use the available-tools map when present. Otherwise inspect the `mcps/` directory Cursor exposes for enabled MCP servers.
+Inspect only the native tools, apps, connectors, and MCP capabilities exposed in the current session. Do not infer a connector from filesystem paths, assume a service is installed, or auto-install a missing plugin.
 
-Map each available MCP to one evidence category:
+Map each available evidence source to one category:
 
 1. Source control history
 2. Issue / ticket tracker
@@ -71,16 +72,11 @@ Map each available MCP to one evidence category:
 6. Error / exception tracking
 7. Product analytics warehouse
 
-Source control is always available through git and `gh`. For the other six, classify using the MCP name, server instructions, tool names, and resource descriptors. If an MCP could fit more than one category, choose the one matching its primary evidence. Record ambiguous cases in the coverage map.
+Source control is available through local git; use authenticated `gh` when present. For the other six, classify exposed tools from their instructions, schemas, and resource descriptors. If a capability fits more than one category, choose its primary evidence and record the ambiguity.
 
 Aim for a complete **coverage map**, not a minimal one. Document the null, don't skip the search.
 
-Launch all matching investigators in a single message so they run concurrently. Don't ask one agent to cover multiple MCPs.
-
-Subagent config (each):
-- `subagent_type`: `generalPurpose`
-- `model`: your configured why-investigators model (default `grok-4.6-fast-xhigh`)
-- `readonly`: `false` (agent mode). **Do not use readonly/Ask mode.** It strips MCP access, which disables MCP-backed investigators entirely. Investigators still shouldn't write anything.
+Launch all matching native investigators concurrently. Each assignment stays read-only and covers one evidence source. They inherit the parent model by default. If `.cstack/models.json` defines `why investigators`, follow the runtime contract: use only verified available names and report an unavailable explicit override without silently substituting another model.
 
 Each investigator gets:
 1. The base prompt from `references/investigator-prompt.md`
@@ -91,7 +87,7 @@ Each investigator gets:
 
 ### Investigator roster. One per available evidence category
 
-Spawn one investigator per category that has a matching MCP. Each owns exactly one tool or MCP.
+Spawn one investigator per category that has a matching exposed capability. Each owns exactly one evidence source.
 
 Each entry names the category and the kind of "why" it uniquely surfaces. Use it to know what to expect back, how to name a gap when a category returns empty, and (only in the rare provably-irrelevant case) to justify a skip.
 
@@ -113,18 +109,14 @@ Each entry names the category and the kind of "why" it uniquely surfaces. Use it
 
 Only skip with an **explicit, written justification** that goes in the final "Sources Consulted" section. Two valid reasons:
 
-- **No MCP is available for that category** in this environment. Flag this as a gap, not a choice. Example: "Real-time team chat skipped. No matching MCP available, so the conversational record was not searchable."
+- **No native tool or connector is available for that category** in this environment. Flag this as a gap, not a choice. Example: "Real-time team chat skipped. No matching connector is available, so the conversational record was not searchable."
 - **The source is provably irrelevant**, not just "probably irrelevant." A high bar. Example: "Error / exception tracking skipped. Target is a build-time script with no runtime code path."
 
 If your scope assessment suggests a single-commit trivial target where the PR description already contains the complete answer, you may answer inline **only after** confirming all seven available category searches would be redundant. Say so explicitly. This should be rare.
 
 ## Step 4. Synthesize
 
-Spawn one synthesizer subagent:
-
-- `subagent_type`: `generalPurpose`
-- `model`: your configured why-synthesizer model (default `claude-fable-5-1-thinking-max`)
-- `readonly`: `false` (agent mode). The synthesizer's quality check spot-verifies citations, which can require MCP access. Readonly/Ask mode strips MCPs and defeats that.
+Spawn one native synthesizer. It inherits the parent model by default. If `.cstack/models.json` defines `why synthesizer`, follow the runtime contract and do not silently substitute an unavailable explicit override. Keep the assignment read-only; it may use exposed read-only tools to spot-check citations.
 
 The synthesizer gets:
 1. The investigator findings, including any null results and any categories skipped with justification

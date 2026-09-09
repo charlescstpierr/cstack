@@ -1,53 +1,45 @@
-# Understand the code before changing it
+# Comprendre le code avant de le modifier
 
-Editing code you don't understand is how subtle regressions ship. pstack gives you four ways in. `/how` explains what the code does now. `/why` digs up the reasons it's shaped that way. `/teach` blends both into one explanation. `/recall` rebuilds your own recent context on a topic.
+Une correction commence par un modèle du comportement actuel. cstack fournit quatre points d'entrée explicites pour lire le système, son historique et votre contexte récent.
 
-![A detective studies a machine blueprint with a magnifying glass while robots fetch case files; the evidence board behind her links clues under /how and /why.](./images/understanding.jpg)
-
-## Trace behavior with `/how`
+## Tracer le comportement avec `$how`
 
 ```text
-/how do we dedupe notifications? is there an n+1 when we look up subscribers?
+$how comment cette initialisation fonctionne-t-elle ? Montre le flux, les types et les propriétaires.
 ```
 
-Ask the question you actually have. [`/how`](../../skills/how/SKILL.md) reads the code and answers at the level of a senior engineer onboarding you onto the subsystem, with the runtime flow, the key types, and the non-obvious parts. For a big subsystem it fans out two to four read-only explorers first. For a narrow question it just reads and explains.
+[`$how`](../../skills/how/SKILL.md) explique le flux d'exécution et les couches utiles. Il convient avant une modification ou une question de placement.
 
-## Dig up history with `/why`
+## Chercher les raisons avec `$why`
 
 ```text
-/why was the retry limit set to five? does the reason still hold?
+$why pourquoi la limite de retry vaut-elle cinq ? La justification existe-t-elle encore ?
 ```
 
-[`/why`](../../skills/why/SKILL.md) works like a detective on a cold case. It starts from source control, then queries whatever evidence categories your MCPs expose, such as the issue tracker, long-form docs, team chat, observability, error tracking, and analytics, all in parallel. The report cites everything, separates direct evidence from inference, and says "appears to" when the record is thin. A null result gets reported too, because "nobody wrote down why" is itself an answer.
+[`$why`](../../skills/why/SKILL.md) rassemble les éléments disponibles dans le dépôt et les connecteurs autorisés. Il distingue les faits des inférences et indique quand l'historique est absent.
 
-The two compose naturally. `do why first then how` is a perfectly good prompt when you suspect the history explains the mess.
-
-## Actually understand it with `/teach`
+## Construire une explication avec `$teach`
 
 ```text
-/teach me how this PR changes retries. convince me it fixes the cause and not the symptom.
+$teach-moi comment cette PR change les retries et pourquoi elle corrige la cause.
 ```
 
-[`/teach`](../../skills/teach/SKILL.md) is for when a summary isn't enough. It runs `/how` and `/why`, for a small change maybe just one of them, and weaves the findings into a plain explanation that builds up diagram by diagram. The "convince me" framing is worth stealing. It turns the explanation into an argument you can poke at instead of a tour.
+[`$teach`](../../skills/teach/SKILL.md) combine le comportement et la motivation à un niveau lisible. Utilisez-le quand un résumé ne suffit pas.
 
-## Rebuild your own context with `/recall`
+## Reconstituer votre contexte avec `$recall`
 
 ```text
-/recall catch me up on the export work from last week
+$recall mon travail sur l'export de la semaine dernière.
 ```
 
-[`/recall`](../../skills/recall/SKILL.md) mines your own recent chats plus the shared record (issues, prior fixes, errors still firing) and hands back a brief on where things stand and what's next. Use it when you're returning to a topic cold. If you want to resume one specific chat, that's the Session pickup playbook below, not `/recall`.
+[`$recall`](../../skills/recall/SKILL.md) reconstruit le contexte récent à partir des traces disponibles. Il aide à reprendre un sujet, tandis que la reprise d'une tâche précise passe par le playbook de session.
 
-## Take over prior work with Session pickup
-
-When another agent (or you, last week) left a branch mid-flight:
+## Reprendre un travail précédent
 
 ```text
-/poteto-mode take over this branch. read the decision log, figure out what's done, and continue from there. don't redo finished work.
+$cstack reprends cette worktree. Lis les décisions et vérifie le point de reprise sans refaire le travail terminé.
 ```
 
-The [Session pickup playbook](../../skills/poteto-mode/playbooks/session-pickup.md) treats the prior trail as authoritative. It reconstructs the branch state and decisions, names the resume point, and verifies inherited claims against the original goal instead of re-deriving everything from scratch.
+Le [playbook de reprise de session](../../skills/cstack/playbooks/session-pickup.md) vérifie les affirmations héritées contre l'objectif original. Il conserve les preuves utiles et évite de réinventer l'analyse.
 
-**Pitfall:** don't skip this page's skills because "the agent will read the code anyway." An agent that starts editing without a traced model tends to fix the symptom at the first plausible spot. `/how` first is cheaper than the second bug.
-
-Next: [Design the change](./04-design.md).
+Suivant : [concevoir le changement](./04-design.md).

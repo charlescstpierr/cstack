@@ -1,64 +1,54 @@
 ---
-name: setup-pstack
-description: Configure which models pstack uses per role. Detects your available models and writes an always-applied rule that overrides the skill defaults. Use for /setup-pstack, "configure pstack models", or changing pstack's model choices.
+name: setup-cstack
+description: "Configure optional per-role model choices for cstack in the current Codex project. Use for $setup-cstack or requests to change cstack model choices."
 ---
 
-# Setup pstack
+# Set up cstack
 
-Write `~/.cursor/rules/pstack-models.mdc`, an always-applied rule that sets pstack's model per role.
+Read the [native Codex runtime contract](../cstack/references/codex-runtime.md). Core cstack use needs no setup: every role inherits the current model. Configure only the target project.
 
-## Steps
+## Configure
 
-### 1. Detect available models
+1. Locate the target workspace, normally the current git root or current directory outside git. Read `.cstack/models.json` if present. Require a JSON object with only the roles below. Simple roles take non-empty strings; panels take non-empty lists of non-empty strings. The `architect runners` panel requires at least two entries for distinct design attempts. Report invalid keys/values and preserve the existing file on error.
+2. Inspect the native model-selection schema or an authoritative session model list. Offer only confirmed available models and `inherit-parent`. Never guess slugs, inspect credentials or require an API account. Without model discovery, inheritance remains available.
+3. Show effective choices briefly. Apply valid choices already requested; otherwise ask which roles to change. Missing roles inherit. Missing panels default to three independent inherited-model passes, bounded by native concurrency. The cross-judge pool chooses one judge, not three.
+4. Validate all selected model names against the available set and any known compatible reasoning settings. Reject an unavailable explicit choice; do not silently substitute. Preserve roles the user did not ask to change. Write validated JSON to a sibling temporary file, then atomically replace `.cstack/models.json`. If the user chooses defaults and no file exists, no file is needed.
+5. Keep `.cstack/` untracked without replacing existing ignore rules. Read back and validate the file. Report the local path and effective settings. The next cstack dispatch reads them; do not change global configuration, install agents, activate other tasks or require a restart.
 
-Enumerate the model slugs you can pass to a `Task` subagent in this session. That is the dependable source. If Cursor also exposes a models API or CLI that lists the user's entitled models, prefer it for completeness. If you cannot detect any, ask the user to paste the slugs they have access to. Never write a real slug you have not confirmed is available. The aliases `inherit-parent` and `auto` are always valid even though they are not detected slugs.
+## Roles
 
-### 2. Load current state
+Simple roles:
 
-The default role-to-model mapping is the rule shape shown in step 5 below. If `~/.cursor/rules/pstack-models.mdc` already exists, read it and treat its values as the current choices. Otherwise start from those defaults.
+- `feature, refactoring`
+- `bug-fix`
+- `perf-issue`
+- `hillclimb`
+- `judgment and prose`
+- `hardest tasks`
+- `how explorer`
+- `how explainer`
+- `why investigators`
+- `why synthesizer`
+- `reflect tooling`
+- `reflect judgment, divergent, synthesizer`
+- `swarm workers`
 
-### 3. Map and confirm
+Panel roles:
 
-Show every role with its current model, marking any real slug not in the detected set as needing a choice. Ask whether to accept as-is or change specific roles, offering the detected models plus `inherit-parent` and `auto` (both mean: this role runs on the parent chat model, which is how Auto users stay on Auto) as the options. Prefer AskQuestion over free text. For panel roles (arena runners, architect runners, interrogate reviewers) the value is a list, and one subagent runs per entry, alias entries included, so the list length sets the count. `arena cross-judge pool` is also a list, but Arena selects one value from it whose model family differs from the parent's when possible. `swarm workers` is the default model for every worker unless a race or comparison assigns another model per arm.
+- `arena runners`
+- `arena cross-judge pool`
+- `architect runners`
+- `interrogate reviewers`
 
-### 4. Validate
+The cross-judge pool supplies one judge, preferably different from the author when available. Without a pool, use one independent inherited-model judge. Other panel list lengths set the requested number of attempts. Never claim different model families when every pass used the same model.
 
-Every real slug written must be in the detected set. `inherit-parent` and `auto` always pass. If a chosen real slug is not available, stop and ask again.
+Example requiring no particular model:
 
-### 5. Write the rule
-
-Write `~/.cursor/rules/pstack-models.mdc` with `alwaysApply: true` and one line per role, using the same labels poteto-mode uses. Overwrite the whole file so re-runs stay idempotent. Shape:
-
-```
----
-description: pstack per-role model choices (overrides skill defaults)
-alwaysApply: true
----
-# pstack model configuration. One line per role. Delete a line to fall back to the skill default.
-# `inherit-parent` or `auto` as a value: the role runs on the parent chat model (omit Task `model`). Alias entries in a panel list still count toward its fan-out.
-feature, refactoring: grok-4.6-fast-xhigh
-bug-fix: claude-fable-5-1-thinking-max
-perf-issue: claude-fable-5-1-thinking-max
-hillclimb: claude-fable-5-1-thinking-max
-judgment and prose: claude-fable-5-1-thinking-max
-hardest tasks: claude-fable-5-1-thinking-max
-how explorer: grok-4.6-fast-xhigh
-how explainer: claude-fable-5-1-thinking-max
-why investigators: grok-4.6-fast-xhigh
-why synthesizer: claude-fable-5-1-thinking-max
-reflect tooling: gpt-5.6-sol-max
-reflect judgment, divergent, synthesizer: claude-fable-5-1-thinking-max
-arena runners: claude-fable-5-1-thinking-max, gpt-5.6-sol-max, grok-4.6-fast-xhigh, claude-opus-5-thinking-xhigh
-arena cross-judge pool: claude-fable-5-1-thinking-max, gpt-5.6-sol-max, grok-4.6-fast-xhigh, claude-opus-5-thinking-xhigh
-swarm workers: grok-4.6-fast-xhigh
-architect runners: claude-fable-5-1-thinking-max, gpt-5.6-sol-max, grok-4.6-fast-xhigh, claude-opus-5-thinking-xhigh
-interrogate reviewers: claude-fable-5-1-thinking-max, gpt-5.6-sol-max, grok-4.6-fast-xhigh, claude-opus-5-thinking-xhigh
+```json
+{
+  "feature, refactoring": "inherit-parent",
+  "interrogate reviewers": ["inherit-parent", "inherit-parent", "inherit-parent"]
+}
 ```
 
-### 6. Confirm
-
-Tell the user the rule was written and that it applies to new sessions. Re-running this skill updates it.
-
-### 7. Offer a verification skill (optional)
-
-Check whether the project has a way to drive the real app for proof (a `verify-*` skill, or an existing harness). If not, offer once: "want a project-local verification skill, so agents can drive the app the way a user does and prove changes work? I can generate one with /create-verification-skill." On yes, invoke `/create-verification-skill` (resolves wherever pstack is installed: workspace, user, or plugin). On no, move on without pushing.
+A saved configuration does not prove a model can run. Handle rejection at the first actual dispatch as specified in the runtime contract. Do not launch paid test jobs just to finish setup.

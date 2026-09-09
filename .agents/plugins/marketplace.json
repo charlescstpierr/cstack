@@ -1,0 +1,12 @@
+{
+  "name": "cstack",
+  "interface": { "displayName": "cstack" },
+  "plugins": [
+    {
+      "name": "cstack",
+      "source": { "source": "local", "path": "./plugins/cstack" },
+      "policy": { "installation": "AVAILABLE", "authentication": "ON_INSTALL" },
+      "category": "Developer Tools"
+    }
+  ]
+}

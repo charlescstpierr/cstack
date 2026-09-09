@@ -1,94 +1,70 @@
-# Recipes and pitfalls
+# Recettes et pièges
 
-Prompts worth copying, then the mistakes everyone makes once. Swap in your own paths and finish conditions. The recipes are deliberately informal. That's how they get typed in practice, and the skills read intent fine.
+Les exemples donnent la forme minimale d'une bonne demande. Remplacez les chemins, la commande et la preuve par ceux de votre projet.
 
-![She tastes a finished dish while robots cook from a recipe box, with pinned cards reading /how, /tdd, and /loop above the counter.](./images/recipes.jpg)
-
-## Understand an unfamiliar subsystem
+## Comprendre un sous-système inconnu
 
 ```text
-use /how first to understand how this initialization works. then use /why to figure out why it broke recently.
+$how explique d'abord cette initialisation. Puis $why cherche la raison de la régression récente.
 ```
 
-Mechanics first, history second. Each skill's report tells you which sources it searched, so you know what the answer is grounded in.
-
-## Get a second opinion on a design
+## Obtenir un second avis sur un design
 
 ```text
-ask /arena for a second opinion on this thread and our approach
+$arena compare trois formes pour cette interface et explique le choix final.
 ```
 
-Your current design becomes one candidate among several, and the synthesis tells you whether the panel found something better or confirmed what you had. Cheap insurance before a costly commitment.
-
-## Check independent slices in parallel
+## Vérifier des tranches indépendantes
 
 ```text
-/swarm check every package under packages/ against its check.sh. one worker per package. one report.
+$swarm contrôle chaque paquet sous packages/ et rends un rapport unique.
 ```
 
-Each worker owns one package. The parent waits for every slice and returns one `PASS`, `ISSUES`, or `BLOCKED` report instead of raw worker dumps.
-
-## Review a branch skeptically
+## Revoir une branche avec scepticisme
 
 ```text
-/interrogate the whole branch, but skeptically. don't change anything yet. no nitpicks unless it's an actual bug or regression in behavior.
+$interrogate examine toute la branche sans modifier les fichiers. Signale seulement les bugs ou régressions.
 ```
 
-The qualifiers do real work. "don't change anything yet" keeps it read-only, and the nitpick rule pre-filters the noise so `Act on` findings are worth your time.
-
-## Fix a bug through a failing test
+## Corriger un bug avec une preuve ciblée
 
 ```text
-/poteto-mode repro the duplicate write first. if there's a cheap test path, /tdd it. then fix and rerun.
+$cstack reproduis l'écriture en double. Si le test local est bon marché, utilise $tdd, puis corrige et rejoue la preuve.
 ```
 
-"if there's a cheap test path" matters. Forcing a test through brittle mocks proves less than running the real command, and the playbook is allowed to say so.
-
-## Keep a run honest while you're away
+## Garder une tâche autonome honnête
 
 ```text
-im going to bed, keep going autonomously until every fixture passes. do not stop. keep a decision log i can audit in the morning.
+$cstack continue jusqu'à ce que toutes les fixtures passent. N'envoie aucun message externe. Journalise les décisions.
 ```
 
-The full contract is on the [overnight page](./07-overnight.md). The short form works once the task and finish condition are already in the conversation.
-
-## Redirect a drifting run
-
-Steering prompts are one line:
+## Réorienter une tâche
 
 ```text
-i said the goal is to repro. i did not ask for a fix yet.
+Le but est seulement la reproduction. Ne corrige pas encore.
 ```
 
 ```text
-apply prove it works. show me the real output, not the build log.
+Applique `principle-prove-it-works` et montre la sortie réelle, pas seulement le log de build.
 ```
+
+## Obtenir une reformulation simple
 
 ```text
-/unslop that, no emdashes
+$bro
 ```
 
-You rarely need more words. You need the right name, and [the principles page](./08-principles.md) is the vocabulary.
+[`$bro`](../../skills/bro/SKILL.md) reformule le dernier message en termes simples.
 
-## Get the reply in plain words
+## Les pièges
 
-```text
-/bro
-```
+- Énumérer les compétences dans chaque demande. Donnez l'objectif et les contraintes ; le playbook séquence le reste.
+- Donner une condition de fin vague. Préférez une commande, une valeur, un fichier ou un flux qui peut passer ou échouer.
+- Faire écrire plusieurs agents dans une même worktree. Isolez les tentatives et fusionnez après vérification.
+- Utiliser `$arena` pour une matrice de couverture. Utilisez `$swarm` pour répartir des tranches.
+- Accepter chaque commentaire de revue. Vérifiez chaque constat contre le comportement et le périmètre.
+- Affirmer le succès sur un build vert. Vérifiez l'artefact réel.
+- Croire qu'une tâche locale survit à la fermeture de Codex. Demandez un scheduler natif séparément si vous en avez besoin.
+- Donner à Benny une activation native. Ce pack reste documentaire ; voyez [sa limite d'intégration](../../automations/benny/README.md).
 
-That's the whole prompt. [`/bro`](../../skills/bro/SKILL.md) restates the last message like one human talking to another, no jargon, shorter. Use it when a reply is technically thorough and you still don't know what it said.
-
-## The pitfalls
-
-- **Enumerating skills in the prompt.** "use /how then /architect then /arena" reorders steps the playbook already sequences. State the goal and constraints. Name a skill only to override a default.
-- **A vague finish condition.** "make it better" gives `/loop` nothing to check. Give a command or artifact that can pass or fail.
-- **Parallel agents in one worktree.** They overwrite each other and the diff becomes archaeology. Say "own worktree per attempt" and the isolation is free.
-- **Using `/arena` for coverage.** `/arena` repeats one design or code brief, then picks a base and grafts the best parts. `/swarm` partitions slices or declared race arms and aggregates one report.
-- **Accepting every review comment.** Bots and humans both file real catches and noise in one list. `/interrogate` sorts findings into act-on and dismissed buckets with reasons, and you can override either way.
-- **Treating `auto` as a model slug.** `auto` and `inherit-parent` mean "omit the model field so the subagent inherits the parent chat model." [Setup](./01-setup.md) covers the roles.
-- **Reporting success off a green build.** A build proves it compiles. Ask for the real command, flow, stored value, or profile, and expect the evidence in the reply.
-- **Writing a `SKILL.md` freehand.** Route it through the [Authoring or modifying a skill playbook](../../skills/poteto-mode/playbooks/authoring-a-skill.md) so validation and review happen.
-
-That's the guide. If you skipped ahead, go back to [setup](./01-setup.md) and run one real task. The habits stick from use, not from reading.
-
-Back to the [guide index](./README.md).
+Retour à [l'index du guide](./README.md).

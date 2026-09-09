@@ -1,10 +1,11 @@
 ---
 name: unslop
-description: Cut AI tells from any writing. Must always apply.
-disable-model-invocation: true
+description: "Cut AI tells from any writing. Must always apply."
 ---
 
 # Unslop
+
+Runtime: [`../cstack/references/codex-runtime.md`](../cstack/references/codex-runtime.md).
 
 Edit text to remove AI patterns.
 

@@ -11,7 +11,7 @@ const commanderPackagePath = join(
 );
 const installKeyPath = join(
   nodeModulesDirectory,
-  ".poteto-mode-tools-install-key"
+  ".cstack-tools-install-key"
 );
 
 function currentInstallKey(): string {
@@ -50,6 +50,9 @@ export function ensureDependenciesInstalled(): void {
   }
 
   writeFileSync(installKeyPath, `${installKey}\n`);
+  if (process.env.CSTACK_BOOTSTRAP_ONLY === "1") {
+    return;
+  }
 
   const restarted = Bun.spawnSync([process.execPath, ...process.argv.slice(1)], {
     cwd: process.cwd(),

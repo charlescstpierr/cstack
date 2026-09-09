@@ -1,49 +1,50 @@
-# Set up pstack
+# Configurer cstack
 
-In this page you install the plugin, pick which models pstack uses, and run your first task. Setup is one command plus a short conversation.
+cstack est un plugin Codex pour organiser un travail de code autour d'un objectif vérifiable. Le cœur fonctionne avec les outils natifs de Codex et des sous-agents natifs. Il n'ajoute pas de moteur d'orchestration séparé.
 
-## Install the plugin
+## Installer le plugin
 
-In a Cursor chat, run:
+Depuis Codex CLI, ajoutez le marché puis le plugin :
 
-```text
-/add-plugin pstack
+```sh
+codex plugin marketplace add charlescstpierr/cstack
+codex plugin add cstack@cstack
 ```
 
-Cursor confirms the plugin is installed.
-
-## Pick your models
-
-Run:
+Pour un checkout local, remplacez la première ligne par `codex plugin marketplace add /chemin/absolu/vers/cstack`. Ouvrez une nouvelle tâche dans Codex App ou une nouvelle session CLI après l'installation. Après installation, invoquez explicitement :
 
 ```text
-/setup-pstack
+$cstack
 ```
 
-[`/setup-pstack`](../../skills/setup-pstack/SKILL.md) detects the models you have access to, shows you each role (code delegates, judgment, the review panels), and asks what you want. Answer the questions. It writes `~/.cursor/rules/pstack-models.mdc`, a small rule every pstack skill reads.
+L'activation est limitée à cette tâche. Une installation ne rend pas les instructions actives dans les conversations ordinaires.
 
-You only override what you care about. A role with no line in the rule keeps the skill's default. To restore a default later, delete that role's line, or just run `/setup-pstack` again.
+Le contrat d'exécution partagé décrit les outils, les permissions et l'état local : [runtime Codex](../../skills/cstack/references/codex-runtime.md).
 
-You might be wondering what happens if you use Auto. Set a role to `inherit-parent` or `auto` and pstack omits the subagent `model` field, so the subagent inherits your parent chat model. Both values mean the same thing, and neither is a model slug. For a panel role the value is a list, and one subagent runs per entry, so the list length sets the panel size. Setup also configures `swarm workers`, the default model for every `/swarm` worker unless a race names a model for each arm.
+## Configurer cstack
 
-## Accept the verification offer, or don't
-
-At the end of setup, `/setup-pstack` looks for a way to prove app behavior in your project, either a `verify-*` skill or an existing harness. If it finds neither, it offers once to generate one with [`/create-verification-skill`](../../skills/create-verification-skill/SKILL.md).
-
-Say yes and it writes `.cursor/skills/verify-<app>/`, a project-local skill that teaches agents to drive your app the way a user does. It proves the skill works once before handing it over. Say no and setup moves on. You can run `/create-verification-skill` yourself any time. [Verify and ship](./06-verify-and-ship.md#create-a-project-verification-skill) covers when it earns its place.
-
-After setup, start a new chat. The model rule applies to new sessions.
-
-## Run your first task
-
-Pick something real but small, and describe it the way you'd describe it to a colleague:
+Pour inspecter ou préparer la configuration locale, invoquez [`$setup-cstack`](../../skills/setup-cstack/SKILL.md) :
 
 ```text
-/poteto-mode add a --json flag to this command. text output stays byte-identical. verify both.
+$setup-cstack
 ```
 
-Watch the todo list. Its first items are the matched playbook's steps copied in, the Feature playbook for this prompt. If `/poteto-mode` skips a step, the step stays in the list with `skip: <reason>`, so you can see what it chose not to do.
+Le setup prépare seulement ce qui est nécessaire au workspace. Les sous-agents héritent du modèle de la session, sauf choix explicite disponible dans votre environnement. Aucun nom de modèle n'est imposé par le plugin.
 
-From here you can type normal follow-ups. `/poteto-mode` is sticky. It stays on for the conversation until you opt out by saying so.
+Le setup ne promet pas de planification persistante, de messages externes, de PR, de merge ou de déploiement. Ces opérations restent conditionnées par les outils présents et votre autorisation.
 
-Next: [Route work through `/poteto-mode`](./02-poteto-mode.md).
+## Accepter la vérification du projet, ou non
+
+Si le projet n'a pas encore de moyen fiable de vérifier le comportement réel, utilisez [`$create-verification-skill`](../../skills/create-verification-skill/SKILL.md). Cette compétence produit des instructions locales pour lancer, piloter et inspecter l'application. Elle est facultative et reste limitée au dépôt courant.
+
+## Lancer une première tâche
+
+Décrivez le résultat et la preuve attendue :
+
+```text
+$cstack ajoute une option --json à cette commande. La sortie texte reste identique. Vérifie les deux formats.
+```
+
+Le routeur choisit le playbook adapté, appelle les compétences nécessaires et garde les étapes vérifiables visibles. Vous pouvez ensuite préciser une contrainte ou corriger le cap dans la même tâche.
+
+Suivant : [router le travail avec `$cstack`](./02-cstack.md).

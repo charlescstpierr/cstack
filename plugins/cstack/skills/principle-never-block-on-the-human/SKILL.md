@@ -1,10 +1,11 @@
 ---
 name: principle-never-block-on-the-human
 description: "Apply when tempted to ask 'should I do X?' on reversible work. Proceed, present the result, let the human course-correct after the fact; reserve confirmation for irreversible actions."
-disable-model-invocation: true
 ---
 
 # Never Block on the Human
+
+Apply this principle when it is explicitly invoked or an active cstack workflow routes here. Installation alone does not activate it; setup only configures model choices. Respect the user's scope and permissions. This principle never authorizes automatic external messaging. See the [Codex runtime contract](../cstack/references/codex-runtime.md).
 
 The human supervises asynchronously. Agents must stay unblocked. Make reasonable decisions, proceed, and let the human course-correct after the fact.
 
@@ -17,6 +18,6 @@ The human supervises asynchronously. Agents must stay unblocked. Make reasonable
 - **Supervision is async.** Design workflows for review-after-the-fact.
 
 **Boundaries:**
-- **Irreversible actions** (force-push, delete production data, send external messages) still require confirmation.
+- **Irreversible actions** (force-push, delete production data, send external messages) require explicit authorization; reuse authorization already present, subject to host approval controls.
 - **Reversible actions** (write code, edit notes, split tasks) should proceed without blocking.
 - **Product direction** comes from the human. *Execution* should not block.

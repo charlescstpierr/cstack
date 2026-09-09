@@ -21,6 +21,7 @@ import {
 } from "./store.ts";
 
 const SCRIPT = join(import.meta.dir, "orch.ts");
+const WORKTREE_AUDIT = join(import.meta.dir, "..", "worktree-audit.sh");
 const directories: string[] = [];
 const handles: Store[] = [];
 
@@ -102,7 +103,7 @@ async function makeGitStack(directory: string): Promise<{
   };
 }
 
-async function withFakeGt<T>({
+async function withFakeGh<T>({
   directory,
   operation,
   output,
@@ -112,39 +113,33 @@ async function withFakeGt<T>({
   output: string;
 }): Promise<T> {
   const bin = join(directory, "bin");
-  const outputPath = join(directory, "gt-output.txt");
+  const outputPath = join(directory, "gh-output.json");
   await mkdir(bin);
   await writeFile(outputPath, output);
-  const gt = join(bin, "gt");
+  const gh = join(bin, "gh");
   await writeFile(
-    gt,
+    gh,
     `#!/usr/bin/env bash
 set -euo pipefail
 if [ "$(pwd -P)" != "${realpathSync(join(directory, "repo"))}" ]; then
-  printf 'gt ran outside the fixture repo: %s\\n' "$(pwd -P)" >&2
+  printf 'gh ran outside the fixture repo: %s\\n' "$(pwd -P)" >&2
   exit 2
 fi
 case "$*" in
-  "--no-interactive log short --stack --reverse")
+  "repo view --json defaultBranchRef")
+    printf '{"defaultBranchRef":{"name":"main"}}\\n'
+    ;;
+  "pr list --state all --limit 1000 --json number,state,headRefName,baseRefName,headRefOid")
     cat "${outputPath}"
     ;;
-  "--no-interactive info stack/merged")
-    printf 'stack/merged\\nPR #10 (Merged) merged change\\n'
-    ;;
-  "--no-interactive info stack/closed")
-    printf 'stack/closed\\nPR #13 (Closed) closed change\\n'
-    ;;
-  "--no-interactive info stack/open")
-    printf 'stack/open\\nPR #11 (Needs approvals) open change\\n'
-    ;;
   *)
-    printf 'unexpected gt arguments: %s\\n' "$*" >&2
+    printf 'unexpected gh arguments: %s\\n' "$*" >&2
     exit 2
     ;;
 esac
 `
   );
-  await chmod(gt, 0o755);
+  await chmod(gh, 0o755);
 
   const originalPath = process.env.PATH;
   process.env.PATH = `${bin}:${originalPath ?? ""}`;
@@ -230,7 +225,7 @@ describe("Store", () => {
     const updated = await store.units.set({
       id: "u1",
       state: "done",
-      branch: "poteto/u1",
+      branch: "cstack/u1",
       pr: 184530,
       sha: "abc123",
     });
@@ -238,7 +233,7 @@ describe("Store", () => {
       id: "u1",
       track: "build",
       state: "done",
-      branch: "poteto/u1",
+      branch: "cstack/u1",
       pr: "184530",
       sha: "abc123",
       brief: "briefs/u1.md",
@@ -406,16 +401,34 @@ describe("Store", () => {
     ]);
   });
 
-  it("resolves the ordered Graphite frontier and validates an optional pin", async () => {
+  it("resolves the ordered GitHub frontier and validates an optional pin", async () => {
     const { directory, store } = await initializedStore();
     const stack = await makeGitStack(directory);
-    const output = `◯ main
-◯ stack/merged
-◯ stack/closed
-◉ stack/open (current)
-`;
+    const output = JSON.stringify([
+      {
+        number: 11,
+        state: "OPEN",
+        headRefName: "stack/open",
+        baseRefName: "stack/closed",
+        headRefOid: stack.openSha,
+      },
+      {
+        number: 10,
+        state: "MERGED",
+        headRefName: "stack/merged",
+        baseRefName: "main",
+        headRefOid: stack.mergedSha,
+      },
+      {
+        number: 13,
+        state: "CLOSED",
+        headRefName: "stack/closed",
+        baseRefName: "stack/merged",
+        headRefOid: stack.closedSha,
+      },
+    ]);
 
-    await withFakeGt({
+    await withFakeGh({
       directory,
       output,
       operation: async () => {
@@ -441,7 +454,7 @@ describe("Store", () => {
               state: "OPEN",
             },
           ],
-          lowestUnmerged: 11,
+          lowestUnmerged: 13,
         });
         expect(
           (
@@ -458,7 +471,7 @@ describe("Store", () => {
             prs: [10, 11, 12],
           })
         ).rejects.toThrow(
-          "frontier pin mismatch: missing from gt: 12; extra in gt: 13"
+          "frontier pin mismatch: missing from GitHub: 12; extra in GitHub: 13"
         );
         await expect(
           store.frontier.set({
@@ -466,7 +479,7 @@ describe("Store", () => {
             prs: [13, 10, 11],
           })
         ).rejects.toThrow(
-          "frontier pin mismatch: order differs: expected 13,10,11; gt 10,13,11"
+          "frontier pin mismatch: order differs: expected 13,10,11; GitHub 10,13,11"
         );
         await expect(
           store.frontier.set({
@@ -478,21 +491,166 @@ describe("Store", () => {
     });
   });
 
-  it("rejects unparseable Graphite output loudly", async () => {
+  it("rejects ambiguous, cyclic, and incomplete GitHub stacks", async () => {
     const { directory, store } = await initializedStore();
     const stack = await makeGitStack(directory);
+    const row = (
+      number: number,
+      state: string,
+      headRefName: string,
+      baseRefName: string,
+      headRefOid: string
+    ) => ({ number, state, headRefName, baseRefName, headRefOid });
 
-    await withFakeGt({
+    await withFakeGh({
       directory,
-      output: "◯ main\nthis line is not Graphite output\n",
-      operation: async () => {
+      output: "[]",
+      operation: async (outputPath) => {
+        const base = [
+          row(10, "MERGED", "stack/merged", "main", stack.mergedSha),
+          row(13, "CLOSED", "stack/closed", "stack/merged", stack.closedSha),
+          row(11, "OPEN", "stack/open", "stack/closed", stack.openSha),
+        ];
+
+        await writeFile(
+          outputPath,
+          JSON.stringify(
+            Array.from({ length: 1000 }, (_, index) =>
+              row(
+                index + 1,
+                "CLOSED",
+                `history/${index}`,
+                "main",
+                stack.openSha
+              )
+            )
+          )
+        );
         await expect(
           store.frontier.set({ repo: stack.repo })
         ).rejects.toThrow(
-          'gt log short output has an unparseable line 2: "this line is not Graphite output"'
+          "gh pr list returned 1000 PRs; stack history may be incomplete"
+        );
+
+        await writeFile(
+          outputPath,
+          JSON.stringify([
+            ...base,
+            row(12, "CLOSED", "stack/open", "main", stack.openSha),
+          ])
+        );
+        await expect(
+          store.frontier.set({ repo: stack.repo })
+        ).rejects.toThrow(
+          "GitHub returned multiple PRs for head branch stack/open: 11,12"
+        );
+
+        await writeFile(
+          outputPath,
+          JSON.stringify([
+            ...base,
+            row(14, "OPEN", "stack/upstack-a", "stack/open", stack.openSha),
+            row(15, "OPEN", "stack/upstack-b", "stack/open", stack.openSha),
+          ])
+        );
+        await expect(
+          store.frontier.set({ repo: stack.repo })
+        ).rejects.toThrow("GitHub PR stack branches at stack/open: 14,15");
+
+        await writeFile(
+          outputPath,
+          JSON.stringify([
+            row(10, "MERGED", "stack/merged", "stack/open", stack.mergedSha),
+            row(13, "CLOSED", "stack/closed", "stack/merged", stack.closedSha),
+            row(11, "OPEN", "stack/open", "stack/closed", stack.openSha),
+          ])
+        );
+        await expect(
+          store.frontier.set({ repo: stack.repo })
+        ).rejects.toThrow("GitHub PR stack contains a cycle at stack/open");
+
+        await writeFile(
+          outputPath,
+          JSON.stringify([
+            row(11, "OPEN", "stack/open", "stack/missing", stack.openSha),
+          ])
+        );
+        await expect(
+          store.frontier.set({ repo: stack.repo })
+        ).rejects.toThrow(
+          "GitHub stack is missing a PR for base branch stack/missing"
+        );
+
+        await writeFile(
+          outputPath,
+          JSON.stringify([
+            ...base,
+            row(14, "OPEN", "stack/upstack", "stack/open", stack.openSha),
+          ])
+        );
+        await expect(
+          store.frontier.set({ repo: stack.repo })
+        ).rejects.toThrow("GitHub stack branch stack/upstack is missing locally");
+
+        await writeFile(
+          outputPath,
+          JSON.stringify([
+            base[0],
+            base[1],
+            { ...base[2], headRefOid: stack.closedSha },
+          ])
+        );
+        await expect(
+          store.frontier.set({ repo: stack.repo })
+        ).rejects.toThrow(
+          `PR #11 head SHA mismatch for branch stack/open: GitHub ${stack.closedSha}; local ${stack.openSha}`
         );
       },
     });
+  });
+
+  it("holds a worktree when its dirty-state probe fails", async () => {
+    const directory = await makeDirectory();
+    const stack = await makeGitStack(directory);
+    const worktree = join(directory, "audit worktree");
+    git({
+      repo: stack.repo,
+      args: ["worktree", "add", "-b", "audit-probe", worktree, "main"],
+    });
+
+    const realGit = Bun.which("git");
+    if (realGit === null) throw new Error("git is unavailable");
+    const bin = join(directory, "audit-bin");
+    await mkdir(bin);
+    await writeFile(
+      join(bin, "git"),
+      `#!/usr/bin/env bash
+if [ "$1" = "-C" ] && [ "$2" = "$FAIL_STATUS_PATH" ] && [ "$3" = "status" ]; then
+  exit 2
+fi
+exec "$REAL_GIT" "$@"
+`
+    );
+    await writeFile(join(bin, "gh"), "#!/usr/bin/env bash\nprintf '[]\\n'\n");
+    await chmod(join(bin, "git"), 0o755);
+    await chmod(join(bin, "gh"), 0o755);
+
+    const result = Bun.spawnSync([WORKTREE_AUDIT, stack.repo], {
+      env: {
+        ...process.env,
+        PATH: `${bin}:${process.env.PATH ?? ""}`,
+        REAL_GIT: realGit,
+        FAIL_STATUS_PATH: worktree,
+      },
+    });
+    expect(result.exitCode).toBe(0);
+    const row = result.stdout
+      .toString()
+      .split("\n")
+      .find((line) => line.endsWith(`\t${worktree}`));
+    expect(row).toBeDefined();
+    expect(row?.split("\t")[3]).toBe("unknown");
+    expect(row?.split("\t")[7]).toBe("hold-unknown");
   });
 
   it("rejects malformed TSV, verdict, frontier, and inbox data", async () => {

@@ -1,0 +1,22 @@
+name: Validate cstack
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.0'
+      - run: bun scripts/validate.ts
+      - run: python3 -m unittest discover -s tests -p 'test_*.py'
+      - run: bun test tests
+      - run: bun install --frozen-lockfile
+        working-directory: plugins/cstack/skills/cstack/scripts
+      - run: bun run test
+        working-directory: plugins/cstack/skills/cstack/scripts
+      - run: bun run typecheck
+        working-directory: plugins/cstack/skills/cstack/scripts
+      - run: plugins/cstack/skills/cstack/scripts/node_modules/.bin/tsc -p tsconfig.json

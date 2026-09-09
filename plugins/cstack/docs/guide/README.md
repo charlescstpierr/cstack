@@ -1,30 +1,24 @@
-# The pstack guide
+# Guide cstack
 
-pstack works best when you stop micromanaging the agent. You describe what you want and how you'll know it's done. `/poteto-mode` picks the playbook, runs the other skills as the steps need them, and shows you the evidence. This guide teaches that habit with realistic prompts.
+cstack fonctionne avec une demande claire, un périmètre explicite et une preuve observable. `$cstack` choisit le playbook et appelle les compétences utiles avec les outils natifs de Codex.
 
-Here's what you'll learn:
+Voici le parcours :
 
-1. [Set up pstack](./01-setup.md). Install the plugin and pick your models.
-2. [Route work through `/poteto-mode`](./02-poteto-mode.md). Give it a goal and watch it pick a playbook.
-3. [Understand the code](./03-understand.md). `/how`, `/why`, `/teach`, and `/recall` before you edit anything.
-4. [Design the change](./04-design.md). `/architect`, `/arena`, `/swarm`, and `/interrogate` before code locks in a shape.
-5. [Build and clean the change](./05-build-and-clean.md). The build playbooks, `/tdd`, `/unslop`, and `/no-comments`.
-6. [Verify and ship](./06-verify-and-ship.md). Prove behavior on the real app, then open a focused PR and drive it to merged.
-7. [Run work while you sleep](./07-overnight.md). An overnight contract, a decision log you can audit, and the playbooks that scale past one agent.
-8. [Steer with principle names](./08-principles.md). The 23 names that redirect an agent mid-task.
-9. [Make it yours](./09-make-it-yours.md). Your own mode, plus how to test a skill change.
-10. [Recipes and pitfalls](./10-recipes-and-pitfalls.md). Prompts to copy and mistakes to skip.
+1. [Configurer cstack](./01-setup.md). Installer le plugin et lancer une première tâche.
+2. [Router avec `$cstack`](./02-cstack.md). Donner un objectif et choisir le bon playbook.
+3. [Comprendre le code](./03-understand.md). Utiliser `$how`, `$why`, `$teach` et `$recall`.
+4. [Concevoir le changement](./04-design.md). Comparer les formes avant de verrouiller l'architecture.
+5. [Construire et nettoyer](./05-build-and-clean.md). Tester le comportement et garder un diff lisible.
+6. [Vérifier et livrer](./06-verify-and-ship.md). Prouver le résultat réel et préparer la livraison.
+7. [Continuer pendant une absence](./07-overnight.md). Définir un contrat, une trace et une condition d'arrêt.
+8. [Piloter avec les principes](./08-principles.md). Utiliser les 23 principes au bon moment.
+9. [Adapter cstack](./09-make-it-yours.md). Créer une compétence ciblée et l'évaluer.
+10. [Recettes et pièges](./10-recipes-and-pitfalls.md). Copier des demandes courtes et éviter les erreurs fréquentes.
 
-Read the pages in order the first time. After that, each page stands alone.
-
-## If you only remember one thing
-
-Give the agent a goal and a way to check it, in your own words:
+Si vous ne retenez qu'une chose, demandez un résultat et sa preuve :
 
 ```text
-/poteto-mode the export writes duplicate rows when a retry lands mid-run. repro first, then fix and verify.
+$cstack l'export écrit des lignes en double après un retry. Reproduis, corrige la cause et montre la vérification.
 ```
 
-You don't need to name a playbook or list skills. "repro first" and a checkable outcome are all the routing signal `/poteto-mode` needs. It matches the Bug fix playbook, copies the steps into a todo list, and calls the right skills as each step fires.
-
-Next: [Set up pstack](./01-setup.md).
+Commencez par [la configuration](./01-setup.md).

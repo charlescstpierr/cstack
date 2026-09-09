@@ -1,75 +1,37 @@
-# Build the change and clean the diff
+# Construire le changement et nettoyer le diff
 
-The build playbooks share one discipline. Say what you observed, let the playbook demand the evidence. This page shows what to put in the prompt for each common build task, then the cleanup habit that keeps diffs reviewable.
-
-## Prompt each build playbook with what you know
-
-A bug prompt states the symptom and asks for a reproduction first:
+Donnez au playbook le symptôme, le résultat attendu et la preuve. `$cstack` choisit ensuite le flux de bug, fonctionnalité, refactoring ou performance adapté.
 
 ```text
-/poteto-mode this command emits two records after a retry. repro first, then fix and verify.
+$cstack cette commande écrit deux lignes après un retry. Reproduis, corrige, puis vérifie.
 ```
 
-A feature prompt states the behavior and what must not change:
+Le [playbook de bug](../../skills/cstack/playbooks/bug-fix.md) reproduit avant la correction. Le [playbook de fonctionnalité](../../skills/cstack/playbooks/feature.md) fixe la forme des données. Le [playbook de refactoring](../../skills/cstack/playbooks/refactoring.md) capture le comportement avant de déplacer le code. Le [playbook de performance](../../skills/cstack/playbooks/perf-issue.md) mesure avant d'optimiser.
+
+## Donner au playbook ce que vous savez
+
+Indiquez le déclencheur, les invariants à conserver et la preuve attendue. Cette information permet au playbook de choisir une étape de reproduction, de caractérisation ou de mesure sans vous faire répéter la procédure.
+
+## Écrire le test utile avec `$tdd`
 
 ```text
-/poteto-mode add a --json flag. text output stays byte-identical. verify both forms.
+$tdd implémente ce changement avec un test qui échoue pour la bonne raison.
 ```
 
-A refactoring prompt pins behavior before structure moves:
+[`$tdd`](../../skills/tdd/SKILL.md) choisit le plus petit test qui prouve le comportement. Si le chemin est coûteux ou artificiel, le flux peut retenir une vérification exécutable plus proche de l'utilisateur.
 
-```text
-/poteto-mode move parsing into one module, zero behavior change. record the current output first and prove it's unchanged after.
-```
+## Laisser les règles TypeScript s'appliquer
 
-A perf prompt states the measurement, not a vibe:
+[`typescript-best-practices`](../../skills/typescript-best-practices/SKILL.md) encadre les fichiers `.ts` et `.tsx`. Il complète les principes de types, de frontières et de variantes exhaustives sans ajouter de dépendance.
 
-```text
-/poteto-mode startup takes 1.8s on this fixture. trace it, fix the measured cause, show me before and after.
-```
+## Nettoyer avant le commit
 
-Each of these routes to its playbook ([Bug fix](../../skills/poteto-mode/playbooks/bug-fix.md), [Feature](../../skills/poteto-mode/playbooks/feature.md), [Refactoring](../../skills/poteto-mode/playbooks/refactoring.md), [Perf issue](../../skills/poteto-mode/playbooks/perf-issue.md)), and the playbook supplies the steps you didn't type: reproduce before fixing, name the data shape before implementing, pin behavior before restructuring, profile before optimizing.
+Utilisez [`$unslop`](../../skills/unslop/SKILL.md) pour la prose. cstack privilégie la suppression de code mort, des chemins de compatibilité inutiles et des changements sans rapport.
 
-For sustained improvement of one number, there's the [Hillclimb playbook](../../skills/poteto-mode/playbooks/hillclimb.md). Give it the metric, a target, and a floor on attempts, and it loops one hypothesis at a time with a frozen measurement harness. It keeps wins and reverts everything else.
+Le plugin ne suppose pas la présence d'un outil externe de nettoyage. Si vous avez un linter ou un formatter du dépôt, exécutez celui qui fait partie du projet.
 
-## Write the failing test first with `/tdd`
+## Supprimer les commentaires qui cachent le comportement
 
-When a bug has a cheap local test path, the whole prompt can be two words:
+Utilisez [`$no-comments`](../../skills/no-comments/SKILL.md) pour examiner les commentaires qui masquent une contrainte ou une décision. Conservez les liens et explications nécessaires quand le code ne peut pas exprimer la contrainte.
 
-```text
-/tdd implement
-```
-
-In context, that's enough. [`/tdd`](../../skills/tdd/SKILL.md) writes the smallest test that fails for the intended reason, then the fix, then reruns the test. If a test would need broad harness setup or brittle mocks, the skill says so and uses the closest executable check instead. Don't force a test where a real command is stronger evidence.
-
-## Let the TypeScript rules load themselves
-
-[`typescript-best-practices`](../../skills/typescript-best-practices/SKILL.md) has no slash command in your workflow. It loads whenever the agent touches a `.ts` or `.tsx` file and turns the type-system principles into concrete rules: discriminated unions, `unknown` at boundaries, exhaustive variants, schema-derived types.
-
-## Clean before you commit
-
-The [Opening a PR playbook](../../skills/poteto-mode/playbooks/opening-a-pr.md) runs `/deslop` on the diff before each commit and applies [`/unslop`](../../skills/unslop/SKILL.md) to the PR description and commit bodies. `/deslop` ships in the `cursor-team-kit` plugin, not in pstack. If you don't have it, ask for the same outcome in plain words: remove narrating comments, unsupported guards, dead compatibility paths, and unrelated edits.
-
-For prose, `/unslop` takes a target and any extra rules you have:
-
-```text
-/unslop the readme changes, no emdashes
-```
-
-You'll develop your own shorthand. The skill reads intent fine from terse prompts like `unslop that, tighten it`.
-
-## Strip the comments with `/no-comments`
-
-Comments need their own pass, and not from the agent that wrote them. An author defends its comments the way you'd defend yours. So before review, hand them to fresh eyes:
-
-```text
-/no-comments the diff
-```
-
-[`/no-comments`](../../skills/no-comments/SKILL.md) spawns [Comment Sicko](../../agents/comment-sicko.md), a read-only reviewer with a short keep list: license headers, doc comments on a public API, links that explain what code can't, behavior forced by an external dependency you can't reshape. Everything else goes. A surprise in your own code gets no such pass. The comment comes back as a refactor flag, and `/no-comments` fixes the flags it accepts at the root cause. When a comment claims a constraint, "do not remove", the skill offers to encode the claim as a type, test, or lint. Either way, the comment comes out.
-
-The division of labor is worth keeping straight. `/deslop` cleans slop out of the code, `/unslop` cleans it out of prose, and `/no-comments` hands the comments to a reviewer who didn't write them.
-
-**Pitfall:** cleanup is not optional polish. A diff with narrating comments and defensive dead weight reads as unfinished to reviewers, and the extra code is where the next bug hides. If the diff feels padded, say `deslop it` before you commit, not after review calls it out.
-
-Next: [Verify and ship](./06-verify-and-ship.md).
+Suivant : [vérifier et livrer le résultat](./06-verify-and-ship.md).

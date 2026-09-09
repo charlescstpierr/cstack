@@ -1,0 +1,6 @@
+interface:
+  display_name: "setup-cstack"
+  short_description: "Configure optional per-role model choices for cstack in the"
+  default_prompt: "Use $setup-cstack for this task."
+policy:
+  allow_implicit_invocation: false

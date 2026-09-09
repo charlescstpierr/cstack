@@ -1,0 +1,23 @@
+{
+  "name": "cstack",
+  "version": "0.1.0",
+  "description": "pstack workflows adapted for native Codex App and CLI: investigation, implementation, review and verified delivery.",
+  "author": { "name": "charlescstpierr", "url": "https://github.com/charlescstpierr" },
+  "homepage": "https://github.com/charlescstpierr/cstack",
+  "repository": "https://github.com/charlescstpierr/cstack",
+  "license": "MIT",
+  "keywords": ["codex", "cstack", "skills", "review", "verification"],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "cstack",
+    "shortDescription": "Du code vérifié avec Codex App et CLI",
+    "longDescription": "Portage indépendant de pstack pour Codex. Activez $cstack dans une tâche pour utiliser ses workflows et ses sous-agents natifs. Les intégrations facultatives et leurs limites sont documentées.",
+    "developerName": "charlescstpierr",
+    "category": "Developer Tools",
+    "capabilities": [],
+    "defaultPrompt": ["$cstack Corrige ce bug et vérifie le résultat.", "$cstack Examine cette modification avant livraison.", "$setup-cstack"],
+    "brandColor": "#157A6E",
+    "composerIcon": "./assets/logo.svg",
+    "logo": "./assets/logo.svg"
+  }
+}

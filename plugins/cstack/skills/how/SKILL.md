@@ -1,10 +1,11 @@
 ---
 name: how
 description: "Use for \"how does X work\", code walkthroughs before changing something, and placement / ownership / layering questions (\"where should this live\", \"which package owns this\", \"is this the right layer\"). Explains subsystem architecture, runtime flow, onboarding mental models. Use why for motivation."
-disable-model-invocation: true
 ---
 
 # How
+
+Runtime: [`../cstack/references/codex-runtime.md`](../cstack/references/codex-runtime.md).
 
 Explore the codebase to answer "how does X work?" questions. Produce architectural explanations at the level of a senior engineer onboarding onto a subsystem, enough to build a working mental model, not so much that it reads like annotated source code.
 
@@ -19,31 +20,19 @@ When in doubt, take the simple path.
 
 ## Step 2a. Explore (complex questions only)
 
-Decompose the question into 2 to 4 exploration angles, each a distinct slice of the subsystem. Spawn all explorers in a single message:
-
-- `subagent_type`: `generalPurpose`
-- `model`: your configured how-explorer model (default `grok-4.6-fast-xhigh`)
-- `readonly`: `true`
+Decompose the question into 2 to 4 exploration angles, each a distinct slice of the subsystem. Spawn native review-only subagents concurrently. They inherit the parent model by default. If `.cstack/models.json` defines `how explorer`, follow the runtime contract and do not silently substitute an unavailable explicit override.
 
 Each explorer gets the prompt in `references/explorer-prompt.md` with its angle filled in. Then go to Step 3.
 
 ## Step 2b. Direct Explain (simple questions)
 
-Spawn one Task subagent that explores and explains in one pass:
-
-- `subagent_type`: `generalPurpose`
-- `model`: your configured how-explainer model (default `claude-fable-5-1-thinking-max`)
-- `readonly`: `true`
+Spawn one native review-only subagent that explores and explains in one pass. It inherits the parent model by default. If `.cstack/models.json` defines `how explainer`, follow the runtime contract and do not silently substitute an unavailable explicit override.
 
 Build its prompt from `references/explainer-prompt.md` without the explorer-findings section. Go to Step 4.
 
 ## Step 3. Synthesize (complex questions only)
 
-Once all explorers have returned, spawn one Task subagent to synthesize their findings into one explanation:
-
-- `subagent_type`: `generalPurpose`
-- `model`: your configured how-explainer model (default `claude-fable-5-1-thinking-max`)
-- `readonly`: `true`
+Once all explorers have returned, spawn one native review-only subagent to synthesize their findings into one explanation. It inherits the parent model by default. If `.cstack/models.json` defines `how explainer`, follow the runtime contract and do not silently substitute an unavailable explicit override.
 
 Build its prompt from `references/explainer-prompt.md` with every explorer's findings filled in.
 

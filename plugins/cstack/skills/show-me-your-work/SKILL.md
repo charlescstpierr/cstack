@@ -1,10 +1,11 @@
 ---
 name: show-me-your-work
-description: "Keep a reviewable decision trail for long-running or unattended work: a TSV log with one row per decision (what, why, evidence, result). Local by default; commit it when a reviewer needs the trail to trust the result. Use for /show-me-your-work, autonomous or multi-phase runs, or work a human reviews after stepping away."
-disable-model-invocation: true
+description: "Keep a reviewable decision trail for long-running or unattended work: a TSV log with one row per decision (what, why, evidence, result). Local by default; commit it when a reviewer needs the trail to trust the result. Use for $show-me-your-work, autonomous or multi-phase runs, or work a human reviews after stepping away."
 ---
 
 # Show me your work
+
+Runtime: [`../cstack/references/codex-runtime.md`](../cstack/references/codex-runtime.md).
 
 Keep one canonical log.
 
@@ -41,9 +42,9 @@ Log decision points and checkpoints, not every action: a fork chosen, a unit com
 
 ## Where it lives
 
-By default the log is a working artifact, not committed. Keep it at `decisions.tsv` in the work dir, or `.audit/<task-slug>.tsv` when several efforts run at once, and leave it out of git.
+By default the log is an untracked working artifact at `.cstack/tasks/<task-slug>/decisions.tsv` in the target workspace. Give concurrent tasks distinct directories.
 
-Commit it only when the work is ambitious enough that a reviewer needs the trail to trust the result.
+Export a sanitized copy to a tracked report path only when the user explicitly requests a committed audit trail. Preserve the original task log and exclude credentials and unrelated conversation content.
 
 ## Rules
 
@@ -51,9 +52,9 @@ Commit it only when the work is ambitious enough that a reviewer needs the trail
 - Append-only. A wrong call gets a new row that supersedes it. Never edit or delete history.
 - Prefer evidence produced by committed scripts over hand-made one-offs (the **encode-lessons-in-structure** principle skill).
 
-## Audit the log against the transcript
+## Audit the log against the task record
 
-At the end of the run, before handing back, check the log told the truth. Read this run's transcript under the active workspace's `agent-transcripts/` directory (the system prompt names the path). Don't glob across `~/.cursor/projects/*/`. That reads unrelated private chats. Walk the log against what actually happened:
+At the end of the run, check that the log told the truth. Prefer native task-history tools scoped to this project and task. Otherwise use the current context and checkpoints. Read a local transcript only when its metadata explicitly matches this project and session; never infer a storage path or scan unrelated projects. Walk the log against what actually happened:
 
 - Every row maps to a real action. Cut invented or aspirational entries.
 - Each row's evidence resolves and shows what the row claims.
@@ -62,20 +63,20 @@ At the end of the run, before handing back, check the log told the truth. Read t
 
 Fix the log, not the story. If the work diverged from what a row claims, the row is wrong.
 
-## Cross-model review of the trail
+## Independent review of the trail
 
-Before handing back, spawn a subagent on a different model family from the one that did the work. Self-review is not a substitute. The subagent reads the audit trail and the run's transcript, then flags what the user should pay attention to. Not a redo of the work, a scan for what's suboptimal or risky.
+Before handing back, use an independent native reviewer when delegation is available and permitted. It inherits the parent model, reads the audit trail and task record, and flags weak evidence or risk. When delegation is unavailable or prohibited, perform the scan directly and disclose that no independent review occurred.
 
 - Decisions logged with weak or absent evidence.
-- Verification steps skipped or claimed without proof in the transcript.
+- Verification steps skipped or claimed without proof in the task record.
 - Choices that look risky in hindsight (premature, scope-creeping, papering over a symptom).
 - Gaps the user would otherwise miss on a casual skim.
 
-Every reply for a run that produced a trail ends with an "Attention" section. Lead with the reviewer's model on its own line (`reviewed by <model>`), then list each flag pointing to specific rows or moments. "No flags" is a valid value. The model name is not.
+Every reply for a run that produced a trail ends with an "Attention" section. Identify an actual delegated reviewer as `independent native reviewer`, or label the fallback `single-agent audit`. Include a model only when the runtime reports it. List flags with specific rows or moments; do not treat a missing independent review as an independent clean verdict.
 
 ## Reviewing the trail
 
-Read top to bottom, follow the evidence pointers, spot-check. GitHub renders a committed TSV as a table. `column -s$'\t' -t decisions.tsv` renders it in a terminal.
+Read top to bottom, follow the evidence pointers, spot-check. GitHub renders an explicitly exported TSV as a table. Run `column -s$'\t' -t "<workspace>/.cstack/tasks/<task-slug>/decisions.tsv"` with the actual workspace and task slug to inspect the local trail in a terminal.
 
 ## Composing this skill
 

@@ -1,11 +1,11 @@
 ---
 name: typescript-best-practices
-description: TypeScript best practices. Use when reading or editing any .ts or .tsx file.
-paths: ["**/*.ts", "**/*.tsx"]
-disable-model-invocation: true
+description: "TypeScript best practices. Use when reading or editing any .ts or .tsx file."
 ---
 
 # TypeScript best practices
+
+Runtime: [`../cstack/references/codex-runtime.md`](../cstack/references/codex-runtime.md).
 
 Apply the **type-system-discipline** principle skill first.
 

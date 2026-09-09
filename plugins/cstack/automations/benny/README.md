@@ -1,23 +1,9 @@
-# benny
+# Benny
 
-benny gives you two cursor automations for slack issue reports. one triages each report. the other reproduces confirmed bugs and may prepare a small draft fix.
+Benny est le pack amont de triage Slack, de reproduction de bugs et de suivi de correctifs. Il dépend des webhooks, de l'API Slack et d'une interface d'automatisation Cursor. Codex ne fournit pas cette activation native, et cstack n'installe ni webhook, ni planificateur, ni connecteur Slack.
 
-the files in this directory are dormant setup and automation sources. they do not appear as slash skills.
+Ce dossier est donc une référence documentaire uniquement. Il ne contient aucune compétence enregistrée et ne démarre aucune automatisation. Le pack original est disponible à [ce commit amont](https://github.com/cursor/plugins/tree/27e2a62ff94f9af4b5e68435e41cdceacadb840c/pstack/automations/benny).
 
-## set it up
+Avec un connecteur autorisé et une demande explicite de l'utilisateur, un agent Codex peut effectuer manuellement des étapes bornées comme lire un fil, analyser une pièce jointe, rechercher un doublon, lancer une reproduction locale, vérifier un correctif et préparer un rapport ou une PR brouillon. Chaque action externe doit passer par l'outil connecté disponible et par l'autorisation de l'utilisateur. Une réponse ne déclenche pas automatiquement de message Slack, de ticket, de PR, de merge ou de déploiement.
 
-1. point cursor at [`FOR_AGENTS.md`](./FOR_AGENTS.md) and name the target repository.
-2. let setup merge this whole directory into the target at `.cursor/automations/benny/`. it must preserve destination-only files and review conflicts instead of overwriting local edits.
-3. let setup enable pstack in the target repository's `.cursor/settings.json` for shared dependencies:
-
-```json
-{
-	"plugins": {
-		"pstack": { "enabled": true }
-	}
-}
-```
-
-4. keep user-owned configuration outside the copied pack, for example in `.cursor/benny/`. adapt [`configuration.example.yaml`](./templates/configuration.example.yaml) and [`feature-map.example.md`](./skills/reproduce-and-fix-issues/references/feature-map.example.md).
-5. commit `.cursor/settings.json`, `.cursor/automations/benny/`, and any secret-free configuration before enabling either automation.
-6. review each new automation draft or update existing automations in their editors. then send a harmless test report and verify every source-channel post stays in the original thread.
+Pour obtenir des automatisations persistantes, il faut un service externe qui possède les webhooks, le stockage d'état, les identifiants et les contrôles d'accès nécessaires. Configurez ce service séparément et faites vérifier ses permissions avant tout envoi.

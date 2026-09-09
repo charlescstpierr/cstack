@@ -3,8 +3,8 @@ import fs from "node:fs";
 import process from "node:process";
 
 const RULE =
-	"Tests alone are not sufficient verification. A PR is verified only when its unit, live, and perf boxes are all checked.";
-const LANES = "Ten lanes on `grok-4.6-fast-xhigh` at the PR head";
+	"Tests alone do not verify a PR. Each PR requires unit, live, and performance evidence.";
+const LANES = "within native capacity";
 const SUB_BLOCKS = [
 	"Depends on.",
 	"Files.",
@@ -12,16 +12,16 @@ const SUB_BLOCKS = [
 	"You see.",
 	"Verify, unit.",
 	"Verify, live.",
-	"Verify, perf.",
+	"Verify, performance.",
 	"Review gate.",
-	"Merge.",
+	"Deliver.",
 ];
-const PROGRAM_H3 = ["Arm the program", "Spawn owners", "PR mechanics", "Verdict and merge", "Boot recipe"];
-const PROGRAM_MARKERS = ["/goal", "git show origin/main:", /30[- ]minute/, "status message"];
+const PROGRAM_H3 = ["Start the program", "Assign owners", "Handle each PR", "Verify and deliver each PR", "Boot each live lane"];
+const PROGRAM_MARKERS = [".cstack/", "native", "authorization"];
 const HOW_TO_READ_MARKERS = [
 	"One box is one unit of work",
-	"names the evidence",
-	"Check a box only when its evidence exists",
+	"names its evidence",
+	"Check a box only when that evidence exists",
 	"playbooks/",
 	RULE,
 ];
@@ -50,14 +50,6 @@ for (let i = start; i < raw.length; i++) {
 	const n = i + 1;
 	if (/^```/.test(text)) fence = !fence;
 	lines.push({ n, text, code: fence });
-	if (fence) continue;
-	const prose = text
-		.replace(/`[^`]*`/g, "`")
-		.replace(/!\[[^\]]*\]\([^)]*\)/g, "")
-		.replace(/\]\([^)]*\)/g, "]");
-	if (/[\u2013\u2014]/.test(prose)) fail(n, "long dash");
-	if (/[\u2018\u2019\u201c\u201d]/.test(prose)) fail(n, "curly quote");
-	if (/: \S/.test(prose)) fail(n, "mid-sentence colon");
 }
 
 const h2 = (l) => (!l.code && l.text.startsWith("## ") ? l.text.slice(3).trim() : null);
@@ -125,11 +117,11 @@ for (const pr of prSections) {
 
 	const depends = block("Depends on.");
 	if (depends && depends.rest === "") fail(depends.n, `${pr.title}: Depends on names nothing`);
-	for (const name of ["Files.", "Build.", "You see.", "Verify, unit.", "Merge."]) {
+	for (const name of ["Files.", "Build.", "You see.", "Verify, unit.", "Deliver."]) {
 		const b = block(name);
 		if (b && boxes(b.lines).length === 0) fail(b.n, `${pr.title}: ${name} has no box`);
 	}
-	for (const name of ["Verify, unit.", "Verify, live.", "Verify, perf."]) {
+	for (const name of ["Verify, unit.", "Verify, live.", "Verify, performance."]) {
 		const b = block(name);
 		if (b && !b.rest.startsWith(RULE)) fail(b.n, `${pr.title}: ${name} does not open with the rule`);
 	}
@@ -142,12 +134,13 @@ for (const pr of prSections) {
 		if (numbers.join(",") !== "1,2,3,4,5,6,7,8,9,10") fail(live.n, `${pr.title}: lanes are [${numbers.join(",")}], expected 1 to 10`);
 		for (const lane of lanes) {
 			if (!lane.m) fail(lane.n, `${pr.title}: live box is not a lane`);
-			else if (!/Save `[^`]+`/.test(lane.text)) fail(lane.n, `${pr.title}: lane ${lane.m[1]} names no screenshot`);
+			else if (/^Lane \d+\. n\/a:\s*\S/.test(lane.text)) continue;
+			else if (!/Save `[^`]+`/.test(lane.text)) fail(lane.n, `${pr.title}: lane ${lane.m[1]} names no evidence artifact`);
 			else if (!lane.text.includes("Pass when")) fail(lane.n, `${pr.title}: lane ${lane.m[1]} has no pass predicate`);
 		}
 	}
 
-	const perf = block("Verify, perf.");
+	const perf = block("Verify, performance.");
 	if (perf) {
 		const items = boxes(perf.lines).map((b) => b.text.split(" ")[0]);
 		if (items.join("|") !== PERF_ITEMS.join("|")) fail(perf.n, `${pr.title}: perf boxes are [${items.join(", ")}], expected [${PERF_ITEMS.join(", ")}]`);
