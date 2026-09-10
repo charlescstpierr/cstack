@@ -633,141 +633,141 @@
     },
     {
       "source": "pstack/skills/principle-attack-the-premise/SKILL.md",
-      "target": "plugins/cstack/skills/principle-attack-the-premise/SKILL.md",
+      "target": "plugins/cstack/skills/cstack/references/principles/attack-the-premise.md",
       "status": "ported",
-      "reason": "Adapted or preserved within the Codex plugin."
+      "reason": "Principle guidance retained as an internal reference, with conditional callers and no separate skill entrypoint."
     },
     {
       "source": "pstack/skills/principle-boundary-discipline/SKILL.md",
-      "target": "plugins/cstack/skills/principle-boundary-discipline/SKILL.md",
+      "target": "plugins/cstack/skills/cstack/references/principles/boundary-discipline.md",
       "status": "ported",
-      "reason": "Adapted or preserved within the Codex plugin."
+      "reason": "Principle guidance retained as an internal reference, with conditional callers and no separate skill entrypoint."
     },
     {
       "source": "pstack/skills/principle-build-the-lever/SKILL.md",
-      "target": "plugins/cstack/skills/principle-build-the-lever/SKILL.md",
+      "target": "plugins/cstack/skills/cstack/references/principles/build-the-lever.md",
       "status": "ported",
-      "reason": "Adapted or preserved within the Codex plugin."
+      "reason": "Principle guidance retained as an internal reference, with conditional callers and no separate skill entrypoint."
     },
     {
       "source": "pstack/skills/principle-encode-lessons-in-structure/SKILL.md",
-      "target": "plugins/cstack/skills/principle-encode-lessons-in-structure/SKILL.md",
+      "target": "plugins/cstack/skills/cstack/references/principles/encode-lessons-in-structure.md",
       "status": "ported",
-      "reason": "Adapted or preserved within the Codex plugin."
+      "reason": "Principle guidance retained as an internal reference, with conditional callers and no separate skill entrypoint."
     },
     {
       "source": "pstack/skills/principle-exhaust-the-design-space/SKILL.md",
-      "target": "plugins/cstack/skills/principle-exhaust-the-design-space/SKILL.md",
+      "target": "plugins/cstack/skills/cstack/references/principles/exhaust-the-design-space.md",
       "status": "ported",
-      "reason": "Adapted or preserved within the Codex plugin."
+      "reason": "Principle guidance retained as an internal reference, with conditional callers and no separate skill entrypoint."
     },
     {
       "source": "pstack/skills/principle-experience-first/SKILL.md",
-      "target": "plugins/cstack/skills/principle-experience-first/SKILL.md",
+      "target": "plugins/cstack/skills/cstack/references/principles/experience-first.md",
       "status": "ported",
-      "reason": "Adapted or preserved within the Codex plugin."
+      "reason": "Principle guidance retained as an internal reference, with conditional callers and no separate skill entrypoint."
     },
     {
       "source": "pstack/skills/principle-fix-root-causes/SKILL.md",
-      "target": "plugins/cstack/skills/principle-fix-root-causes/SKILL.md",
+      "target": "plugins/cstack/skills/cstack/references/principles/fix-root-causes.md",
       "status": "ported",
-      "reason": "Adapted or preserved within the Codex plugin."
+      "reason": "Principle guidance retained as an internal reference, with conditional callers and no separate skill entrypoint."
     },
     {
       "source": "pstack/skills/principle-foundational-thinking/SKILL.md",
-      "target": "plugins/cstack/skills/principle-foundational-thinking/SKILL.md",
+      "target": "plugins/cstack/skills/cstack/references/principles/foundational-thinking.md",
       "status": "ported",
-      "reason": "Adapted or preserved within the Codex plugin."
+      "reason": "Principle guidance retained as an internal reference, with conditional callers and no separate skill entrypoint."
     },
     {
       "source": "pstack/skills/principle-guard-the-context-window/SKILL.md",
-      "target": "plugins/cstack/skills/principle-guard-the-context-window/SKILL.md",
+      "target": "plugins/cstack/skills/cstack/references/principles/guard-the-context-window.md",
       "status": "ported",
-      "reason": "Adapted or preserved within the Codex plugin."
+      "reason": "Principle guidance retained as an internal reference, with conditional callers and no separate skill entrypoint."
     },
     {
       "source": "pstack/skills/principle-laziness-protocol/SKILL.md",
-      "target": "plugins/cstack/skills/principle-laziness-protocol/SKILL.md",
+      "target": "plugins/cstack/skills/cstack/references/principles/laziness-protocol.md",
       "status": "ported",
-      "reason": "Adapted or preserved within the Codex plugin."
+      "reason": "Principle guidance retained as an internal reference, with conditional callers and no separate skill entrypoint."
     },
     {
       "source": "pstack/skills/principle-make-operations-idempotent/SKILL.md",
-      "target": "plugins/cstack/skills/principle-make-operations-idempotent/SKILL.md",
+      "target": "plugins/cstack/skills/cstack/references/principles/make-operations-idempotent.md",
       "status": "ported",
-      "reason": "Adapted or preserved within the Codex plugin."
+      "reason": "Principle guidance retained as an internal reference, with conditional callers and no separate skill entrypoint."
     },
     {
       "source": "pstack/skills/principle-migrate-callers-then-delete-legacy-apis/SKILL.md",
-      "target": "plugins/cstack/skills/principle-migrate-callers-then-delete-legacy-apis/SKILL.md",
+      "target": "plugins/cstack/skills/cstack/references/principles/migrate-callers-then-delete-legacy-apis.md",
       "status": "ported",
-      "reason": "Adapted or preserved within the Codex plugin."
+      "reason": "Principle guidance retained as an internal reference, with conditional callers and no separate skill entrypoint."
     },
     {
       "source": "pstack/skills/principle-minimize-reader-load/SKILL.md",
-      "target": "plugins/cstack/skills/principle-minimize-reader-load/SKILL.md",
+      "target": "plugins/cstack/skills/cstack/references/principles/minimize-reader-load.md",
       "status": "ported",
-      "reason": "Adapted or preserved within the Codex plugin."
+      "reason": "Principle guidance retained as an internal reference, with conditional callers and no separate skill entrypoint."
     },
     {
       "source": "pstack/skills/principle-model-the-domain/SKILL.md",
-      "target": "plugins/cstack/skills/principle-model-the-domain/SKILL.md",
+      "target": "plugins/cstack/skills/cstack/references/principles/model-the-domain.md",
       "status": "ported",
-      "reason": "Adapted or preserved within the Codex plugin."
+      "reason": "Principle guidance retained as an internal reference, with conditional callers and no separate skill entrypoint."
     },
     {
       "source": "pstack/skills/principle-never-block-on-the-human/SKILL.md",
-      "target": "plugins/cstack/skills/principle-never-block-on-the-human/SKILL.md",
+      "target": "plugins/cstack/skills/cstack/references/principles/never-block-on-the-human.md",
       "status": "ported",
-      "reason": "Adapted or preserved within the Codex plugin."
+      "reason": "Principle guidance retained as an internal reference, with conditional callers and no separate skill entrypoint."
     },
     {
       "source": "pstack/skills/principle-outcome-oriented-execution/SKILL.md",
-      "target": "plugins/cstack/skills/principle-outcome-oriented-execution/SKILL.md",
+      "target": "plugins/cstack/skills/cstack/references/principles/outcome-oriented-execution.md",
       "status": "ported",
-      "reason": "Adapted or preserved within the Codex plugin."
+      "reason": "Principle guidance retained as an internal reference, with conditional callers and no separate skill entrypoint."
     },
     {
       "source": "pstack/skills/principle-prove-it-works/SKILL.md",
-      "target": "plugins/cstack/skills/principle-prove-it-works/SKILL.md",
+      "target": "plugins/cstack/skills/cstack/references/principles/prove-it-works.md",
       "status": "ported",
-      "reason": "Adapted or preserved within the Codex plugin."
+      "reason": "Principle guidance retained as an internal reference, with conditional callers and no separate skill entrypoint."
     },
     {
       "source": "pstack/skills/principle-redesign-from-first-principles/SKILL.md",
-      "target": "plugins/cstack/skills/principle-redesign-from-first-principles/SKILL.md",
+      "target": "plugins/cstack/skills/cstack/references/principles/redesign-from-first-principles.md",
       "status": "ported",
-      "reason": "Adapted or preserved within the Codex plugin."
+      "reason": "Principle guidance retained as an internal reference, with conditional callers and no separate skill entrypoint."
     },
     {
       "source": "pstack/skills/principle-separate-before-serializing-shared-state/SKILL.md",
-      "target": "plugins/cstack/skills/principle-separate-before-serializing-shared-state/SKILL.md",
+      "target": "plugins/cstack/skills/cstack/references/principles/separate-before-serializing-shared-state.md",
       "status": "ported",
-      "reason": "Adapted or preserved within the Codex plugin."
+      "reason": "Principle guidance retained as an internal reference, with conditional callers and no separate skill entrypoint."
     },
     {
       "source": "pstack/skills/principle-sequence-verifiable-units/SKILL.md",
-      "target": "plugins/cstack/skills/principle-sequence-verifiable-units/SKILL.md",
+      "target": "plugins/cstack/skills/cstack/references/principles/sequence-verifiable-units.md",
       "status": "ported",
-      "reason": "Adapted or preserved within the Codex plugin."
+      "reason": "Principle guidance retained as an internal reference, with conditional callers and no separate skill entrypoint."
     },
     {
       "source": "pstack/skills/principle-subtract-before-you-add/SKILL.md",
-      "target": "plugins/cstack/skills/principle-subtract-before-you-add/SKILL.md",
+      "target": "plugins/cstack/skills/cstack/references/principles/subtract-before-you-add.md",
       "status": "ported",
-      "reason": "Adapted or preserved within the Codex plugin."
+      "reason": "Principle guidance retained as an internal reference, with conditional callers and no separate skill entrypoint."
     },
     {
       "source": "pstack/skills/principle-test-behavior-not-implementation/SKILL.md",
-      "target": "plugins/cstack/skills/principle-test-behavior-not-implementation/SKILL.md",
+      "target": "plugins/cstack/skills/cstack/references/principles/test-behavior-not-implementation.md",
       "status": "ported",
-      "reason": "Adapted or preserved within the Codex plugin."
+      "reason": "Principle guidance retained as an internal reference, with conditional callers and no separate skill entrypoint."
     },
     {
       "source": "pstack/skills/principle-type-system-discipline/SKILL.md",
-      "target": "plugins/cstack/skills/principle-type-system-discipline/SKILL.md",
+      "target": "plugins/cstack/skills/cstack/references/principles/type-system-discipline.md",
       "status": "ported",
-      "reason": "Adapted or preserved within the Codex plugin."
+      "reason": "Principle guidance retained as an internal reference, with conditional callers and no separate skill entrypoint."
     },
     {
       "source": "pstack/skills/recall/SKILL.md",

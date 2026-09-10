@@ -2,6 +2,16 @@
 
 Environnement de référence : Linux, Codex CLI 0.153.4, Bun 1.4.0, Python 3.13. Vérifications réalisées le 9 septembre 2026. Ce fichier décrit les preuves observées ; une validation de manifeste ne constitue pas une validation de comportement.
 
+## Références internes
+
+Vérifications du 10 septembre 2026, contre le commit `ea39069`. Le paquet expose 28 skills et conserve les 23 principes dans `skills/cstack/references/principles/`. La comparaison des corps de texte, après normalisation des liens et du préambule d'activation, conserve leur contenu de fond. Les 28 noms et fichiers `agents/openai.yaml` restants, les sources du setup et celles des assistants d'exécution sont inchangés.
+
+Les 90 tests passent : 34 avec `python3 -m unittest discover -s tests -p 'test_*.py'`, puis 56 avec `bun test`. Le validateur `bun scripts/validate.ts` contrôle les 28 skills, les 23 références, leur présence dans le routeur et la couverture des 158 fichiers upstream. Les tests de mutation rejettent une référence manquante, un lien de routage retiré, une provenance incorrecte, un ancien chemin ou une ancienne invocation, ainsi qu'une ancienne entrée de skill réintroduite. Les contrôles TypeScript du dépôt et des assistants, les validateurs système du plugin et des 28 skills, et `git diff --check` passent. La revue indépendante du diff n'a relevé aucun problème exploitable.
+
+Deux essais natifs de la version de base ont terminé : modification d'un parseur de port avec assertions exécutées, puis revue Boundary Discipline en lecture seule avec empreinte du projet conservée. Les sessions héritent de `gpt-6-astra` / `ultra`. Aucun sous-agent accepté n'est enregistré ; les réponses signalent une délégation indisponible, ce qui ne permet pas de comparer le coût de délégation. Les premiers essais échoués sur les permissions SQLite/réseau sont exclus des résultats.
+
+Les deux essais de la nouvelle version sont préparés, mais leur lancement CLI a été refusé par le contrôle automatique d'approbation faute d'autorisation explicite de transmettre les fichiers privés du plugin au service Codex. Ils ne sont pas comptés comme exécutés. Aucune amélioration de durée ou de tokens n'est revendiquée. Les demandes, résultats de base et empreintes restent sous `.cstack/tasks/native-references/behavior/`.
+
 ## Intégration 0.3.0
 
 Base de comparaison : `a373eca2e003a9bd2e4b2e90ac7f28a250108f6c` (0.2.0). Les quatre nouveaux skills sont explicites. Les playbooks de correction et de développement, `how`, `why`, et le helper `models.py` conservent leurs sources. Les 23 principes concernés changent seulement leur phrase décrivant le setup passif.

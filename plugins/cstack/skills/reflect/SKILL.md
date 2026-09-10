@@ -39,7 +39,7 @@ After all reviews complete, spawn one native synthesizer. It inherits the parent
 
 ### 4. Check structural enforcement
 
-For any Accepted item enforced more reliably by a lint rule, script, metadata flag, or runtime check, move it to Backlog. See the **encode-lessons-in-structure** principle skill.
+For any Accepted item enforced more reliably by a lint rule, script, metadata flag, or runtime check, move it to Backlog. See the [Encode Lessons in Structure](../cstack/references/principles/encode-lessons-in-structure.md) principle reference.
 
 ### 5. Apply or draft
 

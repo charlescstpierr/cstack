@@ -10,7 +10,7 @@ Source : pstack 0.15.0, commit `27e2a62ff94f9af4b5e68435e41cdceacadb840c` de `cu
 | --- | --- |
 | Mode principal | `poteto-mode` devient `$cstack:cstack`, avec routage à la demande et instructions natives. |
 | Configuration | `setup-pstack` devient `$cstack:setup-cstack`, sans réglages globaux ni modèle imposé. |
-| 23 principes | Texte de fond conservé, application limitée à la tâche explicitement activée. |
+| 23 principes | Texte de fond conservé dans `skills/cstack/references/principles/`, avec liens depuis les workflows et sans entrées de skill distinctes. |
 | Skills spécialisés | Architecture, explication, investigation, revue, tests, personnalisation et vérification adaptés avec leurs références. |
 | 23 playbooks | Procédures conservées, outils et règles de livraison adaptés à Codex. |
 | Deux agents | Prompts embarqués transmis aux sous-agents natifs, sans installation de rôles nommés. |
@@ -20,6 +20,8 @@ Source : pstack 0.15.0, commit `27e2a62ff94f9af4b5e68435e41cdceacadb840c` de `cu
 | Pack Benny | Notice documentaire uniquement ; aucune installation ni automatisation événementielle active. |
 
 Les 47 entrées issues du premier portage incluent la notice `make-bot-ui`. La version 0.3.0 ajoute quatre préparations explicites : 51 entrées au total, dont 50 skills utilisables et une notice de limite.
+
+Le catalogue courant réduit ces 51 entrées à 28 en déplaçant les 23 principes dans les références internes. Leurs anciennes commandes individuelles sont retirées ; les demandes nomment le principe dans `$cstack:cstack`. Les références conservent leur provenance et leurs règles, avec des chemins explicites depuis les consommateurs. Les autres skills et leurs politiques d'invocation restent disponibles. Les tâches ordinaires peuvent s'exécuter directement, avec exploration, conception et délégation lorsque leur coût est justifié par le travail.
 
 ## Compléments de Matt Pocock
 

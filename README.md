@@ -38,6 +38,8 @@ $cstack:setup-cstack
 
 Le mode reste actif dans la tâche jusqu'à une demande de désactivation, par exemple « arrête cstack ». Les skills spécialisés restent utilisables à la demande. Le mode Plan, les instructions du projet et les autorisations Codex restent prioritaires.
 
+Le catalogue contient 28 skills. Les 23 principes sont des [références internes](plugins/cstack/docs/guide/08-principles.md), consultées seulement lorsqu'elles sont utiles au travail ou que vous nommez un principe. Leurs anciennes commandes individuelles disparaissent du sélecteur. Par exemple, utilisez `$cstack:cstack applique le principe « Boundary Discipline » à cette validation`. Les tâches simples s'exécutent directement ; une exploration, une comparaison d'architectures ou des sous-agents s'ajoutent quand le travail le justifie.
+
 Quatre compétences de préparation sont facultatives : `$cstack:clarify` pour clarifier les exigences, `$cstack:domain` pour le vocabulaire et les décisions du projet, `$cstack:horizon` pour cartographier un objectif incertain sur plusieurs sessions, et `$cstack:audit-architecture` pour repérer des simplifications dans le code existant. Elles ne s'ajoutent pas automatiquement aux corrections et aux développements ordinaires. Voir le [guide de conception](plugins/cstack/docs/guide/04-design.md).
 
 Exemple sans interface interactive :

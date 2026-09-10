@@ -11,25 +11,25 @@ When the task matches no playbook, design one. The deliverable before any code i
 
 ## Start
 
-Open a task list whose first item is to read the Principles section of the **cstack** skill. Then add the phases below.
+Use the conditional principle routes in the [cstack skill](../cstack/SKILL.md) while designing the workflow. Read only the references that apply, then add the phases below to the task list.
 
 ## Phase A: Frame
 
 Ground first, then commit. Don't start the run until you can state:
 
-- The definition of done as a falsifiable predicate (the **prove-it-works** principle skill).
+- The definition of done as a falsifiable predicate (the [Prove It Works](../cstack/references/principles/prove-it-works.md) principle reference).
 - Scope, quantified: rough units and effort, plus the blockers grounding surfaced.
 - The rigor level, biased high. One-way doors and high blast radius get more. Reversible low-stakes steps get less. Rigor is gates and artifacts, not "try harder".
 
-Present the framing and tradeoffs before committing to a long run. Reversible work proceeds (the **never-block-on-the-human** principle skill), but a multi-hour run earns one checkpoint.
+Present the framing and tradeoffs before committing to a long run. Reversible work proceeds (the [Never Block on the Human](../cstack/references/principles/never-block-on-the-human.md) principle reference), but a multi-hour run earns one checkpoint.
 
 ## Phase B: Design the workflow
 
-Decompose into atomic, independently-landable units. Sequence riskiest-unknown-first. Scaffold and verification come before features (the **foundational-thinking** principle skill).
+Decompose into atomic, independently-landable units. Sequence riskiest-unknown-first. Scaffold and verification come before features (the [Foundational Thinking](../cstack/references/principles/foundational-thinking.md) principle reference).
 
 - Build the verification harness before the work, with the baseline captured from the pre-change state, so the check reads as "old value vs new value".
-- For one-way-door design decisions, run the **architect** skill (it runs **arena**). Skip it for mechanical work whose shape is already concrete. A second arena over a settled design is over-engineering (the **laziness-protocol** principle skill).
-- Decide what fans out. Parallelize only across seams, and give each worker its own worktree or branch (the **separate-before-serializing-shared-state** principle skill). Don't over-fan.
+- For one-way-door design decisions, run the **architect** skill (it runs **arena**). Skip it for mechanical work whose shape is already concrete. A second arena over a settled design is over-engineering (the [Laziness Protocol](../cstack/references/principles/laziness-protocol.md) principle reference).
+- Decide what fans out. Parallelize only across seams, and give each worker its own worktree or branch (the [Separate Before Serializing Shared State](../cstack/references/principles/separate-before-serializing-shared-state.md) principle reference). Don't over-fan.
 - Write the designed phase list down. That list is what the human reviews.
 
 Then execute the design. Add its steps to the current task list after Phase C and before Phase D. Run each under the Phase C loop discipline, and weave the Phase D log through them as each step lands.
@@ -37,7 +37,7 @@ Then execute the design. Add its steps to the current task list after Phase C an
 ## Phase C: Run the loop
 
 Each unit is an experiment. State the hypothesis, make the smallest change, measure against the predicate on the real artifact, keep it if it advanced, revert it if it didn't.
-Apply the **sequence-verifiable-units** principle skill, verifying each unit before starting the next instead of batching checks at the end.
+Apply the [Sequence work into verifiable units](../cstack/references/principles/sequence-verifiable-units.md) principle reference, verifying each unit before starting the next instead of batching checks at the end.
 
 - Verify by inspecting the artifact, never a self-report. When something passes too easily, suspect the observation method before the system.
 - Pair delegated work with a judge and audit the delegates' artifacts yourself before trusting them. If a worker games the gate, reset and harden the contract. If the gate itself is wrong, fix the gate in its own change rather than routing around it.
@@ -49,6 +49,6 @@ Log the run via the **show-me-your-work** skill, one canonical TSV with a row pe
 
 ## Phase E: Verify and hand back
 
-Check the whole against the Phase A predicate on the real product, not just the harness. Encode any recurring correction as a gate, a lint rule, a check, or a script (the **encode-lessons-in-structure** principle skill).
+Check the whole against the Phase A predicate on the real product, not just the harness. Encode any recurring correction as a gate, a lint rule, a check, or a script (the [Encode Lessons in Structure](../cstack/references/principles/encode-lessons-in-structure.md) principle reference).
 
 **Reply:** the playbook you designed, the rigor level and why, the decision-trail path, what's verified against the predicate, and what's still open.

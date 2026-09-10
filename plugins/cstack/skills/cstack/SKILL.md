@@ -11,7 +11,7 @@ Read [the Codex runtime contract](references/codex-runtime.md) before choosing t
 
 ## Route the work
 
-Read the matched playbook in full and copy its steps into the current plan before task-specific steps. Keep a skipped step with `skip: <reason>`.
+Read the matched playbook in full, then plan only the steps the task needs. Keep skipped-step notes only when omitting the step would otherwise hide a real risk, tradeoff, or authorization boundary.
 
 - Read `playbooks/investigation.md` for a read-only explanation, comparison, or design question.
 - Read `playbooks/bug-fix.md` for a reported defect that needs reproduction, diagnosis, and a fix.
@@ -54,51 +54,51 @@ If `docs/agents/cstack.md` exists, consult its project conventions while cstack 
 
 ### Understand before editing
 
-- For a nontrivial change or architecture question, read and apply `../how/SKILL.md`.
-- Before writing stateful or branching code, name the data shape and read `../principle-model-the-domain/SKILL.md`.
-- Before code crosses a new function or module boundary, read `../architect/SKILL.md`.
+- For a nontrivial change or architecture question where the current implementation is not already clear, read and apply `../how/SKILL.md`. Simple or well-scoped work can be inspected and handled directly by the parent.
+- Before writing stateful or branching code, name the data shape and read [Model the Domain](references/principles/model-the-domain.md).
+- Before code crosses a new function or module boundary with meaningful design choice, read `../architect/SKILL.md`. Routine placement that follows an existing local pattern can stay in the parent.
 - For a disputed design, read `../interrogate/SKILL.md` when native subagents and the requested model choices are available. Otherwise make the best evidence-backed decision in the foreground and record the missing comparison.
 - For a large migration or an unmatched workflow, read `../figure-it-out/SKILL.md`.
 
 ### Keep the implementation small
 
-Read a principle only when its trigger applies, then name the concrete decision it changed in the final report.
+Read a principle only when its trigger applies or the user names it. Do not load the whole directory. Report decisions when they help explain the result, without an inventory of applied principles.
 
-- Read `../principle-laziness-protocol/SKILL.md` before a refactor or a new abstraction.
-- Read `../principle-subtract-before-you-add/SKILL.md` before a rewrite or migration.
-- Read `../principle-minimize-reader-load/SKILL.md` when control flow or state is hard to trace.
-- Read `../principle-redesign-from-first-principles/SKILL.md` when a new requirement changes the design's foundation.
-- Read `../principle-foundational-thinking/SKILL.md` before choosing core types, shared state, or implementation order.
-- Read `../principle-attack-the-premise/SKILL.md` after two fixes fail for the same assumed reason.
-- Read `../principle-outcome-oriented-execution/SKILL.md` for a phased rewrite or migration with a fixed target shape.
-- Read `../principle-experience-first/SKILL.md` for a product or interaction tradeoff.
-- Read `../principle-exhaust-the-design-space/SKILL.md` when a novel choice needs competing prototypes.
-- Read `../principle-build-the-lever/SKILL.md` when a small repeatable tool can perform or prove the work better than manual edits.
+- Read [Laziness Protocol](references/principles/laziness-protocol.md) before a refactor or a new abstraction.
+- Read [Subtract Before You Add](references/principles/subtract-before-you-add.md) before a rewrite or migration.
+- Read [Minimize Reader Load](references/principles/minimize-reader-load.md) when control flow or state is hard to trace.
+- Read [Redesign From First Principles](references/principles/redesign-from-first-principles.md) when a new requirement changes the design's foundation.
+- Read [Foundational Thinking](references/principles/foundational-thinking.md) before choosing core types, shared state, or implementation order.
+- Read [Attack the Premise](references/principles/attack-the-premise.md) after two fixes fail for the same assumed reason.
+- Read [Outcome-Oriented Execution](references/principles/outcome-oriented-execution.md) for a phased rewrite or migration with a fixed target shape.
+- Read [Experience First](references/principles/experience-first.md) for a product or interaction tradeoff.
+- Read [Exhaust the Design Space](references/principles/exhaust-the-design-space.md) when a novel choice needs competing prototypes.
+- Read [Build the Lever](references/principles/build-the-lever.md) when a small repeatable tool can perform or prove the work better than manual edits.
 
 ### Keep boundaries explicit
 
-- Read `../principle-boundary-discipline/SKILL.md` for validation, external APIs, CLI input, config, and framework adapters.
-- Read `../principle-type-system-discipline/SKILL.md` when designing a typed data shape or signature.
-- Read `../principle-make-operations-idempotent/SKILL.md` for commands or loops that can retry after partial progress.
-- Read `../principle-migrate-callers-then-delete-legacy-apis/SKILL.md` when replacing an internal API.
-- Read `../principle-separate-before-serializing-shared-state/SKILL.md` when concurrent actors may write the same branch, file, or state.
+- Read [Boundary Discipline](references/principles/boundary-discipline.md) for validation, external APIs, CLI input, config, and framework adapters.
+- Read [Type System Discipline](references/principles/type-system-discipline.md) when designing a typed data shape or signature.
+- Read [Make Operations Idempotent](references/principles/make-operations-idempotent.md) for commands or loops that can retry after partial progress.
+- Read [Migrate Callers Then Delete Legacy APIs](references/principles/migrate-callers-then-delete-legacy-apis.md) when replacing an internal API.
+- Read [Separate Before Serializing Shared State](references/principles/separate-before-serializing-shared-state.md) when concurrent actors may write the same branch, file, or state.
 
 ### Verify real behavior
 
-- Read `../principle-prove-it-works/SKILL.md` before claiming completion.
-- Read `../principle-fix-root-causes/SKILL.md` for a defect.
-- Read `../principle-sequence-verifiable-units/SKILL.md` for multi-step work.
-- Read `../principle-test-behavior-not-implementation/SKILL.md` when adding or changing tests.
-- Read `../principle-encode-lessons-in-structure/SKILL.md` when the same correction appears twice.
-- Read `../principle-never-block-on-the-human/SKILL.md` before asking about a reversible or discoverable choice.
-- Read `../principle-guard-the-context-window/SKILL.md` before loading a large artifact or broad fan-out into the parent task.
+- Read [Prove It Works](references/principles/prove-it-works.md) before claiming completion.
+- Read [Fix Root Causes](references/principles/fix-root-causes.md) for a defect.
+- Read [Sequence work into verifiable units](references/principles/sequence-verifiable-units.md) for multi-step work.
+- Read [Test Behavior, Not Implementation](references/principles/test-behavior-not-implementation.md) when adding or changing tests.
+- Read [Encode Lessons in Structure](references/principles/encode-lessons-in-structure.md) when the same correction appears twice.
+- Read [Never Block on the Human](references/principles/never-block-on-the-human.md) before asking about a reversible or discoverable choice.
+- Read [Guard the Context Window](references/principles/guard-the-context-window.md) before loading a large artifact or broad fan-out into the parent task.
 - Read `../no-comments/SKILL.md` before code review.
 - Read `../unslop/SKILL.md` for every prose artifact and reply.
 - Read `../technical-writing/SKILL.md` for documentation, plans, PR text, and commit text.
 
 ### Use native subagents deliberately
 
-Follow [the runtime contract](references/codex-runtime.md). Give each native subagent a bounded task, file ownership, acceptance criteria, and the instructions from `references/agents/cstack-agent.md`. The parent owns integration and verification.
+Follow [the runtime contract](references/codex-runtime.md). Use native subagents for independent work that improves speed, evidence, or review separation. Give each native subagent a bounded task, file ownership, acceptance criteria, and the instructions from `references/agents/cstack-agent.md`. The parent owns integration and verification.
 
 For coverage across independent areas, read and apply `../swarm/SKILL.md`. For competing implementations or designs, read and apply `../arena/SKILL.md`. Parallelize only independent work. One actor writes a branch or shared file at a time.
 
