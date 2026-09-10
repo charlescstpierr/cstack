@@ -92,7 +92,7 @@ Read a principle only when its trigger applies or the user names it. Do not load
 - Read [Encode Lessons in Structure](references/principles/encode-lessons-in-structure.md) when the same correction appears twice.
 - Read [Never Block on the Human](references/principles/never-block-on-the-human.md) before asking about a reversible or discoverable choice.
 - Read [Guard the Context Window](references/principles/guard-the-context-window.md) before loading a large artifact or broad fan-out into the parent task.
-- Read `../no-comments/SKILL.md` before code review.
+- Read `../no-comments/SKILL.md` when the user requests a dedicated comment review. Ordinary code review or explanation does not activate its delegated cleanup workflow.
 - Read `../unslop/SKILL.md` for every prose artifact and reply.
 - Read `../technical-writing/SKILL.md` for documentation, plans, PR text, and commit text.
 

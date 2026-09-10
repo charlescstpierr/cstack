@@ -10,7 +10,14 @@ Les 90 tests passent : 34 avec `python3 -m unittest discover -s tests -p 'test_*
 
 Deux essais natifs de la version de base ont terminé : modification d'un parseur de port avec assertions exécutées, puis revue Boundary Discipline en lecture seule avec empreinte du projet conservée. Les sessions héritent de `gpt-6-astra` / `ultra`. Aucun sous-agent accepté n'est enregistré ; les réponses signalent une délégation indisponible, ce qui ne permet pas de comparer le coût de délégation. Les premiers essais échoués sur les permissions SQLite/réseau sont exclus des résultats.
 
-Les deux essais de la nouvelle version sont préparés, mais leur lancement CLI a été refusé par le contrôle automatique d'approbation faute d'autorisation explicite de transmettre les fichiers privés du plugin au service Codex. Ils ne sont pas comptés comme exécutés. Aucune amélioration de durée ou de tokens n'est revendiquée. Les demandes, résultats de base et empreintes restent sous `.cstack/tasks/native-references/behavior/`.
+Après autorisation explicite de l'utilisateur, les deux essais de la nouvelle version ont été exécutés. Le premier passage a révélé que la consigne de lire `no-comments` avant toute revue activait inutilement la revue de commentaires dans une question de validation. Le routeur réserve désormais ce workflow aux demandes de revue de commentaires dédiées. Les deux scénarios ont ensuite été rejoués depuis leurs commits initiaux, sans réutiliser le code déjà corrigé.
+
+- Le parseur produit accepte les ports de 1 à 65535 et lève `ValueError("invalid port")` pour les entrées invalides. Le parent a réexécuté `verify_parser.py` et 17 assertions indépendantes. Seuls `parser.py` et `verify_parser.py` ont changé ; le commit initial du projet temporaire est conservé.
+- La revue Boundary Discipline place la validation dans `load_config`, cite le README et les symboles observés, et explique le rôle de `connect`. Les empreintes avant/après et la relecture du projet confirment la lecture seule ; aucun commit n'a été créé.
+
+Les traces des deux essais finaux chargent les nouvelles références, notamment `references/principles/boundary-discipline.md`, sans charger `how`, `architect`, `no-comments` ou le prompt de revue de commentaires. La revue en lecture seule tente encore une délégation facultative, que le CLI refuse avec `no thread with id` pour la session parente. cstack signale cette limite et termine au premier plan, conformément à son contrat. Ce résultat valide les tâches demandées et leur repli, mais ne prouve pas l'exécution de sous-agents dans ce banc CLI. Aucune amélioration générale de durée ou de tokens n'est revendiquée.
+
+Les demandes, traces, empreintes et résultats vérifiés restent sous `.cstack/tasks/native-references/behavior/`. `proposed-20260910T200842Z` conserve le premier passage ; `final-20260910/results/summary.json` et `final-20260910/verified-outcomes.json` décrivent les deux essais finaux.
 
 ## Intégration 0.3.0
 
