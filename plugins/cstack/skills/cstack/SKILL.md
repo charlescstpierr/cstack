@@ -13,6 +13,8 @@ Read [the Codex runtime contract](references/codex-runtime.md) before choosing t
 
 Read the matched playbook in full, then plan only the steps the task needs. Keep skipped-step notes only when omitting the step would otherwise hide a real risk, tradeoff, or authorization boundary.
 
+Before choosing the direct path, classify the task's observable uncertainty and risk. Clear routine work stays in the parent. Extra reads and native subagents earn their place by producing new evidence, settling a decision, or giving independent verification; do not optimize for fewer calls when quality, safety, or review separation needs them.
+
 - Read `playbooks/investigation.md` for a read-only explanation, comparison, or design question.
 - Read `playbooks/bug-fix.md` for a reported defect that needs reproduction, diagnosis, and a fix.
 - Read `playbooks/perf-issue.md` for one measured performance defect.
@@ -54,7 +56,7 @@ If `docs/agents/cstack.md` exists, consult its project conventions while cstack 
 
 ### Understand before editing
 
-- For a nontrivial change or architecture question where the current implementation is not already clear, read and apply `../how/SKILL.md`. Simple or well-scoped work can be inspected and handled directly by the parent.
+- For a nontrivial change or architecture question where the current implementation is not already clear, read and apply `../how/SKILL.md`. Once `how` is selected, preserve its configured explainer path. Simple local inspection can stay in the parent without invoking that specialist.
 - Before writing stateful or branching code, name the data shape and read [Model the Domain](references/principles/model-the-domain.md).
 - Before code crosses a new function or module boundary with meaningful design choice, read `../architect/SKILL.md`. Routine placement that follows an existing local pattern can stay in the parent.
 - For a disputed design, read `../interrogate/SKILL.md` when native subagents and the requested model choices are available. Otherwise make the best evidence-backed decision in the foreground and record the missing comparison.
@@ -108,6 +110,8 @@ Follow the runtime contract's direct inheritance path when unconfigured; otherwi
 
 Use `simple edits` for small bounded implementation changes and `documentation` for documentation-only delegates. Generic review or judgment uses `judgment and prose`. Use `hardest tasks` only for explicitly complex architecture, not difficult bugs or algorithms. Other implementation uses `feature, refactoring`; debugging uses `bug-fix`, `perf-issue` or `hillclimb` as appropriate. Specialized investigators, synthesizers and panels use their named setup roles. Pass the selected role into Swarm so its generic `swarm workers` default cannot replace it.
 
+For nontrivial deliverable code, get a distinct independent review before PR creation or merge when native capacity permits. Reuse a review for the same scope and unchanged patch instead of starting another at every playbook boundary. If no independent reviewer is available, say so and use a bounded self review without calling it independent.
+
 ### Keep state local
 
 Write durable workflow state only under the target workspace's `.cstack/` directory. Do not write to an installed plugin cache. The root launcher is `../../scripts/run-tool.sh` relative to this file. Resolve the plugin root first, then run helpers as:
@@ -128,7 +132,7 @@ Continue foreground work while the session is active. Use a native scheduler onl
 
 For long, autonomous, or multi-phase work, read and apply `../show-me-your-work/SKILL.md` and keep its trail under `.cstack/`. If a bundled skill breaks during the task, fix it only when it is in scope or blocks the current goal. Otherwise record a proposed follow-up without creating a PR.
 
-Keep comments only for a non-obvious reason that the code cannot express. Preserve licenses, public contracts, accessibility rationale, and verified tool constraints. Read `references/agents/comment-reviewer.md` for a dedicated comment review.
+Keep comments only for a non-obvious reason that the code cannot express. Preserve licenses, public contracts, accessibility rationale, and verified tool constraints. Read `references/agents/comment-reviewer.md` only for a dedicated comment review.
 
 ### Write the report
 

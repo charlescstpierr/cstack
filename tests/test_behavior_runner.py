@@ -100,6 +100,272 @@ class BehaviorRunnerTests(unittest.TestCase):
         )
         self.assertEqual(current["questions"], [])
 
+    def test_case_ephemeral_defaults_true_and_allows_opt_in_false(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            project = root / "project"
+            project.mkdir()
+            cases = root / "cases.json"
+            cases.write_text(json.dumps([
+                {"id": "default", "cwd": str(project), "prompt": "Read only."},
+                {"id": "persisted", "cwd": str(project), "prompt": "Spawn once.", "ephemeral": False},
+            ]))
+            parsed = verify_behavior.read_cases(cases)
+            self.assertTrue(parsed[0]["ephemeral"])
+            self.assertFalse(parsed[1]["ephemeral"])
+
+    def test_case_ephemeral_must_be_boolean(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            project = root / "project"
+            project.mkdir()
+            cases = root / "cases.json"
+            cases.write_text(json.dumps([{
+                "id": "bad",
+                "cwd": str(project),
+                "prompt": "Read only.",
+                "ephemeral": "false",
+            }]))
+            with self.assertRaises(verify_behavior.HarnessError):
+                verify_behavior.read_cases(cases)
+
+    def test_persisted_case_archives_harness_thread_after_metadata(self):
+        class FakeServer:
+            requests = []
+
+            def __init__(self, *args):
+                self.reads = 0
+
+            def request(self, method, params, timeout, on_event):
+                self.requests.append((method, params.copy()))
+                if method == "thread/start":
+                    return {"threadId": "parent"}
+                if method == "turn/start":
+                    return {"turnId": "turn"}
+                if method == "thread/read":
+                    return {"thread": {"id": params["threadId"], "model": "model"}}
+                return {}
+
+            def notify(self, *args):
+                pass
+
+            def read(self, deadline):
+                self.reads += 1
+                return {
+                    "method": "turn/completed",
+                    "params": {"threadId": "parent", "turn": {"id": "turn", "status": "completed"}},
+                }
+
+            def close(self):
+                pass
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            project = root / "project"
+            project.mkdir()
+            output = root / "output"
+            case = {"id": "persisted", "cwd": project, "prompts": ["Read only."], "sandbox": "read-only", "ephemeral": False}
+            with patch.object(verify_behavior, "AppServer", FakeServer):
+                result = verify_behavior.run_case(case, output, ["codex"], None, None, 1)
+            self.assertEqual(result["status"], "completed")
+            self.assertEqual(result["archived_thread_ids"], ["parent"])
+            self.assertIn(("thread/archive", {"threadId": "parent"}), FakeServer.requests)
+            self.assertIn(("thread/start", {
+                "cwd": str(project),
+                "approvalPolicy": "never",
+                "sandbox": "read-only",
+                "ephemeral": False,
+                "developerInstructions": verify_behavior.NEUTRAL_INSTRUCTIONS,
+            }), FakeServer.requests)
+
+    def test_persisted_case_archives_parent_after_needs_input(self):
+        class NeedsInputServer:
+            requests = []
+
+            def __init__(self, *args):
+                pass
+
+            def request(self, method, params, timeout, on_event):
+                self.requests.append((method, params.copy()))
+                if method == "thread/start":
+                    return {"threadId": "parent"}
+                if method == "turn/start":
+                    raise verify_behavior.NeedsInput("native request requires input: item/requestUserInput")
+                return {}
+
+            def notify(self, *args):
+                pass
+
+            def close(self):
+                pass
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            project = root / "project"
+            project.mkdir()
+            output = root / "output"
+            case = {"id": "persisted", "cwd": project, "prompts": ["Read only."], "sandbox": "read-only", "ephemeral": False}
+            with patch.object(verify_behavior, "AppServer", NeedsInputServer):
+                result = verify_behavior.run_case(case, output, ["codex"], None, None, 1)
+            self.assertEqual(result["status"], "needs_input")
+            self.assertEqual(result["error"], "native request requires input: item/requestUserInput")
+            self.assertEqual(result["archived_thread_ids"], ["parent"])
+            self.assertEqual(result["cleanup_errors"], [])
+            self.assertIn(("thread/archive", {"threadId": "parent"}), NeedsInputServer.requests)
+
+    def test_archive_failure_is_reported_without_hiding_turn_failure(self):
+        class ArchiveFailureServer:
+            requests = []
+
+            def __init__(self, *args):
+                pass
+
+            def request(self, method, params, timeout, on_event):
+                self.requests.append((method, params.copy()))
+                if method == "thread/start":
+                    return {"threadId": "parent"}
+                if method == "turn/start":
+                    raise verify_behavior.NeedsInput("native request requires input: item/requestUserInput")
+                if method == "thread/archive":
+                    raise verify_behavior.HarnessError("archive denied")
+                return {}
+
+            def notify(self, *args):
+                pass
+
+            def close(self):
+                pass
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            project = root / "project"
+            project.mkdir()
+            output = root / "output"
+            case = {"id": "persisted", "cwd": project, "prompts": ["Read only."], "sandbox": "read-only", "ephemeral": False}
+            with patch.object(verify_behavior, "AppServer", ArchiveFailureServer):
+                result = verify_behavior.run_case(case, output, ["codex"], None, None, 1)
+            self.assertEqual(result["status"], "needs_input")
+            self.assertEqual(result["error"], "native request requires input: item/requestUserInput")
+            self.assertEqual(result["archived_thread_ids"], [])
+            self.assertEqual(result["cleanup_errors"], [{
+                "operation": "thread/archive",
+                "thread_id": "parent",
+                "error": "archive denied",
+            }])
+
+    def test_timeout_interrupts_active_turn_before_archive(self):
+        class TimeoutServer:
+            requests = []
+
+            def __init__(self, *args):
+                self.reads = 0
+
+            def request(self, method, params, timeout, on_event):
+                self.requests.append((method, params.copy(), timeout))
+                if method == "thread/start":
+                    return {"threadId": "parent"}
+                if method == "turn/start":
+                    return {"turnId": "turn"}
+                if method == "turn/interrupt":
+                    on_event({
+                        "method": "turn/completed",
+                        "params": {"threadId": "parent", "turn": {"id": "turn", "status": "interrupted"}},
+                    })
+                    return {}
+                return {}
+
+            def notify(self, *args):
+                pass
+
+            def read(self, deadline):
+                self.reads += 1
+                if self.reads == 1:
+                    raise TimeoutError("app-server response timeout")
+                raise AssertionError("turn completion was already received during turn/interrupt")
+
+            def close(self):
+                pass
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            project = root / "project"
+            project.mkdir()
+            output = root / "output"
+            case = {"id": "persisted", "cwd": project, "prompts": ["Read only."], "sandbox": "read-only", "ephemeral": False}
+            with patch.object(verify_behavior, "AppServer", TimeoutServer):
+                result = verify_behavior.run_case(case, output, ["codex"], None, None, 90)
+            self.assertEqual(result["status"], "failed_turn")
+            self.assertEqual(result["error"], "app-server response timeout")
+            request_names = [request[0] for request in TimeoutServer.requests]
+            self.assertLess(request_names.index("turn/interrupt"), request_names.index("thread/archive"))
+            self.assertIn(("turn/interrupt", {"threadId": "parent", "turnId": "turn"}, 15), TimeoutServer.requests)
+            self.assertEqual(result["archived_thread_ids"], ["parent"])
+
+    def test_keyboard_interrupt_during_archive_still_closes_server(self):
+        class KeyboardInterruptServer:
+            closed = False
+
+            def __init__(self, *args):
+                pass
+
+            def request(self, method, params, timeout, on_event):
+                if method == "thread/start":
+                    return {"threadId": "parent"}
+                if method == "turn/start":
+                    return {"turnId": "turn"}
+                if method == "thread/read":
+                    return {"thread": {"id": params["threadId"], "model": "model"}}
+                if method == "thread/archive":
+                    raise KeyboardInterrupt()
+                return {}
+
+            def notify(self, *args):
+                pass
+
+            def read(self, deadline):
+                return {
+                    "method": "turn/completed",
+                    "params": {"threadId": "parent", "turn": {"id": "turn", "status": "completed"}},
+                }
+
+            def close(self):
+                self.__class__.closed = True
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            project = root / "project"
+            project.mkdir()
+            output = root / "output"
+            case = {"id": "persisted", "cwd": project, "prompts": ["Read only."], "sandbox": "read-only", "ephemeral": False}
+            with patch.object(verify_behavior, "AppServer", KeyboardInterruptServer):
+                with self.assertRaises(KeyboardInterrupt):
+                    verify_behavior.run_case(case, output, ["codex"], None, None, 1)
+            self.assertTrue(KeyboardInterruptServer.closed)
+
+    def test_main_fails_completed_case_with_cleanup_errors(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            project = root / "project"
+            project.mkdir()
+            cases = root / "cases.json"
+            output = root / "output"
+            cases.write_text(json.dumps([{"id": "one", "cwd": str(project), "prompt": "Read only."}]))
+            result = {
+                "id": "one",
+                "cwd": str(project),
+                "status": "completed",
+                "error": None,
+                "cleanup_errors": [{"operation": "thread/archive", "thread_id": "parent", "error": "archive denied"}],
+            }
+            with patch.object(verify_behavior, "build_command", return_value=["codex"]):
+                with patch.object(verify_behavior, "run_case", return_value=result):
+                    exit_code = verify_behavior.main(["--cases", str(cases), "--output", str(output)])
+            self.assertEqual(exit_code, 1)
+            summary = json.loads((output / "summary.json").read_text())
+            self.assertEqual(summary["cases"][0]["status"], "completed")
+            self.assertIsNone(summary["cases"][0]["error"])
+            self.assertEqual(summary["cases"][0]["cleanup_errors"], result["cleanup_errors"])
+
     def test_native_user_input_rpc_stops_without_answer(self):
         current = state()
         with self.assertRaises(verify_behavior.NeedsInput):

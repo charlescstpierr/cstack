@@ -311,6 +311,59 @@ def tree_hash(root, excluded):
     return {"sha256": digest.hexdigest(), "files": files, "bytes": total_bytes}
 
 
+def completed_turn_status(message, parent_thread, turn_id):
+    if not isinstance(message, dict) or message.get("method") != "turn/completed":
+        return None
+    params = message.get("params", {})
+    if first(params, ("threadId", "thread_id")) != parent_thread:
+        return None
+    candidate = first(params, ("turn",)) or params
+    candidate_id = first(candidate, ("id", "turnId", "turn_id"))
+    if turn_id and candidate_id and str(candidate_id) != str(turn_id):
+        return None
+    return first(candidate, ("status",)) or "unknown"
+
+
+def wait_for_turn_completion(server, parent_thread, turn_id, timeout, state):
+    deadline = time.monotonic() + timeout
+    while True:
+        try:
+            message = server.read(deadline)
+        except TimeoutError:
+            return None
+        update_state(message, state, parent_thread)
+        status = completed_turn_status(message, parent_thread, turn_id)
+        if status is not None:
+            return status
+
+
+def interrupt_active_turn(server, parent_thread, state, timeout, cleanup_errors):
+    current = state["current_turn"]
+    turn_id = current.get("turn_id") if current else None
+    if not parent_thread or not turn_id or current.get("status") is not None:
+        return
+    def on_event(message):
+        update_state(message, state, parent_thread)
+        status = completed_turn_status(message, parent_thread, turn_id)
+        if status is not None:
+            current["status"] = status
+
+    try:
+        server.request(
+            "turn/interrupt", {"threadId": parent_thread, "turnId": turn_id}, timeout,
+            on_event,
+        )
+        if current.get("status") is None:
+            current["status"] = wait_for_turn_completion(server, parent_thread, turn_id, timeout, state)
+    except (NeedsInput, HarnessError, OSError, TimeoutError, subprocess.SubprocessError) as exc:
+        cleanup_errors.append({
+            "operation": "turn/interrupt",
+            "thread_id": parent_thread,
+            "turn_id": turn_id,
+            "error": str(exc),
+        })
+
+
 def config_names():
     config_path = Path("/home/ubuntu/.codex/config.toml")
     if not config_path.exists():
@@ -383,7 +436,10 @@ def read_cases(path):
         sandbox = row.get("sandbox", "workspace-write")
         if not isinstance(sandbox, str) or not sandbox:
             raise HarnessError(f"{case_id}: sandbox must be a string")
-        cases.append({"id": case_id, "cwd": cwd, "prompts": prompts, "sandbox": sandbox})
+        ephemeral = row.get("ephemeral", True)
+        if not isinstance(ephemeral, bool):
+            raise HarnessError(f"{case_id}: ephemeral must be a boolean")
+        cases.append({"id": case_id, "cwd": cwd, "prompts": prompts, "sandbox": sandbox, "ephemeral": ephemeral})
     return cases
 
 
@@ -405,13 +461,15 @@ def run_case(case, output, command, model, effort, timeout):
     status = "completed"
     error = None
     parent_thread = None
+    archived_thread_ids = []
+    cleanup_errors = []
     try:
         server = AppServer(command, case["cwd"], raw_path, stderr_path)
         server.request("initialize", {"clientInfo": {"name": "cstack-behavior-runner", "version": "0.1.0"}}, timeout, lambda message: update_state(message, state, parent_thread))
         server.notify("initialized")
         thread_params = {
             "cwd": str(case["cwd"]), "approvalPolicy": "never", "sandbox": case["sandbox"],
-            "ephemeral": True, "developerInstructions": NEUTRAL_INSTRUCTIONS,
+            "ephemeral": case["ephemeral"], "developerInstructions": NEUTRAL_INSTRUCTIONS,
         }
         if model:
             thread_params["model"] = model
@@ -428,18 +486,13 @@ def run_case(case, output, command, model, effort, timeout):
                 turn_params["effort"] = effort
             turn_result = server.request("turn/start", turn_params, timeout, lambda message: update_state(message, state, parent_thread))
             turn_id = first(turn_result, ("turnId", "turn_id")) or first(first(turn_result, ("turn",)) or {}, ("id",))
+            state["current_turn"]["turn_id"] = turn_id
             deadline = time.monotonic() + timeout
             turn_status = None
             while turn_status is None:
                 message = server.read(deadline)
                 update_state(message, state, parent_thread)
-                if message.get("method") == "turn/completed":
-                    params = message.get("params", {})
-                    if first(params, ("threadId", "thread_id")) == parent_thread:
-                        candidate = first(params, ("turn",)) or params
-                        candidate_id = first(candidate, ("id", "turnId", "turn_id"))
-                        if not turn_id or not candidate_id or str(candidate_id) == str(turn_id):
-                            turn_status = first(candidate, ("status",)) or "unknown"
+                turn_status = completed_turn_status(message, parent_thread, turn_id)
             current = state["current_turn"]
             current["status"] = turn_status
             current["final_text"] = "\n\n".join(state["messages"])
@@ -466,10 +519,33 @@ def run_case(case, output, command, model, effort, timeout):
         error = str(exc)
     finally:
         if server is not None:
-            server.close()
+            try:
+                if not case["ephemeral"]:
+                    cleanup_timeout = min(timeout, 15)
+                    interrupt_active_turn(server, parent_thread, state, cleanup_timeout, cleanup_errors)
+                    for thread_id in [*state["child_ids"], parent_thread]:
+                        if thread_id and thread_id not in archived_thread_ids:
+                            try:
+                                server.request(
+                                    "thread/archive", {"threadId": thread_id}, cleanup_timeout,
+                                    lambda message: update_state(message, state, parent_thread),
+                                )
+                            except (NeedsInput, HarnessError, OSError, TimeoutError, subprocess.SubprocessError) as exc:
+                                cleanup_errors.append({
+                                    "operation": "thread/archive",
+                                    "thread_id": thread_id,
+                                    "error": str(exc),
+                                })
+                            else:
+                                archived_thread_ids.append(thread_id)
+            finally:
+                try:
+                    server.close()
+                except (OSError, subprocess.SubprocessError) as exc:
+                    cleanup_errors.append({"operation": "server.close", "error": str(exc)})
     after = tree_hash(case["cwd"], output)
     return {
-        "id": case["id"], "cwd": str(case["cwd"]), "sandbox": case["sandbox"],
+        "id": case["id"], "cwd": str(case["cwd"]), "sandbox": case["sandbox"], "ephemeral": case["ephemeral"],
         "input_prompts": case["prompts"], "status": status,
         "wall_seconds": round(time.monotonic() - started, 3),
         "before_project_hash": before, "after_project_hash": after,
@@ -478,7 +554,8 @@ def run_case(case, output, command, model, effort, timeout):
         "actual_commands": state["actual_commands"], "app_server_command": command,
         "questions": state["questions"], "native_child_thread_ids": state["child_ids"],
         "dispatch_metadata": state["dispatch_metadata"], "child_metadata": state.get("child_metadata", []),
-        "metadata_gaps": state["metadata_gaps"],
+        "metadata_gaps": state["metadata_gaps"], "archived_thread_ids": archived_thread_ids,
+        "cleanup_errors": cleanup_errors,
         "token_usage": state["token_usage"], "after_turn_actual_metadata": state["after_turn_actual_metadata"],
         "turns": state["turns"], "error": error,
         "raw_stream": str(raw_path.resolve()), "stderr": str(stderr_path.resolve()),
@@ -530,6 +607,8 @@ def main(argv=None):
     write_summary(output, results, selected_case_ids)
     if any(result["status"] != "completed" for result in results):
         return 2 if any(result["status"] == "needs_input" for result in results) else 1
+    if any(result.get("cleanup_errors") for result in results):
+        return 1
     print(f"summary: {output / 'summary.json'}", flush=True)
     return 0
 

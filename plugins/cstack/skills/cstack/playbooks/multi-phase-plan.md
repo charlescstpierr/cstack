@@ -6,7 +6,7 @@ Follow [the Codex runtime contract](../references/codex-runtime.md).
 
 1. If the change is one or two files with an obvious approach, explain why a formal plan adds no value and return the short execution outline.
 2. Settle observable questions with `prototype.md` before writing the plan. Ask only about a product preference or materially branching choice that no run can settle. Record prototype paths and evidence in Appendix A.
-3. Explore independent repository areas with bounded native subagents when capacity permits. Give each a read-only scope and ask for file pointers, conventions, checks, and entry points. Run excess work in waves. Models inherit unless `.cstack/models.json` supplies an available `how explorer` override.
+3. Explore independent repository areas with bounded native subagents when capacity permits and each slice can add evidence, settle a decision, or provide independent verification. Give each a read-only scope and ask for file pointers, conventions, checks, and entry points. Run excess work in waves. Models inherit unless `.cstack/models.json` supplies an available `how explorer` override.
 4. Copy the skeleton below into `.cstack/plans/<slug>.md` unless the user names a path. Fill every placeholder. Keep the headings and blocks in order. Give each PR one change and its own evidence. Choose `autopilot-full.md`, `autopilot-stack.md`, or `orchestrate.md` as the execution playbook.
 5. Read and apply `../../technical-writing/SKILL.md` and `../../unslop/SKILL.md`. Keep the body as a how-to. Use appendices for explanation and reference.
 6. Resolve the plugin root and run `bash <plugin-root>/scripts/run-tool.sh check-plan.mjs <plan.md>`. Fix every reported error.
@@ -63,13 +63,14 @@ Tests alone do not verify a PR. Each PR requires unit, live, and performance evi
 - [ ] Use git and `gh` only.
 - [ ] Create a ready PR with `gh pr create --base <base-branch>` only when authorized. A stack child targets its parent branch.
 - [ ] Run the repository's targeted checks, lint, and typecheck before the PR-facing push.
-- [ ] Read and apply `<plugin-root>/skills/no-comments/SKILL.md`, `<plugin-root>/skills/technical-writing/SKILL.md`, and `<plugin-root>/skills/unslop/SKILL.md` before review.
+- [ ] Inspect comments as part of the general diff review. Read and apply `<plugin-root>/skills/no-comments/SKILL.md` only for a dedicated comment-review request. Read and apply `<plugin-root>/skills/technical-writing/SKILL.md` and `<plugin-root>/skills/unslop/SKILL.md` before PR text.
 - [ ] Triage automated review through `../references/bugbot-triage.md`.
 - [ ] Rebase onto current trunk before babysitting and again before the merge-ready report when the execution playbook requires it.
 
 ### Verify and deliver each PR
 
 - [ ] At the merge-ready head SHA, run gates, the ten live lanes below within native capacity, the performance lane, and a diff-and-receipts audit.
+- [ ] For nontrivial deliverable code, obtain a distinct independent review when native capacity permits. If unavailable, record the bounded self-review fallback without calling it independent.
 - [ ] Mark clean only when every applicable lane passes. A changed head gets a fresh verdict unless an unchanged patch ID preserves the code verdict and current CI and mergeability pass.
 - [ ] Follow the merge or append rule from the execution playbook. Do not merge without concrete authorization.
 
