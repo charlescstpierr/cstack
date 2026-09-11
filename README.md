@@ -40,7 +40,7 @@ Le mode reste actif dans la tâche jusqu'à une demande de désactivation, par e
 
 Le catalogue contient 28 skills. Les 23 principes sont des [références internes](plugins/cstack/docs/guide/08-principles.md), consultées seulement lorsqu'elles sont utiles au travail ou que vous nommez un principe. Leurs anciennes commandes individuelles disparaissent du sélecteur. Par exemple, utilisez `$cstack:cstack applique le principe « Boundary Discipline » à cette validation`. Les tâches simples s'exécutent directement ; une exploration, une comparaison d'architectures ou des sous-agents s'ajoutent quand le travail le justifie.
 
-Quatre compétences de préparation sont facultatives : `$cstack:clarify` pour clarifier les exigences, `$cstack:domain` pour le vocabulaire et les décisions du projet, `$cstack:horizon` pour cartographier un objectif incertain sur plusieurs sessions, et `$cstack:audit-architecture` pour repérer des simplifications dans le code existant. Elles ne s'ajoutent pas automatiquement aux corrections et aux développements ordinaires. Voir le [guide de conception](plugins/cstack/docs/guide/04-design.md).
+`$cstack:cstack` peut appeler les préparations quand la demande l'exige : `clarify` pour une ambiguïté réelle, `horizon` pour un objectif vraiment long ou multi-phase, `domain` pour le vocabulaire et les décisions du projet, et `audit-architecture` pour repérer des simplifications dans le code existant. Une tâche claire part directement vers le playbook adapté avec sa revue et sa vérification ; plusieurs fichiers ne suffisent pas à déclencher Horizon. Voir le [guide de conception](plugins/cstack/docs/guide/04-design.md).
 
 Exemple sans interface interactive :
 

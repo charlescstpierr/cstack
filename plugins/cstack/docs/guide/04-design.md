@@ -2,9 +2,9 @@
 
 Une décision difficile mérite une forme explicite avant l'implémentation. cstack sépare l'architecture, les alternatives, la couverture parallèle et la critique adversariale.
 
-## Préparations facultatives
+## Préparations et routage
 
-Ces compétences s'utilisent quand vous les demandez. Une correction claire conserve son parcours habituel.
+Ces compétences restent utilisables seules pour préparer une tâche. `$cstack:cstack` peut aussi les appeler sans vous demander de relancer la commande : `clarify` quand une vraie question métier bloque le bon résultat, et Horizon quand le travail mérite une carte de décisions sur plusieurs phases. Une correction claire conserve son parcours habituel.
 
 | Compétence | Résultat | Délégation initiale |
 | --- | --- | --- |
@@ -13,9 +13,9 @@ Ces compétences s'utilisent quand vous les demandez. Une correction claire cons
 | [`$cstack:horizon`](../../skills/horizon/SKILL.md) | Carte des décisions ouvertes, de leurs dépendances et des inconnues d'un objectif de plusieurs sessions. | Un enfant par recherche prête, sans délégation imbriquée. |
 | [`$cstack:audit-architecture`](../../skills/audit-architecture/SKILL.md) | Candidats à une simplification, avec preuves dans le code et propositions avant/après. | Au plus un explorateur. |
 
-`clarify` établit les faits accessibles avant de poser les questions réellement ouvertes. `domain` rédige le glossaire ou les ADRs seulement si la demande autorise ces documents. En lecture seule ou en mode Plan, les propositions restent dans la conversation.
+`clarify` établit les faits accessibles avant de poser les questions réellement ouvertes. Les questions humaines restent réservées aux choix métier, produit ou périmètre que le dépôt ne peut pas résoudre. `domain` rédige le glossaire ou les ADRs seulement si la demande autorise ces documents. En lecture seule ou en mode Plan, les propositions restent dans la conversation.
 
-Horizon conserve la limite de Wayfinder : la cartographie s'arrête après la création du plan de décisions ; une reprise traite au plus un ticket de décision, sauf pour les recherches. Les choix humains restent ouverts jusqu'à votre réponse. Une fois les décisions résolues, Horizon produit une spécification cohérente puis des unités vérifiables pour le playbook cstack adapté. Il ne démarre pas l'implémentation ni un goal natif automatiquement. Les recherches utilisent le rôle `how explorer`, la synthèse déléguée `judgment and prose`, et l'architecture complexe `hardest tasks`.
+Horizon conserve la limite de Wayfinder : la cartographie s'arrête après la création du plan de décisions ; une reprise traite au plus un ticket de décision, sauf pour les recherches. Les choix humains restent ouverts jusqu'à votre réponse. Une fois les décisions résolues, `$cstack:cstack` reprend les faits et lance les unités vérifiables du playbook adapté sans pause artificielle entre les phases. Horizon seul ne démarre pas l'implémentation, un goal natif, une PR distante, un merge ou un déploiement automatiquement. Les recherches utilisent le rôle `how explorer`, la synthèse déléguée `judgment and prose`, et l'architecture complexe `hardest tasks`.
 
 L'audit d'architecture examine des opportunités ; choisir un candidat autorise sa discussion, pas sa modification. Son rapport reste dans la conversation sauf demande d'export compatible avec le mode courant.
 

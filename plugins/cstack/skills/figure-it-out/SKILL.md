@@ -11,7 +11,7 @@ When the task matches no playbook, design one. The deliverable before any code i
 
 ## Start
 
-Use the conditional principle routes in the [cstack skill](../cstack/SKILL.md) while designing the workflow. Read only the references that apply, then add the phases below to the task list.
+Start the task list by reading the common rules and principle routes in the [cstack skill](../cstack/SKILL.md). Read the individual references whose triggers apply, then add the phases below to the task list. Reuse an existing Horizon handoff and verified decisions when they already establish the framing; retain the playbook's review and verification gates.
 
 ## Phase A: Frame
 

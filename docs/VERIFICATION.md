@@ -2,6 +2,23 @@
 
 Environnement de référence : Linux, Codex CLI 0.153.4, Bun 1.4.0, Python 3.13. Vérifications réalisées le 9 septembre 2026. Ce fichier décrit les preuves observées ; une validation de manifeste ne constitue pas une validation de comportement.
 
+## Playbooks rigoureux et préparation automatique
+
+La révision du 11 septembre conserve les principes en références et rétablit les étapes de compréhension, conception, délégation et revue du cstack antérieur à l'optimisation (`ea39069`). Après normalisation des liens de principes, les corps de Feature, Bug fix, Refactoring, Investigation et How correspondent à cette base. Le routeur rétablit aussi les étapes de plan explicites, les raisons des étapes sautées et une revue du code par un acteur qui ne l'a pas écrit. Les commentaires et suppressions restent inspectés dans la revue générale ; leur nettoyage spécialisé reste un parcours distinct.
+
+Une invocation explicite de `$cstack:cstack` prend en charge la suite du travail : `clarify` lorsque des exigences matérielles restent ambiguës, `horizon` pour un objectif nécessitant une carte durable entre phases, puis le playbook approprié. Les étapes se poursuivent dans l'autorisation existante. Les décisions humaines restent humaines ; les demandes en lecture seule et les invocations autonomes des skills de préparation conservent leur périmètre.
+
+Les 90 tests existants passent : 34 Python et 56 Bun. Les deux contrôles TypeScript, la validation du plugin et celle des skills modifiés passent. Des coordinateurs et enfants natifs Codex ont aussi travaillé dans des projets isolés ; le parent a inspecté les fichiers produits et exécuté ses propres assertions.
+
+- Orion : demande de normalisation entièrement définie, exécutée sans question produit. Une seule ligne de code a changé ; les cas de bord et le comportement hors des espaces sont vérifiés.
+- Nova : aucune écriture avant les deux décisions sur la signification d'archiver et la mutation des entrées. Une réponse contenant uniquement le contrat a déclenché la suite de l'implémentation, sans nouvelle demande d'approbation. L'ordre, les champs, les copies et l'absence de mutation des entrées sont vérifiés.
+- Lyra : Horizon a produit un spec et quatre unités dépendantes sans inventer de tickets de décision. La première phase autorisée a été implémentée, avec grounding natif, délégation et revues indépendantes. Les phases suivantes restent planifiées et aucun commit, dépendance ou service externe n'a été ajouté.
+- Lyra en lecture seule : la réponse respecte l'ordre de retrait de la compatibilité ; l'empreinte complète du projet, état de planification inclus, est inchangée.
+
+Le [manifeste de validation](evidence/automatic-routing.json) contient les résultats et empreintes. Les traces de travail restent sous `.cstack/tasks/preserve-rigor/forward/`. Ces exemples vérifient les transitions et leurs limites dans une session active, pas une supériorité générale ni une exécution persistante après fermeture de l'application.
+
+Cette révision ne revendique aucun gain général de qualité, de durée ou de tokens. La PR #4 reste un brouillon expérimental ; les économies d'appels ne justifient pas la suppression de garanties des playbooks.
+
 ## Références internes
 
 Vérifications du 10 septembre 2026, contre le commit `ea39069`. Le paquet expose 28 skills et conserve les 23 principes dans `skills/cstack/references/principles/`. La comparaison des corps de texte, après normalisation des liens et du préambule d'activation, conserve leur contenu de fond. Les 28 noms, leurs politiques d'invocation explicite, les sources du setup et celles des assistants d'exécution sont inchangés.

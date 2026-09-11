@@ -63,7 +63,7 @@ Tests alone do not verify a PR. Each PR requires unit, live, and performance evi
 - [ ] Use git and `gh` only.
 - [ ] Create a ready PR with `gh pr create --base <base-branch>` only when authorized. A stack child targets its parent branch.
 - [ ] Run the repository's targeted checks, lint, and typecheck before the PR-facing push.
-- [ ] Read and apply `<plugin-root>/skills/no-comments/SKILL.md`, `<plugin-root>/skills/technical-writing/SKILL.md`, and `<plugin-root>/skills/unslop/SKILL.md` before review.
+- [ ] Read and apply `<plugin-root>/skills/technical-writing/SKILL.md` and `<plugin-root>/skills/unslop/SKILL.md` before review. Inspect comments and suppressions in the full diff; use `<plugin-root>/skills/no-comments/SKILL.md` for a dedicated comment-review request.
 - [ ] Triage automated review through `../references/bugbot-triage.md`.
 - [ ] Rebase onto current trunk before babysitting and again before the merge-ready report when the execution playbook requires it.
 

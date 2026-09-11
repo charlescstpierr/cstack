@@ -216,7 +216,7 @@ def _agent_payload(snapshots: dict[str, bytes | None]) -> bytes:
 
 
 def _workflow_payload(tracker: dict[str, str]) -> bytes:
-    rows = ["# cstack project guidance", "", "Read this file only after the user explicitly invokes a cstack skill.", "", "## Workflows", "", "| Workflow | Invocation | Agent count rule | Reused role keys |", "| --- | --- | --- | --- |"]
+    rows = ["# cstack project guidance", "", "Read this file only after the user explicitly invokes a cstack skill.", "", "## Workflows", "", "`$cstack:cstack` owns automatic preparation and execution routing; use the commands below for a focused preparation request.", "", "| Workflow | Invocation | Agent count rule | Reused role keys |", "| --- | --- | --- | --- |"]
     for name, value in WORKFLOWS.items():
         rows.append(f"| `{name}` | `$cstack:{name}` | {value['count_rule']} | {', '.join(f'`{role}`' for role in value['roles'])} |")
     rows += ["", "## Domain records", "", "Use the project's existing CONTEXT.md and ADR conventions when present. Setup does not create blank CONTEXT.md or ADR files.", "", "## Local state", "", "Use `.cstack/horizon` for Horizon state. Keep `.cstack/models.json` as the source for model and reasoning-effort choices. Setup performs no global setup, push, label, or remote action.", "", "## Role boundary", "", "Use `hardest tasks` only for explicit complex architecture. Horizon synthesis uses `judgment and prose`.", "", "## Tracker mode", "", f"The configured tracker mode is `{tracker['mode']}`."]

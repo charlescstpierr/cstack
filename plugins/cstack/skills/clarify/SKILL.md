@@ -1,13 +1,13 @@
 ---
 name: clarify
-description: "Use when explicitly selected as $cstack:clarify or routed by an explicitly selected cstack preparation skill to resolve material requirements ambiguity through repository facts and frontier decision rounds."
+description: "Use when explicitly selected as $cstack:clarify or routed during an explicitly selected cstack task to resolve material requirements ambiguity through repository facts and frontier decision rounds."
 ---
 
 # Clarify
 
 Runtime: [`../cstack/references/codex-runtime.md`](../cstack/references/codex-runtime.md).
 
-Use this skill when the user explicitly selects `$cstack:clarify`, or when an explicitly selected cstack preparation skill routes here (`$cstack:horizon`, `$cstack:clarify`, or `$cstack:domain`). Do not enter it silently for an ordinary code task. Use it when an unresolved requirement could change scope, behavior, ownership, or acceptance. If the request is already clear, say so and return to the caller's workflow.
+Use this skill when the user explicitly selects `$cstack:clarify`, or when the active cstack coordinator or its preparation skills route here. Do not activate outside an explicitly selected cstack task or preparation request. Use it when an unresolved requirement could change scope, behavior, ownership, or acceptance. If the request is already clear, say so and return to the caller's workflow.
 
 ## Find facts before asking
 
@@ -38,8 +38,9 @@ After each answer, mark what is settled, recompute the frontier, and ask only ne
 
 ## Finish cleanly
 
-When clarification ends, return a concise record of settled decisions, evidence-backed constraints, unresolved items, and recommended next action.
+When clarification ends, return a concise settled record to the caller: decisions, evidence-backed constraints, unresolved items, and recommended next action.
 
-- If implementation is authorized and the requirements are settled, continue the caller's workflow without another approval gate.
+- If implementation is authorized and the requirements are settled, continue or return to the caller's workflow without another approval gate.
+- When routed by `$cstack:cstack`, do not ask "continue?". Hand back the settled record so the coordinator can select the appropriate existing playbook and keep working inside the user's prior authorization.
 - In Plan mode, read-only work, or design-only work, return the draft in chat and do not edit code or documents.
 - Clarify itself creates no goals, trackers, PRs, messages, or implementation changes. After receiving the settled record, the caller may continue its already-authorized workflow. Durable vocabulary and ADR records belong to [`$cstack:domain`](../domain/SKILL.md), subject to that skill's write rules.
