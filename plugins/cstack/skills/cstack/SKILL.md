@@ -91,6 +91,10 @@ Read a principle only when its trigger applies or the user names it, then name t
 - Read [Migrate Callers Then Delete Legacy APIs](references/principles/migrate-callers-then-delete-legacy-apis.md) when replacing an internal API.
 - Read [Separate Before Serializing Shared State](references/principles/separate-before-serializing-shared-state.md) when concurrent actors may write the same branch, file, or state.
 
+### Commit verified work
+
+Follow [Local commits](references/codex-runtime.md#local-commits) for every authorized implementation or documentation edit: commit each verified coherent unit locally without another confirmation, preserve unrelated work, and report actual commit SHAs before finishing.
+
 ### Verify real behavior
 
 - Read [Prove It Works](references/principles/prove-it-works.md) before claiming completion.

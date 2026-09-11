@@ -67,6 +67,14 @@ Use native task-history tools when exposed, constrained to the current workspace
 
 Native waits and foreground continuation support active work. A Codex goal is created only when explicitly requested. A native scheduled task is configured only when requested and the necessary scheduler is exposed. Without a scheduler, report the limit and leave a checkpoint; do not launch a hidden daemon or promise work after Codex exits. Local child agents do not become durable cloud workers. On resumption, verify current git/PR state instead of trusting a previous completion message or a stale agent ID.
 
+## Local commits
+
+An authorized implementation or documentation-editing task includes local Git commits by default. After each coherent unit passes its relevant checks, inspect the diff, stage only that task's changes, and commit without asking for another confirmation. Apply this rule across all implementation playbooks, including small fixes and follow-up edits; opening a PR is not a prerequisite. The coordinator owns commits on a shared branch; delegates commit only on their assigned isolated branches.
+
+Inspect the worktree and index before staging. Preserve pre-existing staged and unstaged changes; never include another task's work or use blanket staging in a dirty workspace. If ownership cannot be separated safely, leave those changes intact and report the blocker. Respect explicit no-commit instructions, project rules, and Plan/read-only mode. Outside a Git repository, report that commits are unavailable rather than initializing one. Do not create empty commits or bypass failing checks or hooks. A deliberately failing reproduction commit is allowed only when the active TDD playbook calls for it; verify the expected failure and finish with the passing fix before reporting completion.
+
+Before finishing, inspect Git status and the actual commit history. Report the created commit SHAs and any remaining task changes with their reason. If committing fails, report the failure and keep the work intact; do not claim it was committed. Local commits do not by themselves authorize pushing, opening PRs, merging, or deploying.
+
 ## External integrations and authorization
 
 No external integration is required for basic code work. Discover connected GitHub, issue tracker, documentation, browser and other tools only when the task needs them. Missing connectors are explicit evidence gaps; do not auto-install plugins or request unrelated accounts.
