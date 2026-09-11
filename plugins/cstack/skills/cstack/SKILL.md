@@ -11,7 +11,20 @@ Read [the Codex runtime contract](references/codex-runtime.md) before choosing t
 
 ## Route the work
 
-Read the matched playbook in full, then plan only the steps the task needs. Keep skipped-step notes only when omitting the step would otherwise hide a real risk, tradeoff, or authorization boundary.
+An explicit `$cstack:cstack` invocation makes this skill the coordinator for preparation, execution, review, and verification of the requested task. Select the needed skills yourself; the user does not need to name them or approve each phase transition.
+
+### Prepare the request
+
+1. Read the request, project guidance, relevant repository facts, and any existing task state. Reuse settled decisions and observed facts while they remain valid.
+2. If an unresolved requirement could change scope, behavior, ownership, or acceptance, read and apply `../clarify/SKILL.md`. Resolve discoverable facts first. Ask the human only for the remaining material decisions, then resume this workflow when those decisions are settled.
+3. For a large goal that needs a durable dependency map across phases, PRs, or sessions, read and apply `../horizon/SKILL.md`. Several files alone do not require Horizon. Resume an existing map instead of recreating it; a clear large goal can go directly to implementation units without invented decision tickets.
+4. While Horizon is routed by cstack, consume its result and continue eligible autonomous prerequisites. Return to its next eligible ticket without asking the user to invoke another command. A waiting human decision blocks dependent work; continue independent authorized work when possible. When the spec and units are ready, select and execute the matching playbook below.
+
+Preparation does not replace the playbook's grounding, design, review, or verification. Reuse valid evidence and decisions from preparation rather than redoing them. In Plan mode or a planning-only/read-only request, return the requested plan or answer and do not start implementation. A resolved preparation step is not permission for an otherwise unauthorized external action.
+
+### Execute the matched playbook
+
+Read the matched playbook in full and copy its steps into the current plan before task-specific steps. Keep a skipped step with `skip: <reason>`. Fewer calls do not justify dropping grounding, design, independent review, or real-behavior verification.
 
 - Read `playbooks/investigation.md` for a read-only explanation, comparison, or design question.
 - Read `playbooks/bug-fix.md` for a reported defect that needs reproduction, diagnosis, and a fix.
@@ -39,14 +52,9 @@ Read the matched playbook in full, then plan only the steps the task needs. Keep
 
 If no playbook fits, read and apply `../figure-it-out/SKILL.md`. Use `playbooks/orchestrate.md` only when the work is a continuing program rather than one session-sized task.
 
-### Optional preparation
+### Focused preparation requests
 
-These routes run only when the user selects the named skill or asks for its specific preparation activity. An ordinary implementation, review, or bug request keeps its existing playbook; do not add an interview, domain-writing phase, or decision map to it.
-
-- Read and apply `../clarify/SKILL.md` for an explicitly requested requirements discussion.
-- Read and apply `../domain/SKILL.md` for explicitly requested vocabulary or domain-decision work. Read-only requests produce drafts without changing project documents.
-- Read and apply `../horizon/SKILL.md` when the user explicitly asks to map a large uncertain objective over multiple sessions. Its human decision gates remain in force; it does not automatically start implementation or a native goal.
-- Read and apply `../audit-architecture/SKILL.md` for an explicitly requested read-only survey of architectural improvement opportunities.
+Directly selected `clarify` and `horizon` keep their own bounded scope. The automatic continuation above belongs to the cstack coordinator and the user's implementation request. Use `../domain/SKILL.md` for requested vocabulary/domain-decision work or a material terminology decision found during preparation. Read-only requests produce drafts without changing project documents. Use `../audit-architecture/SKILL.md` for an explicitly requested read-only survey of architectural improvement opportunities.
 
 If `docs/agents/cstack.md` exists, consult its project conventions while cstack is active. It is optional and must not activate cstack or override the current request, mode, or permissions. A configured issue tracker describes where authorized work is recorded, not permission to create or change remote issues.
 
@@ -54,15 +62,15 @@ If `docs/agents/cstack.md` exists, consult its project conventions while cstack 
 
 ### Understand before editing
 
-- For a nontrivial change or architecture question where the current implementation is not already clear, read and apply `../how/SKILL.md`. Simple or well-scoped work can be inspected and handled directly by the parent.
+- For a nontrivial change or architecture question, read and apply `../how/SKILL.md`.
 - Before writing stateful or branching code, name the data shape and read [Model the Domain](references/principles/model-the-domain.md).
-- Before code crosses a new function or module boundary with meaningful design choice, read `../architect/SKILL.md`. Routine placement that follows an existing local pattern can stay in the parent.
+- Before code crosses a new function or module boundary, read `../architect/SKILL.md`.
 - For a disputed design, read `../interrogate/SKILL.md` when native subagents and the requested model choices are available. Otherwise make the best evidence-backed decision in the foreground and record the missing comparison.
 - For a large migration or an unmatched workflow, read `../figure-it-out/SKILL.md`.
 
 ### Keep the implementation small
 
-Read a principle only when its trigger applies or the user names it. Do not load the whole directory. Report decisions when they help explain the result, without an inventory of applied principles.
+Read a principle only when its trigger applies or the user names it, then name the concrete decision it changed in the final report. Do not load the whole directory.
 
 - Read [Laziness Protocol](references/principles/laziness-protocol.md) before a refactor or a new abstraction.
 - Read [Subtract Before You Add](references/principles/subtract-before-you-add.md) before a rewrite or migration.
@@ -107,6 +115,8 @@ Bound panels to native capacity. A panel with no `.cstack/models.json` entry def
 Follow the runtime contract's direct inheritance path when unconfigured; otherwise resolve the delegate's role with its trusted helper and preserve both `model` and `reasoning_effort` through the final native dispatch. Missing settings inherit. Report unsupported selections or dispatch capabilities without silently substituting or dropping effort.
 
 Use `simple edits` for small bounded implementation changes and `documentation` for documentation-only delegates. Generic review or judgment uses `judgment and prose`. Use `hardest tasks` only for explicitly complex architecture, not difficult bugs or algorithms. Other implementation uses `feature, refactoring`; debugging uses `bug-fix`, `perf-issue` or `hillclimb` as appropriate. Specialized investigators, synthesizers and panels use their named setup roles. Pass the selected role into Swarm so its generic `swarm workers` default cannot replace it.
+
+Before presenting a code change as ready for PR creation or merge, obtain a review from an actor who did not write it when native review is available. A parent reviewing a delegate's diff satisfies this; a parent who wrote the code needs a separate reviewer. Reuse a completed review for the same scope and unchanged patch. If native review is unavailable, report the verification gap and do not call self review independent.
 
 ### Keep state local
 

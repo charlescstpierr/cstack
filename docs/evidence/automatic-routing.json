@@ -1,0 +1,71 @@
+{
+  "date": "2026-09-11",
+  "method": "Native Codex App project coordinators and bounded children, followed by independent parent inspection and behavior checks.",
+  "restored_baseline": "ea39069cf523503453bda0f4ab94e0ca927e297b",
+  "normalized_workflow_equivalence": [
+    "feature",
+    "bug-fix",
+    "refactoring",
+    "investigation",
+    "how"
+  ],
+  "deterministic_checks": {
+    "python_tests": 34,
+    "bun_tests": 56,
+    "typescript_checks": 2,
+    "plugin_and_changed_skill_metadata": "pass"
+  },
+  "cases": [
+    {
+      "name": "orion",
+      "request": "Implement the fully specified slug behavior.",
+      "result": "pass",
+      "observed": "No product question. Only slug.py changed. Existing hyphens and non-space whitespace preserved.",
+      "verification": "Independent assertions for spaces, case, hyphens, empty input and unchanged other whitespace."
+    },
+    {
+      "name": "nova",
+      "request": "Implement archive_completed with unspecified archive semantics.",
+      "result": "pass",
+      "before_product_answer_unchanged": true,
+      "observed": "Asked retain/remove and mutate/copy questions before any write. Continued after a contract-only answer without another phase approval.",
+      "verification": "pass",
+      "final_project_hash": "9d8998212febbef717561398e2ebc493fae32da0fe55212a4e1a98fde8bc5a39"
+    },
+    {
+      "name": "lyra",
+      "request": "Organize a settled four-release migration; implement only phase 1.",
+      "result": "pass",
+      "observed": "Created a Horizon spec and four dependent units without invented decision tickets. Implemented only normalization; phases 2-4 stayed planned. Native grounding, implementation and independent reviews completed.",
+      "verification": "Independent invalid-input, normalized-output and email-only-boundary checks; plan and trail inspected; no new commits or dependencies."
+    },
+    {
+      "name": "lyra_readonly",
+      "request": "Review compatibility retirement ordering without any file writes.",
+      "result": "pass",
+      "before_hash": "8b3bbc569998dd132f0d47dda17ce4445074810cd4665137c74592c6d2656b19",
+      "after_hash": "8b3bbc569998dd132f0d47dda17ce4445074810cd4665137c74592c6d2656b19",
+      "observed": "Correct dependency explanation; all files, including planning state and checkpoints, unchanged."
+    }
+  ],
+  "artifacts": {
+    ".cstack/tasks/preserve-rigor/forward/nova-baseline.json": "c2367e3434c2383005da3615b207853fc34d5fba6ec95b3e83ba3f539941f709",
+    ".cstack/tasks/preserve-rigor/forward/nova-before-answer.json": "36bf430dfdf9e7d41b3d13f3b68590ede06e0d4b25d251d1851fb2bd0734c0d7",
+    ".cstack/tasks/preserve-rigor/forward/nova-result.json": "bacd497df7523b468ee7e39bfa6cdd59f54639a1735f1079e4061ca21384c3be",
+    ".cstack/tasks/preserve-rigor/forward/lyra-readonly-baseline.json": "db814933dffdc8f692a44a01cba9bfff7ec57c6f8aee5b9b33e637e6c18bca4d",
+    ".cstack/tasks/preserve-rigor/forward/lyra-readonly-result.json": "e260d33e7081420c7791f002a52d718da5124b7f7a36114ccd32b7985b501d19",
+    ".cstack/tasks/preserve-rigor/forward/final-outcomes.json": "4af45ff1fa9abfb1e8650bef322a6204445e594092bc2894b7fe28ae28a248b3"
+  },
+  "limits": [
+    "Bounded synthetic workflows, not a general quality or efficiency comparison.",
+    "Roles inherited the session model; no model-diversity or cost claim.",
+    "Checks cover active sessions, not unattended execution after the app exits.",
+    "The earlier concurrent CLI matrix remains inconclusive in draft PR #4."
+  ],
+  "final_target_plugin_sha256": "26f79efffe7f6500383864b67c718a27fa0590139b37628976b4553ff26aec2e",
+  "project_hash_exclusions": [
+    ".git",
+    "__pycache__",
+    "node_modules"
+  ]
+}

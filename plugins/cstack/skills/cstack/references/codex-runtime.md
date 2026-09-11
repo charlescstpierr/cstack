@@ -14,7 +14,9 @@ The 23 principles live in `principles/` beside this runtime contract. They are s
 
 Project setup may create a passive, delimited cstack block in the project's `AGENTS.md` and project guidance in `docs/agents/cstack.md`. Read that guidance only when cstack is explicitly selected. Setup preserves surrounding instructions and does not activate cstack, create native goals or change global files. Existing `CLAUDE.md` is preserved; a project may reference its shared instructions without duplicating them. The project's documentation conventions may place an authorized glossary or ADR outside `.cstack/`; operational maps, checkpoints and transient evidence remain inside `.cstack/`.
 
-The optional preparation skills `clarify`, `domain`, `horizon` and `audit-architecture` do not become mandatory stages of ordinary code work. `clarify` and `domain` may compose each other from an explicitly selected preparation workflow such as `horizon`. Their Plan/read-only branches return drafts in the conversation and write no files.
+When the user selects `$cstack:cstack`, its coordinator automatically uses `clarify` for material unresolved requirements and `horizon` for large goals needing a durable map across phases, PRs, or sessions. Clear ordinary work goes directly to its playbook. Preparation can use `domain` for material vocabulary decisions; `audit-architecture` remains a focused requested survey. These routes stay inside the explicit cstack task and do not activate in unrelated work.
+
+After routed preparation resolves, the cstack coordinator continues the already-authorized playbook without another phase approval. Horizon can return successive eligible autonomous prerequisites to that coordinator; unresolved human decisions remain open. Directly selected preparation skills retain their bounded scope. Plan/read-only requests return drafts without file writes or implementation. None of these routes automatically creates a native goal, scheduler, remote ticket, PR, merge, or deployment authorization.
 
 ## Tools and delegation
 

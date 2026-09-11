@@ -1,13 +1,13 @@
 ---
 name: domain
-description: "Use when explicitly selected as $cstack:domain or routed by an explicitly selected cstack preparation skill to settle project vocabulary and record authorized glossary entries or sparse ADRs."
+description: "Use when explicitly selected as $cstack:domain or routed during an explicitly selected cstack task to settle project vocabulary and record authorized glossary entries or sparse ADRs."
 ---
 
 # Domain
 
 Runtime: [`../cstack/references/codex-runtime.md`](../cstack/references/codex-runtime.md).
 
-Use this skill when the user explicitly selects `$cstack:domain`, or when an explicitly selected cstack preparation skill routes here (`$cstack:horizon`, `$cstack:clarify`, or `$cstack:domain`). Do not enter it silently for an ordinary code task. It is for active domain work: resolving vocabulary, checking model boundaries, and recording a small number of durable decisions. Merely reading a glossary is not this skill.
+Use this skill when the user explicitly selects `$cstack:domain`, or when the active `$cstack:cstack` coordinator or its preparation skills route a material terminology decision here. It is for active domain work: resolving vocabulary, checking model boundaries, and recording a small number of durable decisions. Merely reading a glossary is not this skill.
 
 Read `docs/agents/cstack.md` if the project has it; it may define local conventions, but its absence is fine. Do not require setup, Matt Pocock skills, global skills, or another plugin.
 

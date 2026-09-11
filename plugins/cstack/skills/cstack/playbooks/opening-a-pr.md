@@ -8,7 +8,7 @@ Run this playbook only when the user authorized PR creation. Preparing commits o
 
 **Commits.** Build small, ordered commits when commits are in scope. Each commit must be coherent and pass its relevant check. Amend when a correction belongs to the commit just made. Create a new commit for a separable change.
 
-**Review.** Read and apply `../../no-comments/SKILL.md` before review. Read and apply `../../technical-writing/SKILL.md` and `../../unslop/SKILL.md` to the title, description, and commit body. Inspect the diff for generated filler, redundant comments, speculative abstractions, and unrelated edits. Do not depend on an unavailable cleanup integration.
+**Review.** Read and apply `../../no-comments/SKILL.md` for a dedicated comment-review request. Read and apply `../../technical-writing/SKILL.md` and `../../unslop/SKILL.md` to the title, description, and commit body. Inspect the full diff, including comments and suppressions, for generated filler, redundant comments, speculative abstractions, and unrelated edits. Do not depend on an unavailable cleanup integration.
 
 **Titles.** Use `type(scope): subject`. Choose `feat`, `fix`, `docs`, `refactor`, `test`, `chore`, or `perf`. Use the changed area as the scope. Keep the subject short and imperative. Do not add a trailing period.
 
