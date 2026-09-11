@@ -6,7 +6,7 @@ Run this playbook only when the user authorized PR creation. Preparing commits o
 
 **Worktree.** Use a clean git worktree based on the intended base branch. Give parallel writers separate worktrees and branches. Preserve unrelated user changes. Do not reset or discard a dirty tree to make room.
 
-**Commits.** Build small, ordered commits when commits are in scope. Each commit must be coherent and pass its relevant check. Amend when a correction belongs to the commit just made. Create a new commit for a separable change.
+**Commits.** Follow the runtime contract’s [local commit rule](../references/codex-runtime.md#local-commits). Authorized implementation includes small, ordered local commits by default; do not defer them until PR creation. Each commit must be coherent and pass its relevant check. Amend when a correction belongs to the commit just made. Create a new commit for a separable change.
 
 **Review.** Read and apply `../../no-comments/SKILL.md` for a dedicated comment-review request. Read and apply `../../technical-writing/SKILL.md` and `../../unslop/SKILL.md` to the title, description, and commit body. Inspect the full diff, including comments and suppressions, for generated filler, redundant comments, speculative abstractions, and unrelated edits. Do not depend on an unavailable cleanup integration.
 
