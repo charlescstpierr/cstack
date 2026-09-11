@@ -61,8 +61,8 @@ Pass context by repository path or by quoting only the necessary upstream result
 3. **Pilot one unit.** Take one representative unit through brief, implementation, verification, stack entry, ledger row, and authorized delivery. Use the pilot to test the brief, unit size, and check recipe. For cheap repeated units, the first ordinary unit is the pilot.
 4. **Scale with a rolling window.** Refill native subagent slots as owners finish. Start dependent work only after its required context exists. Audit one sampled brief per track without blocking the current wave.
 5. **Drain results.** Use the queue procedure below at each safe boundary.
-6. **Integrate continuously.** Integrate verified units from the start. Keep one topology writer per stack. Advance `frontier.json` only after a confirmed merge or a reported new head. Create PRs and merge only when the user authorized those operations.
-7. **Close.** Reconcile every assigned unit to a terminal row. Verify the predicate on the real artifact. Confirm that every delivered PR has a verdict for its current head. Audit the decision trail and leave `.cstack/orchestrate/<project-slug>/` intact.
+6. **Integrate continuously.** Integrate verified units from the start. Keep one topology writer per stack. Advance `frontier.json` only after a confirmed merge or a reported new head. Create PRs and merge only when the user authorized those operations. After a unit's confirmed merge and verification, reconcile its worktree users; apply the **After a completed delivery** mode in [worktree cleanup](worktree-cleanup.md) once its owners, verifiers and dependents have released the recorded task-created path.
+7. **Close.** Reconcile every assigned unit to a terminal row. Verify the predicate on the real artifact. Confirm that every delivered PR has a verdict for its current head. Audit the decision trail and preserve `.cstack/orchestrate/<project-slug>/` in a surviving workspace. Finish any eligible post-merge cleanup and report retained worktrees with their reasons.
 
 #### Queue and drain
 

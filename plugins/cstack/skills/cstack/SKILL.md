@@ -47,7 +47,7 @@ Read the matched playbook in full and copy its steps into the current plan befor
 - Read `playbooks/session-pickup.md` to resume work from local state, a branch, or conversation context.
 - Read `playbooks/pause-safely.md` to leave local work in a resumable state.
 - Read `playbooks/multi-phase-plan.md` for a plan that spans phases or PRs.
-- Read `playbooks/worktree-cleanup.md` for disk inspection and authorized cleanup of worktrees or simulators.
+- Read `playbooks/worktree-cleanup.md` after a completed, merged delivery to clean its released temporary worktrees, or for requested disk cleanup.
 - Read `playbooks/opening-a-pr.md` only when the user has authorized creating a PR. Other playbooks may prepare a reviewable branch without creating one.
 
 If no playbook fits, read and apply `../figure-it-out/SKILL.md`. Use `playbooks/orchestrate.md` only when the work is a continuing program rather than one session-sized task.
@@ -141,5 +141,7 @@ For long, autonomous, or multi-phase work, read and apply `../show-me-your-work/
 Keep comments only for a non-obvious reason that the code cannot express. Preserve licenses, public contracts, accessibility rationale, and verified tool constraints. Read `references/agents/comment-reviewer.md` for a dedicated comment review.
 
 ### Write the report
+
+After a verified delivery has merged, the coordinator runs the **After a completed delivery** mode in [worktree cleanup](playbooks/worktree-cleanup.md) before the final handoff. This covers task-created worktrees recorded under the runtime contract, without another phase confirmation. Delegates report release and evidence to that coordinator; they do not delete their own active worktrees. Preserve user-requested worktrees and report any held path with its reason.
 
 Lead with the user-visible result. State what changed, the evidence, and any real limit. Link only artifacts read or produced in the current task. Use a full GitHub PR URL when a PR exists.

@@ -51,6 +51,8 @@ Use only model/effort pairs confirmed available now; a stale cache or saved choi
 
 Use the target workspace `.cstack/` for generated state. Keep each task's checkpoint, decisions and orchestration store in a separate task-specific subdirectory. Use a known task ID or create a unique directory. The checkpoint names the goal, authorized actions, branch/worktree, current commit, completed checks, outstanding work and artifact paths. Do not include credentials or unrelated conversation content.
 
+When creating a temporary worktree, record its absolute path, branch, owning task/unit and agents in that checkpoint. Attach its PR and merged-head receipt when available, and identify task-created disposable outputs and evidence to preserve. Existing or reused worktrees are not automatically owned. Writers and verifiers report release only after their descendants and processes no longer need the path. The coordinator owns removal under [worktree cleanup](../playbooks/worktree-cleanup.md); preserve the checkpoint and evidence in a surviving workspace before removing their original worktree.
+
 Run helper scripts through the plugin's writable launcher:
 
 ```sh
@@ -72,6 +74,8 @@ No external integration is required for basic code work. Discover connected GitH
 Use available browser/computer tools for UI verification, or a project's existing harness. If no UI tool is available, report the missing runtime evidence. Do not claim a screenshot or test that was not produced. Skill authoring can use the system skill-creator if available; otherwise write a self-contained SKILL.md and validate its metadata and behavior directly. Code cleanup uses the repository's formatter/linter and a scoped review, without requiring a separate cleanup plugin.
 
 Activating a workflow does not authorize posting messages, opening PRs, merging, publishing, deploying or deleting data. Perform these only within the user's concrete request and available permissions. Status checks and reviews do not imply permission to merge. No automatic permission handoff for work already authorized. Read-only checks must not enable auto-merge or change PR state. Missing or unrecognized CI/review evidence must fail closed.
+
+An authorized merge-and-deliver task includes the cleanup playbook's safe removal of its own temporary, integrated, released worktrees. No extra confirmation is needed for that bounded finalization. This does not authorize discarding unsaved work, deleting branches, cleaning unrelated worktrees or overriding a retention request.
 
 ## Platform limits
 

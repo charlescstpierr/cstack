@@ -38,4 +38,8 @@ Le [playbook d'ouverture de PR](../../skills/cstack/playbooks/opening-a-pr.md) p
 
 Le [playbook Shipping](../../skills/cstack/playbooks/shipping.md) vérifie chaque tête et peut préparer l'ordre de livraison. Le merge ou le déploiement reste une action externe et irréversible qui demande l'autorisation correspondante.
 
+## Terminer après la fusion
+
+Après une livraison autorisée, fusionnée et vérifiée, le coordinateur appelle automatiquement le [playbook de nettoyage](../../skills/cstack/playbooks/worktree-cleanup.md). Il retire les worktrees temporaires créés pour cette tâche une fois libérés par leurs agents et processus, sans demander une nouvelle confirmation. Les branches et les preuves sont conservées. Un worktree encore utilisé, modifié, verrouillé, contenant des fichiers à préserver ou dont l'intégration reste incertaine est gardé avec une raison dans le rapport. Une PR ouverte ou une pile remise à l'opérateur reste disponible pour la suite du travail.
+
 Suivant : [travailler pendant votre absence](./07-overnight.md).
