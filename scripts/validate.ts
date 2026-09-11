@@ -59,6 +59,7 @@ export function validate(root: string): { skills: number; sourceFiles: number } 
   requireValue(inventory.commit === "27e2a62ff94f9af4b5e68435e41cdceacadb840c" && coverage.commit === inventory.commit, "upstream commit mismatch");
   requireValue(Array.isArray(inventory.files) && Array.isArray(coverage.files), "missing source inventory");
   const sourcePaths = new Set<string>();
+  const principleTargets = new Set<string>();
   for (const item of inventory.files) {
     requireValue(record(item) && typeof item.path === "string" && typeof item.git_blob === "string", "invalid source item");
     requireValue(item.path.startsWith("pstack/") && /^[a-f0-9]{40}$/.test(item.git_blob) && !sourcePaths.has(item.path), "invalid or duplicate upstream path/blob");
@@ -71,11 +72,18 @@ export function validate(root: string): { skills: number; sourceFiles: number } 
     requireValue(sourcePaths.has(item.source) && !covered.has(item.source), `unknown or repeated source: ${item.source}`);
     requireValue(["ported", "retained", "replaced", "unsupported"].includes(String(item.status)), `invalid status for ${item.source}`);
     requireValue(typeof item.reason === "string" && item.reason.length > 0, `missing porting reason for ${item.source}`);
+    const principle = /^pstack\/skills\/principle-(.+)\/SKILL\.md$/.exec(item.source);
+    if (principle) {
+      const expected = `plugins/cstack/skills/cstack/references/principles/${principle[1]}.md`;
+      requireValue(item.target === expected, `${item.source}: principle port target must be ${expected}`);
+      principleTargets.add(expected.slice("plugins/cstack/".length));
+    }
     const target = resolve(root, item.target);
     requireValue(existsSync(target) && inside(root, target), `missing or escaping port target ${item.target}`);
     covered.add(item.source);
   }
   requireValue(covered.size === sourcePaths.size, "source coverage is incomplete");
+  requireValue(principleTargets.size === 23, `expected 23 principle ports, got ${principleTargets.size}`);
 
   const additions = json(join(plugin, "sources/matt-pocock.json"));
   requireValue(additions.repository === "https://github.com/mattpocock/skills"
@@ -101,7 +109,19 @@ export function validate(root: string): { skills: number; sourceFiles: number } 
 
   const all = files(plugin);
   const skills = all.filter((path) => path.endsWith("/SKILL.md") && relative(plugin, path).startsWith("skills/"));
-  requireValue(skills.length === 51, `expected 51 skill entrypoints, got ${skills.length}`);
+  requireValue(!skills.some((path) => relative(join(plugin, "skills"), dirname(path)).startsWith("principle-")), "principle skill entrypoints were moved to references");
+  requireValue(skills.length === 28, `expected 28 skill entrypoints, got ${skills.length}`);
+  const principleRefs = all.filter((path) => path.endsWith(".md") && relative(plugin, path).startsWith("skills/cstack/references/principles/"));
+  requireValue(principleRefs.length === 23, `expected 23 principle references, got ${principleRefs.length}`);
+  for (const path of principleRefs) {
+    const target = relative(plugin, path);
+    requireValue(principleTargets.has(target), `${target}: principle reference is not covered by PORTING.json`);
+  }
+  const mainSkill = readFileSync(join(plugin, "skills/cstack/SKILL.md"), "utf8");
+  for (const target of principleTargets) {
+    const href = relative("skills/cstack", target);
+    requireValue(mainSkill.includes(`](${href})`), `${target}: principle reference is not discoverable from cstack/SKILL.md`);
+  }
   const names = new Set<string>();
   for (const path of skills) {
     const text = readFileSync(path, "utf8");
@@ -118,6 +138,10 @@ export function validate(root: string): { skills: number; sourceFiles: number } 
     const policy: unknown = Bun.YAML.parse(readFileSync(join(dirname(path), "agents/openai.yaml"), "utf8"));
     requireValue(record(policy) && record(policy.policy) && policy.policy.allow_implicit_invocation === false, `${path}: skill must be explicit-only`);
     requireValue(record(policy.interface) && typeof policy.interface.display_name === "string" && typeof policy.interface.short_description === "string", `${path}: missing skill UI metadata`);
+    const summary = policy.interface.short_description.trim();
+    requireValue(summary.length >= 25 && summary.length <= 64, `${path}: skill UI description length must be 25-64 characters`);
+    // Catch dangling separators/connectives; prose still needs editorial review.
+    requireValue(!/(?:[,;:]|\b(?:a|an|the|and|or|with|for|to|of|in|your))$/i.test(summary), `${path}: truncated skill UI description`);
     requireValue(typeof policy.interface.default_prompt === "string" && policy.interface.default_prompt.includes(`$cstack:${name}`), `${path}: default prompt must use its canonical invocation`);
     requireValue(text.includes("codex-runtime.md"), `${path}: missing runtime contract link`);
   }
@@ -135,6 +159,8 @@ export function validate(root: string): { skills: number; sourceFiles: number } 
     }
     requireValue(!/\b(?:omx|oh-my-codex)\b/i.test(text), `${path}: forbidden orchestration dependency`);
     requireValue(!/(?:~\/\.cursor\/|subagent_type\s*:|run_in_background\s*:|claude-fable-5|grok-4\.6|\.cursor\/settings\.json)/i.test(text), `${path}: unported Cursor execution contract`);
+    requireValue(!/\$cstack:principle-/i.test(text), `${path}: stale principle invocation`);
+    requireValue(!/\bprinciple-[a-z0-9-]+\/SKILL\.md/i.test(text), `${path}: stale principle skill reference`);
   }
   const license = readFileSync(join(plugin, "LICENSE"), "utf8");
   requireValue(license.includes("Copyright (c) 2026 Lauren Tan") && license.includes("Permission is hereby granted"), "original license missing");

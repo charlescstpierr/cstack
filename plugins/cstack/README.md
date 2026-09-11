@@ -8,6 +8,8 @@ Dans le sélecteur, cherchez `$cstack` et choisissez **cstack**. Pour une comman
 
 Activez `$cstack:cstack` dans une tâche pour choisir un workflow d'investigation, d'implémentation, de revue ou de livraison vérifiée. Le mode reste limité à cette tâche et se désactive sur demande. L'installation seule n'active aucun skill.
 
+Le plugin expose 28 skills. Ses [23 principes](docs/guide/08-principles.md) sont des références consultées au besoin, sans commandes individuelles dans le sélecteur. Pour en demander un, nommez-le dans votre demande à `$cstack:cstack`. Les tâches simples s'exécutent directement ; les workflows d'exploration, de conception et de délégation restent disponibles quand ils apportent une information ou une vérification utile.
+
 `$cstack:setup-cstack` affiche des recommandations de modèle et d'effort par rôle à accepter, personnaliser ou remplacer par l'héritage ; vous pouvez aussi annuler. Les choix sélectionnés sont validés dans le catalogue courant puis enregistrés localement dans `.cstack/models.json`, en préservant les autres réglages. Par défaut, les sous-agents héritent de la session, dont le modèle reste inchangé. Voir le [tableau du setup](docs/guide/01-setup.md#configurer-cstack). Les instructions du projet, le mode Plan et les autorisations Codex restent prioritaires.
 
 Le [guide](docs/guide/README.md) présente les commandes et les workflows. Le [contrat natif](skills/cstack/references/codex-runtime.md) décrit les sous-agents, l'état local, les scripts et les limites des intégrations. Les webhooks Grok Bot et le [pack Benny](automations/benny/README.md) ne sont pas fournis comme services natifs.

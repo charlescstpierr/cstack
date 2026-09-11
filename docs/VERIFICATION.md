@@ -2,6 +2,25 @@
 
 Environnement de référence : Linux, Codex CLI 0.153.4, Bun 1.4.0, Python 3.13. Vérifications réalisées le 9 septembre 2026. Ce fichier décrit les preuves observées ; une validation de manifeste ne constitue pas une validation de comportement.
 
+## Références internes
+
+Vérifications du 10 septembre 2026, contre le commit `ea39069`. Le paquet expose 28 skills et conserve les 23 principes dans `skills/cstack/references/principles/`. La comparaison des corps de texte, après normalisation des liens et du préambule d'activation, conserve leur contenu de fond. Les 28 noms, leurs politiques d'invocation explicite, les sources du setup et celles des assistants d'exécution sont inchangés.
+
+Les résumés d'interface tronqués sont corrigés. Le validateur contrôle leur longueur de 25 à 64 caractères et quelques terminaisons incomplètes ; cette garde ne prétend pas vérifier toute la grammaire. Le fichier `AGENTS.md` ajoute une carte du dépôt et les commandes de vérification. Les nouveaux ajustements du routage complexe et leur comparaison à trois stratégies restent dans une PR brouillon distincte, liée au ticket #1.
+
+Les 90 tests passent : 34 avec `python3 -m unittest discover -s tests -p 'test_*.py'`, puis 56 avec `bun test`. Le validateur `bun scripts/validate.ts` contrôle les 28 skills, les 23 références, leur présence dans le routeur et la couverture des 158 fichiers upstream. Les tests de mutation rejettent une référence manquante, un lien de routage retiré, une provenance incorrecte, un ancien chemin ou une ancienne invocation, ainsi qu'une ancienne entrée de skill réintroduite. Les contrôles TypeScript du dépôt et des assistants, les validateurs système du plugin et des 28 skills, et `git diff --check` passent. La revue indépendante du diff n'a relevé aucun problème exploitable.
+
+Deux essais natifs de la version de base ont terminé : modification d'un parseur de port avec assertions exécutées, puis revue Boundary Discipline en lecture seule avec empreinte du projet conservée. Les sessions héritent de `gpt-6-astra` / `ultra`. Aucun sous-agent accepté n'est enregistré ; les réponses signalent une délégation indisponible, ce qui ne permet pas de comparer le coût de délégation. Les premiers essais échoués sur les permissions SQLite/réseau sont exclus des résultats.
+
+Après autorisation explicite de l'utilisateur, les deux essais de la nouvelle version ont été exécutés. Le premier passage a révélé que la consigne de lire `no-comments` avant toute revue activait inutilement la revue de commentaires dans une question de validation. Le routeur réserve désormais ce workflow aux demandes de revue de commentaires dédiées. Les deux scénarios ont ensuite été rejoués depuis leurs commits initiaux, sans réutiliser le code déjà corrigé.
+
+- Le parseur produit accepte les ports de 1 à 65535 et lève `ValueError("invalid port")` pour les entrées invalides. Le parent a réexécuté `verify_parser.py` et 17 assertions indépendantes. Seuls `parser.py` et `verify_parser.py` ont changé ; le commit initial du projet temporaire est conservé.
+- La revue Boundary Discipline place la validation dans `load_config`, cite le README et les symboles observés, et explique le rôle de `connect`. Les empreintes avant/après et la relecture du projet confirment la lecture seule ; aucun commit n'a été créé.
+
+Les traces des deux essais finaux chargent les nouvelles références, notamment `references/principles/boundary-discipline.md`, sans charger `how`, `architect`, `no-comments` ou le prompt de revue de commentaires. La revue en lecture seule tente encore une délégation facultative, que le CLI refuse avec `no thread with id` pour la session parente. cstack signale cette limite et termine au premier plan, conformément à son contrat. Ce résultat valide les tâches demandées et leur repli, mais ne prouve pas l'exécution de sous-agents dans ce banc CLI. Aucune amélioration générale de durée ou de tokens n'est revendiquée.
+
+Les demandes, traces, empreintes et résultats vérifiés restent sous `.cstack/tasks/native-references/behavior/`. `proposed-20260910T200842Z` conserve le premier passage ; `final-20260910/results/summary.json` et `final-20260910/verified-outcomes.json` décrivent les deux essais finaux.
+
 ## Intégration 0.3.0
 
 Base de comparaison : `a373eca2e003a9bd2e4b2e90ac7f28a250108f6c` (0.2.0). Les quatre nouveaux skills sont explicites. Les playbooks de correction et de développement, `how`, `why`, et le helper `models.py` conservent leurs sources. Les 23 principes concernés changent seulement leur phrase décrivant le setup passif.

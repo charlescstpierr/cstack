@@ -1,6 +1,6 @@
 interface:
   display_name: "how"
-  short_description: "Use for \"how does X work\", code walkthroughs before changing"
+  short_description: "Explain code flow, boundaries, and ownership"
   default_prompt: "Use $cstack:how for this task."
 policy:
   allow_implicit_invocation: false

@@ -10,6 +10,8 @@ $cstack:cstack les notifications sont écrites deux fois après un retry. Reprod
 
 Le routeur identifie le type de travail, reprend les contraintes explicites et prépare une séquence contrôlable. Les playbooks vivent dans [le répertoire cstack](../../skills/cstack/playbooks/). Ils couvrent notamment les bugs, fonctionnalités, refactorings, performances, investigations, prototypes, vérifications et reprises de session.
 
+Pour une tâche simple et définie, Codex lit les fichiers concernés, fait le travail et vérifie le résultat directement. Les étapes d'exploration, de conception et de coordination s'ajoutent selon la complexité et les tâches indépendantes disponibles. Les [principes](./08-principles.md) sont des références à consulter au moment utile, pas une liste à charger intégralement.
+
 ## Décrire l'objectif, pas la cérémonie
 
 Préférez le résultat observable :

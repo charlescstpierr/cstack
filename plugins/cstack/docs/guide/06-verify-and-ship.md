@@ -8,7 +8,7 @@
 $cstack:cstack ajoute la sortie JSON. La sortie texte reste identique, le JSON se parse et les deux fonctionnent sur le projet exemple. Montre les preuves.
 ```
 
-[`principle-prove-it-works`](../../skills/principle-prove-it-works/SKILL.md) et [`$cstack:blast-radius`](../../skills/blast-radius/SKILL.md) ramènent la vérification au produit, à la commande, aux valeurs écrites ou au profil réel.
+[Prove It Works](../../skills/cstack/references/principles/prove-it-works.md) et [`$cstack:blast-radius`](../../skills/blast-radius/SKILL.md) ramènent la vérification au produit, à la commande, aux valeurs écrites ou au profil réel.
 
 ## Créer une compétence de vérification du projet
 

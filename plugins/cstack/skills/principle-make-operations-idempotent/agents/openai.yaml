@@ -1,6 +1,0 @@
-interface:
-  display_name: "principle-make-operations-idempotent"
-  short_description: "Apply when designing commands, lifecycle steps, or processing"
-  default_prompt: "Use $cstack:principle-make-operations-idempotent for this task."
-policy:
-  allow_implicit_invocation: false

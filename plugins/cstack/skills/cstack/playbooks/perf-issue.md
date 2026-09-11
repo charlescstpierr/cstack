@@ -16,7 +16,7 @@ Follow [the Codex runtime contract](../references/codex-runtime.md).
    - **Lazy evaluation.** Cost lands on results that are never used or not needed yet (eager init on the boot path, rendering offscreen items). Defer the work until first use.
    - **Scheduling.** The work must happen, but not during the interactive moment. Move it to where nobody is waiting: idle callbacks, a background warmup after boot, precompute before the user arrives, cleanup after the frame commits. The win is perceived latency, so measure the interactive path, not total work done.
 3. Plan the fix from the trace. If it crosses a function boundary, read and apply `../../architect/SKILL.md` first. Delegate a bounded implementation when native capacity permits. Models inherit unless `.cstack/models.json` supplies an available `perf-issue` override. Review the diff. Capture a post-fix trace.
-   Apply the **sequence-verifiable-units** principle skill, verifying each attempt before trying the next.
+   Apply the [Sequence work into verifiable units](../references/principles/sequence-verifiable-units.md) principle reference, verifying each attempt before trying the next.
 4. Parse and compare the artifacts (JSON to sqlite, diff). "Inconclusive" or wrong-surface is not a pass. Flag it.
 5. Cite the measurement in the PR.
 6. Run **Opening a PR** only when the user authorized PR creation.

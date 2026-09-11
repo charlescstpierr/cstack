@@ -1,6 +1,6 @@
 interface:
   display_name: "tdd"
-  short_description: "Use only when the user explicitly asks for TDD, a failing test,"
+  short_description: "Build behavior with a failing check before the fix"
   default_prompt: "Use $cstack:tdd for this task."
 policy:
   allow_implicit_invocation: false

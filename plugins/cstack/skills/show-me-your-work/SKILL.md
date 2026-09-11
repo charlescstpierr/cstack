@@ -50,7 +50,7 @@ Export a sanitized copy to a tracked report path only when the user explicitly r
 
 - One row is one decision or checkpoint.
 - Append-only. A wrong call gets a new row that supersedes it. Never edit or delete history.
-- Prefer evidence produced by committed scripts over hand-made one-offs (the **encode-lessons-in-structure** principle skill).
+- Prefer evidence produced by committed scripts over hand-made one-offs (the [Encode Lessons in Structure](../cstack/references/principles/encode-lessons-in-structure.md) principle reference).
 
 ## Audit the log against the task record
 

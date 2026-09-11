@@ -1,6 +1,6 @@
 interface:
   display_name: "maintain-verification-skill"
-  short_description: "Periodic pass that keeps a project's verification skill and"
+  short_description: "Keep project verification steps accurate and runnable"
   default_prompt: "Use $cstack:maintain-verification-skill for this task."
 policy:
   allow_implicit_invocation: false

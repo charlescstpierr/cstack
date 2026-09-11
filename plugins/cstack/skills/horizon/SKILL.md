@@ -9,7 +9,7 @@ Use only when the user explicitly invokes `$cstack:horizon` for work whose desti
 
 Runtime: [`../cstack/references/codex-runtime.md`](../cstack/references/codex-runtime.md).
 
-Read [the artifact templates](references/templates.md) before creating or updating local state. When they are installed, use the sibling [`clarify`](../clarify/SKILL.md) skill to settle the destination and the sibling [`domain`](../domain/SKILL.md) skill to settle project terms. Use [`how`](../how/SKILL.md) for read-only codebase facts and [`principle-model-the-domain`](../principle-model-the-domain/SKILL.md) when a decision depends on a state shape. If a sibling is unavailable, keep the same boundary in the parent session; do not invent a replacement framework.
+Read [the artifact templates](references/templates.md) before creating or updating local state. When they are installed, use the sibling [`clarify`](../clarify/SKILL.md) skill to settle the destination and the sibling [`domain`](../domain/SKILL.md) skill to settle project terms. Use [`how`](../how/SKILL.md) for read-only codebase facts and [Model the Domain](../cstack/references/principles/model-the-domain.md) when a decision depends on a state shape. If a sibling is unavailable, keep the same boundary in the parent session; do not invent a replacement framework.
 
 ## Hard boundaries
 

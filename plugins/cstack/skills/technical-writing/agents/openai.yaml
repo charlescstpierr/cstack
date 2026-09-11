@@ -1,6 +1,6 @@
 interface:
   display_name: "technical-writing"
-  short_description: "Layered technical-writing standard: Diátaxis structure, Google"
+  short_description: "Write clear documentation, plans, and PR descriptions"
   default_prompt: "Use $cstack:technical-writing for this task."
 policy:
   allow_implicit_invocation: false

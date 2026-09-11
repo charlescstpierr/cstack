@@ -45,7 +45,7 @@ Le but est seulement la reproduction. Ne corrige pas encore.
 ```
 
 ```text
-Applique `principle-prove-it-works` et montre la sortie réelle, pas seulement le log de build.
+Applique le principe « Prove It Works » et montre la sortie réelle, pas seulement le log de build.
 ```
 
 ## Obtenir une reformulation simple

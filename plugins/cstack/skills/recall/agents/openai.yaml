@@ -1,6 +1,6 @@
 interface:
   display_name: "recall"
-  short_description: "Use for $cstack:recall, 'recall my work on X', 'catch me up',"
+  short_description: "Reconstruct recent work from available project evidence"
   default_prompt: "Use $cstack:recall for this task."
 policy:
   allow_implicit_invocation: false

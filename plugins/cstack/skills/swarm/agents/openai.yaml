@@ -1,6 +1,6 @@
 interface:
   display_name: "swarm"
-  short_description: "Fan out N parallel workers, drain them, and return one report."
+  short_description: "Distribute independent tasks and verify combined results"
   default_prompt: "Use $cstack:swarm for this task."
 policy:
   allow_implicit_invocation: false

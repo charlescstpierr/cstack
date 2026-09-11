@@ -1,6 +1,0 @@
-interface:
-  display_name: "principle-model-the-domain"
-  short_description: "Apply when writing stateful logic, or when code branches a lot"
-  default_prompt: "Use $cstack:principle-model-the-domain for this task."
-policy:
-  allow_implicit_invocation: false

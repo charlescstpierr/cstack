@@ -1,6 +1,6 @@
 interface:
   display_name: "arena"
-  short_description: "Spawn N parallel candidates at the same task, pick a base,"
+  short_description: "Compare independent proposals and synthesize a result"
   default_prompt: "Use $cstack:arena for this task."
 policy:
   allow_implicit_invocation: false

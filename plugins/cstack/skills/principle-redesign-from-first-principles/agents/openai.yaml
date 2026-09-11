@@ -1,6 +1,0 @@
-interface:
-  display_name: "principle-redesign-from-first-principles"
-  short_description: "Apply when integrating a new requirement into an existing"
-  default_prompt: "Use $cstack:principle-redesign-from-first-principles for this task."
-policy:
-  allow_implicit_invocation: false

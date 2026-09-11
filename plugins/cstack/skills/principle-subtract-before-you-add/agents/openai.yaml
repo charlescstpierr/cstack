@@ -1,6 +1,0 @@
-interface:
-  display_name: "principle-subtract-before-you-add"
-  short_description: "Apply when sequencing an addition, refactor, or rewrite. Remove"
-  default_prompt: "Use $cstack:principle-subtract-before-you-add for this task."
-policy:
-  allow_implicit_invocation: false
