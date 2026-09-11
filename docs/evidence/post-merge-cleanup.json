@@ -1,0 +1,114 @@
+{
+  "date": "2026-09-11",
+  "base_commit": "ebddda6e64e502e11b0851339b9a9e3f1f3a219e",
+  "final_plugin_sha256": "65348b8dec15e20bf54be80fe71990ec837a8821d2b99f179da6dacefa59a2b8",
+  "plugin_hash_policy": "sorted tracked repository-relative plugin path + NUL + bytes + NUL",
+  "fixture_generator": "scripts/worktree-cleanup-scenarios.py",
+  "fixture_generator_sha256": "51c71cc311e8bd9132ed017ecdd45f57206d95682938795707b7e5043f4af6e7",
+  "deterministic_checks": {
+    "python_tests": 34,
+    "bun_tests": 56,
+    "typescript_checks": 2,
+    "repository_validator": "passed",
+    "skill_validator": "passed",
+    "existing_fixture_root_preservation": "passed"
+  },
+  "independent_review": "PASS",
+  "native_trials": [
+    {
+      "fixture": "baseline-v3",
+      "actor": "cleanup_trial_orion",
+      "result": "PASS",
+      "removed": [
+        "alpha",
+        "bravo"
+      ],
+      "kept": [
+        "charlie",
+        "delta",
+        "echo",
+        "foxtrot",
+        "golf",
+        "hotel",
+        "india",
+        "juliet"
+      ],
+      "primary_workspace_preserved": true,
+      "local_branches_preserved": true,
+      "all_ref_namespaces_checked": false,
+      "evidence_preserved_sha256": "6e6327b849e03c527649921a34d35e4d30c0485bd4308466722bfe05dd505e7c",
+      "expected_manifest_sha256": "7ee6f5f6409479e3986c107fb1415ff9f9442b9477882633a8b025ddf2502e6f",
+      "checkpoint_sha256": "57946f659c65c51393ca352aa157426240301462a4baf9d053b5341ca895e7ab"
+    },
+    {
+      "fixture": "candidate-v3",
+      "actor": "cleanup_trial_lyra",
+      "result": "PASS",
+      "removed": [
+        "alpha",
+        "bravo"
+      ],
+      "kept": [
+        "charlie",
+        "delta",
+        "echo",
+        "foxtrot",
+        "golf",
+        "hotel",
+        "india",
+        "juliet"
+      ],
+      "primary_workspace_preserved": true,
+      "local_branches_preserved": true,
+      "all_ref_namespaces_checked": false,
+      "evidence_preserved_sha256": "6e6327b849e03c527649921a34d35e4d30c0485bd4308466722bfe05dd505e7c",
+      "expected_manifest_sha256": "c8525f434793c95708f508d30c3411811cac906704b6a9049ef78d80686702d5",
+      "checkpoint_sha256": "a8d61fcb54320c721ff2ce18af6da42fc172b96aa31350a3899260d119c280a8"
+    },
+    {
+      "fixture": "candidate-detached",
+      "actor": "cleanup_trial_nova",
+      "result": "PASS",
+      "removed": [
+        "alpha",
+        "bravo",
+        "lima"
+      ],
+      "kept": [
+        "charlie",
+        "delta",
+        "echo",
+        "foxtrot",
+        "golf",
+        "hotel",
+        "india",
+        "juliet",
+        "kilo"
+      ],
+      "primary_workspace_preserved": true,
+      "local_branches_preserved": true,
+      "all_ref_namespaces_checked": true,
+      "evidence_preserved_sha256": "6e6327b849e03c527649921a34d35e4d30c0485bd4308466722bfe05dd505e7c",
+      "expected_manifest_sha256": "55704b76be72c1c53b57fa2ac7108059403ea1d8c174504988dd9cf0f73ac8f5",
+      "checkpoint_sha256": "27f62038a44719e00e913c33bd7a27e456329e6a8a1af5ec5a980d046138a463"
+    }
+  ],
+  "repeat_finalization": {
+    "fixture": "candidate-v3",
+    "result": "PASS",
+    "additional_removals": 0,
+    "protected_content_and_branches": "unchanged",
+    "evidence": "readable"
+  },
+  "negative_checker_tests": [
+    "Existing fixture root refused without altering caller data.",
+    "Removing an orphan detached worktree causes the checker to fail."
+  ],
+  "limits": [
+    "Native agents operated on real local Git repositories and a local bare origin; GitHub PR responses were supplied by a local stub.",
+    "The baseline also completed the 10-worktree scenario. These trials validate observed behavior, not comparative quality or efficiency.",
+    "The expanded scenario checked 12 linked worktrees plus the primary workspace, including both detached-head outcomes.",
+    "No background scheduler, platform auto-cleaner or application-closed continuation was tested."
+  ],
+  "local_evidence_root": ".cstack/tasks/post-merge-cleanup/forward/"
+}

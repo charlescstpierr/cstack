@@ -2,6 +2,21 @@
 
 Environnement de référence : Linux, Codex CLI 0.153.4, Bun 1.4.0, Python 3.13. Vérifications réalisées le 9 septembre 2026. Ce fichier décrit les preuves observées ; une validation de manifeste ne constitue pas une validation de comportement.
 
+## Nettoyage après livraison
+
+Le playbook de nettoyage reprend les contrôles de propriété, d'usage et de préservation de [pstack](https://github.com/cursor/plugins/blob/main/pstack/skills/poteto-mode/playbooks/worktree-cleanup.md). Le coordinateur l'appelle après une livraison autorisée, fusionnée et vérifiée. Les worktrees admissibles sont retirés sans confirmation supplémentaire et sans suppression forcée ; les branches, références de récupération et preuves sont conservées.
+
+Le générateur `scripts/worktree-cleanup-scenarios.py` crée de vrais dépôts et worktrees Git jetables, avec un origin local. Un stub local fournit les réponses de forge, dont les têtes originales de PR fusionnées par squash. Les résultats attendus restent hors du workspace donné à l'agent. Les essais natifs sélectionnent le routeur cstack avec une demande de fin de livraison, sans lui indiquer quels dossiers retirer. Le vérificateur indépendant contrôle les dossiers, les contenus à préserver, les références Git et l'archivage des décisions. Le [manifeste des résultats](evidence/post-merge-cleanup.json) précise les cas exécutés et leurs limites.
+
+Pour reproduire l'essai dans un nouveau répertoire, générer le cas, donner son `ACTOR_PROMPT.md` à un agent natif, puis vérifier les artefacts :
+
+```sh
+python3 scripts/worktree-cleanup-scenarios.py create /tmp/cstack-cleanup-trial
+python3 scripts/worktree-cleanup-scenarios.py check /tmp/cstack-cleanup-trial
+```
+
+`create` refuse un répertoire existant. `check` doit échouer avant l'exécution de la tâche. Les tests de mutation ont aussi confirmé qu'il rejette la suppression d'un worktree détaché sans référence de récupération.
+
 ## Playbooks rigoureux et préparation automatique
 
 La révision du 11 septembre conserve les principes en références et rétablit les étapes de compréhension, conception, délégation et revue du cstack antérieur à l'optimisation (`ea39069`). Après normalisation des liens de principes, les corps de Feature, Bug fix, Refactoring, Investigation et How correspondent à cette base. Le routeur rétablit aussi les étapes de plan explicites, les raisons des étapes sautées et une revue du code par un acteur qui ne l'a pas écrit. Les commentaires et suppressions restent inspectés dans la revue générale ; leur nettoyage spécialisé reste un parcours distinct.
@@ -17,13 +32,13 @@ Les 90 tests existants passent : 34 Python et 56 Bun. Les deux contrôles TypeSc
 
 Le [manifeste de validation](evidence/automatic-routing.json) contient les résultats et empreintes. Les traces de travail restent sous `.cstack/tasks/preserve-rigor/forward/`. Ces exemples vérifient les transitions et leurs limites dans une session active, pas une supériorité générale ni une exécution persistante après fermeture de l'application.
 
-Cette révision ne revendique aucun gain général de qualité, de durée ou de tokens. La PR #4 reste un brouillon expérimental ; les économies d'appels ne justifient pas la suppression de garanties des playbooks.
+Cette révision ne revendique aucun gain général de qualité, de durée ou de tokens. La PR expérimentale #4 a ensuite été fermée sans fusion ; les économies d'appels ne justifient pas la suppression de garanties des playbooks.
 
 ## Références internes
 
 Vérifications du 10 septembre 2026, contre le commit `ea39069`. Le paquet expose 28 skills et conserve les 23 principes dans `skills/cstack/references/principles/`. La comparaison des corps de texte, après normalisation des liens et du préambule d'activation, conserve leur contenu de fond. Les 28 noms, leurs politiques d'invocation explicite, les sources du setup et celles des assistants d'exécution sont inchangés.
 
-Les résumés d'interface tronqués sont corrigés. Le validateur contrôle leur longueur de 25 à 64 caractères et quelques terminaisons incomplètes ; cette garde ne prétend pas vérifier toute la grammaire. Le fichier `AGENTS.md` ajoute une carte du dépôt et les commandes de vérification. Les nouveaux ajustements du routage complexe et leur comparaison à trois stratégies restent dans une PR brouillon distincte, liée au ticket #1.
+Les résumés d'interface tronqués sont corrigés. Le validateur contrôle leur longueur de 25 à 64 caractères et quelques terminaisons incomplètes ; cette garde ne prétend pas vérifier toute la grammaire. Le fichier `AGENTS.md` ajoute une carte du dépôt et les commandes de vérification. Les ajustements expérimentaux du routage complexe étaient isolés dans la PR #4, liée au ticket #1 et ensuite fermée sans fusion.
 
 Les 90 tests passent : 34 avec `python3 -m unittest discover -s tests -p 'test_*.py'`, puis 56 avec `bun test`. Le validateur `bun scripts/validate.ts` contrôle les 28 skills, les 23 références, leur présence dans le routeur et la couverture des 158 fichiers upstream. Les tests de mutation rejettent une référence manquante, un lien de routage retiré, une provenance incorrecte, un ancien chemin ou une ancienne invocation, ainsi qu'une ancienne entrée de skill réintroduite. Les contrôles TypeScript du dépôt et des assistants, les validateurs système du plugin et des 28 skills, et `git diff --check` passent. La revue indépendante du diff n'a relevé aucun problème exploitable.
 
