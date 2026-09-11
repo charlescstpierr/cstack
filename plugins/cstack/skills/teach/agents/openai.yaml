@@ -1,6 +1,6 @@
 interface:
   display_name: "teach"
-  short_description: "Use for $cstack:teach, 'teach me this', 'help me really"
+  short_description: "Explain code and design decisions with grounded examples"
   default_prompt: "Use $cstack:teach for this task."
 policy:
   allow_implicit_invocation: false

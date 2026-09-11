@@ -1,6 +1,6 @@
 interface:
   display_name: "setup-cstack"
-  short_description: "Configure optional per-role model choices for cstack in the"
+  short_description: "Configure project guidance and delegated models"
   default_prompt: "Use $cstack:setup-cstack for this task."
 policy:
   allow_implicit_invocation: false

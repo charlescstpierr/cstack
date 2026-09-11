@@ -138,6 +138,10 @@ export function validate(root: string): { skills: number; sourceFiles: number } 
     const policy: unknown = Bun.YAML.parse(readFileSync(join(dirname(path), "agents/openai.yaml"), "utf8"));
     requireValue(record(policy) && record(policy.policy) && policy.policy.allow_implicit_invocation === false, `${path}: skill must be explicit-only`);
     requireValue(record(policy.interface) && typeof policy.interface.display_name === "string" && typeof policy.interface.short_description === "string", `${path}: missing skill UI metadata`);
+    const summary = policy.interface.short_description.trim();
+    requireValue(summary.length >= 25 && summary.length <= 64, `${path}: skill UI description length must be 25-64 characters`);
+    // Catch dangling separators/connectives; prose still needs editorial review.
+    requireValue(!/(?:[,;:]|\b(?:a|an|the|and|or|with|for|to|of|in|your))$/i.test(summary), `${path}: truncated skill UI description`);
     requireValue(typeof policy.interface.default_prompt === "string" && policy.interface.default_prompt.includes(`$cstack:${name}`), `${path}: default prompt must use its canonical invocation`);
     requireValue(text.includes("codex-runtime.md"), `${path}: missing runtime contract link`);
   }

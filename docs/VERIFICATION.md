@@ -4,7 +4,9 @@ Environnement de référence : Linux, Codex CLI 0.153.4, Bun 1.4.0, Python 3.13.
 
 ## Références internes
 
-Vérifications du 10 septembre 2026, contre le commit `ea39069`. Le paquet expose 28 skills et conserve les 23 principes dans `skills/cstack/references/principles/`. La comparaison des corps de texte, après normalisation des liens et du préambule d'activation, conserve leur contenu de fond. Les 28 noms et fichiers `agents/openai.yaml` restants, les sources du setup et celles des assistants d'exécution sont inchangés.
+Vérifications du 10 septembre 2026, contre le commit `ea39069`. Le paquet expose 28 skills et conserve les 23 principes dans `skills/cstack/references/principles/`. La comparaison des corps de texte, après normalisation des liens et du préambule d'activation, conserve leur contenu de fond. Les 28 noms, leurs politiques d'invocation explicite, les sources du setup et celles des assistants d'exécution sont inchangés.
+
+Les résumés d'interface tronqués sont corrigés. Le validateur contrôle leur longueur de 25 à 64 caractères et quelques terminaisons incomplètes ; cette garde ne prétend pas vérifier toute la grammaire. Le fichier `AGENTS.md` ajoute une carte du dépôt et les commandes de vérification. Les nouveaux ajustements du routage complexe et leur comparaison à trois stratégies restent dans une PR brouillon distincte, liée au ticket #1.
 
 Les 90 tests passent : 34 avec `python3 -m unittest discover -s tests -p 'test_*.py'`, puis 56 avec `bun test`. Le validateur `bun scripts/validate.ts` contrôle les 28 skills, les 23 références, leur présence dans le routeur et la couverture des 158 fichiers upstream. Les tests de mutation rejettent une référence manquante, un lien de routage retiré, une provenance incorrecte, un ancien chemin ou une ancienne invocation, ainsi qu'une ancienne entrée de skill réintroduite. Les contrôles TypeScript du dépôt et des assistants, les validateurs système du plugin et des 28 skills, et `git diff --check` passent. La revue indépendante du diff n'a relevé aucun problème exploitable.
 

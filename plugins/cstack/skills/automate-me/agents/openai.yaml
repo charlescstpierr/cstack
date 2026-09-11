@@ -1,6 +1,6 @@
 interface:
   display_name: "automate-me"
-  short_description: "Use for $cstack:automate-me, \"automate me\","
+  short_description: "Create a personal workflow from repeated work patterns"
   default_prompt: "Use $cstack:automate-me for this task."
 policy:
   allow_implicit_invocation: false

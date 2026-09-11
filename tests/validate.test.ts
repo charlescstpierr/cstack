@@ -19,6 +19,8 @@ test("the distributable loads 28 skills and rejects unsafe or incomplete packagi
       ["plugins/cstack/.codex-plugin/plugin.json", (text: string) => text.replace('"name": "cstack"', '"name": "other"'), /manifest identity/],
       ["plugins/cstack/skills/cstack/agents/openai.yaml", (text: string) => text.replace("allow_implicit_invocation: false", "allow_implicit_invocation: true"), /explicit-only/],
       ["plugins/cstack/skills/cstack/agents/openai.yaml", (text: string) => text.replace("$cstack:cstack", "$cstack"), /canonical invocation/],
+      ["plugins/cstack/skills/cstack/agents/openai.yaml", (text: string) => text.replace(/short_description: .*/, 'short_description: "Route the work and verify it with"'), /truncated skill UI description/],
+      ["plugins/cstack/skills/cstack/agents/openai.yaml", (text: string) => text.replace(/short_description: .*/, `short_description: "${"x".repeat(65)}"`), /skill UI description length/],
       ["plugins/cstack/skills/cstack/SKILL.md", (text: string) => `${text}\n[Missing resource](references/does-not-exist.md)\n`, /broken or escaping link/],
       ["PORTING.json", (text: string) => {
         const value = JSON.parse(text);
