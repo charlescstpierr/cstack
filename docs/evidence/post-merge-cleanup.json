@@ -1,5 +1,9 @@
 {
   "date": "2026-09-11",
+  "scope": "historical",
+  "plugin_version": "0.3.0",
+  "catalog_skills": 28,
+  "plugin_commit": "5814b38bf6490c7518b787644b3f741480226850",
   "base_commit": "ebddda6e64e502e11b0851339b9a9e3f1f3a219e",
   "final_plugin_sha256": "65348b8dec15e20bf54be80fe71990ec837a8821d2b99f179da6dacefa59a2b8",
   "plugin_hash_policy": "sorted tracked repository-relative plugin path + NUL + bytes + NUL",
@@ -108,7 +112,8 @@
     "Native agents operated on real local Git repositories and a local bare origin; GitHub PR responses were supplied by a local stub.",
     "The baseline also completed the 10-worktree scenario. These trials validate observed behavior, not comparative quality or efficiency.",
     "The expanded scenario checked 12 linked worktrees plus the primary workspace, including both detached-head outcomes.",
-    "No background scheduler, platform auto-cleaner or application-closed continuation was tested."
+    "No background scheduler, platform auto-cleaner or application-closed continuation was tested.",
+    "Historical snapshot of plugin commit 5814b38bf6490c7518b787644b3f741480226850, catalog of 28 skills. final_plugin_sha256 describes that tree. Later commits changed plugin bytes. Hash not recomputed."
   ],
   "local_evidence_root": ".cstack/tasks/post-merge-cleanup/forward/"
 }

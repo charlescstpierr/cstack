@@ -22,16 +22,16 @@ $cstack:tdd implémente ce changement avec un test qui échoue pour la bonne rai
 
 ## Laisser les règles TypeScript s'appliquer
 
-[`typescript-best-practices`](../../skills/typescript-best-practices/SKILL.md) encadre les fichiers `.ts` et `.tsx`. Il complète les principes de types, de frontières et de variantes exhaustives sans ajouter de dépendance.
+[`$cstack:typescript-best-practices`](../../skills/typescript-best-practices/SKILL.md) encadre les fichiers `.ts` et `.tsx`. Il complète les principes de types, de frontières et de variantes exhaustives sans ajouter de dépendance.
 
 ## Nettoyer avant le commit
 
-Utilisez [`$cstack:unslop`](../../skills/unslop/SKILL.md) pour la prose. cstack privilégie la suppression de code mort, des chemins de compatibilité inutiles et des changements sans rapport.
+Trois nettoyages, trois cibles. [`$cstack:deslop`](../../skills/deslop/SKILL.md) retire le poids d'un diff de code avant chaque commit. [`$cstack:unslop`](../../skills/unslop/SKILL.md) nettoie la prose. [`$cstack:no-comments`](../../skills/no-comments/SKILL.md) confie les commentaires à un relecteur qui ne les a pas écrits.
 
-Le plugin ne suppose pas la présence d'un outil externe de nettoyage. Si vous avez un linter ou un formatter du dépôt, exécutez celui qui fait partie du projet.
+cstack privilégie aussi la suppression de code mort, des chemins de compatibilité inutiles et des changements sans rapport. Le plugin ne suppose pas la présence d'un outil externe de nettoyage. Si vous avez un linter ou un formatter du dépôt, exécutez celui qui fait partie du projet.
 
 ## Supprimer les commentaires qui cachent le comportement
 
-Utilisez [`$cstack:no-comments`](../../skills/no-comments/SKILL.md) pour examiner les commentaires qui masquent une contrainte ou une décision. Conservez les liens et explications nécessaires quand le code ne peut pas exprimer la contrainte.
+Utilisez `$cstack:no-comments` pour examiner les commentaires qui masquent une contrainte ou une décision. Conservez les liens et explications nécessaires quand le code ne peut pas exprimer la contrainte.
 
 Suivant : [vérifier et livrer le résultat](./06-verify-and-ship.md).

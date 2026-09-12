@@ -8,14 +8,22 @@ Keep the port small. Reuse upstream helpers and their locked dependencies. Run t
 
 Repository map: `plugins/cstack/` is the distributable; `scripts/` and `tests/` validate packaging and native behavior; `UPSTREAM.json` and `PORTING.json` track source provenance. Work artifacts belong in ignored `.cstack/` directories. Native trials are separate from deterministic checks and must report actual task outcomes and capability gaps.
 
-Run checks from this repository root:
+Python 3.9 or newer runs the helpers and the whole test suite. Parsing the Codex `config.toml` inside `scripts/verify-behavior.py` needs Python 3.11 or newer.
+
+Run checks from this repository root, in this order. Install helper dependencies before any `tsc`. Return to the repository root before the root `tsc` invocation. These commands match `.github/workflows/validate.yml`.
 
 ```sh
 bun scripts/validate.ts
 python3 -m unittest discover -s tests -p 'test_*.py'
-bun test
+bun test tests
+cd plugins/cstack/skills/cstack/scripts
+bun install --frozen-lockfile
+bun run test
+bun run typecheck
+cd ../../../../..
 plugins/cstack/skills/cstack/scripts/node_modules/.bin/tsc -p tsconfig.json
-plugins/cstack/skills/cstack/scripts/node_modules/.bin/tsc -p plugins/cstack/skills/cstack/scripts/watch-pr/tsconfig.json --noEmit --strict
+bash -n plugins/cstack/scripts/run-tool.sh plugins/cstack/skills/cstack/scripts/worktree-audit.sh plugins/cstack/skills/show-me-your-work/scripts/log.sh
+git diff --check
 ```
 
-If helper dependencies are absent, run `bun install --frozen-lockfile` in `plugins/cstack/skills/cstack/scripts/`. Python tests use the standard-library `unittest` runner. Completion requires the relevant observed behavior as well as green checks; fewer calls alone do not establish better results.
+`bun run typecheck` is the watch-pr strict check. The `tsc -p tsconfig.json` line typechecks the repository `tsconfig.json` with the `tsc` binary that `bun install` just created, after `cd` back to the repository root. Python tests use the standard-library `unittest` runner. Completion requires the relevant observed behavior as well as green checks; fewer calls alone do not establish better results.

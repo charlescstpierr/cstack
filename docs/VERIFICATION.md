@@ -1,12 +1,34 @@
 # Vérification de cstack
 
-Environnement de référence : Linux, Codex CLI 0.153.4, Bun 1.4.0, Python 3.13. Vérifications réalisées le 9 septembre 2026. Ce fichier décrit les preuves observées ; une validation de manifeste ne constitue pas une validation de comportement.
+Ce fichier distingue l'état courant des campagnes datées. Les nombres d'une section datée restent ceux de cette campagne. Ils ne décrivent pas le catalogue 0.4.0.
 
-## Nettoyage après livraison
+## État 0.4.0
 
-Le playbook de nettoyage reprend les contrôles de propriété, d'usage et de préservation de [pstack](https://github.com/cursor/plugins/blob/main/pstack/skills/poteto-mode/playbooks/worktree-cleanup.md). Le coordinateur l'appelle après une livraison autorisée, fusionnée et vérifiée. Les worktrees admissibles sont retirés sans confirmation supplémentaire et sans suppression forcée ; les branches, références de récupération et preuves sont conservées.
+Mesures du 12 septembre 2026, working tree après la vague 1, Python 3.9.6, Bun 1.4.2. Plugin `0.4.0`. Pin amont pstack `0.15.2`, commit `889ec4b68fa5aab0e867dad71ec3fdf386ae48f3`.
 
-Le générateur `scripts/worktree-cleanup-scenarios.py` crée de vrais dépôts et worktrees Git jetables, avec un origin local. Un stub local fournit les réponses de forge, dont les têtes originales de PR fusionnées par squash. Les résultats attendus restent hors du workspace donné à l'agent. Les essais natifs sélectionnent le routeur cstack avec une demande de fin de livraison, sans lui indiquer quels dossiers retirer. Le vérificateur indépendant contrôle les dossiers, les contenus à préserver, les références Git et l'archivage des décisions. Le [manifeste des résultats](evidence/post-merge-cleanup.json) précise les cas exécutés et leurs limites.
+Le catalogue 0.4.0 contient 29 skills, 23 principes et 23 playbooks. Deux prompts d'agents. 19 rôles. 4 panels. 6 groupes de recommandations. `ls plugins/cstack/skills/*/SKILL.md | wc -l` vaut 29. `ls plugins/cstack/skills/cstack/references/principles/*.md | wc -l` vaut 23. `ls plugins/cstack/skills/cstack/playbooks/*.md | wc -l` vaut 23.
+
+Fichiers du plugin. `git ls-files plugins/cstack | wc -l` vaut 182 fichiers suivis. Le working tree ajoute `plugins/cstack/skills/deslop/SKILL.md`, `plugins/cstack/skills/deslop/agents/openai.yaml` et `plugins/cstack/skills/cstack/scripts/bootstrap.test.ts`. `{ git ls-files plugins/cstack; git ls-files --others --exclude-standard plugins/cstack; } | wc -l` vaut 185.
+
+Tests mesurés. `python3 -m unittest discover -s tests -p 'test_*.py'` lance 46 tests. Dans `plugins/cstack/skills/cstack/scripts`, `bun run test` rapporte 68 pass. `bun test tests` découvre 3 tests Bun à la racine. `UPSTREAM.json` conserve 158 fichiers source.
+
+Python 3.9 ou plus récent exécute les assistants et toute la suite de tests. L'analyse du `config.toml` de Codex dans `scripts/verify-behavior.py` exige Python 3.11 ou plus récent.
+
+Le workflow `.github/workflows/validate.yml` fixe `actions/checkout` à `11d5960a326750d5838078e36cf38b85af677262`, `oven-sh/setup-bun` à `0c5077e51419868618aeaa5fe8019c62421857d6`, `actions/setup-python` à `a26af69be951a213d495a4c3e4e4022e16d87065` avec `python-version: "3.9"`. Il exécute `bash -n` sur `plugins/cstack/scripts/run-tool.sh`, `plugins/cstack/skills/cstack/scripts/worktree-audit.sh` et `plugins/cstack/skills/show-me-your-work/scripts/log.sh`, puis `git diff --check`. Les campagnes antérieures qui affirmaient que `git diff --check` passait ne l'avaient pas lancé. Cette garde existe maintenant dans le workflow.
+
+`deslop` est original à cstack. Il n'est pas un port. pstack livrait `/deslop` dans `cursor-team-kit`.
+
+Les preuves JSON sous `docs/evidence/` portent `scope: historical`. Leurs empreintes décrivent le commit tamponné, pas cet arbre.
+
+## Campagnes de septembre 2026
+
+Environnement de ces campagnes : Linux, Codex CLI 0.153.4, Bun 1.4.0, Python 3.13. Dates les 9, 10 et 11 septembre 2026.
+
+### Nettoyage après livraison
+
+Le playbook de nettoyage reprend les contrôles de propriété, d'usage et de préservation de [pstack](https://github.com/cursor/plugins/blob/889ec4b68fa5aab0e867dad71ec3fdf386ae48f3/pstack/skills/poteto-mode/playbooks/worktree-cleanup.md). Le coordinateur l'appelle après une livraison autorisée, fusionnée et vérifiée. Les worktrees admissibles sont retirés sans confirmation supplémentaire et sans suppression forcée ; les branches, références de récupération et preuves sont conservées.
+
+Le générateur `scripts/worktree-cleanup-scenarios.py` crée de vrais dépôts et worktrees Git jetables, avec un origin local. Un stub local fournit les réponses de forge, dont les têtes originales de PR fusionnées par squash. Les résultats attendus restent hors du workspace donné à l'agent. Les essais natifs sélectionnent le routeur cstack avec une demande de fin de livraison, sans lui indiquer quels dossiers retirer. Le vérificateur indépendant contrôle les dossiers, les contenus à préserver, les références Git et l'archivage des décisions. Le [manifeste des résultats](evidence/post-merge-cleanup.json) précise les cas exécutés et leurs limites. Il décrit le commit `5814b38bf6490c7518b787644b3f741480226850`, 28 skills.
 
 Pour reproduire l'essai dans un nouveau répertoire, générer le cas, donner son `ACTOR_PROMPT.md` à un agent natif, puis vérifier les artefacts :
 
@@ -17,30 +39,30 @@ python3 scripts/worktree-cleanup-scenarios.py check /tmp/cstack-cleanup-trial
 
 `create` refuse un répertoire existant. `check` doit échouer avant l'exécution de la tâche. Les tests de mutation ont aussi confirmé qu'il rejette la suppression d'un worktree détaché sans référence de récupération.
 
-## Playbooks rigoureux et préparation automatique
+### Playbooks rigoureux et préparation automatique
 
 La révision du 11 septembre conserve les principes en références et rétablit les étapes de compréhension, conception, délégation et revue du cstack antérieur à l'optimisation (`ea39069`). Après normalisation des liens de principes, les corps de Feature, Bug fix, Refactoring, Investigation et How correspondent à cette base. Le routeur rétablit aussi les étapes de plan explicites, les raisons des étapes sautées et une revue du code par un acteur qui ne l'a pas écrit. Les commentaires et suppressions restent inspectés dans la revue générale ; leur nettoyage spécialisé reste un parcours distinct.
 
 Une invocation explicite de `$cstack:cstack` prend en charge la suite du travail : `clarify` lorsque des exigences matérielles restent ambiguës, `horizon` pour un objectif nécessitant une carte durable entre phases, puis le playbook approprié. Les étapes se poursuivent dans l'autorisation existante. Les décisions humaines restent humaines ; les demandes en lecture seule et les invocations autonomes des skills de préparation conservent leur périmètre.
 
-Les 90 tests existants passent : 34 Python et 56 Bun. Les deux contrôles TypeScript, la validation du plugin et celle des skills modifiés passent. Des coordinateurs et enfants natifs Codex ont aussi travaillé dans des projets isolés ; le parent a inspecté les fichiers produits et exécuté ses propres assertions.
+Les 90 tests existants à cette date passent : 34 Python et 56 Bun, mesurés au commit `19acc39fe1743efeac71cf67c79c0ffa842a7854`, 28 skills. Les deux contrôles TypeScript, la validation du plugin et celle des skills modifiés passent. Des coordinateurs et enfants natifs Codex ont aussi travaillé dans des projets isolés ; le parent a inspecté les fichiers produits et exécuté ses propres assertions.
 
 - Orion : demande de normalisation entièrement définie, exécutée sans question produit. Une seule ligne de code a changé ; les cas de bord et le comportement hors des espaces sont vérifiés.
 - Nova : aucune écriture avant les deux décisions sur la signification d'archiver et la mutation des entrées. Une réponse contenant uniquement le contrat a déclenché la suite de l'implémentation, sans nouvelle demande d'approbation. L'ordre, les champs, les copies et l'absence de mutation des entrées sont vérifiés.
 - Lyra : Horizon a produit un spec et quatre unités dépendantes sans inventer de tickets de décision. La première phase autorisée a été implémentée, avec grounding natif, délégation et revues indépendantes. Les phases suivantes restent planifiées et aucun commit, dépendance ou service externe n'a été ajouté.
 - Lyra en lecture seule : la réponse respecte l'ordre de retrait de la compatibilité ; l'empreinte complète du projet, état de planification inclus, est inchangée.
 
-Le [manifeste de validation](evidence/automatic-routing.json) contient les résultats et empreintes. Les traces de travail restent sous `.cstack/tasks/preserve-rigor/forward/`. Ces exemples vérifient les transitions et leurs limites dans une session active, pas une supériorité générale ni une exécution persistante après fermeture de l'application.
+Le [manifeste de validation](evidence/automatic-routing.json) contient les résultats et empreintes de ce commit. Les traces de travail restent sous `.cstack/tasks/preserve-rigor/forward/`. Ces exemples vérifient les transitions et leurs limites dans une session active, pas une supériorité générale ni une exécution persistante après fermeture de l'application.
 
 Cette révision ne revendique aucun gain général de qualité, de durée ou de tokens. La PR expérimentale #4 a ensuite été fermée sans fusion ; les économies d'appels ne justifient pas la suppression de garanties des playbooks.
 
-## Références internes
+### Références internes
 
-Vérifications du 10 septembre 2026, contre le commit `ea39069`. Le paquet expose 28 skills et conserve les 23 principes dans `skills/cstack/references/principles/`. La comparaison des corps de texte, après normalisation des liens et du préambule d'activation, conserve leur contenu de fond. Les 28 noms, leurs politiques d'invocation explicite, les sources du setup et celles des assistants d'exécution sont inchangés.
+Vérifications du 10 septembre 2026, contre le commit `caca9cd`. Le paquet expose 28 skills et conserve les 23 principes dans `skills/cstack/references/principles/`. La comparaison des corps de texte, après normalisation des liens et du préambule d'activation, conserve leur contenu de fond. Les 28 noms, leurs politiques d'invocation explicite, les sources du setup et celles des assistants d'exécution sont inchangés.
 
 Les résumés d'interface tronqués sont corrigés. Le validateur contrôle leur longueur de 25 à 64 caractères et quelques terminaisons incomplètes ; cette garde ne prétend pas vérifier toute la grammaire. Le fichier `AGENTS.md` ajoute une carte du dépôt et les commandes de vérification. Les ajustements expérimentaux du routage complexe étaient isolés dans la PR #4, liée au ticket #1 et ensuite fermée sans fusion.
 
-Les 90 tests passent : 34 avec `python3 -m unittest discover -s tests -p 'test_*.py'`, puis 56 avec `bun test`. Le validateur `bun scripts/validate.ts` contrôle les 28 skills, les 23 références, leur présence dans le routeur et la couverture des 158 fichiers upstream. Les tests de mutation rejettent une référence manquante, un lien de routage retiré, une provenance incorrecte, un ancien chemin ou une ancienne invocation, ainsi qu'une ancienne entrée de skill réintroduite. Les contrôles TypeScript du dépôt et des assistants, les validateurs système du plugin et des 28 skills, et `git diff --check` passent. La revue indépendante du diff n'a relevé aucun problème exploitable.
+Les 90 tests de cette campagne passent : 34 avec `python3 -m unittest discover -s tests -p 'test_*.py'`, puis 56 avec `bun test`. Le validateur `bun scripts/validate.ts` contrôle les 28 skills, les 23 références, leur présence dans le routeur et la couverture des 158 fichiers upstream. Les tests de mutation rejettent une référence manquante, un lien de routage retiré, une provenance incorrecte, un ancien chemin ou une ancienne invocation, ainsi qu'une ancienne entrée de skill réintroduite. Les contrôles TypeScript du dépôt et des assistants et les validateurs système du plugin et des 28 skills passent. Le workflow n'exécutait pas encore `git diff --check`. Cette garde existe maintenant dans `.github/workflows/validate.yml`. La revue indépendante du diff n'a relevé aucun problème exploitable.
 
 Deux essais natifs de la version de base ont terminé : modification d'un parseur de port avec assertions exécutées, puis revue Boundary Discipline en lecture seule avec empreinte du projet conservée. Les sessions héritent de `gpt-6-astra` / `ultra`. Aucun sous-agent accepté n'est enregistré ; les réponses signalent une délégation indisponible, ce qui ne permet pas de comparer le coût de délégation. Les premiers essais échoués sur les permissions SQLite/réseau sont exclus des résultats.
 
@@ -53,19 +75,19 @@ Les traces des deux essais finaux chargent les nouvelles références, notamment
 
 Les demandes, traces, empreintes et résultats vérifiés restent sous `.cstack/tasks/native-references/behavior/`. `proposed-20260910T200842Z` conserve le premier passage ; `final-20260910/results/summary.json` et `final-20260910/verified-outcomes.json` décrivent les deux essais finaux.
 
-## Intégration 0.3.0
+### Intégration 0.3.0
 
-Base de comparaison : `a373eca2e003a9bd2e4b2e90ac7f28a250108f6c` (0.2.0). Les quatre nouveaux skills sont explicites. Les playbooks de correction et de développement, `how`, `why`, et le helper `models.py` conservent leurs sources. Les 23 principes concernés changent seulement leur phrase décrivant le setup passif.
+Base de comparaison : `a373eca2e003a9bd2e4b2e90ac7f28a250108f6c` (0.2.0). Les quatre nouveaux skills sont explicites. Les playbooks de correction et de développement, `how`, `why`, et le helper `models.py` conservent leurs sources. Les 23 principes concernés changent seulement leur phrase décrivant le setup passif. Catalogue mesuré au commit `95df6b48c7c86142567c2ebf0ddab2083fa562e9` : 51 skills. `plugin.json` dit `0.3.0`.
 
-### Vérifications déterministes
+#### Vérifications déterministes
 
-Les **90 tests automatisés** passent : 34 Python, 3 Bun de paquet/plan et 53 Bun des helpers. TypeScript, le validateur système du plugin, les métadonnées des 51 skills, les liens, les 158 fichiers de provenance pstack et `git diff --check` passent.
+Les **90 tests automatisés** de cette version passent : 34 Python, 3 Bun de paquet/plan et 53 Bun des helpers. TypeScript, le validateur système du plugin, les métadonnées des 51 skills, les liens et les 158 fichiers de provenance pstack passent. Le workflow n'exécutait pas encore `git diff --check`. Cette garde existe maintenant dans `.github/workflows/validate.yml`.
 
 Le setup est exercé sur des répertoires temporaires : preview sans écriture, application puis no-op, conservation des octets manuels et CRLF, de `CLAUDE.md` et des modèles non sélectionnés. Les tests couvrent aussi les plans périmés ou altérés, les conflits de marqueurs, les liens symboliques, les erreurs d’écriture et la reprise après interruption. La revue a conduit à corriger l’écriture de bytecode dans le bundle, l’absence d’exclusion Git avant le premier état Horizon et l’écrasement d’une édition manuelle survenue pendant la préparation des fichiers. Une relecture avant chaque remplacement protège cette dernière fenêtre ; plusieurs remplacements ne constituent pas une transaction atomique globale.
 
 Le CLI de modèles résout les 19 rôles à l’identique. Sur 30 mesures entrelacées par version, sa médiane passe de 84,8 à 79,6 ms ; les sources du helper sont identiques. Le seuil fixé avant la mesure était une régression maximale de 25 % plus 20 ms. Cette observation ne démontre pas un gain de vitesse ou de tokens des workflows.
 
-### Essais natifs reproductibles
+#### Essais natifs reproductibles
 
 Le générateur crée des dépôts Git séparés et des copies des deux bundles hors des projets. Le lanceur utilise des sessions Codex natives, enregistre demandes, commandes, réponses, dispatchs, éventuelles lacunes de métadonnées et empreintes des fichiers. Les catalogues viennent d’une découverte réelle ; Luna max est un choix explicite pour ces essais.
 
@@ -97,49 +119,49 @@ Les premiers essais invalidés par le banc (questions nulles, héritage du mauva
 
 ## Historique des versions précédentes
 
-## Base upstream
+### Base upstream
 
-Avant modification des helpers : `bun run test` passe 52 tests, puis `bun run typecheck` passe. Le commit source est enregistré dans `UPSTREAM.json`.
+Avant modification des helpers : `bun run test` passe 52 tests, puis `bun run typecheck` passe. Le commit source est enregistré dans `UPSTREAM.json`. Mesure du premier import, commit `6600fc4`.
 
-## Lanceur inscriptible
+### Lanceur inscriptible
 
 Le lanceur passe 11 tests avec `python3 -m unittest discover -s tests -p 'test_*.py' -v`. Après revue indépendante, son architecture utilise une copie temporaire distincte par invocation : aucun exécutable ou module déjà présent dans le projet ne doit être réutilisé. Les tests de cette version couvrent notamment la lecture seule, les arguments littéraux, les chemins contenant des espaces, les sorties du workspace par liens symboliques, le nettoyage et les appels concurrents.
 
 Les lancements réels de `watch-pr/watch-pr --help` et `orch/orch.ts --help` passent simultanément depuis un dossier contenant des espaces. Les empreintes des sources sont identiques avant/après et aucun stage temporaire ne subsiste après leur fin.
 
-## Configuration de modèles
+### Configuration de modèles
 
 Une évaluation indépendante dans un dossier isolé a demandé `$cstack:setup-cstack` avec le modèle fictif `cstack-fictional-model-999`. Le skill a refusé la sélection non vérifiable, sans dispatch ni écriture ni substitution. L'empreinte du fichier existant est restée identique.
 
-### Setup 0.2.0 : modèle et effort
+#### Setup 0.2.0 : modèle et effort
 
-Les six tests de `tests/test_models.py` couvrent les sept recommandations, leur résolution pour les 19 rôles, les panels, les anciennes chaînes de modèle, l'héritage explicite, les choix indisponibles, le JSON invalide, les prévisualisations périmées, les échecs de sauvegarde et les répertoires d'état liés par symlink. Le parcours CLI réel `show` → `apply` → `resolve` a également été exécuté pour chaque rôle dans un dossier temporaire. Une revue indépendante n'a relevé aucun problème majeur ; le séparateur manquant dans le tableau de recommandations a été corrigé.
+Les six tests de `tests/test_models.py` couvrent les sept recommandations de 0.2.0, leur résolution pour les 19 rôles, les panels, les anciennes chaînes de modèle, l'héritage explicite, les choix indisponibles, le JSON invalide, les prévisualisations périmées, les échecs de sauvegarde et les répertoires d'état liés par symlink. Le parcours CLI réel `show` → `apply` → `resolve` a également été exécuté pour chaque rôle dans un dossier temporaire. Une revue indépendante n'a relevé aucun problème majeur ; le séparateur manquant dans le tableau de recommandations a été corrigé.
 
 Un essai comportemental avec Codex CLI 0.153.4 via son serveur natif a chargé le nouveau skill depuis les sources et enregistré les sept groupes explicitement acceptés dans un projet isolé. Une vérification séparée a résolu `documentation` puis lancé un unique sous-agent. La lecture native `thread/read` confirme `model: gpt-5.6-luna` et `reasoningEffort: max` pour l'enfant, avec un parent `gpt-6-astra` / `low`. L'enfant a lu le README du projet et terminé sa tâche. Cela vérifie une transmission réelle des deux réglages ; les autres paires recommandées sont validées contre le catalogue courant et par les tests, sans lancer un modèle pour chaque rôle.
 
-Pour cette version, les 17 tests Python, les 3 tests Bun du paquet et du plan, et les 53 tests des helpers passent : **73 tests automatisés**. Les contrôles TypeScript, le validateur de plugin, les métadonnées des skills modifiés, les 47 entrées du paquet et la couverture des 158 fichiers upstream passent également. La configuration de test reste dans un projet temporaire ; la mise à jour du plugin ne remplace pas les choix d'un projet utilisateur.
+Pour cette version 0.2.0 (commit `a373eca`), les 17 tests Python, les 3 tests Bun du paquet et du plan, et les 53 tests des helpers passent : **73 tests automatisés**. Les contrôles TypeScript, le validateur de plugin, les métadonnées des skills modifiés, les 47 entrées du paquet et la couverture des 158 fichiers upstream passent également. La configuration de test reste dans un projet temporaire ; la mise à jour du plugin ne remplace pas les choix d'un projet utilisateur.
 
-## Workflow de correction
+### Workflow de correction
 
 Un agent indépendant a utilisé le skill principal pour corriger un filtre Python dans un projet isolé. Le cas fourni excluait à tort la borne inférieure et incluait des événements futurs. L'agent a reproduit l'échec, corrigé le filtre et ajouté un test passant. Le parent a ensuite exécuté une vérification indépendante couvrant les deux bornes, les dates futures, la fenêtre nulle, une liste vide, l'ordre et la conservation des données d'entrée. Ces assertions passent. L'exécution était volontairement séquentielle, sans sous-agents ni accès GitHub.
 
-## Structure du paquet
+### Structure du paquet
 
-Le validateur de plugin fourni avec Codex et les validations individuelles des 47 skills passent. `bun scripts/validate.ts` confirme les 47 entrées, les politiques d'invocation explicite, les liens internes et la couverture des 158 fichiers source.
+Le validateur de plugin fourni avec Codex et les validations individuelles des 47 skills du paquet 0.1.1 (commit `416053e797727dcc5a3a2016ab014157af758877`) passent. `bun scripts/validate.ts` confirme les 47 entrées, les politiques d'invocation explicite, les liens internes et la couverture des 158 fichiers source.
 
 Les trois tests Bun à la racine couvrent le refus des paquets incomplets ou à activation implicite, ainsi que l'acceptation du modèle de plan natif et le rejet des plans privés de vérification. Le contrôle TypeScript strict des outils de validation passe.
 
-## Vérifications finales
+### Vérifications finales
 
-Les 53 tests des helpers, les 3 tests Bun du paquet et du plan, et les 11 tests Python du lanceur passent : 67 tests automatisés. Les contrôles TypeScript couvrent le suivi de PR, l'orchestration, le bootstrap et les outils de validation. `git diff --check` passe.
+Les 53 tests des helpers, les 3 tests Bun du paquet et du plan, et les 11 tests Python du lanceur passent : 67 tests automatisés de cette campagne. Les contrôles TypeScript couvrent le suivi de PR, l'orchestration, le bootstrap et les outils de validation. Le workflow n'exécutait pas encore `git diff --check`. Cette garde existe maintenant dans `.github/workflows/validate.yml`.
 
 Les régressions de revue vérifient notamment qu'une PR fermée reste la première PR non fusionnée, qu'un état Git illisible ne devient pas « propre », et qu'aucun cache exécutable préplanté dans le projet n'est réutilisé.
 
-Le dépôt GitHub est privé, sur `main`. La première publication a passé [GitHub Actions](https://github.com/charlescstpierr/cstack/actions/runs/34301423576). L'installation depuis GitHub a été réalisée avec le gestionnaire de plugins Codex ; les 192 fichiers du plugin installé correspondent aux fichiers suivis du dépôt, sans `node_modules` ajouté au cache du plugin.
+Le dépôt GitHub est privé, sur `main`. La première publication a passé [GitHub Actions](https://github.com/charlescstpierr/cstack/actions/runs/34301423576). L'installation depuis GitHub a été réalisée avec le gestionnaire de plugins Codex ; les 192 fichiers du plugin installé correspondent aux fichiers suivis du dépôt au commit `416053e797727dcc5a3a2016ab014157af758877`, sans `node_modules` ajouté au cache du plugin. `git ls-tree -r --name-only 416053e -- plugins/cstack | wc -l` vaut 192.
 
-## Invocation native App et CLI
+### Invocation native App et CLI
 
-Le serveur natif Codex expose les 47 skills activés, sans erreur de chargement, sous des noms tels que `cstack:cstack` et `cstack:architect`. Une session CLI éphémère avec configuration utilisateur ignorée et uniquement cstack activé a confirmé le chargement du skill installé par `$cstack:cstack`.
+Le serveur natif Codex expose les 47 skills activés du paquet 0.1.1 (commit `416053e`), sans erreur de chargement, sous des noms tels que `cstack:cstack` et `cstack:architect`. Une session CLI éphémère avec configuration utilisateur ignorée et uniquement cstack activé a confirmé le chargement du skill installé par `$cstack:cstack`.
 
 Un second essai a utilisé la sélection structurée `UserInput::Skill` du sélecteur App/CLI dans une session éphémère en lecture seule, avec les autres plugins, serveurs MCP et hooks désactivés. Le mode a chargé son playbook et son contrat, puis lancé exactement deux sous-agents natifs, un par module synthétique. Chaque sous-agent a trouvé et reproduit le défaut prévu, et le parent a vérifié les résultats. Les empreintes des trois fichiers du projet sont restées identiques.
 

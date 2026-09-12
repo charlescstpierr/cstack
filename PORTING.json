@@ -1,5 +1,5 @@
 {
-  "commit": "27e2a62ff94f9af4b5e68435e41cdceacadb840c",
+  "commit": "889ec4b68fa5aab0e867dad71ec3fdf386ae48f3",
   "files": [
     {
       "source": "pstack/.cursor-plugin/plugin.json",
@@ -238,8 +238,8 @@
     {
       "source": "pstack/skills/architect/references/runner-prompt.md",
       "target": "plugins/cstack/skills/architect/references/runner-prompt.md",
-      "status": "retained",
-      "reason": "Portable upstream content retained under its original MIT license."
+      "status": "ported",
+      "reason": "Principle skill mentions rewritten as principle reference links."
     },
     {
       "source": "pstack/skills/arena/SKILL.md",
@@ -328,20 +328,20 @@
     {
       "source": "pstack/skills/interrogate/references/lead-judgment.md",
       "target": "plugins/cstack/skills/interrogate/references/lead-judgment.md",
-      "status": "retained",
-      "reason": "Portable upstream content retained under its original MIT license."
+      "status": "ported",
+      "reason": "Axis separation, frozen-snapshot, and Spec-gap rules added for Codex interrogate."
     },
     {
       "source": "pstack/skills/interrogate/references/reviewer-prompt.md",
       "target": "plugins/cstack/skills/interrogate/references/reviewer-prompt.md",
-      "status": "retained",
-      "reason": "Portable upstream content retained under its original MIT license."
+      "status": "ported",
+      "reason": "Assigned-axis, frozen-scope, and no-delegation instructions added for Codex reviewers."
     },
     {
       "source": "pstack/skills/interrogate/references/rubric.md",
       "target": "plugins/cstack/skills/interrogate/references/rubric.md",
-      "status": "retained",
-      "reason": "Portable upstream content retained under its original MIT license."
+      "status": "ported",
+      "reason": "Spec and Standards fidelity axes added for Codex interrogate."
     },
     {
       "source": "pstack/skills/maintain-verification-skill/SKILL.md",
@@ -556,8 +556,8 @@
     {
       "source": "pstack/skills/poteto-mode/scripts/watch-pr/cli.test.ts",
       "target": "plugins/cstack/skills/cstack/scripts/watch-pr/cli.test.ts",
-      "status": "retained",
-      "reason": "Portable upstream content retained under its original MIT license."
+      "status": "ported",
+      "reason": "Fail-closed coverage for a missing gh binary."
     },
     {
       "source": "pstack/skills/poteto-mode/scripts/watch-pr/cli.ts",
@@ -574,14 +574,14 @@
     {
       "source": "pstack/skills/poteto-mode/scripts/watch-pr/github.test.ts",
       "target": "plugins/cstack/skills/cstack/scripts/watch-pr/github.test.ts",
-      "status": "retained",
-      "reason": "Portable upstream content retained under its original MIT license."
+      "status": "ported",
+      "reason": "Fail-closed coverage for pagination, discovery cap, and base-ref cycles."
     },
     {
       "source": "pstack/skills/poteto-mode/scripts/watch-pr/github.ts",
       "target": "plugins/cstack/skills/cstack/scripts/watch-pr/github.ts",
-      "status": "retained",
-      "reason": "Portable upstream content retained under its original MIT license."
+      "status": "ported",
+      "reason": "Fail-closed GitHub pagination, discovery cap, and auth handling."
     },
     {
       "source": "pstack/skills/poteto-mode/scripts/watch-pr/policy.test.ts",
@@ -616,8 +616,8 @@
     {
       "source": "pstack/skills/poteto-mode/scripts/watch-pr/types.ts",
       "target": "plugins/cstack/skills/cstack/scripts/watch-pr/types.ts",
-      "status": "retained",
-      "reason": "Portable upstream content retained under its original MIT license."
+      "status": "ported",
+      "reason": "Fail-closed error kinds for a missing gh, auth failures, truncation, and base-ref cycles."
     },
     {
       "source": "pstack/skills/poteto-mode/scripts/watch-pr/watch-pr",
@@ -826,8 +826,8 @@
     {
       "source": "pstack/skills/show-me-your-work/scripts/log.sh",
       "target": "plugins/cstack/skills/show-me-your-work/scripts/log.sh",
-      "status": "retained",
-      "reason": "Portable upstream content retained under its original MIT license."
+      "status": "ported",
+      "reason": "Writes a .cstack/.gitignore so local logs stay untracked."
     },
     {
       "source": "pstack/skills/swarm/SKILL.md",
@@ -862,8 +862,8 @@
     {
       "source": "pstack/skills/typescript-best-practices/references/patterns.md",
       "target": "plugins/cstack/skills/typescript-best-practices/references/patterns.md",
-      "status": "retained",
-      "reason": "Portable upstream content retained under its original MIT license."
+      "status": "ported",
+      "reason": "Principle skill mentions rewritten as principle reference links."
     },
     {
       "source": "pstack/skills/unslop/SKILL.md",
@@ -948,6 +948,184 @@
       "target": "plugins/cstack/skills/why/references/synthesizer-prompt.md",
       "status": "ported",
       "reason": "Adapted or preserved within the Codex plugin."
+    }
+  ],
+  "original": [
+    {
+      "path": "plugins/cstack/LICENSE-MATT-POCOCK",
+      "reason": "Matt Pocock skill license, not present in pstack."
+    },
+    {
+      "path": "plugins/cstack/NOTICE.md",
+      "reason": "Independent notice for the Codex port and third-party licenses."
+    },
+    {
+      "path": "plugins/cstack/scripts/run-tool.sh",
+      "reason": "Native Codex tool launcher, not present in pstack."
+    },
+    {
+      "path": "plugins/cstack/scripts/run_tool.py",
+      "reason": "Native Codex tool launcher, not present in pstack."
+    },
+    {
+      "path": "plugins/cstack/skills/architect/agents/openai.yaml",
+      "reason": "Codex skill UI and invocation policy, not present in pstack."
+    },
+    {
+      "path": "plugins/cstack/skills/arena/agents/openai.yaml",
+      "reason": "Codex skill UI and invocation policy, not present in pstack."
+    },
+    {
+      "path": "plugins/cstack/skills/audit-architecture/SKILL.md",
+      "reason": "Matt Pocock adaptation unique to cstack, with no pstack source."
+    },
+    {
+      "path": "plugins/cstack/skills/audit-architecture/agents/openai.yaml",
+      "reason": "Codex skill UI and invocation policy, not present in pstack."
+    },
+    {
+      "path": "plugins/cstack/skills/automate-me/agents/openai.yaml",
+      "reason": "Codex skill UI and invocation policy, not present in pstack."
+    },
+    {
+      "path": "plugins/cstack/skills/blast-radius/agents/openai.yaml",
+      "reason": "Codex skill UI and invocation policy, not present in pstack."
+    },
+    {
+      "path": "plugins/cstack/skills/bro/agents/openai.yaml",
+      "reason": "Codex skill UI and invocation policy, not present in pstack."
+    },
+    {
+      "path": "plugins/cstack/skills/clarify/SKILL.md",
+      "reason": "Matt Pocock adaptation unique to cstack, with no pstack source."
+    },
+    {
+      "path": "plugins/cstack/skills/clarify/agents/openai.yaml",
+      "reason": "Codex skill UI and invocation policy, not present in pstack."
+    },
+    {
+      "path": "plugins/cstack/skills/create-verification-skill/agents/openai.yaml",
+      "reason": "Codex skill UI and invocation policy, not present in pstack."
+    },
+    {
+      "path": "plugins/cstack/skills/cstack/agents/openai.yaml",
+      "reason": "Codex skill UI and invocation policy, not present in pstack."
+    },
+    {
+      "path": "plugins/cstack/skills/cstack/references/codex-runtime.md",
+      "reason": "Codex runtime contract, not present in pstack."
+    },
+    {
+      "path": "plugins/cstack/skills/cstack/scripts/bootstrap.test.ts",
+      "reason": "Native test for the Codex bootstrap helper."
+    },
+    {
+      "path": "plugins/cstack/skills/deslop/SKILL.md",
+      "reason": "Codex-native deslop skill, with no pstack source."
+    },
+    {
+      "path": "plugins/cstack/skills/deslop/agents/openai.yaml",
+      "reason": "Codex-native deslop skill, with no pstack source."
+    },
+    {
+      "path": "plugins/cstack/skills/domain/SKILL.md",
+      "reason": "Matt Pocock adaptation unique to cstack, with no pstack source."
+    },
+    {
+      "path": "plugins/cstack/skills/domain/agents/openai.yaml",
+      "reason": "Codex skill UI and invocation policy, not present in pstack."
+    },
+    {
+      "path": "plugins/cstack/skills/figure-it-out/agents/openai.yaml",
+      "reason": "Codex skill UI and invocation policy, not present in pstack."
+    },
+    {
+      "path": "plugins/cstack/skills/horizon/SKILL.md",
+      "reason": "Matt Pocock adaptation unique to cstack, with no pstack source."
+    },
+    {
+      "path": "plugins/cstack/skills/horizon/agents/openai.yaml",
+      "reason": "Codex skill UI and invocation policy, not present in pstack."
+    },
+    {
+      "path": "plugins/cstack/skills/horizon/references/templates.md",
+      "reason": "Matt Pocock adaptation unique to cstack, with no pstack source."
+    },
+    {
+      "path": "plugins/cstack/skills/how/agents/openai.yaml",
+      "reason": "Codex skill UI and invocation policy, not present in pstack."
+    },
+    {
+      "path": "plugins/cstack/skills/interrogate/agents/openai.yaml",
+      "reason": "Codex skill UI and invocation policy, not present in pstack."
+    },
+    {
+      "path": "plugins/cstack/skills/maintain-verification-skill/agents/openai.yaml",
+      "reason": "Codex skill UI and invocation policy, not present in pstack."
+    },
+    {
+      "path": "plugins/cstack/skills/make-bot-ui/agents/openai.yaml",
+      "reason": "Codex skill UI and invocation policy, not present in pstack."
+    },
+    {
+      "path": "plugins/cstack/skills/no-comments/agents/openai.yaml",
+      "reason": "Codex skill UI and invocation policy, not present in pstack."
+    },
+    {
+      "path": "plugins/cstack/skills/recall/agents/openai.yaml",
+      "reason": "Codex skill UI and invocation policy, not present in pstack."
+    },
+    {
+      "path": "plugins/cstack/skills/reflect/agents/openai.yaml",
+      "reason": "Codex skill UI and invocation policy, not present in pstack."
+    },
+    {
+      "path": "plugins/cstack/skills/setup-cstack/agents/openai.yaml",
+      "reason": "Codex skill UI and invocation policy, not present in pstack."
+    },
+    {
+      "path": "plugins/cstack/skills/setup-cstack/scripts/models.py",
+      "reason": "Codex setup helper, with no pstack counterpart."
+    },
+    {
+      "path": "plugins/cstack/skills/setup-cstack/scripts/project.py",
+      "reason": "Codex setup helper, with no pstack counterpart."
+    },
+    {
+      "path": "plugins/cstack/skills/show-me-your-work/agents/openai.yaml",
+      "reason": "Codex skill UI and invocation policy, not present in pstack."
+    },
+    {
+      "path": "plugins/cstack/skills/swarm/agents/openai.yaml",
+      "reason": "Codex skill UI and invocation policy, not present in pstack."
+    },
+    {
+      "path": "plugins/cstack/skills/tdd/agents/openai.yaml",
+      "reason": "Codex skill UI and invocation policy, not present in pstack."
+    },
+    {
+      "path": "plugins/cstack/skills/teach/agents/openai.yaml",
+      "reason": "Codex skill UI and invocation policy, not present in pstack."
+    },
+    {
+      "path": "plugins/cstack/skills/technical-writing/agents/openai.yaml",
+      "reason": "Codex skill UI and invocation policy, not present in pstack."
+    },
+    {
+      "path": "plugins/cstack/skills/typescript-best-practices/agents/openai.yaml",
+      "reason": "Codex skill UI and invocation policy, not present in pstack."
+    },
+    {
+      "path": "plugins/cstack/skills/unslop/agents/openai.yaml",
+      "reason": "Codex skill UI and invocation policy, not present in pstack."
+    },
+    {
+      "path": "plugins/cstack/skills/why/agents/openai.yaml",
+      "reason": "Codex skill UI and invocation policy, not present in pstack."
+    },
+    {
+      "path": "plugins/cstack/sources/matt-pocock.json",
+      "reason": "Provenance record for Matt Pocock adaptations."
     }
   ]
 }

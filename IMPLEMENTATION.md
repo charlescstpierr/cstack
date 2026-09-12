@@ -1,11 +1,11 @@
 # cstack port
 
-Approved target: private GitHub repository `charlescstpierr/cstack`, full port of `cursor/plugins/pstack` commit `27e2a62ff94f9af4b5e68435e41cdceacadb840c`, Codex App and CLI, explicit activation with `$cstack:cstack`, no external orchestration runtime.
+Approved target: private GitHub repository `charlescstpierr/cstack`, full port of `cursor/plugins/pstack` commit `889ec4b68fa5aab0e867dad71ec3fdf386ae48f3` (pstack 0.15.2), Codex App and CLI, explicit activation with `$cstack:cstack`, no external orchestration runtime.
 
 ## Delivery checklist
 
 - [x] Package one plugin under `plugins/cstack` and a repository marketplace.
-- [x] Account for all 47 upstream skills, 23 core playbooks, two agent prompts and the dormant automation pack.
+- [x] Account for the 47 upstream skills as 23 principle references plus the remaining specialized skills, 23 core playbooks, two agent prompts, the dormant automation pack, and the original `deslop` skill (29 skills in the 0.4.0 catalog).
 - [x] Port main router/playbooks to native tools, preserve scope and authorization boundaries.
 - [x] Port supporting skills/references; explicitly document unavailable integrations.
 - [x] Replace Graphite frontier resolution with git/gh; preserve head-SHA verification gates.

@@ -36,7 +36,6 @@ Le setup affiche les réglages existants et ces recommandations, avec leur dispo
 | Exploration | `gpt-5.6-luna` | `max` |
 | Petites modifications | `gpt-5.6-luna` | `max` |
 | Développement | `gpt-6-astra` | `low` |
-| Débogage difficile | `gpt-6-astra` | `medium` |
 | Revue de code | `gpt-6-astra` | `low` |
 | Architecture complexe | `gpt-6-astra` | `xhigh` |
 | Documentation | `gpt-5.6-luna` | `max` |
