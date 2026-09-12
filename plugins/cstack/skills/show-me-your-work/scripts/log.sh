@@ -16,6 +16,16 @@ if [ -n "$logdir" ] && [ "$logdir" != "." ] && [ ! -d "$logdir" ]; then
 	mkdir -p "$logdir"
 fi
 
+cstack_dir="$logdir"
+while [ -n "$cstack_dir" ] && [ "$cstack_dir" != "." ] && [ "$cstack_dir" != "/" ]; do
+	if [ "${cstack_dir##*/}" = ".cstack" ] && [ -d "$cstack_dir" ] && [ ! -e "$cstack_dir/.gitignore" ]; then
+		printf '*\n' > "$cstack_dir/.gitignore"
+		break
+	fi
+	next="${cstack_dir%/*}"
+	[ "$next" = "$cstack_dir" ] && break
+	cstack_dir="$next"
+done
 if [ ! -f "$logfile" ]; then
 	printf 'ts\tphase\tdecision\twhy\tevidence\tresult\n' > "$logfile"
 fi

@@ -24,27 +24,31 @@ class ModelSetupTests(unittest.TestCase):
             preview = models.preview(config, digest, CATALOG)
             self.assertFalse(path.exists(), "preview must be read-only")
             choices = {}
-            for group in preview["recommendations"].values():
+            expected = {}
+            groups = {}
+            for name, group in preview["recommendations"].items():
                 self.assertIsNone(group["unavailable"])
                 choices.update(group["choices"])
+                for role, value in group["choices"].items():
+                    expected[role] = value
+                    groups[role] = name
             saved = models.apply_choices(path, choices, digest, CATALOG)
             self.assertEqual(set(saved), models.ROLES)
-            expected = {
-                "how explorer": ("gpt-5.6-luna", "max"),
-                "simple edits": ("gpt-5.6-luna", "max"),
-                "feature, refactoring": ("gpt-6-astra", "low"),
-                "bug-fix": ("gpt-6-astra", "medium"),
-                "judgment and prose": ("gpt-6-astra", "low"),
-                "hardest tasks": ("gpt-6-astra", "xhigh"),
-                "documentation": ("gpt-5.6-luna", "max"),
-            }
-            for role, (model, effort) in expected.items():
-                self.assertEqual(models.resolve(saved, role, CATALOG),
-                                 [{"model": model, "reasoning_effort": effort}])
+            for role, value in expected.items():
+                resolved = models.resolve(saved, role, CATALOG)
+                if role in models.PANELS:
+                    self.assertEqual(resolved, [models.selection(item) for item in value])
+                else:
+                    self.assertEqual(resolved, [models.selection(value)])
             for role in models.ROLES:
                 resolved = models.resolve(saved, role, CATALOG)
                 self.assertTrue(all(set(item) == {"model", "reasoning_effort"} for item in resolved))
                 self.assertEqual(len(resolved), models.PANELS.get(role, 1))
+            development = groups["feature, refactoring"]
+            for role in ("bug-fix", "perf-issue", "hillclimb"):
+                self.assertEqual(groups[role], development)
+                self.assertEqual(models.resolve(saved, role, CATALOG),
+                                 models.resolve(saved, "feature, refactoring", CATALOG))
 
     def test_customization_preserves_legacy_values_and_explicit_inheritance(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -121,6 +125,18 @@ class ModelSetupTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 models.apply_choices(path, {"documentation": "inherit-parent"}, digest, None)
             self.assertEqual(list(external.iterdir()), [])
+
+    def test_apply_creates_cstack_gitignore_without_clobbering(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / ".cstack/models.json"
+            _, digest = models.read_config(path)
+            models.apply_choices(path, {"documentation": "inherit-parent"}, digest, None)
+            ignore = path.parent / ".gitignore"
+            self.assertEqual(ignore.read_text(), "*\n")
+            ignore.write_text("keep\n")
+            _, digest = models.read_config(path)
+            models.apply_choices(path, {"simple edits": "inherit-parent"}, digest, None)
+            self.assertEqual(ignore.read_text(), "keep\n")
 
 
 if __name__ == "__main__":

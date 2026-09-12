@@ -15,7 +15,7 @@ Separate discoverable facts from human decisions before forming questions.
 
 - Read the request, current files, project instructions, mode, and authorization.
 - Establish repository facts yourself, reusing [`$cstack:how`](../how/SKILL.md) for code-flow and ownership questions. Mark an inference as an inference and keep it separate from observed behavior.
-- If an independent fact needs a separate read-only pass, use one native delegate per fact only when that adds useful coverage. Resolve it as the configured `how explorer` role and forward the complete model and reasoning-effort selection. With no useful delegation capability, investigate in the parent.
+- If an independent fact needs a separate read-only pass, use one native delegate per fact only when that adds useful coverage. Resolve it as the configured `how explorer` role and forward the complete model and reasoning-effort selection. With no useful delegation capability, investigate in the parent, label the result `single-agent`, and report the missing independence.
 - Never ask the user for a fact the repository or exposed tools can establish. Never invent a fact, answer a material business decision, or turn a recommendation into a decision.
 
 The default is zero extra agents. If a separate recommendation or synthesis pass is genuinely useful, use the configured `judgment and prose` role, preserving its complete selection. Do not create a new role or panel.

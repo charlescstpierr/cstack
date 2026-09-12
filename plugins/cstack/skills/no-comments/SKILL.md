@@ -1,13 +1,13 @@
 ---
 name: no-comments
-description: "Use for $cstack:no-comments to run an independent comment review, fix accepted findings, and offer encodings for claimed constraints."
+description: "Use for $cstack:no-comments when running an independent comment review, then fix accepted findings and offer encodings for claimed constraints."
 ---
 
 # No comments
 
 Runtime: [`../cstack/references/codex-runtime.md`](../cstack/references/codex-runtime.md).
 
-Run an independent comment review, then act on accepted findings.
+Run an independent comment review, then act on accepted findings. `deslop` (`../deslop/SKILL.md`) cleans slop out of code, `unslop` (`../unslop/SKILL.md`) cleans it out of prose, and `no-comments` hands the comments to a reviewer who did not write them.
 
 ## Scope
 
@@ -15,7 +15,7 @@ Use the caller's files or diff. Otherwise use the current diff against the base 
 
 ## Steps
 
-1. Read [`../cstack/references/agents/comment-reviewer.md`](../cstack/references/agents/comment-reviewer.md) and pass that prompt plus the scope to one available native subagent. The assignment is read-only; no named registered role is required.
+1. Read [`../cstack/references/agents/comment-reviewer.md`](../cstack/references/agents/comment-reviewer.md) and pass that prompt plus the scope to one native subagent. The assignment is read-only; no named registered role is required. When no subagent slot is available, run the same prompt in this session as a separate, explicitly re-scoped pass, label the result `single-agent`, and report the missing independence. Absent capacity never deletes the review.
 2. Inspect its report. Reject scope escapes, exception-protected deletions, and flags that treat intentional comments as guilty. A keep survives only with proof that the constraint cannot be expressed in code. Audit missed scoped lint and TypeScript suppressions. Correctness or safety suppressions remain actionable. Before accepting thin `IMPORTANT` or `do not remove` findings, run `$cstack:how` or `$cstack:why` on the symbol. Rerun one rejected review with the failure named. Reject a second, report it open, and fail `$cstack:no-comments`.
 3. Fix trivial accepted findings directly by deleting dead narration, dropping a workaround, or using the real API. If any fix needs a shape, run `$cstack:architect` once for the accepted set and surrounding code. Stop at the sketch; Step 4 implements it.
 4. Implement the smallest root-cause fix in scope. Remove every named workaround. If the root cause is out of scope, land the smallest in-scope fix and report the rest open. The [Fix Root Causes](../cstack/references/principles/fix-root-causes.md) and [Redesign From First Principles](../cstack/references/principles/redesign-from-first-principles.md) references guide intent only. Neither authorizes widening the fence nor fixing instances outside it. Never bolt on symptom guards.

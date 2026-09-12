@@ -11,6 +11,7 @@ function example(): string {
   const template = playbook.split("````markdown\n")[1]?.split("````")[0];
   if (!template) throw new Error("Missing bundled plan template");
   return template.replace(/<[^>]+>/g, "example")
+    .replace(/(\*\*Verify, live\.\*\*[^\n]*)/, (line) => (line.includes("within native capacity") ? line : `${line} within native capacity`))
     .replace(/^- \[ \] Lane (\d+)\..*$/gm, (_, number) => `- [ ] Lane ${number}. Run the scenario. Save \`evidence/lane-${number}.log\`. Pass when the observed result matches the contract.`);
 }
 

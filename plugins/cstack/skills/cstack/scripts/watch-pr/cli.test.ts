@@ -1,6 +1,10 @@
 import { describe, expect, it } from "bun:test";
+import { mkdtemp, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { type CliRuntime, main, parseArgs } from "./cli.ts";
 import { fakeReader, passingCheck } from "./fakes.test-helper.ts";
+import { GhGitHubReader, WatcherQueryError } from "./github.ts";
 import { renderJson, renderPretty } from "./render.ts";
 import type { GitHubReader, WatcherVerdict } from "./types.ts";
 import { parsePrNumber } from "./types.ts";
@@ -220,5 +224,60 @@ describe("main", () => {
     expect(await main(["--help"], harness.runtime)).toBe(0);
     expect(harness.stdout.join("")).toContain("JSON (NDJSON while polling)");
     expect(reader.calls).toEqual([]);
+  });
+
+  it("returns BLOCKER exit 7 when gh is missing", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "watch-cli-missing-gh-"));
+    const original = process.env.PATH;
+    process.env.PATH = directory;
+    try {
+      const harness = testRuntime(new GhGitHubReader());
+      const code = await main(
+        ["--owner", "o", "--repo", "r", "--pr", "1", "--stack"],
+        harness.runtime
+      );
+      expect(code).toBe(7);
+      expect(JSON.parse(harness.stdout[0])).toMatchObject({
+        kind: "BLOCKER",
+        exitCode: 7,
+        blocker: {
+          kind: "status-query",
+          failure: { kind: "missing-command", retryable: false },
+        },
+      });
+    } finally {
+      if (original === undefined) delete process.env.PATH;
+      else process.env.PATH = original;
+      await rm(directory, { recursive: true, force: true });
+    }
+  });
+
+  it("returns exit 7 immediately for a non-retryable auth failure", async () => {
+    const reader = {
+      ...fakeReader(),
+      async pullRequest() {
+        throw new WatcherQueryError({
+          kind: "auth",
+          retryable: false,
+          code: 1,
+          detail: "You are not logged into any GitHub hosts. Run gh auth login",
+        });
+      },
+    };
+    const harness = testRuntime(reader);
+    expect(
+      await main(
+        ["--owner", "owner", "--repo", "repo", "--pr", "1"],
+        harness.runtime
+      )
+    ).toBe(7);
+    expect(JSON.parse(harness.stdout[0])).toMatchObject({
+      kind: "BLOCKER",
+      exitCode: 7,
+      blocker: {
+        kind: "status-query",
+        failure: { kind: "auth", retryable: false },
+      },
+    });
   });
 });

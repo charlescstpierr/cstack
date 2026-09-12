@@ -1,8 +1,10 @@
 import { spawn } from "node:child_process";
 import type * as T from "./types.ts";
 import { nonEmpty, parsePrNumber } from "./types.ts";
+export const REVIEW_THREAD_PAGE_SIZE = 100;
+export const OPEN_PR_LIST_LIMIT = 300;
 export const REVIEW_THREADS_QUERY =
-  "\nquery ReviewThreads($owner: String!, $repo: String!, $pr: Int!) {\n  repository(owner: $owner, name: $repo) {\n    pullRequest(number: $pr) {\n      reviewThreads(first: 100) {\n        nodes {\n          id\n          isResolved\n          comments(first: 10) {\n            nodes {\n              body\n              createdAt\n              path\n              line\n              author { login }\n            }\n          }\n        }\n      }\n    }\n  }\n}\n";
+  "\nquery ReviewThreads($owner: String!, $repo: String!, $pr: Int!) {\n  repository(owner: $owner, name: $repo) {\n    pullRequest(number: $pr) {\n      reviewThreads(first: 100) {\n        pageInfo {\n          hasNextPage\n        }\n        nodes {\n          id\n          isResolved\n          comments(first: 10) {\n            nodes {\n              body\n              createdAt\n              path\n              line\n              author { login }\n            }\n          }\n        }\n      }\n    }\n  }\n}\n";
 export const PR_COMMIT_STATUS_QUERY =
   "\nquery PrCommitStatuses($owner: String!, $repo: String!, $pr: Int!) {\n  repository(owner: $owner, name: $repo) {\n    pullRequest(number: $pr) {\n      commits(last: 50) {\n        nodes {\n          commit {\n            oid\n            statusCheckRollup {\n              state\n            }\n          }\n        }\n      }\n    }\n  }\n}\n";
 export const PR_CHECK_ROLLUP_QUERY =
@@ -29,6 +31,41 @@ export class ChecksUnavailable extends WatcherQueryError {
 }
 const firstLine = (value: string): string =>
   value.trim().split(/\r?\n/, 1)[0]?.slice(0, 240) ?? "";
+function spawnFailure(command: string, error: unknown): WatcherQueryError {
+  const code =
+    error !== null &&
+    typeof error === "object" &&
+    "code" in error &&
+    typeof error.code === "string"
+      ? error.code
+      : null;
+  if (code === "ENOENT") {
+    return new WatcherQueryError({
+      kind: "missing-command",
+      retryable: false,
+      detail: `${command} is not installed`,
+    });
+  }
+  return new WatcherQueryError({
+    kind: "command-exit",
+    retryable: true,
+    code: -1,
+    detail: `${command} failed to start: ${error instanceof Error ? error.message : String(error)}`,
+  });
+}
+function isAuthFailure(stderr: string): boolean {
+  const text = stderr.toLowerCase();
+  return (
+    text.includes("not logged into any github hosts") ||
+    text.includes("gh auth login") ||
+    text.includes("authentication required") ||
+    text.includes("bad credentials") ||
+    text.includes("must re-authenticate") ||
+    text.includes("authorization failed") ||
+    text.includes("resource not accessible by integration") ||
+    /\bhttp\s*40[13]\b/.test(text)
+  );
+}
 function run(argv: readonly [string, ...string[]]): Promise<CommandResult> {
   return new Promise((resolve, reject) => {
     const child = spawn(argv[0], argv.slice(1), {
@@ -36,6 +73,21 @@ function run(argv: readonly [string, ...string[]]): Promise<CommandResult> {
     });
     let stdout = "";
     let stderr = "";
+    let settled = false;
+    const fail = (error: unknown): void => {
+      if (settled) return;
+      settled = true;
+      reject(spawnFailure(argv[0], error));
+    };
+    const succeed = (result: CommandResult): void => {
+      if (settled) return;
+      settled = true;
+      resolve(result);
+    };
+    if (child.stdout === null || child.stderr === null) {
+      fail(new Error(`${argv[0]} spawned without stdio pipes`));
+      return;
+    }
     child.stdout.setEncoding("utf8");
     child.stderr.setEncoding("utf8");
     child.stdout.on("data", (chunk: string) => {
@@ -44,8 +96,10 @@ function run(argv: readonly [string, ...string[]]): Promise<CommandResult> {
     child.stderr.on("data", (chunk: string) => {
       stderr += chunk;
     });
-    child.on("error", reject);
-    child.on("close", (code) => resolve({ code: code ?? -1, stdout, stderr }));
+    child.on("error", fail);
+    child.on("close", (code) =>
+      succeed({ code: code ?? -1, stdout, stderr })
+    );
   });
 }
 function parseJson(text: string, label: string): unknown {
@@ -61,14 +115,23 @@ function parseJson(text: string, label: string): unknown {
 }
 async function runJson(argv: readonly [string, ...string[]]): Promise<unknown> {
   const result = await run(argv);
-  if (result.code !== 0)
+  if (result.code !== 0) {
+    const detail =
+      firstLine(result.stderr) || `${argv.join(" ")} exited ${result.code}`;
+    if (isAuthFailure(result.stderr))
+      throw new WatcherQueryError({
+        kind: "auth",
+        retryable: false,
+        code: result.code,
+        detail,
+      });
     throw new WatcherQueryError({
       kind: "command-exit",
       retryable: true,
       code: result.code,
-      detail:
-        firstLine(result.stderr) || `${argv.join(" ")} exited ${result.code}`,
+      detail,
     });
+  }
   return parseJson(result.stdout, argv.join(" "));
 }
 function raw(value: unknown): string {
@@ -358,10 +421,22 @@ function passKey(comment: T.ReviewComment | null): string | null {
   return null;
 }
 export function parseReviewThreads(value: unknown): readonly T.ReviewThread[] {
-  const nodes = list(
-    at(value, ["data", "repository", "pullRequest", "reviewThreads", "nodes"]),
-    "reviewThreads.nodes"
+  const connection = record(
+    at(value, ["data", "repository", "pullRequest", "reviewThreads"]),
+    "reviewThreads"
   );
+  const page = record(connection.pageInfo, "reviewThreads.pageInfo");
+  if (typeof page.hasNextPage !== "boolean")
+    missing("reviewThreads.pageInfo.hasNextPage", page.hasNextPage);
+  if (page.hasNextPage) {
+    throw new WatcherQueryError({
+      kind: "truncated",
+      retryable: false,
+      detail:
+        "reviewThreads page is full and more pages exist; unresolved threads may be hidden",
+    });
+  }
+  const nodes = list(connection.nodes, "reviewThreads.nodes");
   const threads: {
     readonly id: string;
     readonly firstComment: T.ReviewComment | null;
@@ -450,6 +525,32 @@ function graphqlArgs(
   ];
 }
 
+export function parseOpenPullRequests(
+  value: unknown
+): readonly T.OpenPullRequest[] {
+  const rows = list(value, "open PRs");
+  if (rows.length >= OPEN_PR_LIST_LIMIT) {
+    throw new WatcherQueryError({
+      kind: "truncated",
+      retryable: false,
+      detail: `gh pr list returned ${OPEN_PR_LIST_LIMIT} PRs; stack discovery may be incomplete`,
+    });
+  }
+  return rows.map((item, index) => {
+    const object = record(item, `open PRs[${index}]`);
+    return {
+      number: parsePrNumber(object.number, `open PRs[${index}].number`),
+      headRefName: string(
+        object.headRefName,
+        `open PRs[${index}].headRefName`
+      ),
+      baseRefName: string(
+        object.baseRefName,
+        `open PRs[${index}].baseRefName`
+      ),
+    };
+  });
+}
 export class GhGitHubReader implements T.GitHubReader {
   async originRepo(): Promise<T.Repository | null> {
     const result = await run(["git", "remote", "get-url", "origin"]);
@@ -493,24 +594,11 @@ export class GhGitHubReader implements T.GitHubReader {
       "--state",
       "open",
       "--limit",
-      "300",
+      String(OPEN_PR_LIST_LIMIT),
       "--json",
       "number,headRefName,baseRefName",
     ]);
-    return list(value, "open PRs").map((item, index) => {
-      const object = record(item, `open PRs[${index}]`);
-      return {
-        number: parsePrNumber(object.number, `open PRs[${index}].number`),
-        headRefName: string(
-          object.headRefName,
-          `open PRs[${index}].headRefName`
-        ),
-        baseRefName: string(
-          object.baseRefName,
-          `open PRs[${index}].baseRefName`
-        ),
-      };
-    });
+    return parseOpenPullRequests(value);
   }
   async checksFastPath(context: T.PrContext): Promise<T.ChecksFastPath> {
     const result = await run([
@@ -660,18 +748,23 @@ export function orderStack(
     values.sort((a, b) => a.number - b.number);
   const start = byNumber.get(context.number);
   if (start === undefined) return [context];
+  const seen = new Set<T.PrNumber>([start.number]);
   const down: T.OpenPullRequest[] = [];
   let current = start;
   while (byHead.has(current.baseRefName)) {
     const parent = byHead.get(current.baseRefName);
     if (parent === undefined) break;
+    if (seen.has(parent.number)) {
+      throw new WatcherQueryError({
+        kind: "stack-cycle",
+        retryable: false,
+        detail: `PR stack contains a cycle at ${parent.headRefName}`,
+      });
+    }
+    seen.add(parent.number);
     down.push(parent);
     current = parent;
   }
-  const seen = new Set<T.PrNumber>([
-    ...down.map((pr) => pr.number),
-    start.number,
-  ]);
   const up: T.OpenPullRequest[] = [];
   const visit = (parent: T.OpenPullRequest): void => {
     for (const child of children.get(parent.headRefName) ?? []) {

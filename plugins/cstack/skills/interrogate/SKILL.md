@@ -38,7 +38,7 @@ Write one clear paragraph and name every supplied requirements source. If the ap
 
 ## Step 3, Spawn Reviewers
 
-Resolve `interrogate reviewers` once under the runtime contract. Its panel length is the exact reviewer count, bounded only by native concurrency; queue excess attempts in waves. Preserve the complete model and reasoning-effort selection for every position. The default panel has three reviewers with these responsibilities:
+Resolve `interrogate reviewers` once under the runtime contract. Its panel length is the exact reviewer count, bounded only by native concurrency; queue excess attempts in waves. Preserve the complete model and reasoning-effort selection for every position. When no subagent slot is available, run each reviewer pass in the same session as a separate, explicitly re-scoped pass, label the result `single-agent`, and report the missing independence. Absent capacity never deletes a reviewer or an axis. The default panel has three reviewers with these responsibilities:
 
 - Reviewer 1: Standards, using the repository's supplied standards sources.
 - Reviewer 2: Spec, using only the approved requirements evidence. With no approved source, report the evidence gap and do not invent requirements.
@@ -91,6 +91,8 @@ For each finding, include:
 ## Output Format
 
 Present the verdict in this structure:
+
+Every claim carries its evidence or its label in the same sentence. Measured, inferred, or guess. A prediction or an unseen cause is a guess. Never hand the human a check you could run.
 
 ### Intent
 > [The stated intent paragraph from Step 2]

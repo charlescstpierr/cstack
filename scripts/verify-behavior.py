@@ -14,7 +14,6 @@ import shutil
 import subprocess
 import sys
 import time
-import tomllib
 
 
 DEFAULT_TURN_SECONDS = 300.0
@@ -311,14 +310,35 @@ def tree_hash(root, excluded):
     return {"sha256": digest.hexdigest(), "files": files, "bytes": total_bytes}
 
 
-def config_names():
-    config_path = Path("/home/ubuntu/.codex/config.toml")
-    if not config_path.exists():
-        return [], []
+def config_path():
+    home = os.environ.get("CODEX_HOME")
+    if home is None:
+        return Path.home() / ".codex" / "config.toml"
+    if home == "":
+        raise HarnessError("CODEX_HOME is set but empty")
+    return Path(home) / "config.toml"
+
+
+def parse_toml(raw, path):
     try:
-        config = tomllib.loads(config_path.read_text())
-    except (OSError, tomllib.TOMLDecodeError) as error:
-        raise HarnessError(f"cannot read Codex config: {config_path}") from error
+        import tomllib
+    except ImportError as error:
+        raise HarnessError(
+            f"Python 3.11+ is required to parse {path}; this interpreter is {sys.version.split()[0]}"
+        ) from error
+    try:
+        return tomllib.loads(raw)
+    except tomllib.TOMLDecodeError as error:
+        raise HarnessError(f"cannot read Codex config: {path}") from error
+
+
+def config_names():
+    path = config_path()
+    try:
+        raw = path.read_text()
+    except OSError as error:
+        raise HarnessError(f"cannot read Codex config: {path}") from error
+    config = parse_toml(raw, path)
     plugins = config.get("plugins", {})
     mcp_servers = config.get("mcp_servers", {})
     return (

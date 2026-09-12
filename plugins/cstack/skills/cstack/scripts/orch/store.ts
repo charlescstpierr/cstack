@@ -365,6 +365,27 @@ async function requiredFile(path: string): Promise<string> {
   }
 }
 
+async function firstLineOf(path: string): Promise<string | null> {
+  try {
+    return (await readFile(path, "utf8")).replace(/\r/g, "").split("\n", 1)[0] ?? "";
+  } catch (error) {
+    if (errorCode(error) === "ENOENT") {
+      return null;
+    }
+    throw error;
+  }
+}
+
+async function requireInitializedStore(store: string): Promise<void> {
+  const unitsHeader = await firstLineOf(join(store, "units.tsv"));
+  const ledgerHeader = await firstLineOf(join(store, "ledger.tsv"));
+  if (unitsHeader !== UNIT_HEADER || ledgerHeader !== LEDGER_HEADER) {
+    throw new UserError(
+      `store is not initialized at ${store}; run orch init`
+    );
+  }
+}
+
 function holderIsDead(holder: string): boolean {
   const pid = Number.parseInt(holder, 10);
   if (!Number.isSafeInteger(pid) || pid <= 0 || String(pid) !== holder) {
@@ -391,16 +412,40 @@ async function acquireLock(
   };
 
   const takeOver = async (): Promise<void> => {
-    await unlink(path);
+    const claim = join(store, `${LOCK_FILE}.${pid}.${randomUUID()}`);
+    const stale = join(store, `${LOCK_FILE}.stale.${pid}.${randomUUID()}`);
+    const handle = await open(claim, "wx");
+    await handle.writeFile(`${pid}\n`);
+    await handle.close();
     try {
-      await create();
-    } catch (retryError) {
-      if (errorCode(retryError) === "EEXIST") {
-        const retryHolder =
-          (await readFile(path, "utf8")).trim() || "unknown";
-        throw new UserError(`store lock held by pid ${retryHolder}`);
+      try {
+        await rename(path, stale);
+      } catch (error) {
+        if (errorCode(error) === "ENOENT") {
+          let holder = "unknown";
+          try {
+            holder = (await readFile(path, "utf8")).trim() || "unknown";
+          } catch {
+            holder = "unknown";
+          }
+          throw new UserError(`store lock held by pid ${holder}`);
+        }
+        throw error;
       }
-      throw retryError;
+      try {
+        await rename(claim, path);
+      } catch (error) {
+        try {
+          await rename(stale, path);
+        } catch {
+          // Best effort restore of the stolen stale lock.
+        }
+        throw error;
+      }
+      await rm(stale, { force: true });
+    } catch (error) {
+      await rm(claim, { force: true });
+      throw error;
     }
   };
 
@@ -555,9 +600,9 @@ function pointerCells(pointer: InboxPointer): readonly string[] {
   ];
 }
 
-async function readPointers(
+async function pointerFileNames(
   directory: string
-): Promise<readonly InboxPointer[]> {
+): Promise<readonly string[]> {
   let entries: Dirent[];
   try {
     entries = await readdir(directory, { withFileTypes: true });
@@ -569,26 +614,40 @@ async function readPointers(
     }
     throw error;
   }
-  const result: InboxPointer[] = [];
-  const files = entries
+  return entries
     .filter((entry) => entry.isFile() && entry.name.endsWith(".tsv"))
-    .sort((left, right) => left.name.localeCompare(right.name));
-  for (const entry of files) {
-    const raw = (await readFile(join(directory, entry.name), "utf8")).replace(
-      /\r?\n$/,
-      ""
-    );
-    const row = raw.split("\t");
-    if (/[\r\n]/.test(raw) || row.length !== 5) {
-      throw new UserError(`inbox pointer ${entry.name} is malformed`);
-    }
-    result.push({
-      ts: row[0] ?? "",
-      agent: row[1] ?? "",
-      unit: row[2] ?? "",
-      status: row[3] ?? "",
-      report: row[4] ?? "",
-    });
+    .map((entry) => entry.name)
+    .sort((left, right) => left.localeCompare(right));
+}
+
+async function parsePointerFile(
+  directory: string,
+  name: string
+): Promise<InboxPointer> {
+  const raw = (await readFile(join(directory, name), "utf8")).replace(
+    /\r?\n$/,
+    ""
+  );
+  const row = raw.split("\t");
+  if (/[\r\n]/.test(raw) || row.length !== 5) {
+    throw new UserError(`inbox pointer ${name} is malformed`);
+  }
+  return {
+    ts: row[0] ?? "",
+    agent: row[1] ?? "",
+    unit: row[2] ?? "",
+    status: row[3] ?? "",
+    report: row[4] ?? "",
+  };
+}
+
+async function readPointers(
+  directory: string
+): Promise<readonly InboxPointer[]> {
+  const names = await pointerFileNames(directory);
+  const result: InboxPointer[] = [];
+  for (const name of names) {
+    result.push(await parsePointerFile(directory, name));
   }
   return result;
 }
@@ -1091,11 +1150,20 @@ function defaultBranch(repo: string): string {
   return requiredString(value.defaultBranchRef.name, "default branch");
 }
 
+function livePreferred(
+  rows: readonly GitHubPullRequest[]
+): readonly GitHubPullRequest[] {
+  const live = rows.filter((row) => row.state !== "CLOSED");
+  return live.length > 0 ? live : rows;
+}
+
 function oneByHead(
   rows: readonly GitHubPullRequest[],
   branch: string
 ): GitHubPullRequest | undefined {
-  const matches = rows.filter((row) => row.branches === branch);
+  const matches = livePreferred(
+    rows.filter((row) => row.branches === branch)
+  );
   if (matches.length > 1) {
     throw new UserError(
       `GitHub returned multiple PRs for head branch ${branch}: ${matches
@@ -1167,7 +1235,9 @@ function resolveFrontier(repo: string): readonly FrontierPr[] {
   const up: GitHubPullRequest[] = [];
   cursor = start;
   while (true) {
-    const children = rows.filter((row) => row.base === cursor.branches);
+    const children = livePreferred(
+      rows.filter((row) => row.base === cursor.branches)
+    );
     if (children.length > 1) {
       throw new UserError(
         `GitHub PR stack branches at ${cursor.branches}: ${children
@@ -1262,11 +1332,7 @@ export function openStore(
 
   const beginWrite = async (): Promise<void> => {
     ensureOpen();
-    if (!(await exists(store))) {
-      throw new UserError(
-        `store is not initialized at ${store}; run orch init`
-      );
-    }
+    await requireInitializedStore(store);
     await ensureLock();
   };
 
@@ -1409,7 +1475,8 @@ export function openStore(
     },
     inbox: {
       push: async (params) => {
-        await beginWrite();
+        ensureOpen();
+        await requireInitializedStore(store);
         const pointer: InboxPointer = {
           ts: new Date().toISOString(),
           agent: requiredCell(params.agent, "agent"),
@@ -1435,19 +1502,14 @@ export function openStore(
       drain: async () => {
         await beginWrite();
         const inbox = join(store, "inbox");
-        const rows = await readPointers(inbox);
-        const drained = join(
-          store,
-          `.inbox-drain-${process.pid}-${randomUUID()}`
-        );
-        await rename(inbox, drained);
-        try {
-          await mkdir(inbox);
-        } catch (error) {
-          await rename(drained, inbox);
-          throw error;
+        const names = await pointerFileNames(inbox);
+        const rows: InboxPointer[] = [];
+        for (const name of names) {
+          rows.push(await parsePointerFile(inbox, name));
         }
-        await rm(drained, { recursive: true, force: true });
+        for (const name of names) {
+          await unlink(join(inbox, name));
+        }
         return rows;
       },
       peek: async () => {
@@ -1532,7 +1594,7 @@ export function openStore(
         const value: Frontier = {
           generation: old.generation + 1,
           prs,
-          lowestUnmerged: prs.find((row) => row.state !== "MERGED")?.pr ?? null,
+          lowestUnmerged: prs.find((row) => row.state === "OPEN")?.pr ?? null,
         };
         await atomicWrite(
           join(store, "frontier.json"),

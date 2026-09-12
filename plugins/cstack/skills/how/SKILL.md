@@ -1,6 +1,6 @@
 ---
 name: how
-description: "Use for \"how does X work\", code walkthroughs before changing something, and placement / ownership / layering questions (\"where should this live\", \"which package owns this\", \"is this the right layer\"). Explains subsystem architecture, runtime flow, onboarding mental models. Use why for motivation."
+description: "Use for $cstack:how, \"how does X work\", code walkthroughs before changing something, and placement / ownership / layering questions (\"where should this live\", \"which package owns this\", \"is this the right layer\"). Explains subsystem architecture, runtime flow, onboarding mental models. Use $cstack:why for motivation."
 ---
 
 # How
@@ -10,6 +10,8 @@ Runtime: [`../cstack/references/codex-runtime.md`](../cstack/references/codex-ru
 Explore the codebase to answer "how does X work?" questions. Produce architectural explanations at the level of a senior engineer onboarding onto a subsystem, enough to build a working mental model, not so much that it reads like annotated source code.
 
 Follow the runtime contract's direct inheritance path when unconfigured; otherwise resolve each named role with its helper and pass the complete selection, including reasoning effort, to each native spawn. Report host capability gaps rather than dropping a selected field.
+
+A missing subagent serializes a step. It never removes one. When no subagent slot is available, run the explorer, explainer, or synthesizer pass in the same session as a separate, explicitly re-scoped pass, label the result `single-agent`, and report the missing independence.
 
 ## Step 1. Assess Complexity
 
@@ -45,3 +47,5 @@ Present the explainer's output to the user. Light edits for clarity or context f
 ## Output Format
 
 The explanation uses the sections defined in `references/explainer-prompt.md`, dropping any that do not apply: Overview, Key Concepts, How It Works, Where Things Live, Gotchas.
+
+Every claim carries its evidence or its label in the same sentence. Measured, inferred, or guess. A prediction or an unseen cause is a guess. Never hand the human a check you could run.

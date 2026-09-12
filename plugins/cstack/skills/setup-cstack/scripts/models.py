@@ -15,9 +15,8 @@ GROUPS = {
         "how explorer", "how explainer", "why investigators", "why synthesizer"]),
     "simple changes": ("gpt-5.6-luna", "max", ["simple edits"]),
     "development": ("gpt-6-astra", "low", [
-        "feature, refactoring", "swarm workers", "arena runners"]),
-    "difficult debugging": ("gpt-6-astra", "medium", [
-        "bug-fix", "perf-issue", "hillclimb"]),
+        "feature, refactoring", "bug-fix", "perf-issue", "hillclimb",
+        "swarm workers", "arena runners"]),
     "code review": ("gpt-6-astra", "low", [
         "judgment and prose", "reflect tooling",
         "reflect judgment, divergent, synthesizer",
@@ -31,6 +30,15 @@ PANELS = {"arena runners": 3, "arena cross-judge pool": 1,
 ROLES = {role for _, _, roles in GROUPS.values() for role in roles}
 LEGACY_FALLBACKS = {"simple edits": "feature, refactoring",
                     "documentation": "judgment and prose"}
+
+
+def ensure_cstack_gitignore(directory):
+    if directory.name != ".cstack":
+        return
+    ignore = directory / ".gitignore"
+    if ignore.exists() or ignore.is_symlink():
+        return
+    ignore.write_text("*\n")
 
 
 def selections(role, value):
@@ -134,6 +142,8 @@ def apply_choices(path, choices, expected_digest, catalog):
     if path.is_symlink() or path.parent.is_symlink():
         raise ValueError("models.json or its directory is a symlink; preserve it and use regular project state")
     path.parent.mkdir(parents=True, exist_ok=True)
+    if path.parent.name == ".cstack":
+        ensure_cstack_gitignore(path.parent)
     temporary = None
     try:
         with tempfile.NamedTemporaryFile(mode="w", dir=path.parent, delete=False) as output:

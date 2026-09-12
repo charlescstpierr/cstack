@@ -1,14 +1,20 @@
 import { describe, expect, it } from "bun:test";
 import {
   ChecksUnavailable,
+  GhGitHubReader,
+  OPEN_PR_LIST_LIMIT,
   WatcherQueryError,
   mapRollupNode,
   orderStack,
+  parseOpenPullRequests,
   parsePullRequest,
   parseReviewThreads,
   resolveChecks,
   resolveContext,
 } from "./github.ts";
+import { chmod, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import {
   fakeReader,
   failedCheck,
@@ -198,6 +204,7 @@ it("annotates Bugbot threads with distinct review-pass counts", () => {
       repository: {
         pullRequest: {
           reviewThreads: {
+            pageInfo: { hasNextPage: false },
             nodes: [
               {
                 id: "one",
@@ -302,5 +309,195 @@ describe("context and stack discovery", () => {
       },
     ]);
     expect(ordered.map((item) => Number(item.number))).toEqual([41, 42, 43]);
+  });
+
+  it("fails closed on a base-ref cycle", () => {
+    const cyclic = [
+      {
+        number: context.number,
+        headRefName: "feature",
+        baseRefName: "base-feature",
+      },
+      {
+        number: parsePrNumber(41),
+        headRefName: "base-feature",
+        baseRefName: "feature",
+      },
+    ];
+    expect(() => orderStack(context, cyclic)).toThrow(WatcherQueryError);
+    try {
+      orderStack(context, cyclic);
+      throw new Error("expected cycle to throw");
+    } catch (error) {
+      expect(error).toBeInstanceOf(WatcherQueryError);
+      if (!(error instanceof WatcherQueryError)) throw error;
+      expect(error.failure).toMatchObject({
+        kind: "stack-cycle",
+        retryable: false,
+      });
+    }
+  });
+});
+
+
+function threadResponse(hasNextPage: boolean, nodeCount = 1) {
+  return {
+    data: {
+      repository: {
+        pullRequest: {
+          reviewThreads: {
+            pageInfo: { hasNextPage },
+            nodes: Array.from({ length: nodeCount }, (_, index) => ({
+              id: `thread-${index}`,
+              isResolved: false,
+              comments: {
+                nodes: [
+                  {
+                    body: "note",
+                    createdAt: "now",
+                    path: "a.ts",
+                    line: 1,
+                    author: { login: "reviewer" },
+                  },
+                ],
+              },
+            })),
+          },
+        },
+      },
+    },
+  };
+}
+
+describe("review thread pagination", () => {
+  it("fails closed when the reviewThreads page has more results", () => {
+    expect(() => parseReviewThreads(threadResponse(true, 100))).toThrow(
+      WatcherQueryError
+    );
+    try {
+      parseReviewThreads(threadResponse(true, 100));
+      throw new Error("expected truncated threads to throw");
+    } catch (error) {
+      expect(error).toBeInstanceOf(WatcherQueryError);
+      if (!(error instanceof WatcherQueryError)) throw error;
+      expect(error.failure).toMatchObject({
+        kind: "truncated",
+        retryable: false,
+      });
+    }
+  });
+
+  it("accepts a full page when GraphQL reports no further pages", () => {
+    expect(parseReviewThreads(threadResponse(false, 100))).toHaveLength(100);
+  });
+});
+
+describe("open PR list truncation", () => {
+  it("fails closed when gh pr list hits the discovery cap", () => {
+    const rows = Array.from({ length: OPEN_PR_LIST_LIMIT }, (_, index) => ({
+      number: index + 1,
+      headRefName: `branch-${index}`,
+      baseRefName: "main",
+    }));
+    expect(() => parseOpenPullRequests(rows)).toThrow(WatcherQueryError);
+    try {
+      parseOpenPullRequests(rows);
+      throw new Error("expected truncated stack discovery to throw");
+    } catch (error) {
+      expect(error).toBeInstanceOf(WatcherQueryError);
+      if (!(error instanceof WatcherQueryError)) throw error;
+      expect(error.failure).toMatchObject({
+        kind: "truncated",
+        retryable: false,
+        detail: `gh pr list returned ${OPEN_PR_LIST_LIMIT} PRs; stack discovery may be incomplete`,
+      });
+    }
+  });
+
+  it("parses a listing just under the discovery cap", () => {
+    const rows = Array.from(
+      { length: OPEN_PR_LIST_LIMIT - 1 },
+      (_, index) => ({
+        number: index + 1,
+        headRefName: `branch-${index}`,
+        baseRefName: "main",
+      })
+    );
+    expect(parseOpenPullRequests(rows)).toHaveLength(OPEN_PR_LIST_LIMIT - 1);
+  });
+});
+
+describe("gh spawn failures", () => {
+  async function withPath(
+    directory: string,
+    operation: () => Promise<void>,
+    prepend = false
+  ): Promise<void> {
+    const original = process.env.PATH;
+    process.env.PATH = prepend && original
+      ? `${directory}:${original}`
+      : directory;
+    try {
+      await operation();
+    } finally {
+      if (original === undefined) delete process.env.PATH;
+      else process.env.PATH = original;
+    }
+  }
+
+  it("wraps a missing gh binary as a non-retryable query error", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "watch-missing-gh-"));
+    try {
+      await withPath(directory, async () => {
+        try {
+          await new GhGitHubReader().currentPr(null);
+          throw new Error("expected missing gh to throw");
+        } catch (error) {
+          expect(error).toBeInstanceOf(WatcherQueryError);
+          if (!(error instanceof WatcherQueryError)) throw error;
+          expect(error.failure).toMatchObject({
+            kind: "missing-command",
+            retryable: false,
+          });
+          expect(error.failure.detail).toContain("gh");
+        }
+      });
+    } finally {
+      await rm(directory, { recursive: true, force: true });
+    }
+  });
+
+  it("classifies gh authentication failures as non-retryable", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "watch-auth-gh-"));
+    const gh = join(directory, "gh");
+    await writeFile(
+      gh,
+      `#!/bin/bash
+echo "You are not logged into any GitHub hosts. Run gh auth login" >&2
+exit 1
+`
+    );
+    await chmod(gh, 0o755);
+    try {
+      await withPath(
+        directory,
+        async () => {
+        try {
+          await new GhGitHubReader().currentPr(null);
+          throw new Error("expected auth failure to throw");
+        } catch (error) {
+          expect(error).toBeInstanceOf(WatcherQueryError);
+          if (!(error instanceof WatcherQueryError)) throw error;
+          expect(error.failure).toMatchObject({
+            kind: "auth",
+            retryable: false,
+          });
+        }
+      },
+        true
+      );
+    } finally {
+      await rm(directory, { recursive: true, force: true });
+    }
   });
 });

@@ -23,7 +23,7 @@ Use native task-history tools scoped to the active project and task when availab
 
 ### 2. Spawn three reviewers in parallel
 
-Launch three native reviewer subagents concurrently, one per lens. They inherit the parent model by default. `.cstack/models.json` may define `reflect tooling` for the tooling reviewer and `reflect judgment, divergent, synthesizer` for the other reviewers. Follow the runtime contract and do not silently substitute an unavailable explicit override.
+Launch three native reviewer subagents concurrently, one per lens. They inherit the parent model by default. `.cstack/models.json` may define `reflect tooling` for the tooling reviewer and `reflect judgment, divergent, synthesizer` for the other reviewers. Follow the runtime contract and do not silently substitute an unavailable explicit override. Native concurrency bounds how many run at once. Queue remaining lenses in later waves. When no subagent slot is available, run each lens in the same session as a separate, explicitly re-scoped pass, label the result `single-agent`, and report the missing independence. Absent capacity never deletes a lens.
 
 | Lens | Prompt template |
 |---|---|
@@ -35,7 +35,7 @@ Pass each template verbatim, substituting the task record or digest where marked
 
 ### 3. Synthesize
 
-After all reviews complete, spawn one native synthesizer. It inherits the parent model by default; `reflect judgment, divergent, synthesizer` is its optional configuration key. Follow the runtime contract for an explicit override. Use `references/synthesizer.md` verbatim with each reviewer's full output inlined. The synthesizer returns Accepted / Rejected / Backlog lists.
+After all reviews complete, spawn one native synthesizer. It inherits the parent model by default; `reflect judgment, divergent, synthesizer` is its optional configuration key. Follow the runtime contract for an explicit override. Use `references/synthesizer.md` verbatim with each reviewer's full output inlined. The synthesizer returns Accepted / Rejected / Backlog lists. When no subagent slot is available, run the synthesizer prompt in this session as a separate pass, label the result `single-agent`, and report the missing independence.
 
 ### 4. Check structural enforcement
 
@@ -61,3 +61,5 @@ Run an available SKILL.md validator on every touched skill.
 - New skills created: `<skill path>`. One line each.
 - Backlog drafted locally: `<proposal path>`. One line each.
 - Dropped: one line per rejected finding and its reason.
+
+Every claim carries its evidence or its label in the same sentence. Measured, inferred, or guess. A prediction or an unseen cause is a guess. Never hand the human a check you could run.

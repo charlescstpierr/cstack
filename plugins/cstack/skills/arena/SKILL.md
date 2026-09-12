@@ -1,6 +1,6 @@
 ---
 name: arena
-description: "Spawn N parallel candidates at the same task, pick a base, graft the strongest parts of the losers into it. Use for $cstack:arena, 'arena this', 'throw it in the arena', or when one attempt at a non-trivial artifact would lock in the wrong shape."
+description: "Spawn N parallel candidates at the same task, pick a base, graft the strongest parts of the losers into it. Use for $cstack:arena, 'arena this', 'throw it in the arena', a bakeoff, a race, or selection between N competing implementations or designs."
 ---
 
 # Arena
@@ -31,7 +31,7 @@ The N candidates will receive the same prompt, so the prompt is the contract.
 
 ## Phase B: Fan out
 
-Spawn all N native subagents concurrently, each with the task, the path to the shared grounding, its own output path, and instructions to produce both the artifact and a short rationale. Give every writing agent exclusive ownership of its output path.
+Spawn all N native subagents concurrently, each with the task, the path to the shared grounding, its own output path, and instructions to produce both the artifact and a short rationale. Give every writing agent exclusive ownership of its output path. Native concurrency bounds how many run at once. Queue remaining candidates in later waves. When no subagent slot is available, run each candidate in the same session as a separate, explicitly re-scoped pass, label the result `single-agent`, and report the missing independence. Absent capacity never drops a candidate.
 
 Each rationale names the alternatives the candidate considered and what it rejected.
 
@@ -39,7 +39,7 @@ If a candidate fails to produce output, proceed with N-1 and note the dropout in
 
 ## Phase C: Cross-judge
 
-After all Phase B candidates complete, spawn one review-only native subagent as judge. It inherits the parent model by default. If `.cstack/models.json` defines `arena cross-judge pool`, follow the runtime contract and do not silently substitute an unavailable explicit override. The judge sees the rubric and candidates by path label, scores each criterion, and recommends a base with rationale. It can run alongside the parent's reading in Phase D. Do not launch it while candidates are still writing.
+After all Phase B candidates complete, spawn one review-only native subagent as judge. It inherits the parent model by default. If `.cstack/models.json` defines `arena cross-judge pool`, follow the runtime contract and do not silently substitute an unavailable explicit override. The judge sees the rubric and candidates by path label, scores each criterion, and recommends a base with rationale. It can run alongside the parent's reading in Phase D. Do not launch it while candidates are still writing. When no subagent slot is available, run the judge pass in this session over a clean re-read of every candidate, label it `single-agent review`, and report the missing independence. The comparison never disappears.
 
 ## Phase D: Pick a base
 
@@ -69,4 +69,4 @@ If verification surfaces a problem the arena did not catch, either Phase A was w
 
 ## Outputs
 
-One synthesized artifact. One short synthesis note alongside, naming the base, the grafts (with source candidate), the rejections, the dropouts if any, and the verification result.
+One synthesized artifact. One short synthesis note alongside, naming the base, the grafts (with source candidate), the rejections, the dropouts if any, and the verification result. Every claim carries its evidence or its label in the same sentence. Measured, inferred, or guess. A prediction or an unseen cause is a guess. Never hand the human a check you could run.

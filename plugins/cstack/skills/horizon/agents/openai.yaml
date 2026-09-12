@@ -1,5 +1,5 @@
 interface:
-  display_name: "Horizon"
+  display_name: "horizon"
   short_description: "Plan large goals with decisions and implementation units"
   default_prompt: "Use $cstack:horizon for this task."
 policy:

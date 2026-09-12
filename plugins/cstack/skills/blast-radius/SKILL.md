@@ -1,6 +1,6 @@
 ---
 name: blast-radius
-description: "Find what a change could break somewhere else before it ships, beyond the diff, and prove the one fact it's safe because of by running real code instead of writing it up. Use for 'blast radius of X', 'what could this break', or reviewing a small diff you don't trust."
+description: "Find what a change could break somewhere else before it ships, beyond the diff, and prove the one fact it's safe because of by running real code instead of writing it up. Use for $cstack:blast-radius, 'blast radius of X', 'what could this break', or reviewing a small diff you don't trust."
 ---
 
 # Blast radius
@@ -48,4 +48,4 @@ Any safety fact you can't get to step 4, say so. Don't write it up as settled. S
 
 Write it through `unslop`, cite real code, and strip anything private before it goes anywhere public.
 
-**Reply:** the writeup above, with the one safety fact either proven or marked unproven.
+**Reply:** the writeup above, with the one safety fact either proven or marked unproven. Every claim carries its evidence or its label in the same sentence. Measured, inferred, or guess. A prediction or an unseen cause is a guess. Never hand the human a check you could run.

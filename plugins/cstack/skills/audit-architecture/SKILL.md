@@ -13,7 +13,7 @@ Survey the existing codebase for worthwhile architectural improvements. This ski
 
 1. Use the user's named subsystem or paths as the scope. If none is named, inspect a bounded recent history (`git log --oneline -20`) and follow the files and areas that are actively changing. State the scope before scanning.
 2. Read the actual code, callers, tests, configuration, and relevant project guidance in that scope. Do not infer a candidate from filenames or generic architecture advice.
-3. If native delegation is available, run at most one bounded, read-only explorer for the initial map. Resolve it as the existing `how explorer` role, preserving the configured model and reasoning effort through the native runtime contract. Give it the scope and ask for paths, symbols, callers, hotspots, and evidence; it must not edit files, spawn descendants, or propose a refactor. If delegation is unavailable or prohibited, inspect in the foreground and say so.
+3. Run one bounded, read-only explorer for the initial map. Resolve it as the existing `how explorer` role, preserving the configured model and reasoning effort through the native runtime contract. Give it the scope and ask for paths, symbols, callers, hotspots, and evidence; it must not edit files, spawn descendants, or propose a refactor. When no subagent slot is available, inspect in this session as a separate, explicitly re-scoped pass, label the result `single-agent`, and report the missing independence. Absent capacity never skips the map.
 4. The lead agent synthesizes the explorer result with direct inspection. A delegated summary is not evidence until the cited code is read.
 
 ## Candidate standard
@@ -38,3 +38,5 @@ This run is read-only. Do not edit source, tests, `AGENTS.md`, `CONTEXT.md`, ADR
 If the user selects a candidate, pass the evidence and constraints to `$cstack:architect`. Keep the result design-only unless implementation was already explicitly authorized in the same task. Let Architect preserve the configured `architect runners` panel count and each model/reasoning-effort selection; do not add a fixed panel size or substitute another redesign engine.
 
 Use the existing cstack runtime contract for tools and delegation. Missing tools or unavailable model/effort selections are evidence gaps to report, never reasons to fabricate results or silently substitute a selection.
+
+Every claim carries its evidence or its label in the same sentence. Measured, inferred, or guess. A prediction or an unseen cause is a guess. Never hand the human a check you could run.

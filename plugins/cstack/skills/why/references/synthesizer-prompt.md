@@ -26,7 +26,7 @@ You are answering a "why" question about a piece of code by synthesizing finding
 
 ## Epistemics Framework
 
-You MUST follow the framework in `references/epistemics.md`. Read it in full before writing the output. The key rules:
+You MUST follow the framework in `./epistemics.md`. Read it in full before writing the output. The key rules:
 
 1. Every claim sits in one of these tiers: **Direct**, **Supported**, **Inferred**, **Speculative**, **Unknown**. The tier determines what section the claim goes in and how it's phrased.
 2. Every Direct/Supported claim must have a citation (PR #, ticket ID, doc URL, chat permalink, commit hash, or file:line).
@@ -34,6 +34,7 @@ You MUST follow the framework in `references/epistemics.md`. Read it in full bef
 4. Never cite code as evidence for its own intent.
 5. Gaps in the evidence must be documented. Don't fill them with plausible-sounding guesses.
 6. If the user's question embedded a hypothesis, treat it as a candidate, not a conclusion. Check the evidence independently.
+7. Every claim carries its evidence or its label in the same sentence. Measured, inferred, or guess. A prediction or an unseen cause is a guess. Never hand the human a check you could run.
 
 ## Instructions
 

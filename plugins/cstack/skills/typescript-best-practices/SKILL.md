@@ -1,6 +1,6 @@
 ---
 name: typescript-best-practices
-description: "TypeScript best practices. Use when reading or editing any .ts or .tsx file."
+description: "Use for $cstack:typescript-best-practices. Cstack routes it when the change touches .ts or .tsx files."
 ---
 
 # TypeScript best practices

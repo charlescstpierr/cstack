@@ -19,8 +19,16 @@ function currentInstallKey(): string {
     .update(readFileSync(join(scriptsDirectory, "package.json")))
     .update("\0")
     .update(readFileSync(join(scriptsDirectory, "bun.lock")))
+    .update("\0")
+    .update("production")
     .digest("hex");
 }
+
+export const HELPER_INSTALL_ARGS = [
+  "install",
+  "--frozen-lockfile",
+  "--production",
+] as const;
 
 export function ensureDependenciesInstalled(): void {
   const installKey = currentInstallKey();
@@ -33,14 +41,14 @@ export function ensureDependenciesInstalled(): void {
   }
 
   const result = Bun.spawnSync(
-    [process.execPath, "install", "--frozen-lockfile"],
+    [process.execPath, ...HELPER_INSTALL_ARGS],
     { cwd: scriptsDirectory }
   );
   if (result.exitCode !== 0) {
     process.stdout.write(result.stdout);
     process.stderr.write(result.stderr);
     throw new Error(
-      `bun install --frozen-lockfile exited with status ${result.exitCode}`
+      `bun install --frozen-lockfile --production exited with status ${result.exitCode}`
     );
   }
   if (!existsSync(commanderPackagePath)) {
