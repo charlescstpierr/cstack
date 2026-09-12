@@ -16,4 +16,4 @@ Follow [the Codex runtime contract](../references/codex-runtime.md).
 
 When in doubt, delete. Keep only prose that changes a decision. Tell it to do the thing and skip the reason. Explain only when the rule is confusing without one. Match tone to scope. Point at structural sources (types, READMEs, config) per the [Encode Lessons in Structure](../references/principles/encode-lessons-in-structure.md) principle reference. Delegate to other skills by path. Don't restate. A workflow you keep hitting but isn't captured → propose a new skill.
 
-**Reply:** summary of the skill, key design decisions, validation notes.
+**Reply:** summary of the skill, key design decisions, validation notes. Every claim carries its evidence or its label in the same sentence. Measured, inferred, or guess. A prediction or an unseen cause is a guess. Never hand the human a check you could run.
