@@ -4,13 +4,13 @@ Ce fichier distingue l'état courant des campagnes datées. Les nombres d'une se
 
 ## État 0.4.0
 
-Mesures du 12 septembre 2026, working tree après la vague 1, Python 3.9.6, Bun 1.4.2. Plugin `0.4.0`. Pin amont pstack `0.15.2`, commit `889ec4b68fa5aab0e867dad71ec3fdf386ae48f3`.
+Mesures du 12 septembre 2026, arbre commité de la branche `feat/pstack-parity-deslop`, Python 3.9.6, Bun 1.4.2. Plugin `0.4.0`. Pin amont pstack `0.15.2`, commit `889ec4b68fa5aab0e867dad71ec3fdf386ae48f3`.
 
 Le catalogue 0.4.0 contient 29 skills, 23 principes et 23 playbooks. Deux prompts d'agents. 19 rôles. 4 panels. 6 groupes de recommandations. `ls plugins/cstack/skills/*/SKILL.md | wc -l` vaut 29. `ls plugins/cstack/skills/cstack/references/principles/*.md | wc -l` vaut 23. `ls plugins/cstack/skills/cstack/playbooks/*.md | wc -l` vaut 23.
 
-Fichiers du plugin. `git ls-files plugins/cstack | wc -l` vaut 182 fichiers suivis. Le working tree ajoute `plugins/cstack/skills/deslop/SKILL.md`, `plugins/cstack/skills/deslop/agents/openai.yaml` et `plugins/cstack/skills/cstack/scripts/bootstrap.test.ts`. `{ git ls-files plugins/cstack; git ls-files --others --exclude-standard plugins/cstack; } | wc -l` vaut 185.
+Fichiers du plugin. `git ls-files plugins/cstack | wc -l` vaut 185 fichiers suivis, dont `plugins/cstack/skills/deslop/SKILL.md`, `plugins/cstack/skills/deslop/agents/openai.yaml` et `plugins/cstack/skills/cstack/scripts/bootstrap.test.ts`. `git ls-files --others --exclude-standard plugins/cstack` est vide.
 
-Tests mesurés. `python3 -m unittest discover -s tests -p 'test_*.py'` lance 46 tests. Dans `plugins/cstack/skills/cstack/scripts`, `bun run test` rapporte 68 pass. `bun test tests` découvre 3 tests Bun à la racine. `UPSTREAM.json` conserve 158 fichiers source.
+Tests mesurés. `python3 -m unittest discover -s tests -p 'test_*.py'` lance 51 tests. Dans `plugins/cstack/skills/cstack/scripts`, `bun run test` rapporte 68 pass. `bun test tests` découvre 3 tests Bun à la racine. `UPSTREAM.json` conserve 158 fichiers source.
 
 Python 3.9 ou plus récent exécute les assistants et toute la suite de tests. L'analyse du `config.toml` de Codex dans `scripts/verify-behavior.py` exige Python 3.11 ou plus récent.
 

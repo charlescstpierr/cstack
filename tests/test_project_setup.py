@@ -341,7 +341,8 @@ class ProjectSetupTests(unittest.TestCase):
         finally:
             project._temp = original_temp
         self.assertEqual(ctx.exception.applied, [])
-        self.assertTrue(ctx.exception.skipped)
+        planned = sorted(entry["path"] for entry in plan["files"] if entry["action"] != "unchanged")
+        self.assertEqual(sorted(ctx.exception.skipped), planned)
         self.assertFalse((self.root / "docs").exists())
         self.assertFalse((self.root / "AGENTS.md").exists())
 

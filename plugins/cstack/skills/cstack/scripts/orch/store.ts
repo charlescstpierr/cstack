@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import type { Dirent } from "node:fs";
 import {
   access,
+  link,
   mkdir,
   open,
   readFile,
@@ -411,6 +412,14 @@ async function acquireLock(
     await handle.close();
   };
 
+  const readHolder = async (): Promise<string> => {
+    try {
+      return (await readFile(path, "utf8")).trim() || "unknown";
+    } catch {
+      return "unknown";
+    }
+  };
+
   const takeOver = async (): Promise<void> => {
     const claim = join(store, `${LOCK_FILE}.${pid}.${randomUUID()}`);
     const stale = join(store, `${LOCK_FILE}.stale.${pid}.${randomUUID()}`);
@@ -422,30 +431,30 @@ async function acquireLock(
         await rename(path, stale);
       } catch (error) {
         if (errorCode(error) === "ENOENT") {
-          let holder = "unknown";
-          try {
-            holder = (await readFile(path, "utf8")).trim() || "unknown";
-          } catch {
-            holder = "unknown";
-          }
-          throw new UserError(`store lock held by pid ${holder}`);
+          throw new UserError(`store lock held by pid ${await readHolder()}`);
         }
         throw error;
       }
       try {
-        await rename(claim, path);
+        // link never replaces its destination, so a writer that took the lock
+        // inside the rename gap keeps it and this take-over loses.
+        await link(claim, path);
       } catch (error) {
+        if (errorCode(error) === "EEXIST") {
+          await rm(stale, { force: true });
+          throw new UserError(`store lock held by pid ${await readHolder()}`);
+        }
         try {
-          await rename(stale, path);
+          await link(stale, path);
         } catch {
           // Best effort restore of the stolen stale lock.
         }
+        await rm(stale, { force: true });
         throw error;
       }
       await rm(stale, { force: true });
-    } catch (error) {
+    } finally {
       await rm(claim, { force: true });
-      throw error;
     }
   };
 
@@ -455,12 +464,7 @@ async function acquireLock(
     if (errorCode(error) !== "EEXIST") {
       throw error;
     }
-    let holder = "unknown";
-    try {
-      holder = (await readFile(path, "utf8")).trim() || "unknown";
-    } catch {
-      holder = "unknown";
-    }
+    const holder = await readHolder();
     if (holderIsDead(holder)) {
       options.onStaleLock?.(holder);
       await takeOver();

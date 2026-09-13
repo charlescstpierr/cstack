@@ -89,6 +89,8 @@ def stage_owner_dead(path):
         os.kill(pid, 0)
     except ProcessLookupError:
         return True
+    except OverflowError:
+        return False
     except OSError as error:
         return getattr(error, "errno", None) == errno.ESRCH
     return False
@@ -210,7 +212,9 @@ def main():
                 env=environment,
             )
             if setup:
-                fail(f"dependency setup exited with status {exit_status(setup)}")
+                status = exit_status(setup)
+                print(f"run-tool: dependency setup exited with status {status}", file=sys.stderr)
+                raise SystemExit(status)
 
         staged_entry = (staged / requested).resolve()
         require_inside(staged_entry, staged.resolve(), "staged helper")

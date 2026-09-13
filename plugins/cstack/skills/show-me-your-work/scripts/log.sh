@@ -18,7 +18,7 @@ fi
 
 cstack_dir="$logdir"
 while [ -n "$cstack_dir" ] && [ "$cstack_dir" != "." ] && [ "$cstack_dir" != "/" ]; do
-	if [ "${cstack_dir##*/}" = ".cstack" ] && [ -d "$cstack_dir" ] && [ ! -e "$cstack_dir/.gitignore" ]; then
+	if [ "${cstack_dir##*/}" = ".cstack" ] && [ -d "$cstack_dir" ] && [ ! -L "$cstack_dir/.gitignore" ] && [ ! -e "$cstack_dir/.gitignore" ]; then
 		printf '*\n' > "$cstack_dir/.gitignore"
 		break
 	fi

@@ -56,6 +56,10 @@ class RunToolTest(unittest.TestCase):
                 break
             args = args[i:]
             if args and args[0] == "-e":
+                if name := os.environ.get("FAKE_BUN_SETUP_SIGNAL"):
+                    os.kill(os.getpid(), getattr(signal, name))
+                if code := os.environ.get("FAKE_BUN_SETUP_EXIT"):
+                    raise SystemExit(int(code))
                 marker = pathlib.Path.cwd() / "node_modules/.cstack-tools-install-key"
                 if not marker.exists():
                     with open(os.environ["FAKE_BUN_INSTALL_LOG"], "a") as log:
@@ -293,6 +297,42 @@ class RunToolTest(unittest.TestCase):
         helper.write_text("kill -TERM $$\n")
         result = self.run_tool("die.sh", check=False)
         self.assertEqual(result.returncode, 128 + signal.SIGTERM)
+
+    def test_signaled_dependency_setup_keeps_its_signal_status(self):
+        (self.source / "tool.ts").write_text("trusted")
+        (self.source / "package.json").write_text("{}")
+        (self.source / "bun.lock").write_text("")
+        (self.source / "bootstrap.ts").write_text("")
+        result = self.run_tool(
+            "tool.ts",
+            check=False,
+            env=self.env | {"FAKE_BUN_SETUP_SIGNAL": "SIGTERM"},
+        )
+        self.assertEqual(result.returncode, 128 + signal.SIGTERM)
+        self.assertIn("dependency setup exited with status", result.stderr)
+
+    def test_failed_dependency_setup_keeps_its_exit_code(self):
+        (self.source / "tool.ts").write_text("trusted")
+        (self.source / "package.json").write_text("{}")
+        (self.source / "bun.lock").write_text("")
+        (self.source / "bootstrap.ts").write_text("")
+        result = self.run_tool(
+            "tool.ts",
+            check=False,
+            env=self.env | {"FAKE_BUN_SETUP_EXIT": "5"},
+        )
+        self.assertEqual(result.returncode, 5)
+
+    def test_out_of_range_owner_pid_does_not_abort_the_sweep(self):
+        (self.source / "tool.ts").write_text("trusted")
+        tools = self.cwd / ".cstack/tools"
+        tools.mkdir(parents=True)
+        huge = tools / "run-huge"
+        huge.mkdir()
+        (huge / "owner.pid").write_text("{}\n".format(2 ** 70))
+        result = self.run_tool("tool.ts")
+        self.assertNotIn("Traceback", result.stderr)
+        self.assertIn("run-huge", {path.name for path in tools.iterdir()})
 
     def test_cleanup_failure_does_not_replace_helper_exit_code(self):
         (self.source / "tool.ts").write_text("trusted")

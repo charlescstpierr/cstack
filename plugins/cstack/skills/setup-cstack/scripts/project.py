@@ -464,7 +464,7 @@ def apply_plan(workspace: Path, supplied_plan: Any, raw_options: Any, catalog: d
         raise
     except KeyboardInterrupt as error:
         done = [entry["path"] for entry, _ in replaced]
-        skipped = [entry["path"] for entry, _, _ in staged if entry["path"] not in done]
+        skipped = [entry["path"] for entry in changes if entry["path"] not in done]
         raise InterruptedApply(done, skipped) from error
     except Exception as error:
         rolled_back, conflicts = [], []
