@@ -29,7 +29,7 @@ CATALOG = {
 class ProjectSetupTests(unittest.TestCase):
     def setUp(self) -> None:
         self.temp = tempfile.TemporaryDirectory()
-        self.root = Path(self.temp.name)
+        self.root = Path(self.temp.name).resolve()
 
     def tearDown(self) -> None:
         self.temp.cleanup()
@@ -298,6 +298,53 @@ class ProjectSetupTests(unittest.TestCase):
         self.assertEqual(result["status"], "rolled_back")
         self.assertEqual((self.root / "AGENTS.md").read_bytes(), b"manual edit during staging\n")
         self.assertFalse((self.root / "docs/agents/cstack.md").exists())
+
+    def test_rollback_removes_directories_created_during_staging(self) -> None:
+        options, plan = self._preview()
+        original_replace = project.os.replace
+        calls = 0
+
+        def fail_second(source, target):
+            nonlocal calls
+            calls += 1
+            if calls == 2:
+                raise OSError("simulated write failure")
+            return original_replace(source, target)
+
+        project.os.replace = fail_second
+        try:
+            rolled = project.apply_plan(self.root, plan, json.loads(options.read_text()), None)
+        finally:
+            project.os.replace = original_replace
+        self.assertEqual(rolled["status"], "rolled_back")
+        self.assertFalse((self.root / "AGENTS.md").exists())
+        self.assertFalse((self.root / "docs").exists())
+        self.assertFalse((self.root / "docs/agents").exists())
+
+    def test_interrupt_during_staging_reports_partial_and_removes_created_dirs(self) -> None:
+        options, plan = self._preview()
+        original_temp = project._temp
+
+        calls = 0
+
+        def interrupt(parent, data, mode):
+            nonlocal calls
+            calls += 1
+            if calls == 1:
+                return original_temp(parent, data, mode)
+            raise KeyboardInterrupt()
+
+        project._temp = interrupt
+        try:
+            with self.assertRaises(project.InterruptedApply) as ctx:
+                project.apply_plan(self.root, plan, json.loads(options.read_text()), None)
+        finally:
+            project._temp = original_temp
+        self.assertEqual(ctx.exception.applied, [])
+        planned = sorted(entry["path"] for entry in plan["files"] if entry["action"] != "unchanged")
+        self.assertEqual(sorted(ctx.exception.skipped), planned)
+        self.assertFalse((self.root / "docs").exists())
+        self.assertFalse((self.root / "AGENTS.md").exists())
 
 
 if __name__ == "__main__":

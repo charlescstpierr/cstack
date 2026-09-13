@@ -327,6 +327,97 @@ describe("Store", () => {
     ).toEqual([]);
   });
 
+  it("pushes inbox pointers without taking the store lock", async () => {
+    const { directory, store } = await initializedStore();
+    const other = useStore(directory);
+    const results = await Promise.all([
+      other.inbox.push({ agent: "a", unit: "u1", status: "done" }),
+      other.inbox.push({ agent: "b", unit: "u2", status: "done" }),
+      store.inbox.push({ agent: "c", unit: "u3", status: "done" }),
+    ]);
+    expect(results).toHaveLength(3);
+    expect(await store.inbox.count()).toBe(3);
+  });
+
+  it("refuses to drain an uninitialized directory", async () => {
+    const directory = await makeDirectory();
+    const inbox = join(directory, "inbox");
+    await mkdir(inbox);
+    await writeFile(join(inbox, "keep.txt"), "secret\n");
+    const store = useStore(directory);
+    await expect(store.inbox.drain()).rejects.toThrow(
+      "store is not initialized"
+    );
+    expect(await readFile(join(inbox, "keep.txt"), "utf8")).toBe("secret\n");
+    expect(await readdir(inbox)).toEqual(["keep.txt"]);
+  });
+
+  it("drains only parsed inbox pointers and leaves other entries", async () => {
+    const { directory, store } = await initializedStore();
+    await store.inbox.push({
+      agent: "worker-1",
+      unit: "u1",
+      status: "done",
+    });
+    await writeFile(join(directory, "inbox", "notes.md"), "keep\n");
+    expect(await store.inbox.drain()).toHaveLength(1);
+    expect(await readdir(join(directory, "inbox"))).toEqual(["notes.md"]);
+  });
+
+  it("lets only one process take over a stale lock", async () => {
+    const { directory, store } = await initializedStore();
+    await store.close();
+    const exited = Bun.spawn(["true"]);
+    await exited.exited;
+    await writeFile(join(directory, ".orch.lock"), `${exited.pid}\n`);
+
+    const startFile = join(directory, "start");
+    const worker = join(directory, "takeover-worker.ts");
+    await writeFile(
+      worker,
+      `import { access } from "node:fs/promises";
+import { openStore } from ${JSON.stringify(join(import.meta.dir, "store.ts"))};
+const storeDir = ${JSON.stringify(directory)};
+const start = ${JSON.stringify(startFile)};
+while (true) {
+  try {
+    await access(start);
+    break;
+  } catch {
+    await Bun.sleep(10);
+  }
+}
+const handle = openStore(storeDir);
+try {
+  await handle.units.add({ id: "u-" + process.pid, track: "build" });
+  process.stdout.write("WON\\n");
+  await Bun.sleep(800);
+  await handle.close();
+} catch {
+  process.stdout.write("LOST\\n");
+  process.exitCode = 1;
+}
+`
+    );
+    const first = Bun.spawn([process.execPath, worker], {
+      stdout: "pipe",
+      stderr: "pipe",
+    });
+    const second = Bun.spawn([process.execPath, worker], {
+      stdout: "pipe",
+      stderr: "pipe",
+    });
+    await writeFile(startFile, "go\n");
+    const [firstOut, secondOut] = await Promise.all([
+      new Response(first.stdout).text(),
+      new Response(second.stdout).text(),
+    ]);
+    await Promise.all([first.exited, second.exited]);
+    const outcomes = [firstOut.trim(), secondOut.trim()];
+    expect(outcomes.filter((line) => line === "WON")).toHaveLength(1);
+    expect(outcomes.filter((line) => line === "LOST")).toHaveLength(1);
+  });
+
   it("replaces a stale lock whose holder pid is dead", async () => {
     const { directory } = await initializedStore();
     const exited = Bun.spawn(["true"]);
@@ -454,7 +545,7 @@ describe("Store", () => {
               state: "OPEN",
             },
           ],
-          lowestUnmerged: 13,
+          lowestUnmerged: 11,
         });
         expect(
           (
@@ -537,6 +628,17 @@ describe("Store", () => {
           JSON.stringify([
             ...base,
             row(12, "CLOSED", "stack/open", "main", stack.openSha),
+          ])
+        );
+        expect(await store.frontier.set({ repo: stack.repo })).toMatchObject({
+          lowestUnmerged: 11,
+        });
+
+        await writeFile(
+          outputPath,
+          JSON.stringify([
+            ...base,
+            row(12, "OPEN", "stack/open", "main", stack.openSha),
           ])
         );
         await expect(
@@ -635,22 +737,31 @@ exec "$REAL_GIT" "$@"
     await chmod(join(bin, "git"), 0o755);
     await chmod(join(bin, "gh"), 0o755);
 
+    const listed = realpathSync(worktree);
     const result = Bun.spawnSync([WORKTREE_AUDIT, stack.repo], {
       env: {
         ...process.env,
         PATH: `${bin}:${process.env.PATH ?? ""}`,
         REAL_GIT: realGit,
-        FAIL_STATUS_PATH: worktree,
+        FAIL_STATUS_PATH: listed,
       },
     });
     expect(result.exitCode).toBe(0);
     const row = result.stdout
       .toString()
       .split("\n")
-      .find((line) => line.endsWith(`\t${worktree}`));
+      .find(
+        (line) => line.endsWith(`\t${listed}`) || line.endsWith(`\t${worktree}`)
+      );
     expect(row).toBeDefined();
     expect(row?.split("\t")[3]).toBe("unknown");
     expect(row?.split("\t")[7]).toBe("hold-unknown");
+  });
+
+  it("parses under bash -n", () => {
+    const syntax = Bun.spawnSync(["bash", "-n", WORKTREE_AUDIT]);
+    expect(syntax.exitCode).toBe(0);
+    expect(syntax.stderr.toString()).toBe("");
   });
 
   it("rejects malformed TSV, verdict, frontier, and inbox data", async () => {

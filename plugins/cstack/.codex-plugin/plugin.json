@@ -1,7 +1,7 @@
 {
   "name": "cstack",
-  "version": "0.3.0",
-  "description": "pstack workflows adapted for native Codex App and CLI: investigation, implementation, review and verified delivery.",
+  "version": "0.4.0",
+  "description": "Portage des workflows pstack pour Codex App et CLI. Investigation, implémentation, revue et livraison vérifiée.",
   "author": {
     "name": "charlescstpierr",
     "url": "https://github.com/charlescstpierr"
@@ -22,6 +22,7 @@
     "shortDescription": "Du code vérifié avec Codex App et CLI",
     "longDescription": "Portage indépendant de pstack pour Codex. Activez $cstack:cstack dans une tâche pour utiliser ses workflows et ses sous-agents natifs. Les intégrations facultatives et leurs limites sont documentées.",
     "developerName": "charlescstpierr",
+    "websiteURL": "https://github.com/charlescstpierr/cstack",
     "category": "Developer Tools",
     "capabilities": [],
     "defaultPrompt": [

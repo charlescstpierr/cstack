@@ -65,7 +65,7 @@ Fix the log, not the story. If the work diverged from what a row claims, the row
 
 ## Independent review of the trail
 
-Before handing back, use an independent native reviewer when delegation is available and permitted. Resolve `judgment and prose` under the runtime contract and preserve both selected fields at dispatch. The reviewer reads the audit trail and task record, and flags weak evidence or risk. When delegation is unavailable or prohibited, perform the scan directly and disclose that no independent review occurred.
+Before handing back, run an independent review of the trail. Prefer a native reviewer. Resolve `judgment and prose` under the runtime contract and preserve both selected fields at dispatch. The reviewer reads the audit trail and task record, and flags weak evidence or risk. When no subagent slot is available, run a separate same-session pass over a clean re-read of the trail, label it `single-agent review`, and name the missing independence. The review never disappears.
 
 - Decisions logged with weak or absent evidence.
 - Verification steps skipped or claimed without proof in the task record.

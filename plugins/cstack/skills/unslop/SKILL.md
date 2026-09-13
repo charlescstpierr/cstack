@@ -1,13 +1,13 @@
 ---
 name: unslop
-description: "Cut AI tells from any writing. Must always apply."
+description: "Use for $cstack:unslop to cut AI tells from prose. Applied to every prose artifact while cstack is active, and on request otherwise."
 ---
 
 # Unslop
 
 Runtime: [`../cstack/references/codex-runtime.md`](../cstack/references/codex-runtime.md).
 
-Edit text to remove AI patterns.
+Edit text to remove AI patterns. `deslop` (`../deslop/SKILL.md`) cleans slop out of code, `unslop` cleans it out of prose, and `no-comments` hands the comments to a reviewer who did not write them.
 
 ## Process
 

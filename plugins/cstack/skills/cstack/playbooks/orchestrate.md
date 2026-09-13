@@ -14,11 +14,11 @@ Three rules carry the program:
 
 #### Roles
 
-- **Coordinator.** Frames the program, writes briefs, drains results, owns topology, records decisions, and reports to the user. It may perform mechanical git integration when authorized. It does not absorb code-writing units that need a separate owner.
+- **Coordinator.** Frames the program, writes briefs, drains results, owns topology, records decisions, and reports to the user. It never authors or edits code. It may perform mechanical git integration when authorized, such as a fast-forward or a clean cherry-pick of a worker's commit, then push. Conflicted merges, restacks, and code changes are always owner tasks.
 - **Track coordinator.** Add one only when the root cannot drain a track directly. It owns a bounded unit list, writes briefs, assigns owners and verifiers, and returns a reduced rollup. Keep nesting shallow.
-- **Owner or verifier.** Give each agent a bounded task, exclusive files or worktree, acceptance criteria, exact checks, and the instructions from `../references/agents/cstack-agent.md`. A verifier does not write the code it judges.
+- **Owner or verifier.** Give each agent a bounded task, exclusive files or worktree, acceptance criteria, exact checks, and the instructions from `../references/agents/cstack-agent.md`. The verifier is always a different actor from the worker. When the session cannot provide a different model, the report states `single-model verification` instead of claiming independence. A verifier does not write the code it judges.
 
-Use native subagents only when the session exposes capacity. Bound the rolling window to that capacity and run extra work in waves. Models inherit by default. Apply only an available override for each unit's matched work from `.cstack/models.json`. If an explicit model is unavailable, stop that selection and report it.
+Bound the rolling window to native subagent capacity and run extra work in waves. A missing slot serializes that unit as a separate re-scoped pass in this session, labeled `single-agent`, and the report names the missing independence. Models inherit by default. Apply only an available override for each unit's matched work from `.cstack/models.json`. If an explicit model is unavailable, stop that selection and report it.
 
 #### State layout
 
@@ -56,7 +56,7 @@ Pass context by repository path or by quoting only the necessary upstream result
 
 #### Steps
 
-1. **Frame.** State a countable done predicate, unit count, rough effort, expected PR shape, and time budget. If one agent can finish within the session, switch to `autonomous-run.md`. Name independent tracks. Use `../../arena/SKILL.md` before a disputed decomposition when native comparison is available. Confirm whether the user's request authorizes PR creation, external messages, or merges. Continue local reversible preparation without those actions.
+1. **Frame.** State a countable done predicate, unit count, rough effort, expected PR shape, and time budget. If one agent can finish within the session, switch to `autonomous-run.md`. Name independent tracks. Use `../../arena/SKILL.md` before a disputed decomposition. When no subagent slot is available, run the comparison in this session as a separate re-scoped pass, label it `single-agent`, and report the missing independence. Confirm whether the user's request authorizes PR creation, external messages, or merges. Continue local reversible preparation without those actions.
 2. **Initialize state.** Run `orch init` through the plugin launcher. Write standing orders before assigning work. Seed `frontier.json` from current git and GitHub PR facts with `orch frontier set --repo <repo-dir>`.
 3. **Pilot one unit.** Take one representative unit through brief, implementation, verification, stack entry, ledger row, and authorized delivery. Use the pilot to test the brief, unit size, and check recipe. For cheap repeated units, the first ordinary unit is the pilot.
 4. **Scale with a rolling window.** Refill native subagent slots as owners finish. Start dependent work only after its required context exists. Audit one sampled brief per track without blocking the current wave.
@@ -82,7 +82,7 @@ Pass context by repository path or by quoting only the necessary upstream result
 
 #### Verification ledger
 
-Scale verification to risk. The owner may run one cheap deterministic command. Use a separate verifier for expensive, judgment-heavy, security-sensitive, or high-impact work.
+Scale verification to risk. The owner may run its own gates as evidence. The unit's verdict still comes from a non-author. When no subagent slot is available, run the verdict in this session as a separate re-scoped pass over a clean re-read, label it `single-agent review`, and report the missing independence. When the session cannot provide a different model, label the result `single-model verification`.
 
 Record verdicts with `orch ledger record` and check them with `orch ledger check`. Key each row by PR and exact head SHA. Allowed verdicts include `live-ui-verified`, `unit-test-verified`, `type-check-only`, `verifier-blocked`, and `verifier-failed`. CI green contributes evidence but does not replace a behavior verdict. A new head invalidates the old row unless an unchanged stable patch ID preserves the code verdict and current CI and mergeability pass.
 
@@ -103,4 +103,4 @@ Batch user gates in `gates.md`. Ask only when a destructive or irreversible oper
 
 Fix mid-run discoveries only when they block the frontier or fall inside the granted scope. Record other findings as proposed follow-ups.
 
-**Reply:** Report the predicate and count from `units.tsv` and `ledger.tsv`, track results, frontier PRs and SHAs, verdicts, abandoned units, user gates, and the `.cstack/` state paths. Include full GitHub PR links when they exist.
+**Reply:** Report the predicate and count from `units.tsv` and `ledger.tsv`, track results, frontier PRs and SHAs, verdicts, abandoned units, user gates, and the `.cstack/` state paths. Include full GitHub PR links when they exist. Every claim carries its evidence or its label in the same sentence. Measured, inferred, or guess. A prediction or an unseen cause is a guess. Never hand the human a check you could run.

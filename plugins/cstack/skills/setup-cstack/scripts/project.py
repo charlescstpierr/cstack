@@ -355,6 +355,28 @@ def _check_state(workspace: Path, plan: dict[str, Any]) -> None:
             raise ProjectError(f"file changed since preview: {entry['path']}")
 
 
+def _missing_ancestors(path: Path) -> list[Path]:
+    missing: list[Path] = []
+    cursor = path
+    while not cursor.exists():
+        missing.append(cursor)
+        parent = cursor.parent
+        if parent == cursor:
+            break
+        cursor = parent
+    return missing
+
+
+def _remove_empty_dirs(created: list[Path]) -> None:
+    for directory in created:
+        try:
+            if directory.is_symlink() or not directory.is_dir():
+                continue
+            directory.rmdir()
+        except OSError:
+            continue
+
+
 def _temp(parent: Path, data: bytes, mode: int) -> Path:
     parent.mkdir(parents=True, exist_ok=True)
     with tempfile.NamedTemporaryFile(mode="wb", dir=parent, delete=False) as output:
@@ -419,12 +441,14 @@ def apply_plan(workspace: Path, supplied_plan: Any, raw_options: Any, catalog: d
         return {"status": "noop", "changed": [], "plan_sha256": plan["plan_sha256"]}
     staged: list[tuple[dict[str, Any], Path, bytes | None]] = []
     replaced: list[tuple[dict[str, Any], bytes | None]] = []
+    created_dirs: list[Path] = []
     try:
         for entry in changes:
             target = _path(workspace, entry["path"], write=True)
             _check(target, workspace)
             old = _unb64(entry["original_content_b64"])
             mode = stat.S_IMODE(target.stat().st_mode) if target.exists() else 0o644
+            created_dirs.extend(_missing_ancestors(target.parent))
             staged.append((entry, _temp(target.parent, entry["new_content"].encode(), mode), old))
         for entry, temp, old in staged:
             current = _read(workspace, entry["path"])
@@ -433,15 +457,15 @@ def apply_plan(workspace: Path, supplied_plan: Any, raw_options: Any, catalog: d
                 continue
             if current_hash != entry["current_sha256"]:
                 raise ProjectError(f"file changed during staging: {entry['path']}")
-            try:
-                os.replace(temp, _path(workspace, entry["path"], write=True))
-            except KeyboardInterrupt as error:
-                done = {item[0]["path"] for item in replaced}
-                raise InterruptedApply(list(done), [item[0]["path"] for item in staged if item[0]["path"] not in done]) from error
+            os.replace(temp, _path(workspace, entry["path"], write=True))
             replaced.append((entry, old))
         return {"status": "applied", "changed": [entry["path"] for entry, _ in replaced], "plan_sha256": plan["plan_sha256"]}
     except InterruptedApply:
         raise
+    except KeyboardInterrupt as error:
+        done = [entry["path"] for entry, _ in replaced]
+        skipped = [entry["path"] for entry in changes if entry["path"] not in done]
+        raise InterruptedApply(done, skipped) from error
     except Exception as error:
         rolled_back, conflicts = [], []
         for entry, old in reversed(replaced):
@@ -450,6 +474,7 @@ def apply_plan(workspace: Path, supplied_plan: Any, raw_options: Any, catalog: d
     finally:
         for _, temp, _ in staged:
             temp.unlink(missing_ok=True)
+        _remove_empty_dirs(created_dirs)
 
 
 def _json(path: Path) -> Any:

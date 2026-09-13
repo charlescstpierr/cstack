@@ -228,6 +228,27 @@ export type QueryFailure =
       readonly retryable: false;
       readonly detail: string;
       readonly rawValue: string;
+    }
+  | {
+      readonly kind: "missing-command";
+      readonly retryable: false;
+      readonly detail: string;
+    }
+  | {
+      readonly kind: "auth";
+      readonly retryable: false;
+      readonly detail: string;
+      readonly code: number;
+    }
+  | {
+      readonly kind: "truncated";
+      readonly retryable: false;
+      readonly detail: string;
+    }
+  | {
+      readonly kind: "stack-cycle";
+      readonly retryable: false;
+      readonly detail: string;
     };
 /**
  * `frontier` names the lowest unmerged PR that is actually waiting, and

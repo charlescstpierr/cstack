@@ -40,7 +40,7 @@ Each unit is an experiment. State the hypothesis, make the smallest change, meas
 Apply the [Sequence work into verifiable units](../cstack/references/principles/sequence-verifiable-units.md) principle reference, verifying each unit before starting the next instead of batching checks at the end.
 
 - Verify by inspecting the artifact, never a self-report. When something passes too easily, suspect the observation method before the system.
-- Pair delegated work with a judge and audit the delegates' artifacts yourself before trusting them. If a worker games the gate, reset and harden the contract. If the gate itself is wrong, fix the gate in its own change rather than routing around it.
+- Pair delegated work with a judge and audit the delegates' artifacts yourself before trusting them. If a worker games the gate, reset and harden the contract. If the gate itself is wrong, fix the gate in its own change rather than routing around it. When no subagent slot is available, the same session runs a separate review pass over a clean re-read of the artifacts, labels it `single-agent review`, and reports the missing independence. The judge never disappears.
 - A verdict is VERIFIED, NOT VERIFIED, or INCONCLUSIVE. Inconclusive is not a pass. Don't hide a negative.
 
 ## Phase D: Keep the audit trail

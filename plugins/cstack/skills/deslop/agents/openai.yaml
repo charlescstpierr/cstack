@@ -1,0 +1,6 @@
+interface:
+  display_name: "deslop"
+  short_description: "Strip slop out of a diff before commit"
+  default_prompt: "Use $cstack:deslop on this diff before committing."
+policy:
+  allow_implicit_invocation: false

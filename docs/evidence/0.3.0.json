@@ -1,5 +1,9 @@
 {
   "date": "2026-09-09",
+  "scope": "historical",
+  "plugin_version": "0.3.0",
+  "catalog_skills": 51,
+  "plugin_commit": "95df6b48c7c86142567c2ebf0ddab2083fa562e9",
   "baseline_commit": "a373eca2e003a9bd2e4b2e90ac7f28a250108f6c",
   "codex_cli": "0.153.4",
   "automated_tests": {
@@ -276,7 +280,8 @@
     "Review scenario scopes staged README; dirty implementation and untracked notes are explicitly excluded and preserved.",
     "Accepted dispatch model/effort and completed child execution are observed. Closed ephemeral children prevented subsequent effective thread/read metadata for nine child lookups.",
     "Native setup uses the r4 source snapshot; the later pre-replace concurrent-edit guard is verified by its regression test and the complete Python suite.",
-    "Invalid early harness runs and 300-second timeouts are excluded. Final long trials use an explicit 900-second limit per turn."
+    "Invalid early harness runs and 300-second timeouts are excluded. Final long trials use an explicit 900-second limit per turn.",
+    "Historical snapshot of plugin commit 95df6b48c7c86142567c2ebf0ddab2083fa562e9, when plugin.json said 0.3.0 and the catalog had 51 skills. Hashes describe that commit, not later trees."
   ],
   "implementation_commit": "95df6b48c7c86142567c2ebf0ddab2083fa562e9"
 }

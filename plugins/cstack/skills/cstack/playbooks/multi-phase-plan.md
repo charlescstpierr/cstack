@@ -6,17 +6,17 @@ Follow [the Codex runtime contract](../references/codex-runtime.md).
 
 1. If the change is one or two files with an obvious approach, explain why a formal plan adds no value and return the short execution outline.
 2. Settle observable questions with `prototype.md` before writing the plan. Ask only about a product preference or materially branching choice that no run can settle. Record prototype paths and evidence in Appendix A.
-3. Explore independent repository areas with bounded native subagents when capacity permits. Give each a read-only scope and ask for file pointers, conventions, checks, and entry points. Run excess work in waves. Models inherit unless `.cstack/models.json` supplies an available `how explorer` override.
+3. Explore independent repository areas with bounded native subagents. Give each a read-only scope and ask for file pointers, conventions, checks, and entry points. Bound how many run at once to native capacity and run excess work in waves. When no subagent slot is available, run each exploration in this session as a separate re-scoped pass, label it `single-agent`, and report the missing independence. Models inherit unless `.cstack/models.json` supplies an available `how explorer` override.
 4. Copy the skeleton below into `.cstack/plans/<slug>.md` unless the user names a path. Fill every placeholder. Keep the headings and blocks in order. Give each PR one change and its own evidence. Choose `autopilot-full.md`, `autopilot-stack.md`, or `orchestrate.md` as the execution playbook.
 5. Read and apply `../../technical-writing/SKILL.md` and `../../unslop/SKILL.md`. Keep the body as a how-to. Use appendices for explanation and reference.
 6. Resolve the plugin root and run `bash <plugin-root>/scripts/run-tool.sh check-plan.mjs <plan.md>`. Fix every reported error.
 7. Return the plan path and validator output. Do not start execution unless the current request already authorized it. A later execution request follows the named playbook.
 
-**Verification rule.** Tests alone do not verify a PR. Each PR must define unit, live, and performance evidence. The live block is mandatory. The template retains ten distinct live scenarios, including a regression scenario against trunk. Execute them within native concurrency, in waves when needed. Models inherit by default. If fewer than ten meaningful scenarios exist, keep each unused lane with `n/a: <reason>` instead of inventing duplicate work.
+**Verification rule.** Tests alone do not verify a PR. Each PR must define unit, live, and performance evidence. The live block is mandatory. The template retains ten distinct live scenarios, including a regression scenario against trunk. Bound how many lanes run at once to native capacity and queue the rest. A missing slot serializes a lane. It never drops one. Models inherit by default. If fewer than ten meaningful scenarios exist, keep each unused lane with `n/a: <reason>` instead of inventing duplicate work.
 
 Run the same load-bearing scenario on trunk and head. If trunk lacks the feature, record that fact and verify the added behavior plus the user-visible end state. The performance block compares like with like. If trunk lacks the scenario, set an absolute budget for the added work and the end state instead of claiming a false ratio.
 
-An interaction change has a review gate. Capture screenshots and a short video when native tools support them, then show them in this task before merge. A PR with no interaction change states `**Review gate.** None. <PR id> is not review-gated.`
+An interaction change has a review gate. Capture screenshots and a short video, then show them in this task before merge. If the session has no capture tool, record the missing evidence and fail the review gate closed. A PR with no interaction change states `**Review gate.** None. <PR id> is not review-gated.`
 
 **Native interface checks.** Use an available Codex browser, simulator, terminal, or repository harness. Name the exact tool or command in each lane. If no tool can drive the interface, record the missing evidence in Appendix C and fail the live gate closed.
 
@@ -39,14 +39,14 @@ Tests alone do not verify a PR. Each PR requires unit, live, and performance evi
 
 - [ ] Confirm the goal, PR order, verification rule, authority boundaries, and done condition from the user's request.
 - [ ] Store the active objective and plan path under `.cstack/`.
-- [ ] Read these files from the current checked-out source at program start and after relevant changes.
+- [ ] Read these files from the installed plugin bundle on disk, not from memory, at program start and at every drain.
   - [ ] `<plugin-root>/skills/cstack/playbooks/<execution-playbook>.md`
   - [ ] `<plugin-root>/skills/swarm/SKILL.md`
   - [ ] `<plugin-root>/skills/cstack/references/codex-runtime.md`
   - [ ] `<plugin-root>/skills/cstack/playbooks/opening-a-pr.md`
   - [ ] <Each other bundled skill this program applies.>
-- [ ] Continue in the foreground. If the user requested scheduled audits and a native scheduler exists, record the schedule. Otherwise checkpoint before exit.
-- [ ] At each audit, re-read the objective and execution playbook. Inspect every active owner through native coordination, git, and `gh`. Judge progress by commits, pushes, PR deltas, checks, and receipts.
+- [ ] Continue in the foreground. Use a native scheduler only when the session exposes one and the user asked for it. Nothing is promised after the app closes. Checkpoint before exit.
+- [ ] Before refilling owners, and at every verification boundary, re-read this playbook and the execution playbooks from the installed plugin bundle on disk, not from memory. Audit the operation against them. Fix drift in that pass. Then post a status message to the operator in chat whether or not anything changed, with the queue table of PR, owner, state, and head SHA, the verdicts since the last audit, what merged, open operator gates, and blockers. Inspect every active owner through native coordination, git, and `gh`. Judge progress by commits, pushes, PR deltas, checks, and receipts.
 - [ ] On the operator's hold, interrupt every owner with a zero-writes instruction.
 
 ### Assign owners
@@ -63,13 +63,15 @@ Tests alone do not verify a PR. Each PR requires unit, live, and performance evi
 - [ ] Use git and `gh` only.
 - [ ] Create a ready PR with `gh pr create --base <base-branch>` only when authorized. A stack child targets its parent branch.
 - [ ] Run the repository's targeted checks, lint, and typecheck before the PR-facing push.
-- [ ] Read and apply `<plugin-root>/skills/technical-writing/SKILL.md` and `<plugin-root>/skills/unslop/SKILL.md` before review. Inspect comments and suppressions in the full diff; use `<plugin-root>/skills/no-comments/SKILL.md` for a dedicated comment-review request.
+- [ ] Run `<plugin-root>/skills/deslop/SKILL.md` over the diff before each commit. Keep `deslop skipped: <reason>` when a step genuinely cannot run it.
+- [ ] Read and apply `<plugin-root>/skills/no-comments/SKILL.md` before review. This step is mandatory. It is not only for an explicit request.
+- [ ] Read and apply `<plugin-root>/skills/technical-writing/SKILL.md` and `<plugin-root>/skills/unslop/SKILL.md` to the PR title, body, and commit messages. Inspect comments and suppressions in the full diff.
 - [ ] Triage automated review through `../references/bugbot-triage.md`.
 - [ ] Rebase onto current trunk before babysitting and again before the merge-ready report when the execution playbook requires it.
 
 ### Verify and deliver each PR
 
-- [ ] At the merge-ready head SHA, run gates, the ten live lanes below within native capacity, the performance lane, and a diff-and-receipts audit.
+- [ ] At the merge-ready head SHA, run gates, the ten live lanes below, the performance lane, and a diff-and-receipts audit. Bound how many lanes run at once to native capacity and queue the rest. A missing slot serializes a lane. It never drops one. The verdict comes from an actor that did not write the code. When no subagent is available, run a separate review pass over a clean re-read of the diff, label it `single-agent review`, and name the missing independence.
 - [ ] Mark clean only when every applicable lane passes. A changed head gets a fresh verdict unless an unchanged patch ID preserves the code verdict and current CI and mergeability pass.
 - [ ] Follow the merge or append rule from the execution playbook. Do not merge without concrete authorization.
 
@@ -102,7 +104,7 @@ Tests alone do not verify a PR. Each PR requires unit, live, and performance evi
 
 - [ ] <Test file and case.> Run `<command>`.
 
-**Verify, live.** Tests alone do not verify a PR. Each PR requires unit, live, and performance evidence. Run these scenarios within native capacity.
+**Verify, live.** Tests alone do not verify a PR. Each PR requires unit, live, and performance evidence. Run these scenarios. Bound how many run at once to native capacity and queue the rest. A missing slot serializes a lane. It never drops one.
 
 - [ ] Lane 1. Regression against trunk. Run <the same load-bearing scenario> on trunk and head. Save `<slug>`. Pass when <predicate>.
 - [ ] Lane 2. <Scenario, artifact, and predicate.>
@@ -157,4 +159,4 @@ Tests alone do not verify a PR. Each PR requires unit, live, and performance evi
 <Files and official docs owners must read. Name which PRs apply how, architect, interrogate, swarm, and show-me-your-work.>
 ````
 
-**Reply:** Return the plan path, PR dependency order, review-gated set, prototype findings and gaps, and the exact validator result.
+**Reply:** Return the plan path, PR dependency order, review-gated set, prototype findings and gaps, and the exact validator result. Every claim carries its evidence or its label in the same sentence. Measured, inferred, or guess. A prediction or an unseen cause is a guess. Never hand the human a check you could run.

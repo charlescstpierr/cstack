@@ -43,7 +43,7 @@ Keep the ADR to the repository's existing format and record context, decision, a
 
 ## Facts, writing, and judgment
 
-The default is zero extra agents. When independent repository facts need separate coverage, use the configured `how explorer` role, one delegate per fact at most, bounded by native capacity. When a separate document draft is useful and writing is authorized, use the configured `documentation` role. When an independent rationale or judgment pass is useful, use `judgment and prose`. Resolve each role through the trusted helper and forward the complete model and reasoning-effort selection; do not hard-code model names or add a role.
+The default is zero extra agents. When independent repository facts need separate coverage, use the configured `how explorer` role, one delegate per fact at most, bounded by native capacity. Queue extra facts when native concurrency is smaller. When no subagent slot is available, investigate in the same session, label the result `single-agent`, and report the missing independence. When a separate document draft is useful and writing is authorized, use the configured `documentation` role. When an independent rationale or judgment pass is useful, use `judgment and prose`. Resolve each role through the trusted helper and forward the complete model and reasoning-effort selection; do not hard-code model names or add a role.
 
 The parent owns the final judgment and verification. This skill never creates goals, implementation changes, trackers, PRs, deployments, or external messages. Its only durable writes are explicitly authorized glossary or ADR documents.
 

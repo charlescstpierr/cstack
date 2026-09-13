@@ -21,7 +21,7 @@ $cstack:why pourquoi la limite de retry vaut-elle cinq ? La justification existe
 ## Construire une explication avec `$cstack:teach`
 
 ```text
-$teach-moi comment cette PR change les retries et pourquoi elle corrige la cause.
+$cstack:teach comment cette PR change les retries et pourquoi elle corrige la cause.
 ```
 
 [`$cstack:teach`](../../skills/teach/SKILL.md) combine le comportement et la motivation à un niveau lisible. Utilisez-le quand un résumé ne suffit pas.

@@ -1,6 +1,7 @@
 import json
 import os
 import shutil
+import signal
 import stat
 import subprocess
 import sys
@@ -19,7 +20,7 @@ BASH = shutil.which("bash")
 class RunToolTest(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
-        root = Path(self.temp.name)
+        root = Path(self.temp.name).resolve()
         self.plugin = root / "read only plugin"
         self.source = self.plugin / "skills/cstack/scripts"
         scripts = self.plugin / "scripts"
@@ -32,10 +33,33 @@ class RunToolTest(unittest.TestCase):
         self.bin = root / "bin"
         self.bin.mkdir()
         bun = self.bin / "bun"
-        bun.write_text(textwrap.dedent("""\
-            #!/usr/bin/python3
-            import json, os, pathlib, sys, time
-            if sys.argv[1] == "-e":
+        bun.write_text("#!{}\n".format(sys.executable) + textwrap.dedent("""\
+            import json, os, pathlib, signal, sys, time
+            args = sys.argv[1:]
+            config = None
+            no_env_file = False
+            i = 0
+            while i < len(args):
+                arg = args[i]
+                if arg == "--no-env-file":
+                    no_env_file = True
+                    i += 1
+                    continue
+                if arg.startswith("--config="):
+                    config = arg.split("=", 1)[1]
+                    i += 1
+                    continue
+                if arg == "--config":
+                    config = args[i + 1]
+                    i += 2
+                    continue
+                break
+            args = args[i:]
+            if args and args[0] == "-e":
+                if name := os.environ.get("FAKE_BUN_SETUP_SIGNAL"):
+                    os.kill(os.getpid(), getattr(signal, name))
+                if code := os.environ.get("FAKE_BUN_SETUP_EXIT"):
+                    raise SystemExit(int(code))
                 marker = pathlib.Path.cwd() / "node_modules/.cstack-tools-install-key"
                 if not marker.exists():
                     with open(os.environ["FAKE_BUN_INSTALL_LOG"], "a") as log:
@@ -44,8 +68,16 @@ class RunToolTest(unittest.TestCase):
                     marker.parent.mkdir(exist_ok=True)
                     marker.write_text("ready")
                 raise SystemExit()
-            entry = pathlib.Path(sys.argv[1])
+            entry = pathlib.Path(args[0])
             stage = next((parent for parent in entry.parents if (parent / "package.json").exists()), entry.parent)
+            if os.environ.get("FAKE_BUN_LOCK_STAGE"):
+                locked = entry.parent / "locked"
+                locked.mkdir()
+                (locked / "x").write_text("x")
+                locked.chmod(0o000)
+                raise SystemExit(int(os.environ.get("FAKE_BUN_EXIT", "7")))
+            if name := os.environ.get("FAKE_BUN_SIGNAL"):
+                os.kill(os.getpid(), getattr(signal, name))
             if barrier := os.environ.get("FAKE_BUN_BARRIER"):
                 barrier = pathlib.Path(barrier)
                 barrier.mkdir(exist_ok=True)
@@ -56,25 +88,39 @@ class RunToolTest(unittest.TestCase):
                 if len(list(barrier.iterdir())) < 2:
                     raise SystemExit("helpers did not overlap")
             print(json.dumps({
-                "argv": sys.argv[2:], "cwd": os.getcwd(),
+                "argv": args[1:], "cwd": os.getcwd(),
                 "entry": str(entry), "content": entry.read_text(),
                 "node_modules": (stage / "node_modules").exists(),
                 "ignored_module": (stage / "node_modules/ignored").exists(),
                 "cache": (stage / "cache").exists(),
+                "no_env_file": no_env_file,
+                "config": config,
             }))
             """))
         bun.chmod(0o755)
         self.env = os.environ | {"PATH": f"{self.bin}:{os.environ['PATH']}"}
 
     def tearDown(self):
-        self._make_writable(self.plugin)
+        self._make_writable(Path(self.temp.name))
         self.temp.cleanup()
 
     @staticmethod
     def _make_writable(root):
-        for path in [root, *root.rglob("*")]:
-            if not path.is_symlink():
-                path.chmod(path.stat().st_mode | stat.S_IWUSR)
+        for dirpath, _directories, files in os.walk(root, topdown=True):
+            current = Path(dirpath)
+            try:
+                if not current.is_symlink():
+                    current.chmod(current.stat().st_mode | stat.S_IWUSR | stat.S_IXUSR | stat.S_IRUSR)
+            except OSError:
+                continue
+            for name in files:
+                path = current / name
+                if path.is_symlink():
+                    continue
+                try:
+                    path.chmod(path.stat().st_mode | stat.S_IWUSR)
+                except OSError:
+                    pass
 
     def run_tool(self, entry, *args, check=True, env=None):
         return subprocess.run(
@@ -245,6 +291,107 @@ class RunToolTest(unittest.TestCase):
         self.assertNotEqual(entries[0], entries[1])
         self.assertFalse(any(entry.exists() for entry in entries))
         self.assertEqual(install_log.read_text().splitlines(), ["install", "install"])
+
+    def test_signaled_helper_maps_to_128_plus_signal(self):
+        helper = self.source / "die.sh"
+        helper.write_text("kill -TERM $$\n")
+        result = self.run_tool("die.sh", check=False)
+        self.assertEqual(result.returncode, 128 + signal.SIGTERM)
+
+    def test_signaled_dependency_setup_keeps_its_signal_status(self):
+        (self.source / "tool.ts").write_text("trusted")
+        (self.source / "package.json").write_text("{}")
+        (self.source / "bun.lock").write_text("")
+        (self.source / "bootstrap.ts").write_text("")
+        result = self.run_tool(
+            "tool.ts",
+            check=False,
+            env=self.env | {"FAKE_BUN_SETUP_SIGNAL": "SIGTERM"},
+        )
+        self.assertEqual(result.returncode, 128 + signal.SIGTERM)
+        self.assertIn("dependency setup exited with status", result.stderr)
+
+    def test_failed_dependency_setup_keeps_its_exit_code(self):
+        (self.source / "tool.ts").write_text("trusted")
+        (self.source / "package.json").write_text("{}")
+        (self.source / "bun.lock").write_text("")
+        (self.source / "bootstrap.ts").write_text("")
+        result = self.run_tool(
+            "tool.ts",
+            check=False,
+            env=self.env | {"FAKE_BUN_SETUP_EXIT": "5"},
+        )
+        self.assertEqual(result.returncode, 5)
+
+    def test_out_of_range_owner_pid_does_not_abort_the_sweep(self):
+        (self.source / "tool.ts").write_text("trusted")
+        tools = self.cwd / ".cstack/tools"
+        tools.mkdir(parents=True)
+        huge = tools / "run-huge"
+        huge.mkdir()
+        (huge / "owner.pid").write_text("{}\n".format(2 ** 70))
+        result = self.run_tool("tool.ts")
+        self.assertNotIn("Traceback", result.stderr)
+        self.assertIn("run-huge", {path.name for path in tools.iterdir()})
+
+    def test_cleanup_failure_does_not_replace_helper_exit_code(self):
+        (self.source / "tool.ts").write_text("trusted")
+        result = self.run_tool(
+            "tool.ts",
+            check=False,
+            env=self.env | {"FAKE_BUN_LOCK_STAGE": "1", "FAKE_BUN_EXIT": "7"},
+        )
+        self.assertEqual(result.returncode, 7)
+        self.assertIn("failed to remove staged helper", result.stderr)
+
+    def test_creates_cstack_gitignore_without_clobbering(self):
+        (self.source / "tool.ts").write_text("trusted")
+        self.run_tool("tool.ts")
+        ignore = self.cwd / ".cstack/.gitignore"
+        self.assertEqual(ignore.read_text(), "*\n")
+        ignore.write_text("keep\n")
+        self.run_tool("tool.ts")
+        self.assertEqual(ignore.read_text(), "keep\n")
+
+    def test_sweep_stale_run_stages_without_touching_other_state(self):
+        (self.source / "tool.ts").write_text("trusted")
+        tools = self.cwd / ".cstack/tools"
+        tools.mkdir(parents=True)
+        keep = self.cwd / ".cstack/models.json"
+        keep.write_text("keep")
+        other = tools / "not-a-stage"
+        other.mkdir()
+        (other / "file").write_text("stay")
+        dead = subprocess.Popen([sys.executable, "-c", "pass"])
+        self.assertEqual(dead.wait(), 0)
+        stale = tools / "run-dead"
+        stale.mkdir()
+        (stale / "owner.pid").write_text("{}\n".format(dead.pid))
+        live = tools / "run-live"
+        live.mkdir()
+        (live / "owner.pid").write_text("{}\n".format(os.getpid()))
+        (live / "marker").write_text("live")
+        orphan = tools / "run-orphan"
+        orphan.mkdir()
+        (orphan / "marker").write_text("no-pid")
+        self.run_tool("tool.ts")
+        names = {path.name for path in tools.iterdir()}
+        self.assertNotIn("run-dead", names)
+        self.assertIn("run-live", names)
+        self.assertIn("run-orphan", names)
+        self.assertIn("not-a-stage", names)
+        self.assertEqual(keep.read_text(), "keep")
+
+    def test_bun_uses_neutral_config_and_skips_project_env(self):
+        (self.source / "tool.ts").write_text("trusted")
+        (self.cwd / "bunfig.toml").write_text('preload = ["./evil.ts"]\n')
+        (self.cwd / ".env").write_text("SECRET=1\n")
+        data = json.loads(self.run_tool("tool.ts").stdout)
+        self.assertTrue(data["no_env_file"])
+        self.assertTrue(data["config"])
+        self.assertTrue(data["config"].endswith("bunfig.toml"))
+        self.assertIn(".cstack/tools", data["config"].replace("\\", "/"))
+        self.assertNotEqual(data["config"], str(self.cwd / "bunfig.toml"))
 
 
 if __name__ == "__main__":

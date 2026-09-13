@@ -28,7 +28,7 @@ Track one item per phase in the current task before launching anything.
 
 ## Phase B: Fan out
 
-Spawn all N native subagents concurrently. Each brief must assign a bounded scope and exclusive file ownership when the worker writes. Use read-only scopes for investigation and review.
+Spawn all N native subagents concurrently. Each brief must assign a bounded scope and exclusive file ownership when the worker writes. Use read-only scopes for investigation and review. Native concurrency bounds how many run at once. Queue remaining workers in later waves. When no subagent slot is available, run each worker brief in the same session as a separate, explicitly re-scoped pass, label the result `single-agent`, and report the missing independence. Absent capacity never drops a required slice.
 
 Every brief stands alone. Include the goal, scope, exact slice or race arm, how to verify, and what to report. Reports use `PASS`, `ISSUES`, or `BLOCKED` with evidence.
 
@@ -42,4 +42,4 @@ Keep a compact result table, one-line evidenced issues, and explicit gaps or dro
 
 ## Phase D: Report
 
-Return one consolidated in-chat report with the table, issue one-liners, gaps or dropouts, and the race rule when used.
+Return one consolidated in-chat report with the table, issue one-liners, gaps or dropouts, and the race rule when used. Every claim carries its evidence or its label in the same sentence. Measured, inferred, or guess. A prediction or an unseen cause is a guess. Never hand the human a check you could run.

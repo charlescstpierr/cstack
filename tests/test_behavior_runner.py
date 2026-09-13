@@ -1,6 +1,9 @@
 import importlib.util
 import json
+import os
+import sys
 import tempfile
+import types
 import unittest
 from pathlib import Path
 from unittest.mock import patch
@@ -146,6 +149,53 @@ class BehaviorRunnerTests(unittest.TestCase):
             "parent",
         )
         self.assertEqual(current["messages"], ["final answer"])
+
+    def test_missing_codex_config_fails_loudly(self):
+        with tempfile.TemporaryDirectory() as directory:
+            home = Path(directory) / "codex-home"
+            with patch.dict(os.environ, {"CODEX_HOME": str(home)}):
+                with self.assertRaises(verify_behavior.HarnessError) as ctx:
+                    verify_behavior.config_names()
+        self.assertIn(str(home / "config.toml"), str(ctx.exception))
+
+    def test_config_names_reads_plugins_from_codex_home(self):
+        with tempfile.TemporaryDirectory() as directory:
+            home = Path(directory)
+            (home / "config.toml").write_text("unused")
+            fake = types.ModuleType("tomllib")
+            fake.TOMLDecodeError = type("TOMLDecodeError", (Exception,), {})
+            fake.loads = lambda text: {"plugins": {"alpha": {}}, "mcp_servers": {"omega": {}}}
+            with patch.dict(os.environ, {"CODEX_HOME": str(home)}):
+                with patch.dict(sys.modules, {"tomllib": fake}):
+                    plugins, mcp_servers = verify_behavior.config_names()
+        self.assertEqual(plugins, ["alpha"])
+        self.assertEqual(mcp_servers, ["omega"])
+
+    def test_invalid_toml_fails_loudly(self):
+        with tempfile.TemporaryDirectory() as directory:
+            home = Path(directory)
+            (home / "config.toml").write_text("not toml")
+            fake = types.ModuleType("tomllib")
+            error_type = type("TOMLDecodeError", (Exception,), {})
+            fake.TOMLDecodeError = error_type
+            fake.loads = lambda text: (_ for _ in ()).throw(error_type("bad"))
+            with patch.dict(os.environ, {"CODEX_HOME": str(home)}):
+                with patch.dict(sys.modules, {"tomllib": fake}):
+                    with self.assertRaises(verify_behavior.HarnessError) as ctx:
+                        verify_behavior.config_names()
+        self.assertIn("cannot read Codex config", str(ctx.exception))
+
+    def test_python39_requires_tomllib_to_parse_config(self):
+        if sys.version_info >= (3, 11):
+            self.skipTest("this interpreter can parse TOML")
+        with tempfile.TemporaryDirectory() as directory:
+            home = Path(directory)
+            (home / "config.toml").write_text("[plugins]\n")
+            with patch.dict(os.environ, {"CODEX_HOME": str(home)}):
+                with patch.dict(sys.modules, {"tomllib": None}):
+                    with self.assertRaises(verify_behavior.HarnessError) as ctx:
+                        verify_behavior.config_names()
+        self.assertIn("3.11", str(ctx.exception))
 
 
 if __name__ == "__main__":

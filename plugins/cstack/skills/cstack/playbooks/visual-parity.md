@@ -10,4 +10,4 @@ Follow [the Codex runtime contract](../references/codex-runtime.md).
 4. Verify each component against its baseline with an available native browser or simulator tool and an image diff. A nonzero diff fails. Investigate the pixel delta and continue in the foreground until the diff is zero or a documented platform variance remains.
 5. Run **Opening a PR** per component or safe batch only when the user authorized PR creation.
 
-**Reply:** components migrated, the diff result for each, the baseline harness location, what's left.
+**Reply:** components migrated, the diff result for each, the baseline harness location, what's left. Every claim carries its evidence or its label in the same sentence. Measured, inferred, or guess. A prediction or an unseen cause is a guess. Never hand the human a check you could run.

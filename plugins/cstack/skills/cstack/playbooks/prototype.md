@@ -13,4 +13,6 @@ The one playbook where the Laziness Protocol's "smallest change" and the verific
 5. Verify with the native tool available for the target. For a visual decision, use an available browser or simulator tool to drive and capture each variant. For a behavioral or timing decision, log the timing, print the output, or inspect the render. The observation is the test.
 6. Present alternatives, tradeoffs, and a recommendation. The output is the decision plus the throwaway artifact, not shippable code. Hand the chosen direction to **Feature** (or `architect` for the shape) for the real build.
 
-**Reply:** the variants explored, the evidence (screenshots for a visual decision, the observed output or timing for a behavioral one), tradeoffs, your recommendation, and the scratch path. Say plainly that the prototype is throwaway.
+Do not commit the throwaway unless the user asked to keep it. If a commit happens, run `../../deslop/SKILL.md` over the diff first. Keep `deslop skipped: <reason>` when a step genuinely cannot run it.
+
+**Reply:** the variants explored, the evidence (screenshots for a visual decision, the observed output or timing for a behavioral one), tradeoffs, your recommendation, and the scratch path. Say plainly that the prototype is throwaway. Every claim carries its evidence or its label in the same sentence. Measured, inferred, or guess. A prediction or an unseen cause is a guess. Never hand the human a check you could run.

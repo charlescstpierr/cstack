@@ -1,5 +1,9 @@
 {
   "date": "2026-09-11",
+  "scope": "historical",
+  "plugin_version": "0.3.0",
+  "catalog_skills": 28,
+  "plugin_commit": "19acc39fe1743efeac71cf67c79c0ffa842a7854",
   "method": "Native Codex App project coordinators and bounded children, followed by independent parent inspection and behavior checks.",
   "restored_baseline": "ea39069cf523503453bda0f4ab94e0ca927e297b",
   "normalized_workflow_equivalence": [
@@ -60,7 +64,8 @@
     "Bounded synthetic workflows, not a general quality or efficiency comparison.",
     "Roles inherited the session model; no model-diversity or cost claim.",
     "Checks cover active sessions, not unattended execution after the app exits.",
-    "The earlier concurrent CLI matrix remains inconclusive in draft PR #4."
+    "The earlier concurrent CLI matrix remains inconclusive in draft PR #4.",
+    "Historical snapshot of plugin commit 19acc39fe1743efeac71cf67c79c0ffa842a7854, catalog of 28 skills. final_target_plugin_sha256 describes that tree. Later commits changed plugin bytes. Hash not recomputed."
   ],
   "final_target_plugin_sha256": "26f79efffe7f6500383864b67c718a27fa0590139b37628976b4553ff26aec2e",
   "project_hash_exclusions": [

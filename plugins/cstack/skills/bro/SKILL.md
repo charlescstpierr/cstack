@@ -1,6 +1,6 @@
 ---
 name: bro
-description: "Restate the last message in plain human language, with no jargon."
+description: "Use for $cstack:bro to restate the last message in plain human language, with no jargon."
 ---
 
 Runtime: [`../cstack/references/codex-runtime.md`](../cstack/references/codex-runtime.md).
