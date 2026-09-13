@@ -28,23 +28,9 @@ const context = {
   repo: "repo",
   number: parsePrNumber(42),
 };
-const source = (owner: string, repo = "repo") => ({ owner, repo });
-const openPr = (
-  number: number,
-  headRefName: string,
-  baseRefName: string,
-  headOwner = context.owner,
-  headRepo = context.repo
-) => ({
-  number: parsePrNumber(number),
-  headRepository: source(headOwner, headRepo),
-  headRefName,
-  baseRepository: source(context.owner, context.repo),
-  baseRefName,
-});
 
-describe("chaîne de repli des vérifications", () => {
-  it("utilise un résultat du chemin rapide non vide sans requête rollup", async () => {
+describe("checks fallback chain", () => {
+  it("uses a non-empty fast-path result without a rollup query", async () => {
     const reader = fakeReader({
       fastPath: { kind: "checks", checks: [passingCheck("fast")] },
     });
@@ -54,7 +40,7 @@ describe("chaîne de repli des vérifications", () => {
     expect(reader.calls).toEqual(["checksFastPath"]);
   });
 
-  it("pagine GraphQL quand le chemin rapide est inutilisable", async () => {
+  it("paginates GraphQL when the fast path is unusable", async () => {
     const reader = fakeReader({
       fastPath: { kind: "unusable", exitCode: 8, stderr: "" },
       rollupPages: [
@@ -72,18 +58,18 @@ describe("chaîne de repli des vérifications", () => {
     ]);
   });
 
-  it("bascule en repli quand le JSON du chemin rapide valide représente une liste vide", async () => {
+  it("falls back when valid fast-path JSON represented an empty list", async () => {
     const reader = fakeReader({
       fastPath: { kind: "checks", checks: [] },
-      rollupPages: [{ checks: [pendingCheck("repli")], endCursor: null }],
+      rollupPages: [{ checks: [pendingCheck("fallback")], endCursor: null }],
     });
     expect((await resolveChecks(reader, context)).checks[0].name).toBe(
-      "repli"
+      "fallback"
     );
     expect(reader.calls).toEqual(["checksFastPath", "checkRollupPage:null"]);
   });
 
-  it("échoue ferme quand les deux chemins sont vides", async () => {
+  it("fails closed when both paths are empty", async () => {
     const reader = fakeReader({
       fastPath: {
         kind: "unusable",
@@ -98,8 +84,8 @@ describe("chaîne de repli des vérifications", () => {
   });
 });
 
-describe("correspondance des nœuds rollup", () => {
-  it("associe les états CheckRun terminaux et non terminaux en échec ferme", () => {
+describe("rollup node mapping", () => {
+  it("maps terminal and non-terminal CheckRun states fail closed", () => {
     const cases = [
       ["IN_PROGRESS", null, "pending", "PENDING"],
       ["COMPLETED", "SUCCESS", "passed", "SUCCESS"],
@@ -121,7 +107,7 @@ describe("correspondance des nœuds rollup", () => {
     }
   });
 
-  it("classe un Code Review Gate en cours depuis le rollup comme barrière", () => {
+  it("classifies an in-progress Code Review Gate from the rollup as the gate", () => {
     expect(
       mapRollupNode({
         __typename: "CheckRun",
@@ -139,7 +125,7 @@ describe("correspondance des nœuds rollup", () => {
     ).toMatchObject({ kind: "code-review-gate" });
   });
 
-  it("associe les états StatusContext et ignore les typenames inconnus", () => {
+  it("maps StatusContext states and drops unknown typenames", () => {
     expect(
       mapRollupNode({
         __typename: "StatusContext",
@@ -158,7 +144,7 @@ describe("correspondance des nœuds rollup", () => {
   });
 });
 
-describe("analyse ferme des énumérations", () => {
+describe("closed enum parsing", () => {
   const rawPullRequest = {
     mergeable: "MERGEABLE",
     mergeStateStatus: "CLEAN",
@@ -171,7 +157,7 @@ describe("analyse ferme des énumérations", () => {
     isDraft: false,
   };
 
-  it("accepte mergeStateStatus CONFLICTING", () => {
+  it("accepts mergeStateStatus CONFLICTING", () => {
     expect(
       parsePullRequest(
         { ...rawPullRequest, mergeStateStatus: "CONFLICTING" },
@@ -180,26 +166,26 @@ describe("analyse ferme des énumérations", () => {
     ).toBe("CONFLICTING");
   });
 
-  it("lit reviewDecision vide de gh comme absence de décision plutôt qu’échec d’analyse", () => {
+  it("reads gh's empty reviewDecision as no decision rather than a parse failure", () => {
     expect(
       parsePullRequest({ ...rawPullRequest, reviewDecision: "" }, context)
         .reviewDecision
     ).toBeNull();
   });
 
-  it("rejette encore un reviewDecision inconnu", () => {
+  it("still rejects an unknown reviewDecision", () => {
     expect(() =>
       parsePullRequest({ ...rawPullRequest, reviewDecision: "MAYBE" }, context)
     ).toThrow(WatcherQueryError);
   });
 
-  it("rejette les valeurs enum inconnues comme erreurs réessayables portant la valeur brute", () => {
+  it("rejects unknown enum values as retryable errors carrying the raw value", () => {
     try {
       parsePullRequest(
         { ...rawPullRequest, mergeStateStatus: "FUTURE_STATE" },
         context
       );
-      throw new Error("parseur attendu en echec");
+      throw new Error("expected parser to throw");
     } catch (error) {
       expect(error).toBeInstanceOf(WatcherQueryError);
       if (!(error instanceof WatcherQueryError)) throw error;
@@ -212,7 +198,7 @@ describe("analyse ferme des énumérations", () => {
   });
 });
 
-it("annote les fils Bugbot avec des comptes distincts de passes de revue", () => {
+it("annotates Bugbot threads with distinct review-pass counts", () => {
   const response = {
     data: {
       repository: {
@@ -277,8 +263,8 @@ it("annote les fils Bugbot avec des comptes distincts de passes de revue", () =>
   expect(threads.map((thread) => thread.bugbotReviewPasses)).toEqual([3, 3]);
 });
 
-describe("découverte du contexte et de la pile", () => {
-  it("renvoie un contexte entièrement explicite sans appel au lecteur", async () => {
+describe("context and stack discovery", () => {
+  it("returns a fully explicit context without any reader call", async () => {
     const reader = fakeReader();
     expect(
       await resolveContext({
@@ -291,7 +277,7 @@ describe("découverte du contexte et de la pile", () => {
     expect(reader.calls).toEqual([]);
   });
 
-  it("utilise l’origine locale avant currentPr pour un numéro explicite", async () => {
+  it("uses the local origin before currentPr for an explicit number", async () => {
     const reader = fakeReader({ origin: { owner: "local", repo: "checkout" } });
     expect(
       await resolveContext({
@@ -304,100 +290,44 @@ describe("découverte du contexte et de la pile", () => {
     expect(reader.calls).toEqual(["originRepo"]);
   });
 
-  it("ordonne la pile connectée de bas en haut", () => {
-    const ordered = orderStack(context, [
-      openPr(41, "base-feature", "main"),
-      openPr(Number(context.number), "feature", "base-feature"),
-      openPr(43, "upstack", "feature"),
-    ]);
-    expect(ordered.map((item) => Number(item.number))).toEqual([41, 42, 43]);
-  });
-
-  it("conserve les descendants bifurqués de la PR sélectionnée", () => {
-    const ordered = orderStack(context, [
-      openPr(Number(context.number), "root", "main"),
-      openPr(43, "child-a", "root"),
-      openPr(44, "child-b", "root"),
-      openPr(45, "grandchild", "child-a"),
-    ]);
-    expect(ordered.map((item) => Number(item.number))).toEqual([
-      42, 43, 45, 44,
-    ]);
-  });
-
-  it("n’inclut pas les frères quand la PR sélectionnée est un enfant", () => {
-    const ordered = orderStack(context, [
-      openPr(41, "root", "main"),
-      openPr(Number(context.number), "child-a", "root"),
-      openPr(43, "child-b", "root"),
-      openPr(44, "grandchild", "child-a"),
-    ]);
-    expect(ordered.map((item) => Number(item.number))).toEqual([41, 42, 44]);
-  });
-
-  it("ne confond pas un fork homonyme avec le parent réel", () => {
-    const ordered = orderStack(context, [
-      openPr(41, "base-feature", "main"),
-      openPr(Number(context.number), "feature", "base-feature"),
-      openPr(43, "upstack", "feature"),
-      openPr(44, "base-feature", "main", "fork"),
-    ]);
-    expect(ordered.map((item) => Number(item.number))).toEqual([41, 42, 43]);
-  });
-
-  it("ne dépend pas de l’ordre d’une PR de fork homonyme", () => {
-    const ordered = orderStack(context, [
-      openPr(44, "base-feature", "main", "fork"),
-      openPr(43, "upstack", "feature"),
-      openPr(Number(context.number), "feature", "base-feature"),
-      openPr(41, "base-feature", "main"),
-    ]);
-    expect(ordered.map((item) => Number(item.number))).toEqual([41, 42, 43]);
-  });
-
-  it("ne crée ni cycle ni enfants entre fork main et dépôt cible main", () => {
-    const ordered = orderStack(
-      { owner: context.owner, repo: context.repo, number: parsePrNumber(44) },
-      [
-        openPr(41, "feature", "main"),
-        openPr(44, "main", "main", "fork"),
-      ]
-    );
-    expect(ordered.map((item) => Number(item.number))).toEqual([44]);
-  });
-
-  it("accepte une PR sélectionnée depuis un fork", () => {
-    const ordered = orderStack(
-      { owner: context.owner, repo: context.repo, number: parsePrNumber(44) },
-      [
-        openPr(41, "base-feature", "main"),
-        openPr(44, "fork-feature", "base-feature", "fork"),
-      ]
-    );
-    expect(ordered.map((item) => Number(item.number))).toEqual([41, 44]);
-  });
-
-  it("compare owner/repo sans casse mais garde la casse des branches", () => {
+  it("orders the connected stack bottom-to-top", () => {
     const ordered = orderStack(context, [
       {
-        ...openPr(41, "Base", "main", "OWNER", "REPO"),
-        baseRepository: source("OWNER", "REPO"),
+        number: parsePrNumber(41),
+        headRefName: "base-feature",
+        baseRefName: "main",
       },
-      openPr(Number(context.number), "feature", "Base"),
-      openPr(43, "case-mismatch", "base"),
+      {
+        number: context.number,
+        headRefName: "feature",
+        baseRefName: "base-feature",
+      },
+      {
+        number: parsePrNumber(43),
+        headRefName: "upstack",
+        baseRefName: "feature",
+      },
     ]);
-    expect(ordered.map((item) => Number(item.number))).toEqual([41, 42]);
+    expect(ordered.map((item) => Number(item.number))).toEqual([41, 42, 43]);
   });
 
-  it("échoue ferme sur un cycle de base-ref", () => {
+  it("fails closed on a base-ref cycle", () => {
     const cyclic = [
-      openPr(Number(context.number), "feature", "base-feature"),
-      openPr(41, "base-feature", "feature"),
+      {
+        number: context.number,
+        headRefName: "feature",
+        baseRefName: "base-feature",
+      },
+      {
+        number: parsePrNumber(41),
+        headRefName: "base-feature",
+        baseRefName: "feature",
+      },
     ];
     expect(() => orderStack(context, cyclic)).toThrow(WatcherQueryError);
     try {
       orderStack(context, cyclic);
-      throw new Error("cycle attendu en echec");
+      throw new Error("expected cycle to throw");
     } catch (error) {
       expect(error).toBeInstanceOf(WatcherQueryError);
       if (!(error instanceof WatcherQueryError)) throw error;
@@ -408,21 +338,38 @@ describe("découverte du contexte et de la pile", () => {
     }
   });
 
-  it("échoue ferme quand deux parents ont la même identité source", () => {
-    const ambiguous = [
-      openPr(Number(context.number), "feature", "base-feature"),
-      openPr(41, "base-feature", "main"),
-      openPr(40, "base-feature", "release"),
+  it("fails closed on an upstack cycle", () => {
+    const cyclic = [
+      {
+        number: parsePrNumber(41),
+        headRefName: "base-feature",
+        baseRefName: "main",
+      },
+      {
+        number: context.number,
+        headRefName: "feature",
+        baseRefName: "base-feature",
+      },
+      {
+        number: parsePrNumber(43),
+        headRefName: "upstack",
+        baseRefName: "feature",
+      },
+      {
+        number: parsePrNumber(44),
+        headRefName: "feature",
+        baseRefName: "upstack",
+      },
     ];
-    expect(() => orderStack(context, ambiguous)).toThrow(WatcherQueryError);
+    expect(() => orderStack(context, cyclic)).toThrow(WatcherQueryError);
     try {
-      orderStack(context, ambiguous);
-      throw new Error("parent ambigu attendu en echec");
+      orderStack(context, cyclic);
+      throw new Error("expected cycle to throw");
     } catch (error) {
       expect(error).toBeInstanceOf(WatcherQueryError);
       if (!(error instanceof WatcherQueryError)) throw error;
       expect(error.failure).toMatchObject({
-        kind: "stack-ambiguous",
+        kind: "stack-cycle",
         retryable: false,
       });
     }
@@ -459,14 +406,14 @@ function threadResponse(hasNextPage: boolean, nodeCount = 1) {
   };
 }
 
-describe("pagination des fils de revue", () => {
-  it("échoue ferme quand la page reviewThreads a plus de résultats", () => {
+describe("review thread pagination", () => {
+  it("fails closed when the reviewThreads page has more results", () => {
     expect(() => parseReviewThreads(threadResponse(true, 100))).toThrow(
       WatcherQueryError
     );
     try {
       parseReviewThreads(threadResponse(true, 100));
-      throw new Error("fils tronques attendus en echec");
+      throw new Error("expected truncated threads to throw");
     } catch (error) {
       expect(error).toBeInstanceOf(WatcherQueryError);
       if (!(error instanceof WatcherQueryError)) throw error;
@@ -477,89 +424,47 @@ describe("pagination des fils de revue", () => {
     }
   });
 
-  it("accepte une page pleine quand GraphQL signale aucune page suivante", () => {
+  it("accepts a full page when GraphQL reports no further pages", () => {
     expect(parseReviewThreads(threadResponse(false, 100))).toHaveLength(100);
   });
 });
 
-describe("troncature de la liste des PR ouvertes", () => {
-  it("échoue ferme quand gh pr list atteint la limite de découverte", () => {
+describe("open PR list truncation", () => {
+  it("fails closed when gh pr list hits the discovery cap", () => {
     const rows = Array.from({ length: OPEN_PR_LIST_LIMIT }, (_, index) => ({
       number: index + 1,
       headRefName: `branch-${index}`,
-      headRepository: { nameWithOwner: "owner/repo" },
-      headRepositoryOwner: { login: "owner" },
       baseRefName: "main",
     }));
-    expect(() => parseOpenPullRequests(rows, context)).toThrow(
-      WatcherQueryError
-    );
+    expect(() => parseOpenPullRequests(rows)).toThrow(WatcherQueryError);
     try {
-      parseOpenPullRequests(rows, context);
-      throw new Error("decouverte de pile tronquee attendue en echec");
+      parseOpenPullRequests(rows);
+      throw new Error("expected truncated stack discovery to throw");
     } catch (error) {
       expect(error).toBeInstanceOf(WatcherQueryError);
       if (!(error instanceof WatcherQueryError)) throw error;
       expect(error.failure).toMatchObject({
         kind: "truncated",
         retryable: false,
-        detail: `gh pr list a renvoyé ${OPEN_PR_LIST_LIMIT} PR; la découverte de pile peut être incomplète`,
+        detail: `gh pr list returned ${OPEN_PR_LIST_LIMIT} PRs; stack discovery may be incomplete`,
       });
     }
   });
 
-  it("analyse une liste juste sous la limite de découverte", () => {
+  it("parses a listing just under the discovery cap", () => {
     const rows = Array.from(
       { length: OPEN_PR_LIST_LIMIT - 1 },
       (_, index) => ({
         number: index + 1,
         headRefName: `branch-${index}`,
-        headRepository: { nameWithOwner: "owner/repo" },
-        headRepositoryOwner: { login: "owner" },
         baseRefName: "main",
       })
     );
-    expect(parseOpenPullRequests(rows, context)).toHaveLength(
-      OPEN_PR_LIST_LIMIT - 1
-    );
-  });
-
-  it("analyse strictement l’identité source des PR ouvertes", () => {
-    expect(
-      parseOpenPullRequests(
-        [
-          {
-            number: 41,
-            headRefName: "feature",
-            headRepository: { nameWithOwner: "Fork/Repo" },
-            headRepositoryOwner: { login: "fork" },
-            baseRefName: "main",
-          },
-        ],
-        context
-      )
-    ).toEqual([
-      {
-        number: parsePrNumber(41),
-        headRefName: "feature",
-        headRepository: { owner: "Fork", repo: "Repo" },
-        baseRefName: "main",
-        baseRepository: { owner: context.owner, repo: context.repo },
-      },
-    ]);
-  });
-
-  it("échoue ferme quand l’identité source d’une PR ouverte manque", () => {
-    expect(() =>
-      parseOpenPullRequests(
-        [{ number: 41, headRefName: "feature", baseRefName: "main" }],
-        context
-      )
-    ).toThrow(WatcherQueryError);
+    expect(parseOpenPullRequests(rows)).toHaveLength(OPEN_PR_LIST_LIMIT - 1);
   });
 });
 
-describe("échecs de lancement de gh", () => {
+describe("gh spawn failures", () => {
   async function withPath(
     directory: string,
     operation: () => Promise<void>,
@@ -577,13 +482,13 @@ describe("échecs de lancement de gh", () => {
     }
   }
 
-  it("enveloppe un binaire gh manquant comme erreur de requête non réessayable", async () => {
+  it("wraps a missing gh binary as a non-retryable query error", async () => {
     const directory = await mkdtemp(join(tmpdir(), "watch-missing-gh-"));
     try {
       await withPath(directory, async () => {
         try {
           await new GhGitHubReader().currentPr(null);
-          throw new Error("gh manquant attendu en echec");
+          throw new Error("expected missing gh to throw");
         } catch (error) {
           expect(error).toBeInstanceOf(WatcherQueryError);
           if (!(error instanceof WatcherQueryError)) throw error;
@@ -599,7 +504,7 @@ describe("échecs de lancement de gh", () => {
     }
   });
 
-  it("classe les échecs d’authentification gh comme non réessayables", async () => {
+  it("classifies gh authentication failures as non-retryable", async () => {
     const directory = await mkdtemp(join(tmpdir(), "watch-auth-gh-"));
     const gh = join(directory, "gh");
     await writeFile(
@@ -616,7 +521,7 @@ exit 1
         async () => {
         try {
           await new GhGitHubReader().currentPr(null);
-          throw new Error("echec auth attendu");
+          throw new Error("expected auth failure to throw");
         } catch (error) {
           expect(error).toBeInstanceOf(WatcherQueryError);
           if (!(error instanceof WatcherQueryError)) throw error;

@@ -14,6 +14,11 @@ EXCLUDED = {"node_modules", "cache", ".cache", "__pycache__"}
 OWNER_PID = "owner.pid"
 
 
+def require_python(version):
+    if tuple(version[:2]) < (3, 9):
+        fail("Python 3.9 or newer is required")
+
+
 def fail(message):
     print(f"run-tool: {message}", file=sys.stderr)
     raise SystemExit(2)
@@ -77,12 +82,17 @@ def stage_owner_dead(path):
     if pid_file.is_symlink() or not pid_file.is_file():
         return False
     try:
-        raw = pid_file.read_text().strip()
+        raw = pid_file.read_bytes()
     except OSError:
         return False
-    if not raw.isdigit():
+    try:
+        text = raw.decode("utf-8")
+    except UnicodeDecodeError:
         return False
-    pid = int(raw)
+    text = text.strip()
+    if not text.isascii() or not text.isdigit():
+        return False
+    pid = int(text)
     if pid <= 0:
         return False
     try:
@@ -132,6 +142,7 @@ def require_bun_no_env_file():
 
 
 def main():
+    require_python(sys.version_info)
     if len(sys.argv) < 2:
         fail("utilisation: run-tool.sh <script-aide-relatif> [args ...]")
 
@@ -215,6 +226,9 @@ def main():
         if not bunfig.is_file():
             bunfig.write_text("")
         bunfig = bunfig.resolve()
+        tsconfig = staged / "tsconfig.json"
+        if not tsconfig.is_file():
+            tsconfig.write_text("{}\n")
         if runtime == "bun" and all((staged / name).is_file() for name in ("bootstrap.ts", "package.json", "bun.lock")):
             environment = os.environ | {
                 "CSTACK_BOOTSTRAP_ONLY": "1",

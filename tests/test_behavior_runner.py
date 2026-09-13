@@ -197,6 +197,49 @@ class BehaviorRunnerTests(unittest.TestCase):
                         verify_behavior.config_names()
         self.assertIn("3.11", str(ctx.exception))
 
+    def test_scrub_redacts_normalized_secret_keys(self):
+        payload = {
+            "x-api-key": "one",
+            "API_KEY": "two",
+            "Api-Key": "three",
+            "private-token": "four",
+            "access-token": "five",
+            "set-cookie": "six",
+            "tokenizer": "keep",
+            "token_usage": {"input": 3},
+        }
+        result = verify_behavior.scrub(payload)
+        for key in ("x-api-key", "API_KEY", "Api-Key", "private-token", "access-token", "set-cookie"):
+            self.assertEqual(result[key], "<REDACTED>")
+        self.assertEqual(result["tokenizer"], "keep")
+        self.assertEqual(result["token_usage"], {"input": 3})
+
+    def test_scrub_redacts_secret_shaped_values_not_digests(self):
+        git_sha = "e83c5163316f89bfbde7d9ab23ca2e25604af290"
+        digest = "649cf39c9a6e81e21b88747946236d33e7ed2efa3512d8b8447b1889006a61f0"
+        path = "/private/tmp/cstack-work/scripts/verify-behavior.py"
+        bearer = "Bearer ghp_0123456789abcdefghijABCDEFGHIJ0123"
+        result = verify_behavior.scrub(
+            {
+                "header": bearer + " trailing",
+                "url": "https://api.example.com/v1?access_token=abcdef123456&page=2",
+                "nested": {"items": [bearer, git_sha, digest, path, 12, True, None], "ok": False},
+                "git_sha": git_sha,
+                "digest": digest,
+                "path": path,
+                "count": 7,
+            }
+        )
+        self.assertEqual(result["header"], "Bearer <REDACTED> trailing")
+        self.assertEqual(result["url"], "https://api.example.com/v1?access_token=<REDACTED>&page=2")
+        self.assertEqual(result["nested"]["items"][0], "Bearer <REDACTED>")
+        self.assertEqual(result["nested"]["items"][1:], [git_sha, digest, path, 12, True, None])
+        self.assertIs(result["nested"]["ok"], False)
+        self.assertEqual(result["git_sha"], git_sha)
+        self.assertEqual(result["digest"], digest)
+        self.assertEqual(result["path"], path)
+        self.assertEqual(result["count"], 7)
+
 
 if __name__ == "__main__":
     unittest.main()

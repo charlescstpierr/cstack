@@ -20,6 +20,15 @@ DEFAULT_TURN_SECONDS = 300.0
 MAX_TURN_SECONDS = 900.0
 SKIP_DIRS = {".git", "__pycache__", "node_modules"}
 SAFE_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
+SECRET_KEY_MARKERS = ("password", "secret", "apikey", "authorization", "cookie")
+GITHUB_TOKEN = re.compile(r"\b(?:github_pat_[A-Za-z0-9_]+|gh[pousr]_[A-Za-z0-9]{36,})\b")
+BEARER_TOKEN = re.compile(r"(?i)(\bBearer\s+)\S+")
+QUERY_SECRET = re.compile(
+    r"(?i)([?&](?:access[_-]token|refresh[_-]token|id[_-]token|session[_-]token|api[_-]key|private[_-]token|password|secret|authorization|token)=)[^&]*"
+)
+FLAG_SECRET = re.compile(
+    r"(?i)(--(?:access[_-]token|refresh[_-]token|api[_-]key|private[_-]token|password|secret|authorization|token)=)\S+"
+)
 NEUTRAL_INSTRUCTIONS = (
     "Utilisez le paquet local sélectionné et les consignes du projet. Utilisez des rôles "
     "natifs génériques. Respectez la demande utilisateur et le périmètre actuel du projet. N’utilisez pas de "
@@ -35,22 +44,33 @@ class NeedsInput(HarnessError):
     pass
 
 
+def secret_key(key):
+    folded = normalized(key)
+    return any(marker in folded for marker in SECRET_KEY_MARKERS) or folded.endswith("token")
+
+
+def scrub_text(text):
+    text = GITHUB_TOKEN.sub("<REDACTED>", text)
+    text = BEARER_TOKEN.sub(r"\1<REDACTED>", text)
+    text = QUERY_SECRET.sub(r"\1<REDACTED>", text)
+    text = FLAG_SECRET.sub(r"\1<REDACTED>", text)
+    return text
+
+
 def scrub(value):
     """Conserve des preuves utiles sans exposer de secrets dans summary.json."""
     if isinstance(value, dict):
         result = {}
         for key, item in value.items():
-            lowered = str(key).lower()
-            if (
-                any(token in lowered for token in ("password", "secret", "api_key", "authorization", "cookie"))
-                or lowered in {"token", "access_token", "refresh_token", "id_token", "session_token"}
-            ):
+            if secret_key(key):
                 result[key] = "<REDACTED>"
             else:
                 result[key] = scrub(item)
         return result
     if isinstance(value, list):
         return [scrub(item) for item in value]
+    if isinstance(value, str):
+        return scrub_text(value)
     return value
 
 

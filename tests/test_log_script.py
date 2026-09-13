@@ -40,6 +40,25 @@ class LogScriptTest(unittest.TestCase):
         self.assertFalse(outside.exists())
         self.assertTrue((self.state / ".gitignore").is_symlink())
 
+    def test_control_bytes_are_mapped_to_spaces_and_utf8_survives(self):
+        why = "évidence — ok"
+        evidence = "\033[31mred\033[0m\v\f\a\b"
+        subprocess.run(
+            [BASH, str(SCRIPT), str(self.logfile), "build", "chose bun", why, evidence, "pass"],
+            cwd=self.root, capture_output=True, check=True,
+        )
+        row = self.logfile.read_bytes().split(b"\n")[1]
+        self.assertEqual(row.count(b"\t"), 5)
+        fields = row.split(b"\t")
+        self.assertEqual(len(fields), 6)
+        self.assertEqual(fields[3], why.encode("utf-8"))
+        self.assertEqual(fields[4], b" [31mred [0m    ")
+        for byte in row:
+            if byte in (9,):
+                continue
+            self.assertGreater(byte, 31)
+            self.assertNotEqual(byte, 127)
+
 
 if __name__ == "__main__":
     unittest.main()

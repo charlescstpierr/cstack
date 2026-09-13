@@ -43,14 +43,14 @@ function spawnFailure(command: string, error: unknown): WatcherQueryError {
     return new WatcherQueryError({
       kind: "missing-command",
       retryable: false,
-      detail: `${command} n'est pas installe`,
+      detail: `${command} is not installed`,
     });
   }
   return new WatcherQueryError({
     kind: "command-exit",
     retryable: true,
     code: -1,
-    detail: `${command} n'a pas demarre: ${error instanceof Error ? error.message : String(error)}`,
+    detail: `${command} failed to start: ${error instanceof Error ? error.message : String(error)}`,
   });
 }
 function isAuthFailure(stderr: string): boolean {
@@ -117,7 +117,7 @@ async function runJson(argv: readonly [string, ...string[]]): Promise<unknown> {
   const result = await run(argv);
   if (result.code !== 0) {
     const detail =
-      firstLine(result.stderr) || `${argv.join(" ")} s'est termine avec ${result.code}`;
+      firstLine(result.stderr) || `${argv.join(" ")} exited ${result.code}`;
     if (isAuthFailure(result.stderr))
       throw new WatcherQueryError({
         kind: "auth",
@@ -147,8 +147,8 @@ function missing(path: string, value?: unknown): never {
     retryable: true,
     detail:
       value === undefined
-        ? `${path} manquant`
-        : `${path} invalide: ${raw(value)}`,
+        ? `missing ${path}`
+        : `invalid ${path}: ${raw(value)}`,
     ...(value === undefined ? {} : { rawValue: raw(value) }),
   });
 }
@@ -178,35 +178,6 @@ function string(value: unknown, path: string): string {
 }
 const optionalString = (value: unknown, path: string): string | null =>
   value === null ? null : string(value, path);
-function repositoryIdentity(repository: T.Repository): string {
-  return `${repository.owner.toLowerCase()}/${repository.repo.toLowerCase()}`;
-}
-function refIdentity(repository: T.Repository, refName: string): string {
-  return `${repositoryIdentity(repository)}:${refName}`;
-}
-function parseNameWithOwner(value: unknown, path: string): T.Repository {
-  const text = string(value, path);
-  const parts = text.split("/");
-  if (parts.length !== 2 || parts[0] === "" || parts[1] === "")
-    missing(path, value);
-  return { owner: parts[0], repo: parts[1] };
-}
-function parseOpenPullRequestRepository(
-  object: Record<string, unknown>,
-  path: string
-): T.Repository {
-  const repository = parseNameWithOwner(
-    at(object, ["headRepository", "nameWithOwner"]),
-    `${path}.headRepository.nameWithOwner`
-  );
-  const owner = string(
-    at(object, ["headRepositoryOwner", "login"]),
-    `${path}.headRepositoryOwner.login`
-  );
-  if (repository.owner.toLowerCase() !== owner.toLowerCase())
-    missing(`${path}.headRepositoryOwner.login`, owner);
-  return repository;
-}
 function enumValue<const V extends readonly string[]>(
   value: unknown,
   values: V,
@@ -244,10 +215,9 @@ const REVIEW_DECISIONS = [
   "CHANGES_REQUESTED",
   "REVIEW_REQUIRED",
 ] as const;
-// `gh pr view` signale l'absence de decision de revue par "", pas par null.
-// Seul ce champ le fait; la normalisation reste donc ici plutot que dans
-// nullableEnum, où elle empêcherait un état rollup vraiment inattendu
-// d’échouer fermé.
+// `gh pr view` reports no review decision as "", not null. Only this field does
+// it, so the normalization stays here rather than in nullableEnum, where it
+// would stop a genuinely unexpected rollup state from failing closed.
 const reviewDecision = (value: unknown): T.ReviewDecision =>
   nullableEnum(
     value === "" ? null : value,
@@ -297,7 +267,7 @@ function parsePrUrl(value: string): T.PrContext {
       parts.length !== 4 ||
       parts[2] !== "pull"
     )
-      throw new Error("URL de pull GitHub non canonique");
+      throw new Error("not a canonical GitHub pull URL");
     return {
       owner: parts[0],
       repo: parts[1],
@@ -308,7 +278,7 @@ function parsePrUrl(value: string): T.PrContext {
       kind: "invalid-context-url",
       retryable: false,
       rawValue: value,
-      detail: `impossible de deduire owner/repo depuis l'URL de PR: ${value} (${error instanceof Error ? error.message : String(error)})`,
+      detail: `could not infer owner/repo from PR URL: ${value} (${error instanceof Error ? error.message : String(error)})`,
     });
   }
 }
@@ -463,7 +433,7 @@ export function parseReviewThreads(value: unknown): readonly T.ReviewThread[] {
       kind: "truncated",
       retryable: false,
       detail:
-        "la page reviewThreads est pleine et d’autres pages existent; des fils non résolus peuvent être masqués",
+        "reviewThreads page is full and more pages exist; unresolved threads may be hidden",
     });
   }
   const nodes = list(connection.nodes, "reviewThreads.nodes");
@@ -556,29 +526,28 @@ function graphqlArgs(
 }
 
 export function parseOpenPullRequests(
-  value: unknown,
-  baseRepository: T.Repository
+  value: unknown
 ): readonly T.OpenPullRequest[] {
   const rows = list(value, "open PRs");
   if (rows.length >= OPEN_PR_LIST_LIMIT) {
     throw new WatcherQueryError({
       kind: "truncated",
       retryable: false,
-      detail: `gh pr list a renvoyé ${OPEN_PR_LIST_LIMIT} PR; la découverte de pile peut être incomplète`,
+      detail: `gh pr list returned ${OPEN_PR_LIST_LIMIT} PRs; stack discovery may be incomplete`,
     });
   }
   return rows.map((item, index) => {
     const object = record(item, `open PRs[${index}]`);
-    const path = `open PRs[${index}]`;
     return {
-      number: parsePrNumber(object.number, `${path}.number`),
-      headRepository: parseOpenPullRequestRepository(object, path),
-      headRefName: string(object.headRefName, `${path}.headRefName`),
-      baseRepository: {
-        owner: baseRepository.owner,
-        repo: baseRepository.repo,
-      },
-      baseRefName: string(object.baseRefName, `${path}.baseRefName`),
+      number: parsePrNumber(object.number, `open PRs[${index}].number`),
+      headRefName: string(
+        object.headRefName,
+        `open PRs[${index}].headRefName`
+      ),
+      baseRefName: string(
+        object.baseRefName,
+        `open PRs[${index}].baseRefName`
+      ),
     };
   });
 }
@@ -627,9 +596,9 @@ export class GhGitHubReader implements T.GitHubReader {
       "--limit",
       String(OPEN_PR_LIST_LIMIT),
       "--json",
-      "number,headRepository,headRepositoryOwner,headRefName,baseRefName",
+      "number,headRefName,baseRefName",
     ]);
-    return parseOpenPullRequests(value, repository);
+    return parseOpenPullRequests(value);
   }
   async checksFastPath(context: T.PrContext): Promise<T.ChecksFastPath> {
     const result = await run([
@@ -738,9 +707,9 @@ export async function resolveChecks(
   if (fallback !== null) return { source: "graphql-rollup", checks: fallback };
   const suffix =
     fast.kind === "unusable"
-      ? `sortie fast path=${fast.exitCode}; le rollup GraphQL était vide${firstLine(fast.stderr) ? `; ${firstLine(fast.stderr)}` : ""}`
-      : "fast path et rollup GraphQL étaient vides";
-  throw new ChecksUnavailable(`impossible de lire les checks de PR: ${suffix}`);
+      ? `fast path exit=${fast.exitCode}; GraphQL rollup was empty${firstLine(fast.stderr) ? `; ${firstLine(fast.stderr)}` : ""}`
+      : "fast path and GraphQL rollup were empty";
+  throw new ChecksUnavailable(`could not read PR checks: ${suffix}`);
 }
 export async function resolveContext(args: {
   readonly reader: T.GitHubReader;
@@ -771,47 +740,25 @@ export function orderStack(
   open: readonly T.OpenPullRequest[]
 ): T.NonEmpty<T.PrContext> {
   const byNumber = new Map(open.map((pr) => [pr.number, pr]));
-  const byHead = new Map<string, T.OpenPullRequest[]>();
-  for (const pr of open) {
-    const key = refIdentity(pr.headRepository, pr.headRefName);
-    byHead.set(key, [...(byHead.get(key) ?? []), pr]);
-  }
+  const byHead = new Map(open.map((pr) => [pr.headRefName, pr]));
   const children = new Map<string, T.OpenPullRequest[]>();
-  for (const pr of open) {
-    const key = refIdentity(pr.baseRepository, pr.baseRefName);
-    children.set(key, [...(children.get(key) ?? []), pr]);
-  }
+  for (const pr of open)
+    children.set(pr.baseRefName, [...(children.get(pr.baseRefName) ?? []), pr]);
   for (const values of children.values())
     values.sort((a, b) => a.number - b.number);
   const start = byNumber.get(context.number);
   if (start === undefined) return [context];
-  const parentFor = (child: T.OpenPullRequest): T.OpenPullRequest | null => {
-    const key = refIdentity(child.baseRepository, child.baseRefName);
-    const matches = byHead.get(key) ?? [];
-    if (matches.length > 1) {
-      throw new WatcherQueryError({
-        kind: "stack-ambiguous",
-        retryable: false,
-        detail:
-          `la pile de PR contient ${matches.length} parents possibles pour ` +
-          `${child.baseRepository.owner}/${child.baseRepository.repo}:${child.baseRefName}`,
-      });
-    }
-    return matches[0] ?? null;
-  };
   const seen = new Set<T.PrNumber>([start.number]);
   const down: T.OpenPullRequest[] = [];
   let current = start;
-  while (true) {
-    const parent = parentFor(current);
-    if (parent === null) break;
+  while (byHead.has(current.baseRefName)) {
+    const parent = byHead.get(current.baseRefName);
+    if (parent === undefined) break;
     if (seen.has(parent.number)) {
       throw new WatcherQueryError({
         kind: "stack-cycle",
         retryable: false,
-        detail:
-          `la pile de PR contient un cycle a ` +
-          `${parent.headRepository.owner}/${parent.headRepository.repo}:${parent.headRefName}`,
+        detail: `PR stack contains a cycle at ${parent.headRefName}`,
       });
     }
     seen.add(parent.number);
@@ -820,10 +767,14 @@ export function orderStack(
   }
   const up: T.OpenPullRequest[] = [];
   const visit = (parent: T.OpenPullRequest): void => {
-    for (const child of
-      children.get(refIdentity(parent.headRepository, parent.headRefName)) ??
-      []) {
-      if (seen.has(child.number)) continue;
+    for (const child of children.get(parent.headRefName) ?? []) {
+      if (seen.has(child.number)) {
+        throw new WatcherQueryError({
+          kind: "stack-cycle",
+          retryable: false,
+          detail: `PR stack contains a cycle at ${child.headRefName}`,
+        });
+      }
       seen.add(child.number);
       up.push(child);
       visit(child);

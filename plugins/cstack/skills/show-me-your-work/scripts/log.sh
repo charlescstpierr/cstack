@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# Ajouter une ligne bien formée au journal de décision show-me-your-work (TSV).
-# Utilisation: log.sh <journal> <phase> <décision> <pourquoi> <preuve> <résultat>
+# Append a well-formed row to a show-me-your-work decision log (TSV).
+# Usage: log.sh <logfile> <phase> <decision> <why> <evidence> <result>
 set -euo pipefail
 
 if [ "$#" -ne 6 ]; then
-	printf 'utilisation: log.sh <journal> <phase> <décision> <pourquoi> <preuve> <résultat>\n' >&2
+	printf 'usage: log.sh <logfile> <phase> <decision> <why> <evidence> <result>\n' >&2
 	exit 1
 fi
 
@@ -31,16 +31,15 @@ if [ ! -f "$logfile" ]; then
 fi
 
 ts="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-# Retirer tabulations/nouvelles lignes/CR pour garder les cellules sur une
-# seule ligne, et préfixer d’une apostrophe toute cellule dont le premier
-# caractère serait interprété par un tableur comme une formule (=, +, -, @).
-# La skill prévoit une lecture de ce journal dans des tableurs; les preuves
-# contrôlées par un attaquant (titres de PR, noms de fichiers, texte généré)
-# ne doivent donc pas devenir une formule exécutée quand un réviseur ouvre le
-# fichier.
+# Map every control byte to a space so cells stay on one line, and prefix
+# any cell whose first char a spreadsheet would parse as a formula
+# (=, +, -, @) with a single quote. The skill expects this log to be read
+# in spreadsheets and terminals, so attacker-controlled evidence (PR titles,
+# filenames, generated text) must not become formula execution or terminal
+# control when a reviewer opens the file. LC_ALL=C keeps tr byte-oriented.
 clean() {
 	local v
-	v=$(printf '%s' "$1" | tr '\t\n\r' '   ')
+	v=$(printf '%s' "$1" | LC_ALL=C tr '[:cntrl:]' ' ')
 	case "$v" in
 		=*|+*|-*|@*) printf "'%s" "$v" ;;
 		*) printf '%s' "$v" ;;
