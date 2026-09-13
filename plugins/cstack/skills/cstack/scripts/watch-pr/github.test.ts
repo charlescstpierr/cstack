@@ -311,6 +311,44 @@ describe("context and stack discovery", () => {
     expect(ordered.map((item) => Number(item.number))).toEqual([41, 42, 43]);
   });
 
+  it("keeps a stack whose upstack PRs share a head branch", () => {
+    const ordered = orderStack(context, [
+      {
+        number: context.number,
+        headRefName: "feature",
+        baseRefName: "main",
+      },
+      {
+        number: parsePrNumber(43),
+        headRefName: "left",
+        baseRefName: "feature",
+      },
+      {
+        number: parsePrNumber(44),
+        headRefName: "right",
+        baseRefName: "feature",
+      },
+      {
+        number: parsePrNumber(45),
+        headRefName: "shared",
+        baseRefName: "left",
+      },
+      {
+        number: parsePrNumber(46),
+        headRefName: "shared",
+        baseRefName: "right",
+      },
+      {
+        number: parsePrNumber(47),
+        headRefName: "above-shared",
+        baseRefName: "shared",
+      },
+    ]);
+    expect(ordered.map((item) => Number(item.number))).toEqual([
+      42, 43, 45, 47, 44, 46,
+    ]);
+  });
+
   it("fails closed on a base-ref cycle", () => {
     const cyclic = [
       {

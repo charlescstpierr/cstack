@@ -1,0 +1,258 @@
+# Copy to .github/workflows/intake.yml in the target repository.
+# Pin measured 2026-09-12: openai/codex-action v1
+#   tag v1 -> commit 86365089eb2b84e0a8fb0717b304f8bdcb13b20e
+#   action.yml blob ff7088b97498db5cacab3c72b96c406f03f92fa5
+# Checkout pin matches this plugin's validate workflow.
+#
+# Codex reasons. This workflow writes. One run, two jobs, needs: for the
+# marker gate. Do not add issue_comment: github-actions[bot] comments
+# authored with GITHUB_TOKEN never start a second workflow.
+
+name: cstack intake
+
+on:
+  issues:
+    types: [opened]
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        description: Source GitHub issue number
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+concurrency:
+  group: intake-${{ github.event.issue.number || github.event.inputs.issue_number }}-${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  triage:
+    if: github.event_name == 'issues' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+    outputs:
+      marker: ${{ steps.publish.outputs.marker }}
+      comment_body: ${{ steps.publish.outputs.comment_body }}
+      issue_number: ${{ steps.publish.outputs.issue_number }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - name: Resolve issue number
+        id: issue
+        run: |
+          set -euo pipefail
+          ISSUE="${{ github.event.issue.number || github.event.inputs.issue_number }}"
+          test -n "$ISSUE"
+          echo "number=$ISSUE" >> "$GITHUB_OUTPUT"
+      - name: Require installed intake files
+        run: |
+          set -euo pipefail
+          for f in \
+            .cstack/intake/configuration.yaml \
+            .cstack/intake/prompts/triage.md \
+            .cstack/intake/schemas/triage-result.schema.json
+          do
+            test -f "$f"
+          done
+      - name: Snapshot source issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p .cstack/intake
+          ISSUE="${{ steps.issue.outputs.number }}"
+          gh issue view "$ISSUE" --json number,title,body,author,labels,url,comments,state \
+            > .cstack/intake/source-issue.json
+          gh issue list --limit 50 --state open --json number,title,url,labels,state \
+            > .cstack/intake/tracker-open.json
+          jq -n \
+            --arg repo "$GITHUB_REPOSITORY" \
+            --argjson issue "${{ steps.issue.outputs.number }}" \
+            '{repository:$repo, issue_number:$issue, run:"triage"}' \
+            > .cstack/intake/run-context.json
+      - name: Run intake triage
+        uses: openai/codex-action@86365089eb2b84e0a8fb0717b304f8bdcb13b20e
+        with:
+          prompt-file: .cstack/intake/prompts/triage.md
+          output-file: .cstack/intake/triage-output.json
+          output-schema-file: .cstack/intake/schemas/triage-result.schema.json
+          working-directory: ${{ github.workspace }}
+          sandbox: read-only
+          safety-strategy: drop-sudo
+          allow-bots: "false"
+          allow-users: ""
+          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+          codex-args: '["--json"]'
+      - name: Publish triage outputs
+        id: publish
+        run: |
+          set -euo pipefail
+          RESULT=.cstack/intake/triage-output.json
+          test -f "$RESULT"
+          python3 -c "import json,sys; json.load(open(sys.argv[1]))" "$RESULT"
+          MARKER=$(jq -r '.marker' "$RESULT")
+          BODY=$(jq -r '.comment_body' "$RESULT")
+          case "$MARKER" in
+            '[intake:bug]'|'[intake:performance]'|'[intake:other]') ;;
+            *) echo "invalid marker: $MARKER" >&2; exit 1 ;;
+          esac
+          COUNT=$(printf '%s\n' "$BODY" | grep -cE '\[intake:(bug|performance|other)\]' || true)
+          if [ -z "$BODY" ]; then
+            COUNT=0
+          fi
+          if [ -n "$BODY" ] && [ "$COUNT" != "1" ]; then
+            echo "comment_body must contain exactly one marker, found $COUNT" >&2
+            exit 1
+          fi
+          DELIM="INTAKEBODY$(python3 -c 'import secrets; print(secrets.token_hex(8))')"
+          {
+            echo "marker=$MARKER"
+            echo "issue_number=${{ steps.issue.outputs.number }}"
+            echo "comment_body<<$DELIM"
+            printf '%s\n' "$BODY"
+            echo "$DELIM"
+          } >> "$GITHUB_OUTPUT"
+      - name: Post verdict comment
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          RESULT=.cstack/intake/triage-output.json
+          BODY=$(jq -r '.comment_body' "$RESULT")
+          if [ -z "$BODY" ] || [ "$BODY" = "null" ]; then
+            exit 0
+          fi
+          ISSUE="${{ steps.issue.outputs.number }}"
+          printf '%s\n' "$BODY" | gh issue comment "$ISSUE" --body-file -
+      - name: Write tracker labels
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          RESULT=.cstack/intake/triage-output.json
+          CREATE=$(jq -r '.create_tracker' "$RESULT")
+          MARKER=$(jq -r '.marker' "$RESULT")
+          ISSUE="${{ steps.issue.outputs.number }}"
+          if [ "$CREATE" != "true" ]; then
+            exit 0
+          fi
+          if [ "$MARKER" != "[intake:bug]" ] && [ "$MARKER" != "[intake:performance]" ]; then
+            echo "create_tracker is true but marker is $MARKER" >&2
+            exit 1
+          fi
+          LABELS=$(jq -r '.tracker_labels[]?' "$RESULT")
+          if [ -z "$LABELS" ]; then
+            exit 0
+          fi
+          ARGS=()
+          while IFS= read -r label; do
+            test -n "$label"
+            ARGS+=(--add-label "$label")
+          done <<< "$LABELS"
+          gh issue edit "$ISSUE" "${ARGS[@]}"
+
+  reproduce:
+    needs: triage
+    if: >
+      needs.triage.outputs.marker == '[intake:bug]' ||
+      needs.triage.outputs.marker == '[intake:performance]'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - name: Require installed intake files
+        run: |
+          set -euo pipefail
+          for f in \
+            .cstack/intake/configuration.yaml \
+            .cstack/intake/prompts/reproduce.md \
+            .cstack/intake/schemas/reproduce-result.schema.json \
+            .cstack/intake/feature-map.md
+          do
+            test -f "$f"
+          done
+      - name: Snapshot source issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p .cstack/intake
+          ISSUE="${{ needs.triage.outputs.issue_number }}"
+          gh issue view "$ISSUE" --json number,title,body,author,labels,url,comments,state \
+            > .cstack/intake/source-issue.json
+          jq -n \
+            --arg repo "$GITHUB_REPOSITORY" \
+            --arg marker "${{ needs.triage.outputs.marker }}" \
+            --argjson issue "$ISSUE" \
+            '{repository:$repo, issue_number:$issue, marker:$marker, run:"reproduce"}' \
+            > .cstack/intake/run-context.json
+      - name: Run intake reproduce
+        uses: openai/codex-action@86365089eb2b84e0a8fb0717b304f8bdcb13b20e
+        with:
+          prompt-file: .cstack/intake/prompts/reproduce.md
+          output-file: .cstack/intake/reproduce-output.json
+          output-schema-file: .cstack/intake/schemas/reproduce-result.schema.json
+          working-directory: ${{ github.workspace }}
+          sandbox: read-only
+          safety-strategy: drop-sudo
+          allow-bots: "false"
+          allow-users: ""
+          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+          codex-args: '["--json"]'
+      - name: Post reproduce comment
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          RESULT=.cstack/intake/reproduce-output.json
+          test -f "$RESULT"
+          python3 -c "import json,sys; json.load(open(sys.argv[1]))" "$RESULT"
+          BODY=$(jq -r '.source_comment_body' "$RESULT")
+          if [ -z "$BODY" ] || [ "$BODY" = "null" ]; then
+            exit 0
+          fi
+          ISSUE="${{ needs.triage.outputs.issue_number }}"
+          printf '%s\n' "$BODY" | gh issue comment "$ISSUE" --body-file -
+      - name: Open draft pull request
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          RESULT=.cstack/intake/reproduce-output.json
+          OUTCOME=$(jq -r '.outcome' "$RESULT")
+          MODE=$(jq -r '.mode' "$RESULT")
+          VERIFY=$(jq -r '.verify_verdict' "$RESULT")
+          PATCH=$(jq -r '.patch' "$RESULT")
+          TITLE=$(jq -r '.pr_title' "$RESULT")
+          PRBODY=$(jq -r '.pr_body' "$RESULT")
+          MESSAGE=$(jq -r '.commit_message' "$RESULT")
+          ISSUE="${{ needs.triage.outputs.issue_number }}"
+          if [ "$OUTCOME" != "reproduced" ] || [ "$MODE" != "fix" ] || [ "$VERIFY" != "not_applicable" ]; then
+            echo "no draft pull request: outcome=$OUTCOME mode=$MODE verify=$VERIFY"
+            exit 0
+          fi
+          if [ -z "$PATCH" ] || [ "$PATCH" = "null" ]; then
+            echo "no patch in structured result"
+            exit 0
+          fi
+          if [ -z "$TITLE" ] || [ -z "$PRBODY" ] || [ -z "$MESSAGE" ]; then
+            echo "missing pull request fields" >&2
+            exit 1
+          fi
+          BRANCH="intake/issue-${ISSUE}-${GITHUB_RUN_ID}"
+          git checkout -b "$BRANCH"
+          printf '%s\n' "$PATCH" > .cstack/intake/proposed.patch
+          git apply --index .cstack/intake/proposed.patch
+          git -c user.name="github-actions[bot]" \
+              -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+              commit -m "$MESSAGE"
+          git push origin "$BRANCH"
+          gh pr create --draft --title "$TITLE" --body "$PRBODY"

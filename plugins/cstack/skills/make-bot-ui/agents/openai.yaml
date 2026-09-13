@@ -1,6 +1,6 @@
 interface:
   display_name: "make-bot-ui"
-  short_description: "Expliquer les limites du webhook Grok"
-  default_prompt: "Utilise $cstack:make-bot-ui pour cette tâche."
+  short_description: "Build a local UI that wakes Codex with exec"
+  default_prompt: "Use $cstack:make-bot-ui for this task."
 policy:
   allow_implicit_invocation: false

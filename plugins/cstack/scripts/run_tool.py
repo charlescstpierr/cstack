@@ -12,6 +12,7 @@ from pathlib import Path, PurePath
 
 EXCLUDED = {"node_modules", "cache", ".cache", "__pycache__"}
 OWNER_PID = "owner.pid"
+STAGE_PREFIX = "cstack-run-"
 
 
 def require_python(version):
@@ -38,16 +39,23 @@ def validate_source(source):
         for name in directories:
             path = Path(root, name)
             if path.is_symlink():
-                fail(f"l’entrée source n’est pas un dossier régulier: {path.relative_to(source)}")
+                fail(f"source entry is not a regular directory: {path.relative_to(source)}")
         for name in sorted(names):
             path = Path(root, name)
             resolved = path.resolve()
             try:
                 resolved.relative_to(source)
             except ValueError:
-                fail(f"le lien symbolique source sort du dossier des scripts d’aide: {path.relative_to(source)}")
+                fail(f"source symlink escapes helper directory: {path.relative_to(source)}")
             if not resolved.is_file():
-                fail(f"l’entrée source n’est pas un fichier régulier: {path.relative_to(source)}")
+                fail(f"source entry is not a regular file: {path.relative_to(source)}")
+
+
+def inside_stage(path, stage, label):
+    try:
+        path.resolve().relative_to(stage)
+    except ValueError:
+        fail(f"{label} escapes the stage: {path}")
 
 
 def workspace_root():
@@ -67,7 +75,7 @@ def require_inside(path, root, label):
     try:
         path.resolve().relative_to(root)
     except ValueError:
-        fail(f"{label} sort de l’espace de travail: {path}")
+        fail(f"{label} escapes workspace: {path}")
 
 
 def ensure_cstack_gitignore(state):
@@ -79,9 +87,9 @@ def ensure_cstack_gitignore(state):
 
 def stage_owner_dead(path):
     pid_file = path / OWNER_PID
-    if pid_file.is_symlink() or not pid_file.is_file():
-        return False
     try:
+        if pid_file.is_symlink() or not pid_file.is_file():
+            return False
         raw = pid_file.read_bytes()
     except OSError:
         return False
@@ -90,7 +98,9 @@ def stage_owner_dead(path):
     except UnicodeDecodeError:
         return False
     text = text.strip()
-    if not text.isascii() or not text.isdigit():
+    # CPython 3.9.14 and newer refuse int() on more than 4300 digits, so an
+    # over-long run of digits is not a pid and must not reach int().
+    if len(text) > 20 or not text.isascii() or not text.isdigit():
         return False
     pid = int(text)
     if pid <= 0:
@@ -112,20 +122,27 @@ def sweep_stale_stages(tools):
     except OSError:
         return
     for path in entries:
-        if not path.name.startswith("run-"):
-            continue
-        if path.is_symlink() or not path.is_dir():
+        try:
+            if not path.name.startswith(STAGE_PREFIX):
+                continue
+            if path.is_symlink() or not path.is_dir():
+                continue
+        except OSError:
             continue
         if not stage_owner_dead(path):
             continue
         try:
             shutil.rmtree(path)
         except OSError as error:
-            print(f"run-tool: zone temporaire restante {path.name}: {error}", file=sys.stderr)
+            print(f"run-tool: leftover stage {path.name}: {error}", file=sys.stderr)
 
 
-def bun_command(bunfig, *args):
-    return ["bun", "--no-env-file", f"--config={bunfig}", *args]
+def bun_command(bunfig, tsconfig, *args):
+    # Bun resolves its TypeScript config from the process cwd, which for a
+    # helper run is the inspected workspace, so a hostile `paths` mapping there
+    # would redirect the staged entry. Pin the stage's neutral config instead.
+    override = [f"--tsconfig-override={tsconfig}"] if tsconfig is not None else []
+    return ["bun", "--no-env-file", f"--config={bunfig}", *override, *args]
 
 
 def require_bun_no_env_file():
@@ -138,28 +155,28 @@ def require_bun_no_env_file():
     )
     output = f"{result.stdout}\n{result.stderr}"
     if result.returncode != 0 or "--no-env-file" not in output:
-        fail("Bun doit prendre en charge --no-env-file pour isoler les scripts d’aide")
+        fail("Bun must support --no-env-file to isolate helper scripts")
 
 
 def main():
     require_python(sys.version_info)
     if len(sys.argv) < 2:
-        fail("utilisation: run-tool.sh <script-aide-relatif> [args ...]")
+        fail("usage: run-tool.sh <relative-helper> [args ...]")
 
     requested = PurePath(sys.argv[1])
     if requested.is_absolute() or ".." in requested.parts or not requested.parts:
-        fail("le script d’aide doit être un chemin relatif dans skills/cstack/scripts")
+        fail("helper must be a relative path within skills/cstack/scripts")
 
     source = (Path(__file__).resolve().parent.parent / "skills/cstack/scripts").resolve()
     entry = (source / requested).resolve()
     try:
         resolved_relative = entry.relative_to(source)
     except ValueError:
-        fail("le script d’aide se résout hors de skills/cstack/scripts")
+        fail("helper resolves outside skills/cstack/scripts")
     if EXCLUDED.intersection(requested.parts) or EXCLUDED.intersection(resolved_relative.parts):
-        fail("le script d’aide est dans un dossier de cache exclu")
+        fail("helper is inside an excluded cache directory")
     if not entry.is_file():
-        fail(f"le script d’aide n’est pas un fichier régulier: {sys.argv[1]}")
+        fail(f"helper is not a regular file: {sys.argv[1]}")
 
     suffix = entry.suffix
     if suffix == ".sh":
@@ -167,9 +184,9 @@ def main():
     elif suffix in {"", ".ts", ".js", ".mjs"}:
         runtime = "bun"
     else:
-        fail(f"type de script d’aide non pris en charge: {suffix or '<aucun>'}")
+        fail(f"unsupported helper type: {suffix or '<none>'}")
     if shutil.which(runtime) is None:
-        fail(f"environnement d’exécution requis introuvable: {runtime}")
+        fail(f"required runtime not found: {runtime}")
     if runtime == "bun":
         require_bun_no_env_file()
 
@@ -177,17 +194,15 @@ def main():
     workspace = workspace_root().resolve()
     state = workspace / ".cstack"
     if state.is_symlink():
-        require_inside(state, workspace, "lien symbolique .cstack")
+        require_inside(state, workspace, ".cstack symlink")
     state.mkdir(exist_ok=True)
-    require_inside(state, workspace, "dossier .cstack")
+    require_inside(state, workspace, ".cstack directory")
     ensure_cstack_gitignore(state)
-    tools = state / "tools"
-    if tools.is_symlink():
-        require_inside(tools, workspace, "lien symbolique tools")
-    tools.mkdir(exist_ok=True)
-    require_inside(tools, workspace, "dossier tools")
-    sweep_stale_stages(tools)
-    staged = Path(tempfile.mkdtemp(prefix="run-", dir=tools))
+    # The stage must not live inside the inspected workspace: Bun adopts an
+    # ancestor package.json as its install root and honours that tree's
+    # overrides, patches and .npmrc, which are attacker-controlled input.
+    sweep_stale_stages(Path(tempfile.gettempdir()))
+    staged = Path(tempfile.mkdtemp(prefix=STAGE_PREFIX))
     (staged / OWNER_PID).write_text(f"{os.getpid()}\n")
     pending = {"child": None}
 
@@ -229,14 +244,15 @@ def main():
         tsconfig = staged / "tsconfig.json"
         if not tsconfig.is_file():
             tsconfig.write_text("{}\n")
+        tsconfig = tsconfig.resolve()
         if runtime == "bun" and all((staged / name).is_file() for name in ("bootstrap.ts", "package.json", "bun.lock")):
-            environment = os.environ | {
-                "CSTACK_BOOTSTRAP_ONLY": "1",
-                "CSTACK_PLUGIN_ROOT": str(Path(__file__).resolve().parent.parent),
-            }
+            environment = os.environ | {"CSTACK_BOOTSTRAP_ONLY": "1"}
+            # This run's cwd is the stage, so Bun already reads the stage's own
+            # neutral tsconfig and needs no override.
             setup = run_tracked(
                 bun_command(
                     bunfig,
+                    None,
                     "-e",
                     'import { ensureDependenciesInstalled } from "./bootstrap.ts"; ensureDependenciesInstalled()',
                 ),
@@ -245,26 +261,25 @@ def main():
             )
             if setup:
                 status = exit_status(setup)
-                print(f"run-tool: installation des dépendances terminée avec le statut {status}", file=sys.stderr)
+                print(f"run-tool: dependency setup exited with status {status}", file=sys.stderr)
                 raise SystemExit(status)
 
         staged_entry = (staged / requested).resolve()
-        require_inside(staged_entry, staged.resolve(), "script d’aide préparé")
+        inside_stage(staged_entry, staged.resolve(), "staged helper")
         if not staged_entry.is_file():
-            fail(f"le script d’aide préparé n’est pas un fichier régulier: {sys.argv[1]}")
+            fail(f"staged helper is not a regular file: {sys.argv[1]}")
         if runtime == "bun":
-            command = bun_command(bunfig, str(staged_entry), *sys.argv[2:])
+            command = bun_command(bunfig, tsconfig, str(staged_entry), *sys.argv[2:])
         else:
             command = [runtime, str(staged_entry), *sys.argv[2:]]
-        child_environment = os.environ | {"CSTACK_PLUGIN_ROOT": str(Path(__file__).resolve().parent.parent)}
-        raise SystemExit(exit_status(run_tracked(command, env=child_environment)))
+        raise SystemExit(exit_status(run_tracked(command)))
     finally:
         signal.signal(signal.SIGINT, previous_int)
         signal.signal(signal.SIGTERM, previous_term)
         try:
             shutil.rmtree(staged)
         except OSError as error:
-            print(f"run-tool: échec de suppression du script d’aide préparé: {error}", file=sys.stderr)
+            print(f"run-tool: failed to remove staged helper: {error}", file=sys.stderr)
 
 
 if __name__ == "__main__":

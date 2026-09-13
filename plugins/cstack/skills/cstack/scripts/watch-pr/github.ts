@@ -766,21 +766,27 @@ export function orderStack(
     current = parent;
   }
   const up: T.OpenPullRequest[] = [];
-  const visit = (parent: T.OpenPullRequest): void => {
+  const visit = (
+    parent: T.OpenPullRequest,
+    ancestors: ReadonlySet<T.PrNumber>
+  ): void => {
     for (const child of children.get(parent.headRefName) ?? []) {
-      if (seen.has(child.number)) {
+      // Two open PRs may share a head branch with different bases, so a child
+      // reached twice is only a cycle when it is its own ancestor.
+      if (ancestors.has(child.number)) {
         throw new WatcherQueryError({
           kind: "stack-cycle",
           retryable: false,
           detail: `PR stack contains a cycle at ${child.headRefName}`,
         });
       }
+      if (seen.has(child.number)) continue;
       seen.add(child.number);
       up.push(child);
-      visit(child);
+      visit(child, new Set([...ancestors, child.number]));
     }
   };
-  visit(start);
+  visit(start, new Set(seen));
   return (
     nonEmpty(
       [...down.reverse(), start, ...up].map((pr) => ({

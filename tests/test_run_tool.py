@@ -1,3 +1,6 @@
+import contextlib
+import importlib.util
+import io
 import json
 import os
 import shutil
@@ -15,23 +18,26 @@ REPO = Path(__file__).resolve().parents[1]
 LAUNCHER = REPO / "plugins/cstack/scripts/run-tool.sh"
 PY_LAUNCHER = REPO / "plugins/cstack/scripts/run_tool.py"
 BASH = shutil.which("bash")
+STAGE_PREFIX = "cstack-run-"
 
 
 class RunToolTest(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         root = Path(self.temp.name).resolve()
-        self.plugin = root / "plugin en lecture seule"
+        self.plugin = root / "read only plugin"
         self.source = self.plugin / "skills/cstack/scripts"
         scripts = self.plugin / "scripts"
         scripts.mkdir(parents=True)
         self.source.mkdir(parents=True)
         shutil.copy2(LAUNCHER, scripts / "run-tool.sh")
         shutil.copy2(PY_LAUNCHER, scripts / "run_tool.py")
-        self.cwd = root / "espace de travail cible"
+        self.cwd = root / "target workspace"
         self.cwd.mkdir()
         self.bin = root / "bin"
         self.bin.mkdir()
+        self.stage_tmp = (root / "stage-tmp").resolve()
+        self.stage_tmp.mkdir()
         bun = self.bin / "bun"
         bun.write_text("#!{}\n".format(sys.executable) + textwrap.dedent("""\
             import json, os, pathlib, signal, sys, time
@@ -42,6 +48,7 @@ class RunToolTest(unittest.TestCase):
                     print("  --no-env-file")
                 raise SystemExit()
             config = None
+            tsconfig_override = None
             no_env_file = False
             i = 0
             while i < len(args):
@@ -56,6 +63,14 @@ class RunToolTest(unittest.TestCase):
                     continue
                 if arg == "--config":
                     config = args[i + 1]
+                    i += 2
+                    continue
+                if arg.startswith("--tsconfig-override="):
+                    tsconfig_override = arg.split("=", 1)[1]
+                    i += 1
+                    continue
+                if arg == "--tsconfig-override":
+                    tsconfig_override = args[i + 1]
                     i += 2
                     continue
                 break
@@ -91,7 +106,8 @@ class RunToolTest(unittest.TestCase):
                 while len(list(barrier.iterdir())) < 2 and time.monotonic() < deadline:
                     time.sleep(0.01)
                 if len(list(barrier.iterdir())) < 2:
-                    raise SystemExit("les utilitaires ne se sont pas exécutés simultanément")
+                    raise SystemExit("helpers did not overlap")
+            tsconfig = tsconfig_override
             print(json.dumps({
                 "argv": args[1:], "cwd": os.getcwd(),
                 "entry": str(entry), "content": entry.read_text(),
@@ -100,11 +116,14 @@ class RunToolTest(unittest.TestCase):
                 "cache": (stage / "cache").exists(),
                 "no_env_file": no_env_file,
                 "config": config,
-                "plugin_root": os.environ.get("CSTACK_PLUGIN_ROOT"),
+                "tsconfig": tsconfig,
             }))
             """))
         bun.chmod(0o755)
-        self.env = os.environ | {"PATH": f"{self.bin}:{os.environ['PATH']}"}
+        self.env = os.environ | {
+            "PATH": f"{self.bin}:{os.environ['PATH']}",
+            "TMPDIR": str(self.stage_tmp),
+        }
 
     def tearDown(self):
         self._make_writable(Path(self.temp.name))
@@ -135,10 +154,24 @@ class RunToolTest(unittest.TestCase):
             check=check,
         )
 
+    def assert_under_stage_tmp(self, path):
+        path = Path(path)
+        self.assertTrue(path.is_relative_to(self.stage_tmp), path)
+        self.assertTrue(
+            any(parent.name.startswith(STAGE_PREFIX) for parent in [path, *path.parents]),
+            path,
+        )
+
+    def leftover_stage_dirs(self, root):
+        return [
+            path for path in Path(root).rglob("*")
+            if path.is_dir() and not path.is_symlink() and path.name.startswith(STAGE_PREFIX)
+        ]
+
     def test_stages_read_only_sources_and_preserves_cwd_and_arguments(self):
         helper = self.source / "watch-pr/watch-pr"
         helper.parent.mkdir()
-        helper.write_text("première version\n")
+        helper.write_text("version one\n")
         (self.source / "node_modules").mkdir()
         (self.source / "node_modules/ignored").write_text("ignored")
         (self.source / "cache").mkdir()
@@ -153,20 +186,22 @@ class RunToolTest(unittest.TestCase):
 
         install_log = self.bin.parent / "installs"
         env = self.env | {"FAKE_BUN_INSTALL_LOG": str(install_log)}
-        result = self.run_tool("watch-pr/watch-pr", "valeur avec espace", "$(literal)", "", env=env)
+        result = self.run_tool("watch-pr/watch-pr", "space value", "$(literal)", "", env=env)
         data = json.loads(result.stdout)
 
-        self.assertEqual(data["argv"], ["valeur avec espace", "$(literal)", ""])
+        self.assertEqual(data["argv"], ["space value", "$(literal)", ""])
         self.assertEqual(data["cwd"], str(self.cwd))
-        self.assertEqual(data["content"], "première version\n")
+        self.assertEqual(data["content"], "version one\n")
         self.assertTrue(data["node_modules"])
         self.assertFalse(data["ignored_module"])
         self.assertFalse(data["cache"])
         after = sorted((p.relative_to(self.plugin), p.read_bytes()) for p in self.plugin.rglob("*") if p.is_file())
         self.assertEqual(after, before)
-        self.assertTrue(Path(data["entry"]).is_relative_to(self.cwd / ".cstack/tools"))
+        self.assert_under_stage_tmp(data["entry"])
+        self.assertFalse(Path(data["entry"]).is_relative_to(self.cwd))
         self.assertFalse(Path(data["entry"]).exists())
-        self.assertEqual(list((self.cwd / ".cstack/tools").iterdir()), [])
+        self.assertEqual(self.leftover_stage_dirs(self.stage_tmp), [])
+        self.assertEqual(self.leftover_stage_dirs(self.cwd), [])
 
     def test_source_change_is_reflected_in_a_new_stage(self):
         helper = self.source / "tool.ts"
@@ -177,6 +212,8 @@ class RunToolTest(unittest.TestCase):
 
         self.assertEqual(first["content"], "one")
         self.assertEqual(second["content"], "two")
+        self.assert_under_stage_tmp(first["entry"])
+        self.assert_under_stage_tmp(second["entry"])
         self.assertNotEqual(Path(first["entry"]).parent, Path(second["entry"]).parent)
         self.assertFalse(Path(first["entry"]).exists())
         self.assertFalse(Path(second["entry"]).exists())
@@ -185,21 +222,21 @@ class RunToolTest(unittest.TestCase):
         (self.source / "tool.ts").write_text("trusted")
         (self.source / "package.json").write_text("{}")
         (self.source / "bun.lock").write_text("")
-        (self.source / "bootstrap.ts").write_text("initialisation de confiance")
-        tools = self.cwd / ".cstack/tools"
-        planted = tools / ("0" * 64)
+        (self.source / "bootstrap.ts").write_text("trusted bootstrap")
+        planted = self.stage_tmp / f"{STAGE_PREFIX}planted"
         (planted / "node_modules").mkdir(parents=True)
         (planted / "tool.ts").write_text("tampered")
-        (planted / "bootstrap.ts").write_text("initialisation altérée")
+        (planted / "bootstrap.ts").write_text("tampered bootstrap")
         (planted / "node_modules/.cstack-tools-install-key").write_text("forged")
         install_log = self.bin.parent / "installs"
         env = self.env | {"FAKE_BUN_INSTALL_LOG": str(install_log)}
         data = json.loads(self.run_tool("tool.ts", env=env).stdout)
 
         self.assertEqual(data["content"], "trusted")
+        self.assert_under_stage_tmp(data["entry"])
         self.assertNotEqual(Path(data["entry"]).parent, planted)
         self.assertEqual(install_log.read_text().splitlines(), ["install"])
-        self.assertEqual([path for path in tools.iterdir()], [planted])
+        self.assertEqual([path for path in self.stage_tmp.iterdir() if path.name.startswith(STAGE_PREFIX)], [planted])
 
     def test_shell_helpers_run_with_bash(self):
         helper = self.source / "show.sh"
@@ -209,15 +246,18 @@ class RunToolTest(unittest.TestCase):
 
     def test_stages_at_git_root_when_called_from_a_subdirectory(self):
         (self.source / "tool.ts").write_text("git root")
-        repository = self.cwd / "racine du dépôt"
-        nested = repository / "sous-dossier"
+        repository = self.cwd / "repo root"
+        nested = repository / "nested dir"
         nested.mkdir(parents=True)
         subprocess.run(["git", "init", "-q", str(repository)], check=True)
         self.cwd = nested
 
         data = json.loads(self.run_tool("tool.ts").stdout)
-        self.assertTrue(Path(data["entry"]).is_relative_to(repository / ".cstack/tools"))
+        self.assert_under_stage_tmp(data["entry"])
+        self.assertFalse(Path(data["entry"]).is_relative_to(repository))
         self.assertEqual(data["cwd"], str(nested))
+        self.assertTrue((repository / ".cstack/.gitignore").is_file())
+        self.assertFalse((nested / ".cstack").exists())
 
     def test_uses_cwd_when_git_is_unavailable(self):
         (self.source / "tool.ts").write_text("no git")
@@ -227,7 +267,8 @@ class RunToolTest(unittest.TestCase):
         (path / "bun").symlink_to(self.bin / "bun")
 
         data = json.loads(self.run_tool("tool.ts", env=self.env | {"PATH": str(path)}).stdout)
-        self.assertTrue(Path(data["entry"]).is_relative_to(self.cwd / ".cstack/tools"))
+        self.assert_under_stage_tmp(data["entry"])
+        self.assertTrue((self.cwd / ".cstack/.gitignore").is_file())
 
     def test_reports_a_missing_runtime(self):
         (self.source / "tool.ts").write_text("")
@@ -236,7 +277,7 @@ class RunToolTest(unittest.TestCase):
         (path / "python3").symlink_to(Path(sys.executable))
         result = self.run_tool("tool.ts", check=False, env=self.env | {"PATH": str(path)})
         self.assertEqual(result.returncode, 2)
-        self.assertIn("environnement d’exécution requis introuvable: bun", result.stderr)
+        self.assertIn("required runtime not found: bun", result.stderr)
 
     def test_rejects_bun_without_no_env_file_support(self):
         (self.source / "tool.ts").write_text("trusted")
@@ -269,19 +310,21 @@ class RunToolTest(unittest.TestCase):
         state.symlink_to(outside, target_is_directory=True)
         result = self.run_tool("tool.ts", check=False)
         self.assertEqual(result.returncode, 2)
-        self.assertIn("sort de l’espace de travail", result.stderr)
-        self.assertFalse((outside / "tools").exists())
+        self.assertIn("escapes workspace", result.stderr)
+        self.assertEqual(list(outside.iterdir()), [])
 
         state.unlink()
         state.mkdir()
         (state / "tools").symlink_to(outside, target_is_directory=True)
-        result = self.run_tool("tool.ts", check=False)
-        self.assertEqual(result.returncode, 2)
-        self.assertIn("sort de l’espace de travail", result.stderr)
+        result = self.run_tool("tool.ts")
+        data = json.loads(result.stdout)
+        self.assert_under_stage_tmp(data["entry"])
+        self.assertFalse(Path(data["entry"]).is_relative_to(outside))
+        self.assertEqual(list(outside.iterdir()), [])
 
     def test_filesystem_errors_are_reported_without_a_traceback(self):
         (self.source / "tool.ts").write_text("")
-        (self.cwd / ".cstack").write_text("pas un dossier")
+        (self.cwd / ".cstack").write_text("not a directory")
         result = self.run_tool("tool.ts", check=False)
         self.assertEqual(result.returncode, 2)
         self.assertIn("run-tool:", result.stderr)
@@ -304,8 +347,10 @@ class RunToolTest(unittest.TestCase):
                      for _ in range(2)]
         results = [process.communicate(timeout=5) + (process.returncode,) for process in processes]
         self.assertEqual([result[2] for result in results], [0, 0], results)
-        entries = [Path(json.loads(result[0])["entry"]).parent for result in results]
-        self.assertNotEqual(entries[0], entries[1])
+        entries = [Path(json.loads(result[0])["entry"]) for result in results]
+        for entry in entries:
+            self.assert_under_stage_tmp(entry)
+        self.assertNotEqual(entries[0].parent, entries[1].parent)
         self.assertFalse(any(entry.exists() for entry in entries))
         self.assertEqual(install_log.read_text().splitlines(), ["install", "install"])
 
@@ -326,7 +371,7 @@ class RunToolTest(unittest.TestCase):
             env=self.env | {"FAKE_BUN_SETUP_SIGNAL": "SIGTERM"},
         )
         self.assertEqual(result.returncode, 128 + signal.SIGTERM)
-        self.assertIn("installation des dépendances terminée avec le statut", result.stderr)
+        self.assertIn("dependency setup exited with status", result.stderr)
 
     def test_failed_dependency_setup_keeps_its_exit_code(self):
         (self.source / "tool.ts").write_text("trusted")
@@ -342,14 +387,12 @@ class RunToolTest(unittest.TestCase):
 
     def test_out_of_range_owner_pid_does_not_abort_the_sweep(self):
         (self.source / "tool.ts").write_text("trusted")
-        tools = self.cwd / ".cstack/tools"
-        tools.mkdir(parents=True)
-        huge = tools / "run-huge"
+        huge = self.stage_tmp / f"{STAGE_PREFIX}huge"
         huge.mkdir()
         (huge / "owner.pid").write_text("{}\n".format(2 ** 70))
         result = self.run_tool("tool.ts")
         self.assertNotIn("Traceback", result.stderr)
-        self.assertIn("run-huge", {path.name for path in tools.iterdir()})
+        self.assertIn(f"{STAGE_PREFIX}huge", {path.name for path in self.stage_tmp.iterdir()})
 
     def test_cleanup_failure_does_not_replace_helper_exit_code(self):
         (self.source / "tool.ts").write_text("trusted")
@@ -359,7 +402,7 @@ class RunToolTest(unittest.TestCase):
             env=self.env | {"FAKE_BUN_LOCK_STAGE": "1", "FAKE_BUN_EXIT": "7"},
         )
         self.assertEqual(result.returncode, 7)
-        self.assertIn("échec de suppression", result.stderr)
+        self.assertIn("failed to remove staged helper", result.stderr)
 
     def test_creates_cstack_gitignore_without_clobbering(self):
         (self.source / "tool.ts").write_text("trusted")
@@ -372,30 +415,29 @@ class RunToolTest(unittest.TestCase):
 
     def test_sweep_stale_run_stages_without_touching_other_state(self):
         (self.source / "tool.ts").write_text("trusted")
-        tools = self.cwd / ".cstack/tools"
-        tools.mkdir(parents=True)
         keep = self.cwd / ".cstack/models.json"
+        keep.parent.mkdir(parents=True)
         keep.write_text("keep")
-        other = tools / "not-a-stage"
+        other = self.stage_tmp / "not-a-stage"
         other.mkdir()
         (other / "file").write_text("stay")
         dead = subprocess.Popen([sys.executable, "-c", "pass"])
         self.assertEqual(dead.wait(), 0)
-        stale = tools / "run-dead"
+        stale = self.stage_tmp / f"{STAGE_PREFIX}dead"
         stale.mkdir()
         (stale / "owner.pid").write_text("{}\n".format(dead.pid))
-        live = tools / "run-live"
+        live = self.stage_tmp / f"{STAGE_PREFIX}live"
         live.mkdir()
         (live / "owner.pid").write_text("{}\n".format(os.getpid()))
         (live / "marker").write_text("live")
-        orphan = tools / "run-orphan"
+        orphan = self.stage_tmp / f"{STAGE_PREFIX}orphan"
         orphan.mkdir()
         (orphan / "marker").write_text("no-pid")
         self.run_tool("tool.ts")
-        names = {path.name for path in tools.iterdir()}
-        self.assertNotIn("run-dead", names)
-        self.assertIn("run-live", names)
-        self.assertIn("run-orphan", names)
+        names = {path.name for path in self.stage_tmp.iterdir()}
+        self.assertNotIn(f"{STAGE_PREFIX}dead", names)
+        self.assertIn(f"{STAGE_PREFIX}live", names)
+        self.assertIn(f"{STAGE_PREFIX}orphan", names)
         self.assertIn("not-a-stage", names)
         self.assertEqual(keep.read_text(), "keep")
 
@@ -407,14 +449,107 @@ class RunToolTest(unittest.TestCase):
         self.assertTrue(data["no_env_file"])
         self.assertTrue(data["config"])
         self.assertTrue(data["config"].endswith("bunfig.toml"))
-        self.assertIn(".cstack/tools", data["config"].replace("\\", "/"))
+        self.assert_under_stage_tmp(data["config"])
         self.assertNotEqual(data["config"], str(self.cwd / "bunfig.toml"))
 
-    def test_child_receives_trusted_plugin_root_from_launcher(self):
+    def test_corrupt_owner_pid_does_not_abort_the_sweep(self):
         (self.source / "tool.ts").write_text("trusted")
-        env = self.env | {"CSTACK_PLUGIN_ROOT": "/tmp/not-trusted"}
-        data = json.loads(self.run_tool("tool.ts", env=env).stdout)
-        self.assertEqual(data["plugin_root"], str(self.plugin))
+        binary = self.stage_tmp / f"{STAGE_PREFIX}binary"
+        binary.mkdir()
+        (binary / "owner.pid").write_bytes(b"\xff\xfe\n")
+        superscript = self.stage_tmp / f"{STAGE_PREFIX}superscript"
+        superscript.mkdir()
+        (superscript / "owner.pid").write_text("\u00b2\n", encoding="utf-8")
+        result = self.run_tool("tool.ts")
+        self.assertEqual(result.returncode, 0)
+        self.assertNotIn("Traceback", result.stderr)
+        names = {path.name for path in self.stage_tmp.iterdir()}
+        self.assertIn(f"{STAGE_PREFIX}binary", names)
+        self.assertIn(f"{STAGE_PREFIX}superscript", names)
+
+    def test_unreadable_stage_directory_does_not_abort_the_sweep(self):
+        (self.source / "tool.ts").write_text("trusted")
+        locked = self.stage_tmp / f"{STAGE_PREFIX}locked"
+        locked.mkdir()
+        (locked / "owner.pid").write_text("4000009\n")
+        locked.chmod(0o000)
+        try:
+            result = self.run_tool("tool.ts")
+        finally:
+            locked.chmod(0o700)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertNotIn("Permission denied", result.stderr)
+        self.assertIn(f"{STAGE_PREFIX}locked", {path.name for path in self.stage_tmp.iterdir()})
+
+    def test_owner_pid_longer_than_a_pid_is_not_parsed(self):
+        spec = importlib.util.spec_from_file_location("run_tool", PY_LAUNCHER)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        stage = self.cwd / "run-huge"
+        stage.mkdir()
+        (stage / "owner.pid").write_text("9" * 5000)
+        self.assertFalse(module.stage_owner_dead(stage))
+
+    def test_bun_receives_the_stage_tsconfig_as_an_override(self):
+        (self.source / "tool.ts").write_text("trusted")
+        (self.cwd / "tsconfig.json").write_text(
+            '{"compilerOptions":{"baseUrl":".","paths":{"*":["./evil.ts"]}}}'
+        )
+        data = json.loads(self.run_tool("tool.ts").stdout)
+        self.assertTrue(data["tsconfig"])
+        self.assert_under_stage_tmp(data["tsconfig"])
+        self.assertNotEqual(data["tsconfig"], str(self.cwd / "tsconfig.json"))
+
+    @unittest.skipUnless(shutil.which("bun"), "bun resolves the entry path")
+    def test_a_hostile_workspace_tsconfig_cannot_redirect_the_staged_entry(self):
+        (self.source / "tool.ts").write_text('console.log("staged helper ran");\n')
+        marker = Path(self.temp.name) / "hijacked"
+        (self.cwd / "poison.ts").write_text(
+            'import { writeFileSync } from "node:fs";\n'
+            f"writeFileSync({json.dumps(str(marker))}, \"1\");\n"
+        )
+        (self.cwd / "tsconfig.json").write_text(
+            '{"compilerOptions":{"baseUrl":".","paths":{"*":["./poison.ts"]}}}'
+        )
+        result = subprocess.run(
+            [BASH, str(self.plugin / "scripts/run-tool.sh"), "tool.ts"],
+            cwd=self.cwd,
+            capture_output=True,
+            text=True,
+            env=os.environ | {"TMPDIR": str(self.stage_tmp)},
+        )
+        self.assertFalse(marker.exists(), result.stderr)
+        self.assertIn("staged helper ran", result.stdout)
+
+    def test_hostile_workspace_package_does_not_adopt_the_stage(self):
+        (self.source / "tool.ts").write_text("trusted\n")
+        (self.cwd / "package.json").write_text(json.dumps({
+            "private": True,
+            "workspaces": [".cstack/tools/*", f"{self.stage_tmp}/*"],
+            "overrides": {"left-pad": "1.0.0"},
+        }))
+        data = json.loads(self.run_tool("tool.ts").stdout)
+        entry = Path(data["entry"])
+        self.assert_under_stage_tmp(entry)
+        self.assertFalse(entry.is_relative_to(self.cwd))
+        self.assertEqual(data["content"], "trusted\n")
+        self.assertFalse((self.cwd / ".cstack" / "tools").exists())
+        self.assertEqual(self.leftover_stage_dirs(self.cwd), [])
+
+    def test_python_floor_rejects_versions_below_3_9(self):
+        spec = importlib.util.spec_from_file_location("run_tool", PY_LAUNCHER)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        stderr = io.StringIO()
+        with contextlib.redirect_stderr(stderr):
+            with self.assertRaises(SystemExit) as caught:
+                module.require_python((3, 8, 19))
+        self.assertEqual(caught.exception.code, 2)
+        lines = stderr.getvalue().splitlines()
+        self.assertEqual(len(lines), 1)
+        self.assertTrue(lines[0].startswith("run-tool:"))
+        module.require_python((3, 9, 0))
+        module.require_python((3, 12, 1))
 
 
 if __name__ == "__main__":

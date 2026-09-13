@@ -20,15 +20,50 @@ DEFAULT_TURN_SECONDS = 300.0
 MAX_TURN_SECONDS = 900.0
 SKIP_DIRS = {".git", "__pycache__", "node_modules"}
 SAFE_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
-SECRET_KEY_MARKERS = ("password", "secret", "apikey", "authorization", "cookie")
+# Key-name policy: a dict key or assignment/flag/header name is secret when
+# its normalized form contains a marker below or ends with "token". Markers
+# are credential words, not bare "key" or "auth". "key" would redact
+# identifier fields; "auth" would redact an auth mode and oauth_* names.
+# "apikey" and "authorization" already cover the credential-bearing keys.
+SECRET_KEY_MARKERS = (
+    "password",
+    "secret",
+    "apikey",
+    "authorization",
+    "cookie",
+    "privatekey",
+    "credentials",
+    "passwd",
+    "pwd",
+    "jwt",
+    "bearer",
+    "sshkey",
+    "awsaccesskeyid",
+)
 GITHUB_TOKEN = re.compile(r"\b(?:github_pat_[A-Za-z0-9_]+|gh[pousr]_[A-Za-z0-9]{36,})\b")
-BEARER_TOKEN = re.compile(r"(?i)(\bBearer\s+)\S+")
+# The value after the scheme must look like a credential, so prose such as
+# "the bearer of the ring" keeps its words.
+BEARER_TOKEN = re.compile(r"(?i)(\bBearer\s+)[A-Za-z0-9._~+/=-]{16,}")
+BASIC_TOKEN = re.compile(r"(?i)(\bBasic\s+)[A-Za-z0-9+/=]{12,}")
 QUERY_SECRET = re.compile(
-    r"(?i)([?&](?:access[_-]token|refresh[_-]token|id[_-]token|session[_-]token|api[_-]key|private[_-]token|password|secret|authorization|token)=)[^&]*"
+    r"(?i)([?&](?:access[_-]token|refresh[_-]token|id[_-]token|session[_-]token|api[_-]key|private[_-]token|password|secret|authorization|token|jwt|bearer|credentials)=)[^&]*"
 )
-FLAG_SECRET = re.compile(
-    r"(?i)(--(?:access[_-]token|refresh[_-]token|api[_-]key|private[_-]token|password|secret|authorization|token)=)\S+"
+AWS_ACCESS_KEY_ID = re.compile(r"\bAKIA[0-9A-Z]{16}\b")
+SK_TOKEN = re.compile(r"\bsk-[A-Za-z0-9_-]{16,}")
+SLACK_TOKEN = re.compile(r"\bxox[baprs]-[A-Za-z0-9-]{10,}")
+JWT_TOKEN = re.compile(r"\beyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+")
+URL_USERINFO = re.compile(r"(?i)(https?://)[^/@\s]+:[^/@\s]+@")
+NPM_TOKEN = re.compile(r"\bnpm_[A-Za-z0-9]{36,}\b")
+GITLAB_TOKEN = re.compile(r"\bglpat-[A-Za-z0-9_-]{20,}\b")
+GOOGLE_API_KEY = re.compile(r"\bAIza[0-9A-Za-z_-]{35}\b")
+GOOGLE_OAUTH = re.compile(r"\bya29\.[A-Za-z0-9_-]+")
+PEM_PRIVATE_KEY = re.compile(
+    r"(-----BEGIN (?:[A-Z]+ )?PRIVATE KEY-----)\s*.*?\s*(-----END (?:[A-Z]+ )?PRIVATE KEY-----)",
+    re.DOTALL,
 )
+ASSIGNMENT = re.compile(r"(?i)(\b(?:export\s+)?)([A-Za-z_][A-Za-z0-9_]*)(=)([^\s&]*)")
+FLAG = re.compile(r"(?i)(--[A-Za-z0-9_-]+|-p)(=|\s+)(\S+)")
+HEADER = re.compile(r"(?i)(^|[\n\r])([A-Za-z][A-Za-z0-9-]*)(\s*:\s*)(.+)")
 NEUTRAL_INSTRUCTIONS = (
     "Utilisez le paquet local sélectionné et les consignes du projet. Utilisez des rôles "
     "natifs génériques. Respectez la demande utilisateur et le périmètre actuel du projet. N’utilisez pas de "
@@ -49,11 +84,63 @@ def secret_key(key):
     return any(marker in folded for marker in SECRET_KEY_MARKERS) or folded.endswith("token")
 
 
+def _password_short_flag(value):
+    # -p is overloaded (password, port, pid, preserve). Treat it as a password
+    # flag only when the value looks like a secret, not a path, port, or pid.
+    if "/" in value or ":" in value or "." in value:
+        return False
+    if len(value) < 6:
+        return False
+    return any(char.isalpha() for char in value) and any(char.isdigit() for char in value)
+
+
+def _scrub_assignment(match):
+    prefix, name, eq, value = match.groups()
+    if value and secret_key(name):
+        return f"{prefix}{name}{eq}<REDACTED>"
+    return match.group(0)
+
+
+def _scrub_flag(match):
+    flag, sep, value = match.groups()
+    name = flag.lstrip("-")
+    if name.lower() == "p":
+        if not _password_short_flag(value):
+            return match.group(0)
+        return f"{flag}{sep}<REDACTED>"
+    if secret_key(name):
+        return f"{flag}{sep}<REDACTED>"
+    return match.group(0)
+
+
+def _scrub_header(match):
+    lead, name, sep, rest = match.groups()
+    if not secret_key(name):
+        return match.group(0)
+    auth = re.match(r"(?i)(Bearer|Basic)\s+(\S+)(.*)$", rest)
+    if auth:
+        return f"{lead}{name}{sep}{auth.group(1)} <REDACTED>{auth.group(3)}"
+    return f"{lead}{name}{sep}<REDACTED>"
+
+
 def scrub_text(text):
+    text = PEM_PRIVATE_KEY.sub(r"\1\n<REDACTED>\n\2", text)
     text = GITHUB_TOKEN.sub("<REDACTED>", text)
+    text = NPM_TOKEN.sub("<REDACTED>", text)
+    text = GITLAB_TOKEN.sub("<REDACTED>", text)
+    text = GOOGLE_API_KEY.sub("<REDACTED>", text)
+    text = GOOGLE_OAUTH.sub("<REDACTED>", text)
+    text = AWS_ACCESS_KEY_ID.sub("<REDACTED>", text)
+    text = SLACK_TOKEN.sub("<REDACTED>", text)
+    text = SK_TOKEN.sub("<REDACTED>", text)
+    text = JWT_TOKEN.sub("<REDACTED>", text)
     text = BEARER_TOKEN.sub(r"\1<REDACTED>", text)
+    text = BASIC_TOKEN.sub(r"\1<REDACTED>", text)
+    text = URL_USERINFO.sub(r"\1<REDACTED>@", text)
     text = QUERY_SECRET.sub(r"\1<REDACTED>", text)
-    text = FLAG_SECRET.sub(r"\1<REDACTED>", text)
+    text = FLAG.sub(_scrub_flag, text)
+    text = ASSIGNMENT.sub(_scrub_assignment, text)
+    text = HEADER.sub(_scrub_header, text)
     return text
 
 
@@ -526,7 +613,11 @@ def run_case(case, output, command, model, effort, timeout):
 
 
 def write_summary(output, results, selected_case_ids):
-    summary = {"cases": results, "selected_case_ids": selected_case_ids, "output": str(output)}
+    summary = scrub({
+        "cases": results,
+        "selected_case_ids": selected_case_ids,
+        "output": str(output),
+    })
     (output / "summary.json").write_text(json.dumps(summary, ensure_ascii=False, indent=2) + "\n")
 
 

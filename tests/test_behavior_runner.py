@@ -240,6 +240,111 @@ class BehaviorRunnerTests(unittest.TestCase):
         self.assertEqual(result["path"], path)
         self.assertEqual(result["count"], 7)
 
+    def test_write_summary_scrubs_agent_text_and_commands(self):
+        token = "ghp_" + "B" * 36
+        current = state()
+        verify_behavior.update_state(
+            {
+                "method": "item/started",
+                "params": {
+                    "threadId": "parent",
+                    "item": {"type": "agentMessage", "id": "m1", "text": f"contact support with {token}"},
+                },
+            },
+            current,
+            "parent",
+        )
+        verify_behavior.update_state(
+            {
+                "method": "item/completed",
+                "params": {
+                    "threadId": "parent",
+                    "item": {
+                        "type": "commandExecution",
+                        "command": f"gh api user --with-token {token}",
+                    },
+                },
+            },
+            current,
+            "parent",
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory)
+            verify_behavior.write_summary(
+                output,
+                [{
+                    "id": "one",
+                    "input_prompts": [f"please use {token}"],
+                    "actual_commands": current["actual_commands"],
+                    "native_child_thread_ids": ["thread_abc"],
+                    "turns": [{
+                        "prompt": f"please use {token}",
+                        "final_text": "\n\n".join(current["messages"]),
+                    }],
+                    "error": f"failed {token}",
+                    "metadata_gaps": [{"kind": "child", "error": f"gap {token}"}],
+                }],
+                ["one"],
+            )
+            payload = (output / "summary.json").read_text()
+        self.assertNotIn(token, payload)
+        self.assertIn("contact support with <REDACTED>", payload)
+        self.assertIn("gh api user --with-token <REDACTED>", payload)
+        self.assertIn("thread_abc", payload)
+
+    def test_scrub_redacts_extended_secret_shapes(self):
+        rows = (
+            ("aws_key_id", "id AKIAIOSFODNN7EXAMPLE end", "AKIAIOSFODNN7EXAMPLE"),
+            ("aws_secret_assign", "AWS_SECRET_ACCESS_KEY=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY", "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"),
+            ("openai_sk", "sk-abcdefghijklmnopqrstuvwxyzABCDEF12", "sk-abcdefghijklmnopqrstuvwxyzABCDEF12"),
+            ("openai_sk_proj", "sk-proj-abcdefghijklmnopqrstuvwxyzABCDEF12", "sk-proj-abcdefghijklmnopqrstuvwxyzABCDEF12"),
+            ("anthropic_sk_ant", "sk-ant-api03-abcdefghijklmnopqrstuvwxyzABCDEF12", "sk-ant-api03-abcdefghijklmnopqrstuvwxyzABCDEF12"),
+            ("slack_xoxb", "xoxb-123456789012-abcdefghijklmnopqrstuv", "xoxb-123456789012-abcdefghijklmnopqrstuv"),
+            ("jwt", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4ifQ.signaturetrail", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4ifQ.signaturetrail"),
+            ("basic_auth", "Authorization: Basic dXNlcjpwYXNz", "dXNlcjpwYXNz"),
+            ("url_userinfo", "https://user:hunter2@example.com/v1", "user:hunter2"),
+            ("flag_password_space", "tool --password hunter2", "hunter2"),
+            ("flag_p_space", "tool -p hunter2", "hunter2"),
+            ("flag_with_token", "tool --with-token abcdef123456", "abcdef123456"),
+            ("export_assign", "export OPENAI_API_KEY=sk-abcdefghijklmnopqrstuvwxyzABCDEF12", "sk-abcdefghijklmnopqrstuvwxyzABCDEF12"),
+            ("pem", "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASC\n-----END PRIVATE KEY-----", "MIIEvQIBADANBgkqhkiG9w0BAQEFAASC"),
+            ("npm", "npm_abcdefghijklmnopqrstuvwxyzABCDEFGHIJKL", "npm_abcdefghijklmnopqrstuvwxyzABCDEFGHIJKL"),
+            ("gitlab", "glpat-abcdefghijklmnopqrstuvwxyz", "glpat-abcdefghijklmnopqrstuvwxyz"),
+            ("google_api", "AIzaSyABCDEfghijklmnopqrstuvwxyz0123456", "AIzaSyABCDEfghijklmnopqrstuvwxyz0123456"),
+            ("header_line", "X-Api-Key: supersecretvalue123", "supersecretvalue123"),
+        )
+        for name, text, secret in rows:
+            with self.subTest(name=name):
+                result = verify_behavior.scrub_text(text)
+                self.assertNotIn(secret, result)
+                self.assertIn("<REDACTED>", result)
+
+    def test_scrub_preserves_non_secret_evidence(self):
+        rows = (
+            ("git_sha", "e83c5163316f89bfbde7d9ab23ca2e25604af290"),
+            ("sha256", "649cf39c9a6e81e21b88747946236d33e7ed2efa3512d8b8447b1889006a61f0"),
+            ("abs_path", "/private/tmp/cstack-work/scripts/verify-behavior.py"),
+            ("thread_id", "thread_7f3a9c2e-1b44-4d90-ae11-88c01d2f4a77"),
+            ("model_name", "gpt-5.4-codex"),
+            ("git_status", "git status"),
+            ("plain_sentence", "The worker finished the turn without asking for input."),
+        )
+        for name, text in rows:
+            with self.subTest(name=name):
+                self.assertEqual(verify_behavior.scrub_text(text), text)
+
+    def test_secret_key_policy_matches_documented_markers(self):
+        for key in (
+            "password", "secret", "api_key", "authorization", "cookie",
+            "private_key", "credentials", "passwd", "pwd", "jwt", "bearer",
+            "ssh_key", "aws_access_key_id", "access_token",
+        ):
+            with self.subTest(secret=key):
+                self.assertTrue(verify_behavior.secret_key(key), key)
+        for key in ("auth", "key", "tokenizer", "token_usage", "model", "oauth_client_id"):
+            with self.subTest(kept=key):
+                self.assertFalse(verify_behavior.secret_key(key), key)
+
 
 if __name__ == "__main__":
     unittest.main()

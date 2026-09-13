@@ -31,18 +31,49 @@ if [ ! -f "$logfile" ]; then
 fi
 
 ts="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-# Map every control byte to a space so cells stay on one line, and prefix
-# any cell whose first char a spreadsheet would parse as a formula
-# (=, +, -, @) with a single quote. The skill expects this log to be read
-# in spreadsheets and terminals, so attacker-controlled evidence (PR titles,
-# filenames, generated text) must not become formula execution or terminal
-# control when a reviewer opens the file. LC_ALL=C keeps tr byte-oriented.
+# Map C0/DEL, UTF-8 C1 (U+0080-U+009F as C2 80-9F), a lone 0x9B (CSI),
+# and U+2028/U+2029 to spaces so cells stay one line. Prefix a cell whose
+# first non-space char is =, +, -, or @ so a spreadsheet will not parse it
+# as a formula after a leading control has been mapped to a space. Do not
+# strip 0x80-0x9F in isolation: those bytes are UTF-8 continuations (Û is
+# C3 9B). LC_ALL=C keeps tr and the byte walk byte-oriented.
+line_separator=$(printf '\xe2\x80\xa8')
+paragraph_separator=$(printf '\xe2\x80\xa9')
 clean() {
-	local v
+	local v out i len width byte next tail
 	v=$(printf '%s' "$1" | LC_ALL=C tr '[:cntrl:]' ' ')
-	case "$v" in
-		=*|+*|-*|@*) printf "'%s" "$v" ;;
-		*) printf '%s' "$v" ;;
+	local LC_ALL=C LANG=C
+	out=
+	i=0
+	len=${#v}
+	while [ "$i" -lt "$len" ]; do
+		printf -v byte '%d' "'${v:i:1}"
+		[ "$byte" -lt 0 ] && byte=$((byte + 256))
+		printf -v next '%d' "'${v:i+1:1}"
+		[ "$next" -lt 0 ] && next=$((next + 256))
+		width=1
+		if [ "$byte" -ge 240 ]; then
+			width=4
+		elif [ "$byte" -ge 224 ]; then
+			width=3
+		elif [ "$byte" -ge 194 ]; then
+			width=2
+		fi
+		[ $((i + width)) -gt "$len" ] && width=1
+		if [ "$byte" -eq 155 ] ||
+			{ [ "$byte" -eq 194 ] && [ "$next" -ge 128 ] && [ "$next" -le 159 ]; } ||
+			[ "${v:i:3}" = "$line_separator" ] ||
+			[ "${v:i:3}" = "$paragraph_separator" ]; then
+			out="$out "
+		else
+			out="$out${v:i:width}"
+		fi
+		i=$((i + width))
+	done
+	tail="${out#"${out%%[! ]*}"}"
+	case "$tail" in
+		=*|+*|-*|@*) printf "'%s" "$out" ;;
+		*) printf '%s' "$out" ;;
 	esac
 }
 printf '%s\t%s\t%s\t%s\t%s\t%s\n' \

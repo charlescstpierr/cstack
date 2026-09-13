@@ -45,75 +45,75 @@
     },
     {
       "source": "pstack/automations/benny/FOR_AGENTS.md",
-      "target": "plugins/cstack/automations/benny/README.md",
-      "status": "unsupported",
-      "reason": "Cursor event-driven setup is not executed; native limitations and original source are documented."
+      "target": "plugins/cstack/automations/intake/README.md",
+      "status": "replaced",
+      "reason": "Setup intent is carried by the Codex-native pack README; Cursor /automate and settings enablement have no Codex counterpart."
     },
     {
       "source": "pstack/automations/benny/README.md",
-      "target": "plugins/cstack/automations/benny/README.md",
-      "status": "unsupported",
-      "reason": "Cursor event-driven setup is not executed; native limitations and original source are documented."
+      "target": "plugins/cstack/automations/intake/README.md",
+      "status": "replaced",
+      "reason": "Codex-native intake pack replaces the Cursor install sheet: GitHub Actions trigger plus codex exec, with the Cursor-only mechanisms named as limits."
     },
     {
       "source": "pstack/automations/benny/skills/reproduce-and-fix-issues/SKILL.md",
-      "target": "plugins/cstack/automations/benny/README.md",
-      "status": "unsupported",
-      "reason": "Cursor event-driven setup is not executed; native limitations and original source are documented."
+      "target": "plugins/cstack/automations/intake/references/reproduce-and-fix.md",
+      "status": "replaced",
+      "reason": "Reproduce and fix run ported to a Codex run: marker handshake, double real-UI reproduction, draft-only pull request."
     },
     {
       "source": "pstack/automations/benny/skills/reproduce-and-fix-issues/references/control-adapter.md",
-      "target": "plugins/cstack/automations/benny/README.md",
-      "status": "unsupported",
-      "reason": "Cursor event-driven setup is not executed; native limitations and original source are documented."
+      "target": "plugins/cstack/automations/intake/references/control-adapter.md",
+      "status": "replaced",
+      "reason": "Seven-operation control adapter contract kept host-neutral, with the nine-step smoke before enablement."
     },
     {
       "source": "pstack/automations/benny/skills/reproduce-and-fix-issues/references/feature-map.example.md",
-      "target": "plugins/cstack/automations/benny/README.md",
-      "status": "unsupported",
-      "reason": "Cursor event-driven setup is not executed; native limitations and original source are documented."
+      "target": "plugins/cstack/automations/intake/references/feature-map.example.md",
+      "status": "replaced",
+      "reason": "User-owned feature map example ported for the Codex adapter contract."
     },
     {
       "source": "pstack/automations/benny/skills/reproduce-and-fix-issues/references/verify-existing-fix.md",
-      "target": "plugins/cstack/automations/benny/README.md",
-      "status": "unsupported",
-      "reason": "Cursor event-driven setup is not executed; native limitations and original source are documented."
+      "target": "plugins/cstack/automations/intake/references/verify-existing-fix.md",
+      "status": "replaced",
+      "reason": "Verify-existing-fix mode ported, using a git worktree or codex exec --worktree instead of a Cursor session."
     },
     {
       "source": "pstack/automations/benny/skills/setup-benny/SKILL.md",
-      "target": "plugins/cstack/automations/benny/README.md",
-      "status": "unsupported",
-      "reason": "Cursor event-driven setup is not executed; native limitations and original source are documented."
+      "target": "plugins/cstack/automations/intake/README.md",
+      "status": "replaced",
+      "reason": "Operator install and the enablement gate live in the pack README instead of a Cursor automation-creation skill."
     },
     {
       "source": "pstack/automations/benny/skills/triage-issue-reports/SKILL.md",
-      "target": "plugins/cstack/automations/benny/README.md",
-      "status": "unsupported",
-      "reason": "Cursor event-driven setup is not executed; native limitations and original source are documented."
+      "target": "plugins/cstack/automations/intake/references/triage.md",
+      "status": "replaced",
+      "reason": "Triage run ported to a Codex run: frozen source coordinates, one marker reply, fail-closed tracker write."
     },
     {
       "source": "pstack/automations/benny/skills/triage-issue-reports/references/routing.example.md",
-      "target": "plugins/cstack/automations/benny/README.md",
-      "status": "unsupported",
-      "reason": "Cursor event-driven setup is not executed; native limitations and original source are documented."
+      "target": "plugins/cstack/automations/intake/references/routing.example.md",
+      "status": "replaced",
+      "reason": "User-owned routing map example ported unchanged in intent, with Codex-side paths."
     },
     {
       "source": "pstack/automations/benny/templates/configuration.example.yaml",
-      "target": "plugins/cstack/automations/benny/README.md",
-      "status": "unsupported",
-      "reason": "Cursor event-driven setup is not executed; native limitations and original source are documented."
+      "target": "plugins/cstack/automations/intake/templates/configuration.example.yaml",
+      "status": "replaced",
+      "reason": "Configuration schema ported to Codex terms: runner flags, MCP connectors, tracker operations, markers and budgets."
     },
     {
       "source": "pstack/automations/benny/templates/reproduce-automation-prompt.md",
-      "target": "plugins/cstack/automations/benny/README.md",
-      "status": "unsupported",
-      "reason": "Cursor event-driven setup is not executed; native limitations and original source are documented."
+      "target": "plugins/cstack/automations/intake/templates/reproduce-prompt.md",
+      "status": "replaced",
+      "reason": "Reproduce prompt ported to a prompt-file for codex exec instead of a Cursor /automate draft."
     },
     {
       "source": "pstack/automations/benny/templates/triage-automation-prompt.md",
-      "target": "plugins/cstack/automations/benny/README.md",
-      "status": "unsupported",
-      "reason": "Cursor event-driven setup is not executed; native limitations and original source are documented."
+      "target": "plugins/cstack/automations/intake/templates/triage-prompt.md",
+      "status": "replaced",
+      "reason": "Triage prompt ported to a prompt-file for codex exec instead of a Cursor /automate draft."
     },
     {
       "source": "pstack/docs/guide/01-setup.md",
@@ -352,8 +352,8 @@
     {
       "source": "pstack/skills/make-bot-ui/SKILL.md",
       "target": "plugins/cstack/skills/make-bot-ui/SKILL.md",
-      "status": "unsupported",
-      "reason": "No native Grok Bot webhook endpoint; explicit notice instead of an invented API."
+      "status": "replaced",
+      "reason": "Codex-native local bot UI replaces the Cursor Grok Bot webhook routine: a local server holds the credentials and wakes codex exec."
     },
     {
       "source": "pstack/skills/no-comments/SKILL.md",
@@ -958,6 +958,18 @@
     {
       "path": "plugins/cstack/NOTICE.md",
       "reason": "Independent notice for the Codex port and third-party licenses."
+    },
+    {
+      "path": "plugins/cstack/automations/intake/templates/github-intake.yml",
+      "reason": "GitHub Actions workflow template that triggers the intake runs; no pstack source."
+    },
+    {
+      "path": "plugins/cstack/automations/intake/templates/reproduce-result.schema.json",
+      "reason": "JSON Schema that constrains the reproduce run's structured result; no pstack source."
+    },
+    {
+      "path": "plugins/cstack/automations/intake/templates/triage-result.schema.json",
+      "reason": "JSON Schema that constrains the triage run's structured result; no pstack source."
     },
     {
       "path": "plugins/cstack/scripts/run-tool.sh",

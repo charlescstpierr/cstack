@@ -84,6 +84,6 @@ Les délégués de cstack ne lancent pas de descendants sauf si leur parent leur
 - Accepter chaque commentaire de revue. Vérifiez chaque constat contre le comportement et le périmètre.
 - Affirmer le succès sur un build vert. Vérifiez l'artefact réel.
 - Croire qu'une tâche locale survit à la fermeture de Codex. Demandez un scheduler natif séparément si vous en avez besoin.
-- Donner à Benny une activation native. Ce pack reste documentaire ; voyez [sa limite d'intégration](../../automations/benny/README.md).
+- Attendre qu'un webhook réveille le [pack d'intake](../../automations/intake/README.md). Codex n'en reçoit pas : le déclencheur vient de GitHub Actions ou d'un scheduler local qui lance `codex exec`.
 
 Retour à [l'index du guide](./README.md).

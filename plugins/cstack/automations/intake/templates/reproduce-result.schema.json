@@ -1,0 +1,75 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "outcome",
+    "mode",
+    "status_label",
+    "source_comment_body",
+    "evidence_paths",
+    "patch",
+    "commit_message",
+    "pr_title",
+    "pr_body",
+    "verify_verdict",
+    "existing_fix_url",
+    "stop_reason"
+  ],
+  "properties": {
+    "outcome": {
+      "type": "string",
+      "enum": [
+        "reproduced",
+        "could_not_reproduce",
+        "blocked",
+        "verified_existing_fix",
+        "insufficient_fix",
+        "inconclusive"
+      ]
+    },
+    "mode": {
+      "type": "string",
+      "enum": ["reproduce", "verify", "fix"]
+    },
+    "status_label": {
+      "type": "string"
+    },
+    "source_comment_body": {
+      "type": "string"
+    },
+    "evidence_paths": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "patch": {
+      "type": "string",
+      "description": "Unified git diff to apply on a new branch. Empty when there is no fix to land."
+    },
+    "commit_message": {
+      "type": "string"
+    },
+    "pr_title": {
+      "type": "string"
+    },
+    "pr_body": {
+      "type": "string"
+    },
+    "verify_verdict": {
+      "type": "string",
+      "enum": [
+        "confirmed",
+        "insufficient_fix",
+        "inconclusive",
+        "not_applicable"
+      ]
+    },
+    "existing_fix_url": {
+      "type": "string"
+    },
+    "stop_reason": {
+      "type": "string"
+    }
+  }
+}
