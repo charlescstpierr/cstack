@@ -22,7 +22,7 @@ Bound the rolling window to native subagent capacity and run extra work in waves
 
 #### State layout
 
-Create `.cstack/orchestrate/<project-slug>/` in the target workspace. Every file has one writer. Owners publish facts and readers aggregate them. Resolve the plugin root, then run the helper as `bash <plugin-root>/scripts/run-tool.sh orch/orch.ts <command>`. The launcher stages locked sources in a fresh `cstack-run-<random>` directory in the system temporary location and removes it after the run.
+Create `.cstack/orchestrate/<project-slug>/` in the target workspace. Every file has one writer. Owners publish facts and readers aggregate them. Resolve the plugin root, then run the helper as `bash <plugin-root>/scripts/run-tool.sh orch/orch.ts <command>`. The launcher stages locked sources in a fresh `cstack-run-<random>` directory under `~/.cache/cstack/stages/` and removes it after the run.
 
 - `preferences.md` contains numbered standing orders, one constraint per line.
 - `overview.md` records durable PR and issue facts. Append instead of rewriting history.

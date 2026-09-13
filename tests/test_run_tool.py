@@ -36,8 +36,10 @@ class RunToolTest(unittest.TestCase):
         self.cwd.mkdir()
         self.bin = root / "bin"
         self.bin.mkdir()
-        self.stage_tmp = (root / "stage-tmp").resolve()
-        self.stage_tmp.mkdir()
+        self.home = (root / "home").resolve()
+        self.home.mkdir()
+        self.stage_tmp = self.home / ".cache/cstack/stages"
+        self.stage_tmp.mkdir(mode=0o700, parents=True)
         bun = self.bin / "bun"
         bun.write_text("#!{}\n".format(sys.executable) + textwrap.dedent("""\
             import json, os, pathlib, signal, sys, time
@@ -122,7 +124,7 @@ class RunToolTest(unittest.TestCase):
         bun.chmod(0o755)
         self.env = os.environ | {
             "PATH": f"{self.bin}:{os.environ['PATH']}",
-            "TMPDIR": str(self.stage_tmp),
+            "HOME": str(self.home),
         }
 
     def tearDown(self):
@@ -516,7 +518,7 @@ class RunToolTest(unittest.TestCase):
             cwd=self.cwd,
             capture_output=True,
             text=True,
-            env=os.environ | {"TMPDIR": str(self.stage_tmp)},
+            env=os.environ | {"HOME": str(self.home)},
         )
         self.assertFalse(marker.exists(), result.stderr)
         self.assertIn("staged helper ran", result.stdout)

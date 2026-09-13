@@ -143,7 +143,7 @@ bash <plugin-root>/scripts/run-tool.sh watch-pr/watch-pr <args>
 bash <plugin-root>/scripts/run-tool.sh worktree-audit.sh <args>
 ```
 
-Each invocation stages trusted helper sources in a fresh `cstack-run-<random>` directory in the system temporary location, installs frozen dependencies there, executes, and removes the stage. It forwards arguments without changing the target working directory and never executes a preexisting project-local copy.
+Each invocation stages trusted helper sources in a fresh `cstack-run-<random>` directory under `~/.cache/cstack/stages/`, installs frozen dependencies there, executes, and removes the stage. It forwards arguments without changing the target working directory and never executes a preexisting project-local copy.
 
 ### Respect authority
 

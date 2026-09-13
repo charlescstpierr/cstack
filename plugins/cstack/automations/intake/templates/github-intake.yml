@@ -31,14 +31,12 @@ concurrency:
 
 jobs:
   triage:
-    if: github.event_name == 'issues' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     permissions:
       contents: read
       issues: write
     outputs:
       marker: ${{ steps.publish.outputs.marker }}
-      comment_body: ${{ steps.publish.outputs.comment_body }}
       issue_number: ${{ steps.publish.outputs.issue_number }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
@@ -101,21 +99,19 @@ jobs:
             '[intake:bug]'|'[intake:performance]'|'[intake:other]') ;;
             *) echo "invalid marker: $MARKER" >&2; exit 1 ;;
           esac
-          COUNT=$(printf '%s\n' "$BODY" | grep -cE '\[intake:(bug|performance|other)\]' || true)
-          if [ -z "$BODY" ]; then
-            COUNT=0
-          fi
+          FOUND=$(printf '%s\n' "$BODY" | grep -oE '\[intake:(bug|performance|other)\]' || true)
+          COUNT=$(printf '%s' "$FOUND" | grep -c . || true)
           if [ -n "$BODY" ] && [ "$COUNT" != "1" ]; then
-            echo "comment_body must contain exactly one marker, found $COUNT" >&2
+            echo "comment_body must carry exactly one marker, found $COUNT" >&2
             exit 1
           fi
-          DELIM="INTAKEBODY$(python3 -c 'import secrets; print(secrets.token_hex(8))')"
+          if [ -n "$BODY" ] && [ "$FOUND" != "$MARKER" ]; then
+            echo "comment_body marker $FOUND does not match $MARKER" >&2
+            exit 1
+          fi
           {
             echo "marker=$MARKER"
             echo "issue_number=${{ steps.issue.outputs.number }}"
-            echo "comment_body<<$DELIM"
-            printf '%s\n' "$BODY"
-            echo "$DELIM"
           } >> "$GITHUB_OUTPUT"
       - name: Post verdict comment
         env:

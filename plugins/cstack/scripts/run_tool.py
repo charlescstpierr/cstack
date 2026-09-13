@@ -78,6 +78,21 @@ def require_inside(path, root, label):
         fail(f"{label} escapes workspace: {path}")
 
 
+def stage_root():
+    home = Path.home()
+    root = home / ".cache/cstack/stages"
+    for path in (home / ".cache", home / ".cache/cstack", root):
+        if path.is_symlink():
+            fail(f"stage root is a symlink: {path}")
+    try:
+        root.mkdir(mode=0o700, parents=True, exist_ok=True)
+    except OSError as error:
+        fail(f"{error.strerror or error}: {root}")
+    if root.stat().st_uid != os.getuid():
+        fail(f"stage root is not owned by this user: {root}")
+    return root
+
+
 def ensure_cstack_gitignore(state):
     ignore = state / ".gitignore"
     if ignore.exists() or ignore.is_symlink():
@@ -198,11 +213,12 @@ def main():
     state.mkdir(exist_ok=True)
     require_inside(state, workspace, ".cstack directory")
     ensure_cstack_gitignore(state)
-    # The stage must not live inside the inspected workspace: Bun adopts an
-    # ancestor package.json as its install root and honours that tree's
-    # overrides, patches and .npmrc, which are attacker-controlled input.
-    sweep_stale_stages(Path(tempfile.gettempdir()))
-    staged = Path(tempfile.mkdtemp(prefix=STAGE_PREFIX))
+    # The stage must sit outside the inspected workspace and outside a shared
+    # temporary root: Bun adopts an ancestor package.json as its install root
+    # and honours that tree's overrides, patches and .npmrc.
+    stages = stage_root()
+    sweep_stale_stages(stages)
+    staged = Path(tempfile.mkdtemp(prefix=STAGE_PREFIX, dir=stages))
     (staged / OWNER_PID).write_text(f"{os.getpid()}\n")
     pending = {"child": None}
 
