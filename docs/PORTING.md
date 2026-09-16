@@ -50,6 +50,6 @@ Codex qualifie les compétences de plugin avec leur espace de noms. Le nom compl
 
 Le paquet cible le format natif de plugin Codex et les sessions App et CLI qui prennent en charge les compétences. Les assistants shell nécessitent bash et Python 3.9 ou plus récent. L'analyse du `config.toml` de Codex dans `scripts/verify-behavior.py` exige Python 3.11 ou plus récent. Les assistants TypeScript nécessitent Bun. Sur Windows, utiliser un environnement fournissant ces outils, tel que WSL. Les capacités disponibles peuvent varier selon la session et le compte.
 
-La résolution des piles de PR exige une copie locale de chaque branche connectée et vérifie son SHA contre GitHub. Elle refuse de conclure si la collecte atteint 1 000 PRs, car l'historique pourrait être incomplet. La pagination constitue l'évolution prévue pour les dépôts qui dépassent cette limite.
+La résolution `orch` des piles de PR exige une copie locale de chaque branche connectée et vérifie son SHA contre GitHub. Elle refuse de conclure dès que la collecte atteint 1 000 PRs, car l'historique pourrait être incomplet. Le watcher `watch-pr` a un contrat séparé : il refuse dès que GitHub signale 300 PRs ouvertes. La pagination constitue l'évolution prévue pour les dépôts qui dépassent ces limites.
 
 L'identité de l'auteur amont et la licence MIT sont préservées. Les liens vers Cursor servent à attribuer la source et à documenter les limites ; ils n'ajoutent aucune dépendance d'exécution.

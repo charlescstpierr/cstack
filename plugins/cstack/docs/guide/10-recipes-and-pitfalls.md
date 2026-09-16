@@ -26,7 +26,7 @@ $cstack:swarm contrôle chaque paquet sous packages/ et rends un rapport unique.
 $cstack:interrogate examine toute la branche sans modifier les fichiers. Signale seulement les bugs ou régressions.
 ```
 
-## Corriger un anomalie avec une preuve ciblée
+## Corriger une anomalie avec une preuve ciblée
 
 ```text
 $cstack:cstack reproduis l'écriture en double. Si le test local est bon marché, utilise $cstack:tdd, puis corrige et rejoue la preuve.

@@ -412,7 +412,7 @@ function throwLockError(error: unknown): never {
 async function acquireDirectoryLock(
   path: string,
   options: OpenStoreOptions
-): Promise<() => Promise<void>> {
+) {
   const pid = String(process.pid);
   const generation = randomUUID();
   const marker = `owner.${pid}.${generation}`;
@@ -457,28 +457,38 @@ async function acquireDirectoryLock(
     await rm(candidate, { recursive: true, force: true });
   }
 
-  return async (): Promise<void> => {
-    try {
-      await unlink(ownMarker);
-    } catch (error) {
-      if (errorCode(error) === "ENOENT") return;
-      throw error;
-    }
-    try {
-      await rmdir(path);
-    } catch (error) {
-      // Un successeur peut publier son répertoire après le retrait du marqueur.
-      if (!["ENOENT", "ENOTEMPTY", "EEXIST"].includes(errorCode(error) ?? "")) {
+  return {
+    assertOwned: async (): Promise<void> => {
+      try {
+        if ((await lstat(ownMarker)).isFile()) return;
+      } catch (error) {
+        if (!["ENOENT", "ENOTDIR"].includes(errorCode(error) ?? "")) throw error;
+      }
+      throw new UserError("verrou de magasin perdu; ouvrir un nouveau handle avant de modifier le magasin");
+    },
+    release: async (): Promise<void> => {
+      try {
+        await unlink(ownMarker);
+      } catch (error) {
+        if (errorCode(error) === "ENOENT") return;
         throw error;
       }
-    }
+      try {
+        await rmdir(path);
+      } catch (error) {
+        // Un successeur peut publier son répertoire après le retrait du marqueur.
+        if (!["ENOENT", "ENOTEMPTY", "EEXIST"].includes(errorCode(error) ?? "")) {
+          throw error;
+        }
+      }
+    },
   };
 }
 
 async function acquireLock(
   store: string,
   options: OpenStoreOptions
-): Promise<() => Promise<void>> {
+): ReturnType<typeof acquireDirectoryLock> {
   const path = join(store, LOCK_FILE);
   try {
     return await acquireDirectoryLock(path, options);
@@ -490,7 +500,7 @@ async function acquireLock(
 
   // Les anciens fichiers PID sont migrés sous le même protocole de verrouillage,
   // y compris lorsque le processus de migration précédent est mort.
-  const releaseMigration = await acquireDirectoryLock(`${path}.migration`, {});
+  const migrationLock = await acquireDirectoryLock(`${path}.migration`, {});
   try {
     let info: Stats | undefined;
     try {
@@ -507,7 +517,7 @@ async function acquireLock(
     }
     return await acquireDirectoryLock(path, options);
   } finally {
-    await releaseMigration();
+    await migrationLock.release();
   }
 }
 
@@ -1331,7 +1341,7 @@ export function openStore(
 ): Store {
   const store = resolve(directory);
   let closed = false;
-  let releaseLock: (() => Promise<void>) | null = null;
+  let heldLock: Awaited<ReturnType<typeof acquireLock>> | null = null;
   let lockRequest: Promise<void> | null = null;
 
   const ensureOpen = (): void => {
@@ -1342,12 +1352,13 @@ export function openStore(
 
   const ensureLock = async (): Promise<void> => {
     ensureOpen();
-    if (releaseLock !== null) {
+    if (heldLock !== null) {
+      await heldLock.assertOwned();
       return;
     }
     if (lockRequest === null) {
-      lockRequest = acquireLock(store, options).then((release) => {
-        releaseLock = release;
+      lockRequest = acquireLock(store, options).then((lock) => {
+        heldLock = lock;
       });
     }
     try {
@@ -1716,11 +1727,11 @@ export function openStore(
           // Une acquisition échouée n’a aucun verrou à libérer.
         }
       }
-      const release = releaseLock;
-      releaseLock = null;
+      const lock = heldLock;
+      heldLock = null;
       closed = true;
-      if (release !== null) {
-        await release();
+      if (lock !== null) {
+        await lock.release();
       }
     },
   };

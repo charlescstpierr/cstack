@@ -4,7 +4,11 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { type CliRuntime, main, parseArgs } from "./cli.ts";
 import { fakeReader, passingCheck } from "./fakes.test-helper.ts";
-import { GhGitHubReader, WatcherQueryError } from "./github.ts";
+import {
+  GhGitHubReader,
+  WatcherQueryError,
+  parseOpenPullRequests,
+} from "./github.ts";
 import { renderJson, renderPretty } from "./render.ts";
 import type { GitHubReader, WatcherVerdict } from "./types.ts";
 import { parsePrNumber } from "./types.ts";
@@ -222,7 +226,11 @@ describe("main", () => {
     const lecteur = fakeReader();
     const harness = testRuntime(lecteur);
     expect(await main(["--help"], harness.runtime)).toBe(0);
-    expect(harness.stdout.join("")).toContain("JSON (NDJSON pendant le polling)");
+    const help = harness.stdout.join("").replace(/\s+/g, " ");
+    expect(help).toContain("JSON (NDJSON pendant le polling)");
+    expect(help).toContain(
+      "ancêtres et descendants ouverts de la PR sélectionnée"
+    );
     expect(lecteur.calls).toEqual([]);
   });
 
@@ -277,6 +285,67 @@ describe("main", () => {
       blocker: {
         kind: "status-query",
         failure: { kind: "auth", retryable: false },
+      },
+    });
+  });
+
+  it("ne déclare pas READY quand un fork homonyme masquerait le parent réel en conflit", async () => {
+    const base = { owner: "owner", repo: "repo" };
+    const raw = [
+      {
+        number: 1,
+        headRefName: "root",
+        headRepository: { nameWithOwner: "owner/repo" },
+        headRepositoryOwner: { login: "owner" },
+        baseRefName: "main",
+      },
+      {
+        number: 2,
+        headRefName: "child",
+        headRepository: { nameWithOwner: "owner/repo" },
+        headRepositoryOwner: { login: "owner" },
+        baseRefName: "root",
+      },
+      {
+        number: 4,
+        headRefName: "root",
+        headRepository: { nameWithOwner: "fork/repo" },
+        headRepositoryOwner: { login: "fork" },
+        baseRefName: "main",
+      },
+    ];
+    const source = fakeReader({
+      openPullRequests: parseOpenPullRequests(raw, base),
+    });
+    const requested: number[] = [];
+    const reader: GitHubReader = {
+      ...source,
+      async pullRequest(request) {
+        requested.push(request.number);
+        const pr = raw.find((item) => item.number === request.number);
+        expect(pr).toBeDefined();
+        return {
+          ...(await source.pullRequest(request)),
+          headRefName: pr?.headRefName ?? "",
+          baseRefName: pr?.baseRefName ?? "",
+          mergeable: request.number === 1 ? "CONFLICTING" : "MERGEABLE",
+        };
+      },
+    };
+    const harness = testRuntime(reader);
+    const code = await main(
+      ["--owner", "owner", "--repo", "repo", "--pr", "2", "--stack"],
+      harness.runtime
+    );
+    expect(requested).toEqual([1, 2]);
+    expect(code).toBe(2);
+    expect(
+      JSON.parse(harness.stdout[harness.stdout.length - 1]!)
+    ).toMatchObject({
+      kind: "BLOCKER",
+      blocker: {
+        kind: "merge-conflicts",
+        pr: { number: 1 },
       },
     });
   });

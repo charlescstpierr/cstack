@@ -5,4 +5,4 @@ description: "Utiliser pour $cstack:bro afin de reformuler le dernier message en
 
 Contrat d’exécution : [`../cstack/references/codex-runtime.md`](../cstack/references/codex-runtime.md).
 
-Reformule ton dernier message. Arrete le jargon et parle clairement. Dis-le plus simplement et plus concisement, comme un humain qui parle à un autre.
+Reformule ton dernier message. Arrête le jargon et parle clairement. Dis-le plus simplement et plus concisément, comme un humain qui parle à un autre.

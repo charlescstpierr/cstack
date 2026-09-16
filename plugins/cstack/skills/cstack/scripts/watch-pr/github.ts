@@ -178,6 +178,35 @@ function string(value: unknown, path: string): string {
 }
 const optionalString = (value: unknown, path: string): string | null =>
   value === null ? null : string(value, path);
+function repositoryIdentity(repository: T.Repository): string {
+  return `${repository.owner.toLowerCase()}/${repository.repo.toLowerCase()}`;
+}
+function refIdentity(repository: T.Repository, refName: string): string {
+  return `${repositoryIdentity(repository)}:${refName}`;
+}
+function parseNameWithOwner(value: unknown, path: string): T.Repository {
+  const text = string(value, path);
+  const parts = text.split("/");
+  if (parts.length !== 2 || parts[0] === "" || parts[1] === "")
+    missing(path, value);
+  return { owner: parts[0], repo: parts[1] };
+}
+function parseOpenPullRequestRepository(
+  object: Record<string, unknown>,
+  path: string
+): T.Repository {
+  const repository = parseNameWithOwner(
+    at(object, ["headRepository", "nameWithOwner"]),
+    `${path}.headRepository.nameWithOwner`
+  );
+  const owner = string(
+    at(object, ["headRepositoryOwner", "login"]),
+    `${path}.headRepositoryOwner.login`
+  );
+  if (repository.owner.toLowerCase() !== owner.toLowerCase())
+    missing(`${path}.headRepositoryOwner.login`, owner);
+  return repository;
+}
 function enumValue<const V extends readonly string[]>(
   value: unknown,
   values: V,
@@ -527,7 +556,8 @@ function graphqlArgs(
 }
 
 export function parseOpenPullRequests(
-  value: unknown
+  value: unknown,
+  baseRepository: T.Repository
 ): readonly T.OpenPullRequest[] {
   const rows = list(value, "open PRs");
   if (rows.length >= OPEN_PR_LIST_LIMIT) {
@@ -539,16 +569,16 @@ export function parseOpenPullRequests(
   }
   return rows.map((item, index) => {
     const object = record(item, `open PRs[${index}]`);
+    const path = `open PRs[${index}]`;
     return {
-      number: parsePrNumber(object.number, `open PRs[${index}].number`),
-      headRefName: string(
-        object.headRefName,
-        `open PRs[${index}].headRefName`
-      ),
-      baseRefName: string(
-        object.baseRefName,
-        `open PRs[${index}].baseRefName`
-      ),
+      number: parsePrNumber(object.number, `${path}.number`),
+      headRepository: parseOpenPullRequestRepository(object, path),
+      headRefName: string(object.headRefName, `${path}.headRefName`),
+      baseRepository: {
+        owner: baseRepository.owner,
+        repo: baseRepository.repo,
+      },
+      baseRefName: string(object.baseRefName, `${path}.baseRefName`),
     };
   });
 }
@@ -597,9 +627,9 @@ export class GhGitHubReader implements T.GitHubReader {
       "--limit",
       String(OPEN_PR_LIST_LIMIT),
       "--json",
-      "number,headRefName,baseRefName",
+      "number,headRepository,headRepositoryOwner,headRefName,baseRefName",
     ]);
-    return parseOpenPullRequests(value);
+    return parseOpenPullRequests(value, repository);
   }
   async checksFastPath(context: T.PrContext): Promise<T.ChecksFastPath> {
     const result = await run([
@@ -741,25 +771,47 @@ export function orderStack(
   open: readonly T.OpenPullRequest[]
 ): T.NonEmpty<T.PrContext> {
   const byNumber = new Map(open.map((pr) => [pr.number, pr]));
-  const byHead = new Map(open.map((pr) => [pr.headRefName, pr]));
+  const byHead = new Map<string, T.OpenPullRequest[]>();
+  for (const pr of open) {
+    const key = refIdentity(pr.headRepository, pr.headRefName);
+    byHead.set(key, [...(byHead.get(key) ?? []), pr]);
+  }
   const children = new Map<string, T.OpenPullRequest[]>();
-  for (const pr of open)
-    children.set(pr.baseRefName, [...(children.get(pr.baseRefName) ?? []), pr]);
+  for (const pr of open) {
+    const key = refIdentity(pr.baseRepository, pr.baseRefName);
+    children.set(key, [...(children.get(key) ?? []), pr]);
+  }
   for (const values of children.values())
     values.sort((a, b) => a.number - b.number);
   const start = byNumber.get(context.number);
   if (start === undefined) return [context];
+  const parentFor = (child: T.OpenPullRequest): T.OpenPullRequest | null => {
+    const key = refIdentity(child.baseRepository, child.baseRefName);
+    const matches = byHead.get(key) ?? [];
+    if (matches.length > 1) {
+      throw new WatcherQueryError({
+        kind: "stack-ambiguous",
+        retryable: false,
+        detail:
+          `la pile de PR contient ${matches.length} parents possibles pour ` +
+          `${child.baseRepository.owner}/${child.baseRepository.repo}:${child.baseRefName}`,
+      });
+    }
+    return matches[0] ?? null;
+  };
   const seen = new Set<T.PrNumber>([start.number]);
   const down: T.OpenPullRequest[] = [];
   let current = start;
-  while (byHead.has(current.baseRefName)) {
-    const parent = byHead.get(current.baseRefName);
-    if (parent === undefined) break;
+  while (true) {
+    const parent = parentFor(current);
+    if (parent === null) break;
     if (seen.has(parent.number)) {
       throw new WatcherQueryError({
         kind: "stack-cycle",
         retryable: false,
-        detail: `la pile de PR contient un cycle a ${parent.headRefName}`,
+        detail:
+          `la pile de PR contient un cycle a ` +
+          `${parent.headRepository.owner}/${parent.headRepository.repo}:${parent.headRefName}`,
       });
     }
     seen.add(parent.number);
@@ -768,7 +820,9 @@ export function orderStack(
   }
   const up: T.OpenPullRequest[] = [];
   const visit = (parent: T.OpenPullRequest): void => {
-    for (const child of children.get(parent.headRefName) ?? []) {
+    for (const child of
+      children.get(refIdentity(parent.headRepository, parent.headRefName)) ??
+      []) {
       if (seen.has(child.number)) continue;
       seen.add(child.number);
       up.push(child);

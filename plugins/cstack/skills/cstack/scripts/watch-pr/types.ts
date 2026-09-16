@@ -52,7 +52,9 @@ export interface PullRequestFacts {
 }
 export interface OpenPullRequest {
   readonly number: PrNumber;
+  readonly headRepository: Repository;
   readonly headRefName: string;
+  readonly baseRepository: Repository;
   readonly baseRefName: string;
 }
 export interface ReviewComment {
@@ -247,6 +249,11 @@ export type QueryFailure =
     }
   | {
       readonly kind: "stack-cycle";
+      readonly retryable: false;
+      readonly detail: string;
+    }
+  | {
+      readonly kind: "stack-ambiguous";
       readonly retryable: false;
       readonly detail: string;
     };

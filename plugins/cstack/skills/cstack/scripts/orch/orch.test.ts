@@ -459,6 +459,42 @@ describe("Magasin", () => {
     await expect(contender.units.add({ id: "après-libération", track: "build" })).resolves.toMatchObject({ id: "après-libération" });
   });
 
+  it("refuse les nouvelles mutations verrouillées d’un handle dépossédé", async () => {
+    const { directory, store } = await initializedStore();
+    await store.units.add({ id: "initiale", track: "build" });
+    await store.inbox.push({ agent: "agent", unit: "initiale", status: "done" });
+    const replacement = useStore(directory, { force: true });
+    await replacement.units.add({ id: "remplacement", track: "build" });
+    const files = ["units.tsv", "ledger.tsv", "gates.md", "preferences.md", "frontier.json"];
+    const before = await Promise.all(files.map(file => readFile(join(directory, file), "utf8")));
+    const mutations = [
+      () => store.units.add({ id: "interdite", track: "build" }),
+      () => store.units.set({ id: "initiale", state: "done" }),
+      () => store.ledger.record({ pr: 1, sha: "abc", verdict: "unit-test-verified", evidence: "test.log" }),
+      () => store.inbox.drain(),
+      () => store.gates.park({ id: "interdite", question: "Q", options: "A", defaultAnswer: "A" }),
+      () => store.gates.resolve({ id: "absente", answer: "A" }),
+      () => store.frontier.set({ repo: directory }),
+      () => store.standing.add({ line: "interdite" }),
+      () => store.status.render(),
+      () => store.init(),
+    ];
+    for (const mutate of mutations) {
+      await expect(mutate()).rejects.toThrow("verrou de magasin perdu");
+    }
+    expect(await Promise.all(files.map(file => readFile(join(directory, file), "utf8")))).toEqual(before);
+    expect(existsSync(join(directory, "status.md"))).toBe(false);
+    expect(await store.inbox.count()).toBe(1);
+    await store.inbox.push({ agent: "agent", unit: "initiale", status: "done" });
+    expect(await replacement.inbox.count()).toBe(2);
+    await replacement.close();
+    await expect(store.units.add({ id: "encore-interdite", track: "build" })).rejects.toThrow("verrou de magasin perdu");
+    const fresh = useStore(directory);
+    await fresh.units.add({ id: "nouveau-handle", track: "build" });
+    await store.close();
+    expect((await fresh.units.list()).map(unit => unit.id)).toEqual(["initiale", "remplacement", "nouveau-handle"]);
+  });
+
   it("remplace un verrou périmé dont le pid détenteur est mort", async () => {
     const { directory, store } = await initializedStore();
     await store.close();

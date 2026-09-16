@@ -515,7 +515,7 @@
       "source": "pstack/skills/poteto-mode/scripts/bootstrap.ts",
       "target": "plugins/cstack/skills/cstack/scripts/bootstrap.ts",
       "status": "ported",
-      "reason": "Adapté ou conservé dans le plugin Codex."
+      "reason": "Installation locale verrouillée des dépendances de production et conservation des options Bun au redémarrage direct."
     },
     {
       "source": "pstack/skills/poteto-mode/scripts/bun.lock",
@@ -533,7 +533,7 @@
       "source": "pstack/skills/poteto-mode/scripts/orch/orch.test.ts",
       "target": "plugins/cstack/skills/cstack/scripts/orch/orch.test.ts",
       "status": "ported",
-      "reason": "Tests français et régressions déterministes des reprises concurrentes, de la migration, de la libération et des erreurs de diagnostic des verrous."
+      "reason": "Régressions françaises des reprises concurrentes, de la migration, des diagnostics et des handles dépossédés, avec conservation des opérations sans verrou."
     },
     {
       "source": "pstack/skills/poteto-mode/scripts/orch/orch.ts",
@@ -545,7 +545,7 @@
       "source": "pstack/skills/poteto-mode/scripts/orch/store.ts",
       "target": "plugins/cstack/skills/cstack/scripts/orch/store.ts",
       "status": "ported",
-      "reason": "Textes français et verrou par génération : reprise atomique, migration des fichiers PID, libération limitée au détenteur exact et diagnostics des courses concurrentes."
+      "reason": "Textes français et verrou par génération : reprise atomique, migration PID, libération limitée au détenteur exact, diagnostics de concurrence et refus des nouvelles mutations après dépossession."
     },
     {
       "source": "pstack/skills/poteto-mode/scripts/package.json",
@@ -557,7 +557,7 @@
       "source": "pstack/skills/poteto-mode/scripts/watch-pr/cli.test.ts",
       "target": "plugins/cstack/skills/cstack/scripts/watch-pr/cli.test.ts",
       "status": "ported",
-      "reason": "Tests du refus de poursuivre lorsque le binaire gh manque."
+      "reason": "Tests CLI conservant les codes de sortie et refusant READY lorsque le vrai parent est en conflit malgré un fork homonyme."
     },
     {
       "source": "pstack/skills/poteto-mode/scripts/watch-pr/cli.ts",
@@ -575,13 +575,13 @@
       "source": "pstack/skills/poteto-mode/scripts/watch-pr/github.test.ts",
       "target": "plugins/cstack/skills/cstack/scripts/watch-pr/github.test.ts",
       "status": "ported",
-      "reason": "Tests du refus de poursuivre en cas de pagination incomplète, de plafond de découverte ou de cycle des références de base."
+      "reason": "Tests de lecture GitHub et de piles couvrant forks homonymes, casse, identités manquantes, cycles et parents ambigus."
     },
     {
       "source": "pstack/skills/poteto-mode/scripts/watch-pr/github.ts",
       "target": "plugins/cstack/skills/cstack/scripts/watch-pr/github.ts",
       "status": "ported",
-      "reason": "Refus de poursuivre en cas de pagination GitHub incomplète, de plafond de découverte ou d’échec d’authentification."
+      "reason": "Découverte native via gh, pagination prudente et résolution des piles par identité complète du dépôt et de la branche, sans confusion des forks."
     },
     {
       "source": "pstack/skills/poteto-mode/scripts/watch-pr/policy.test.ts",
@@ -617,7 +617,7 @@
       "source": "pstack/skills/poteto-mode/scripts/watch-pr/types.ts",
       "target": "plugins/cstack/skills/cstack/scripts/watch-pr/types.ts",
       "status": "ported",
-      "reason": "Types d’erreurs bloquantes pour gh absent, les échecs d’authentification, les résultats tronqués et les cycles de références de base."
+      "reason": "Types du watcher natif, identité complète des références et erreurs explicites de découverte."
     },
     {
       "source": "pstack/skills/poteto-mode/scripts/watch-pr/watch-pr",

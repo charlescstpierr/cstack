@@ -4,7 +4,7 @@ Ce fichier distingue l'état courant des campagnes datées. Les nombres d'une se
 
 ## État 0.4.0
 
-Mesures du 12 septembre 2026, arbre commité de la branche `feat/pstack-parity-deslop`, Python 3.9.6, Bun 1.4.2. Plugin `0.4.0`. Version amont épinglée de pstack `0.15.2`, commit `889ec4b68fa5aab0e867dad71ec3fdf386ae48f3`.
+Cette section décrit une campagne datée, pas l'état courant de HEAD. Mesures du 12 septembre 2026, arbre commité de la branche `feat/pstack-parity-deslop`, Python 3.9.6, Bun 1.4.2. Plugin `0.4.0`. Version amont épinglée de pstack `0.15.2`, commit `889ec4b68fa5aab0e867dad71ec3fdf386ae48f3`.
 
 Le catalogue 0.4.0 contient 29 compétences, 23 principes et 23 guides d'exécution. Deux invites d'agents. 19 rôles. 4 comités. 6 groupes de recommandations. `ls plugins/cstack/skills/*/SKILL.md | wc -l` vaut 29. `ls plugins/cstack/skills/cstack/references/principles/*.md | wc -l` vaut 23. `ls plugins/cstack/skills/cstack/playbooks/*.md | wc -l` vaut 23.
 

@@ -14,7 +14,7 @@ Utilise cette skill quand l'utilisateur sélectionne explicitement `$cstack:clar
 Sépare les faits découvrables des décisions humaines avant de formuler les questions.
 
 - Lis la demande, les fichiers courants, les consignes de projet, le mode et l'autorisation.
-- Etablis toi-même les faits du dépôt, en reutilisant [`$cstack:how`](../how/SKILL.md) pour les questions de flux de code et de responsabilité. Marque une inférence comme inférence et garde-la séparée du comportement observe.
+- Établis toi-même les faits du dépôt, en réutilisant [`$cstack:how`](../how/SKILL.md) pour les questions de flux de code et de responsabilité. Marque une inférence comme inférence et garde-la séparée du comportement observé.
 - Si un fait indépendant exige une passe séparée en lecture seule, utilise un délégué natif par fait seulement quand cela ajoute une couverture utile. Résous-le comme le rôle configuré `how explorer` et transmets la sélection complète de modèle et d'effort de raisonnement. Sans capacité de délégation utile, enquête dans le parent, étiquette le résultat `single-agent`, puis signale l'indépendance manquante.
 - Ne demande jamais à l'utilisateur un fait que le dépôt où les outils exposés peuvent établir. N'invente jamais un fait, ne réponds jamais à une décision métier matérielle et ne transforme jamais une recommandation en décision.
 

@@ -7,16 +7,16 @@ description: "Retire le slop d'un diff de code avant commit ou revue. Utiliser p
 
 Contrat d’exécution : [`../cstack/references/codex-runtime.md`](../cstack/references/codex-runtime.md).
 
-Le slop est du code qui survit à la revue parce que personne ne peut pointer la ligne fausse. Ce n'est pas une question de style. Les commentaires narratifs et le poids mort defensif donnent une impression d'inachevé, et le code en trop est l'endroit ou se cache le prochain bug.
+Le slop est du code qui survit à la revue parce que personne ne peut pointer la ligne fausse. Ce n'est pas une question de style. Les commentaires narratifs et le poids mort défensif donnent une impression d'inachevé, et le code en trop est l'endroit où se cache le prochain bug.
 
-Trois nettoyages, trois cibles. `deslop` nettoie le code. [`unslop`](../unslop/SKILL.md) nettoie la prose. [`no-comments`](../no-comments/SKILL.md) confie les commentaires à un relecteur qui ne les à pas écrits.
+Trois nettoyages, trois cibles. `deslop` nettoie le code. [`unslop`](../unslop/SKILL.md) nettoie la prose. [`no-comments`](../no-comments/SKILL.md) confie les commentaires à un relecteur qui ne les a pas écrits.
 
 Deslop s'exécute sur **le diff**, jamais sur le dépôt. Il retire du poids. Il ne change jamais le comportement.
 
 ## Quand il s'exécute
 
 - Avant chaque commit d'un changement d'implémentation ou de documentation autorisé.
-- Avant de rémettre un diff à un relecteur, une PR ou une voie de vérification.
+- Avant de remettre un diff à un relecteur, une PR ou une voie de vérification.
 - Sur demande : `$cstack:deslop`, "deslop it", "nettoie ce diff".
 
 Un playbook qui le saute conserve `deslop skipped: <reason>` dans son plan et sa réponse. Aucun saut silencieux.
@@ -25,7 +25,7 @@ Un playbook qui le saute conserve `deslop skipped: <reason>` dans son plan et sa
 
 1. Liste les chemins modifiés par la tâche elle-même. Utilise `git diff --stat` contre la base, ou `git diff --stat --cached` pour le travail stagé. N'élargis jamais aux fichiers que la tâche n'a pas touchés.
 2. Lis en entier chaque hunk ajouté et modifié. Un hunk que tu n'as pas lu n'est pas desloped.
-3. Préserve exactement les changements preexistants sans rapport, et dis-le dans le rapport.
+3. Préserve exactement les changements préexistants sans rapport, et dis-le dans le rapport.
 
 ## Le catalogue du slop
 

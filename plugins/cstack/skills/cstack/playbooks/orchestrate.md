@@ -36,7 +36,11 @@ Crée `.cstack/orchestrate/<project-slug>/` dans le workspace cible. Chaque fich
 
 N’écris pas l’état du programme dans le répertoire de plugin installé.
 
-Le verrou interne `.orch.lock/` contient un marqueur `owner.<pid>.<uuid>` propre à chaque acquisition. Une reprise vise uniquement le marqueur observé et la fermeture retire uniquement celui du détenteur. Les anciens fichiers PID sont migrés sous le verrou temporaire `.orch.lock.migration/`, récupérable après la mort de son détenteur. `--force` remplace un détenteur vivant sans arrêter son processus ; cette option ne garantit pas l’exclusion des écritures déjà en cours.
+Le verrou interne `.orch.lock/` contient un marqueur `owner.<pid>.<uuid>` propre à chaque acquisition. Une reprise vise uniquement le marqueur observé et la fermeture retire uniquement celui du détenteur. Les anciens fichiers PID sont migrés sous le verrou temporaire `.orch.lock.migration/`, récupérable après la mort de son détenteur.
+
+Un handle dont le marqueur a été remplacé refuse toute nouvelle opération nécessitant le verrou, y compris après la fermeture du remplaçant. Ouvre un nouveau handle pour reprendre. Les lectures et l’ajout de pointeurs avec `inbox.push`, qui ne prennent pas le verrou, restent disponibles.
+
+`--force` remplace un détenteur vivant sans arrêter son processus. La vérification du marqueur et la publication d’une écriture ne sont pas atomiques : une opération déjà engagée peut encore publier après le remplacement. Pour garantir l’exclusion, attends l’arrêt de l’ancien détenteur avant de forcer la reprise.
 
 #### Format de brief
 
@@ -70,7 +74,7 @@ Passe le contexte par chemin de dépôt ou en citant seulement le résultat amon
 
 - À l’achèvement, lance `orch inbox push <agent> <unit> <status> [--report PATH]`. Termine la section critique courante avant la revue profonde.
 - Draine après une section critique, un rollup de piste, un réveil du watcher de frontière et avant un rapport utilisateur. Commence avec `orch inbox drain`. Les arrivées pendant un drain attendent le drain suivant.
-- Les sections critiques incluent l’écriture d’un brief, le changement de topologie de pile, la résolution d’un conflit, l’écriture d’un barrière et la mise à jour du ledger ou de la frontière.
+- Les sections critiques incluent l’écriture d’un brief, le changement de topologie de pile, la résolution d’un conflit, l’écriture d’une barrière et la mise à jour du ledger ou de la frontière.
 - Classe chaque pointeur comme landed, needs verification, failed, stale ou noise. Écris le résultat avec `orch unit add`, `orch unit set` et `orch ledger record`. Puis lance `orch status` et assigne la prochaine vague prête.
 - Comptabilise chaque enfant comme terminé, remplacé, abandonné ou absorbé avec une raison. Ne cache pas les résultats manquants en les refaisant silencieusement.
 
@@ -79,12 +83,12 @@ Passe le contexte par chemin de dépôt ou en citant seulement le résultat amon
 - Calcule la pile depuis les relations head et base des PR GitHub, en partant de la branche courante. Rejette les parents ambigus, cycles, PR manquantes et enfants dupliqués. Enregistre les PR ordonnées, branches, SHA head, une génération et la PR non fusionnée la plus basse dans `frontier.json`.
 - Utilise seulement git et `gh`.
 - Garde exactement un rédacteur de topologie par pile. Les propriétaires ne rebasent pas, ne reciblent pas les PR et ne force-push pas sauf si leur brief accorde cette opération exacte.
-- Lance `babysit.md` contre une génération de frontière figée. Les conflits retournent à le propriétaire de topologie.
+- Lance `babysit.md` contre une génération de frontière figée. Les conflits retournent au propriétaire de topologie.
 - Traite fermeture, retargeting et merge comme des unités explicites. Elles exigent l’autorité concrète de l’utilisateur parce que chacune change l’état externe.
 
 #### Ledger de vérification
 
-Adapte la vérification au risque. L’propriétaire peut lancer ses propres barrières comme preuve. Le verdict de l’unité vient quand même d’un non-auteur. Quand aucun emplacement de sous-agent n’est disponible, lance le verdict dans cette session comme passe séparée au périmètre redéfini après relecture propre, étiquette-le `single-agent review` et rapporte l’indépendance manquante. Quand la session ne peut pas fournir de modèle différent, étiquette le résultat `single-model verification`.
+Adapte la vérification au risque. Le propriétaire peut lancer ses propres barrières comme preuve. Le verdict de l’unité vient quand même d’un non-auteur. Quand aucun emplacement de sous-agent n’est disponible, lance le verdict dans cette session comme passe séparée au périmètre redéfini après relecture propre, étiquette-le `single-agent review` et rapporte l’indépendance manquante. Quand la session ne peut pas fournir de modèle différent, étiquette le résultat `single-model verification`.
 
 Enregistre les verdicts avec `orch ledger record` et vérifie-les avec `orch ledger check`. Clé chaque ligne par PR et SHA head exact. Les verdicts permis incluent `live-ui-verified`, `unit-test-verified`, `type-check-only`, `verifier-blocked` et `verifier-failed`. Une CI verte contribue des preuves mais ne remplace pas un verdict de comportement. Un nouveau head invalide l’ancienne ligne sauf si un patch ID stable inchangé préserve le verdict de code et que la CI et mergeability courantes passent.
 

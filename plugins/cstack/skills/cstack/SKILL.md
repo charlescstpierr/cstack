@@ -84,7 +84,7 @@ Lis un principe seulement quand son déclencheur s’applique ou quand l’utili
 - Lis [Protocole de paresse](references/principles/laziness-protocol.md) avant une refactorisation ou une nouvelle abstraction.
 - Lis [Soustraire avant d’ajouter](references/principles/subtract-before-you-add.md) avant une réécriture ou migration.
 - Lis [Réduire la charge de lecture](references/principles/minimize-reader-load.md) quand le flux de contrôle ou l’état est difficile à suivre.
-- Lis [Reconvoir depuis les premiers principes](references/principles/redesign-from-first-principles.md) quand une nouvelle exigence change la fondation de la conception.
+- Lis [Reconcevoir depuis les premiers principes](references/principles/redesign-from-first-principles.md) quand une nouvelle exigence change la fondation de la conception.
 - Lis [Pensée fondationnelle](references/principles/foundational-thinking.md) avant de choisir les types centraux, l’état partagé ou l’ordre d’implémentation.
 - Lis [Attaquer la prémisse](references/principles/attack-the-premise.md) après deux correctifs échouant pour la même raison supposée.
 - Lis [Exécution orientée résultat](references/principles/outcome-oriented-execution.md) pour une réécriture ou migration phasée avec forme cible fixe.

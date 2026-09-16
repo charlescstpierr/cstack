@@ -4,6 +4,11 @@ Les versions suivent SemVer. Le format suit [Keep a Changelog](https://keepachan
 
 ## À publier
 
+- `watch-pr` distingue les branches homonymes de dépôts différents : un fork ne peut plus remplacer le vrai parent et produire un faux verdict `READY`. Les identités absentes et les parents ambigus bloquent la découverte.
+- Un handle d’orchestration dépossédé refuse les nouvelles opérations nécessitant le verrou. La limite de `--force` sur une opération déjà engagée reste documentée.
+- Le redémarrage direct de bootstrap conserve les options Bun, notamment `--no-env-file` et `--config`, ainsi que les arguments utilisateur.
+- Le validateur contrôle les nombres de « guides d’exécution » avec apostrophe droite ou typographique. Corrections des instructions françaises ambiguës et clarification des références et mesures historiques.
+
 - Messages français pour les courses pendant le diagnostic d’un verrou, sans masquer les erreurs de permission. Tests de régression couvrant aussi la migration des anciens fichiers PID.
 - Diagnostics des plans anglais incomplets conservant la langue de leurs repères.
 - Traduction partagée des erreurs d’arguments des commandes de configuration, avec conservation des valeurs saisies et des codes de sortie.

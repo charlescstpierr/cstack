@@ -116,7 +116,7 @@ function assertQuotedCounts(rel: string, text: string, skills: number, principle
   for (const match of text.matchAll(/\b(\d+)\s+principes?\b/gi)) {
     requireValue(Number(match[1]) === principles, `${rel}: nombre de principes cité ${match[1]} ne correspond pas à ${principles}`);
   }
-  for (const match of text.matchAll(/\b(\d+)\s+(?:playbooks?|guides? opérationnels?)\b/gi)) {
+  for (const match of text.matchAll(/\b(\d+)\s+(?:playbooks?|guides? opérationnels?|guides? d[’']exécution)\b/gi)) {
     requireValue(Number(match[1]) === playbooks, `${rel}: nombre de guides opérationnels cité ${match[1]} ne correspond pas à ${playbooks}`);
   }
   for (const match of text.matchAll(/\b(\d+)\s+fichiers(?:\s+upstream|\s+de provenance(?: pstack)?|\s+source)\b/gi)) {

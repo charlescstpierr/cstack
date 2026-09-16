@@ -14,7 +14,7 @@ Examine le code existant pour trouver des améliorations architecturales utiles.
 1. Utilise comme portée le sous-système ou les chemins nommés par l'utilisateur. S'il n'en nomme aucun, inspecte un historique récent borné (`git log --oneline -20`) et suis les fichiers et zones qui changent activement. Énonce la portée avant de scanner.
 2. Lis le code réel, les appelants, les tests, la configuration et les consignes de projet pertinentes dans cette portée. N'infère pas un candidat depuis les noms de fichiers ou des conseils d'architecture génériques.
 3. Lance un explorateur borné et en lecture seule pour la carte initiale. Résous-le comme le rôle `how explorer` existant, en préservant le modèle configuré et l'effort de raisonnement via le contrat d’exécution natif. Donne-lui la portée et demande chemins, symboles, appelants, points chauds et preuves; il ne doit pas modifier de fichiers, lancer de descendants ni proposer de refactor. Si aucun emplacement de sous-agent n'est disponible, inspecte dans cette session comme passe distincte et explicitement recadrée, étiquette le résultat `single-agent`, puis signale l'indépendance manquante. Le manque de capacité ne saute jamais la carte.
-4. L'agent principal synthétisé le résultat de l'explorateur avec son inspection directe. Un résumé délégué n'est pas une preuve tant que le code cite n'a pas été lu.
+4. L'agent principal synthétise le résultat de l'explorateur avec son inspection directe. Un résumé délégué n'est pas une preuve tant que le code cité n'a pas été lu.
 
 ## Standard d'un candidat
 
@@ -22,12 +22,12 @@ Un candidat doit nommer :
 
 - les chemins et symboles touchés;
 - le problème et la friction actuelle, avec des preuves `path:line` et les appelants pertinents;
-- le test de suppression : si retirer le module propose concentrerait la complexite derrière une interface plus petite ou ne ferait que la déplacer;
-- la profondeur d'interface : ce que les appelants savent aujourd'hui, ce qu'une frontière proposee cacherait, et quels invariants ou politiques gagneraient en localite;
+- le test de suppression : si retirer le module proposé concentrerait la complexité derrière une interface plus petite ou ne ferait que la déplacer;
+- la profondeur d'interface : ce que les appelants savent aujourd'hui, ce qu'une frontière proposée cacherait, et quels invariants ou politiques gagneraient en localité;
 - une recommandation : `Strong`, `Worth exploring`, `Speculative` ou `No worthwhile candidate`;
 - une esquisse avant/après plausible étiquetée **proposé, non vérifié**.
 
-Utilise les termes existants du domaine. Garde les candidats lies au code observe et accepté de conclure qu'il n'y a aucun candidat utile. N'invente pas un second adaptateur, un appelant, un invariant, un gain de performance ou une raison historique.
+Utilise les termes existants du domaine. Garde les candidats liés au code observé et accepte de conclure qu'il n'y a aucun candidat utile. N'invente pas un second adaptateur, un appelant, un invariant, un gain de performance ou une raison historique.
 
 Le rapport par défaut est du Markdown dans la conversation. En mode Plan ou lors d'une demande qui interdit les écritures de fichiers, garde le rapport dans le chat et ne crée aucun artefact. Sinon, crée un artefact de rapport seulement quand l'utilisateur demande ou autorise cette sortie; les sources et la configuration restent en lecture seule. N'exige pas de navigateur, CDN, Mermaid, `xdg-open` ou capture d'écran; utilise un navigateur disponible seulement quand l'utilisateur demande explicitement une inspection visuelle et que l'outil existe.
 
@@ -37,6 +37,6 @@ Cette exécution est en lecture seule. Ne modifie pas les sources, les tests, `A
 
 Si l'utilisateur choisit un candidat, transmets les preuves et contraintes à `$cstack:architect`. Garde le résultat en conception seulement, sauf si l'implémentation a déjà été explicitement autorisée dans la même tâche. Laisse Architect préserver le nombre de panels `architect runners` configuré et chaque sélection de modèle/effort de raisonnement; n'ajoute pas de taille de panel fixe et ne substitue pas un autre moteur de reconception.
 
-Utilise le contrat d’exécution cstack existant pour les outils et la délégation. Les outils manquants où les sélections modèle/effort indisponibles sont des manques de preuve à signaler, jamais des raisons de fabriquer des résultats ou de substituer silencieusement une sélection.
+Utilise le contrat d’exécution cstack existant pour les outils et la délégation. Les outils manquants ou les sélections modèle/effort indisponibles sont des manques de preuve à signaler, jamais des raisons de fabriquer des résultats ou de substituer silencieusement une sélection.
 
 Chaque affirmation porte sa preuve ou son étiquette dans la même phrase. Mesure, inférence ou supposition. Une prédiction ou une cause non observée est une supposition. Ne donne jamais à l'humain une vérification que tu pourrais exécuter.

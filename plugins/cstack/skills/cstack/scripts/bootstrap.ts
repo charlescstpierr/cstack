@@ -62,7 +62,7 @@ export function ensureDependenciesInstalled(): void {
     return;
   }
 
-  const restarted = Bun.spawnSync([process.execPath, ...process.argv.slice(1)], {
+  const restarted = Bun.spawnSync([process.execPath, ...process.execArgv, ...process.argv.slice(1)], {
     cwd: process.cwd(),
     env: process.env,
     stdin: "inherit",

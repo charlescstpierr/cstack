@@ -94,7 +94,10 @@ export function parseArgs(
     .option("--repo <repo>", "nom du dépôt GitHub")
     .option("--pr <number>", "numéro de pull request", prNumber)
     .addOption(
-      new Option("--stack", "surveiller la pile ouverte connectee")
+      new Option(
+        "--stack",
+        "surveiller les ancêtres et descendants ouverts de la PR sélectionnée"
+      )
         .default(false)
         .conflicts("queuedStack")
     )

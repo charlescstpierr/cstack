@@ -28,6 +28,20 @@ const context = {
   repo: "repo",
   number: parsePrNumber(42),
 };
+const source = (owner: string, repo = "repo") => ({ owner, repo });
+const openPr = (
+  number: number,
+  headRefName: string,
+  baseRefName: string,
+  headOwner = context.owner,
+  headRepo = context.repo
+) => ({
+  number: parsePrNumber(number),
+  headRepository: source(headOwner, headRepo),
+  headRefName,
+  baseRepository: source(context.owner, context.repo),
+  baseRefName,
+});
 
 describe("chaîne de repli des vérifications", () => {
   it("utilise un résultat du chemin rapide non vide sans requête rollup", async () => {
@@ -292,37 +306,93 @@ describe("découverte du contexte et de la pile", () => {
 
   it("ordonne la pile connectée de bas en haut", () => {
     const ordered = orderStack(context, [
-      {
-        number: parsePrNumber(41),
-        headRefName: "base-feature",
-        baseRefName: "main",
-      },
-      {
-        number: context.number,
-        headRefName: "feature",
-        baseRefName: "base-feature",
-      },
-      {
-        number: parsePrNumber(43),
-        headRefName: "upstack",
-        baseRefName: "feature",
-      },
+      openPr(41, "base-feature", "main"),
+      openPr(Number(context.number), "feature", "base-feature"),
+      openPr(43, "upstack", "feature"),
     ]);
     expect(ordered.map((item) => Number(item.number))).toEqual([41, 42, 43]);
   });
 
+  it("conserve les descendants bifurqués de la PR sélectionnée", () => {
+    const ordered = orderStack(context, [
+      openPr(Number(context.number), "root", "main"),
+      openPr(43, "child-a", "root"),
+      openPr(44, "child-b", "root"),
+      openPr(45, "grandchild", "child-a"),
+    ]);
+    expect(ordered.map((item) => Number(item.number))).toEqual([
+      42, 43, 45, 44,
+    ]);
+  });
+
+  it("n’inclut pas les frères quand la PR sélectionnée est un enfant", () => {
+    const ordered = orderStack(context, [
+      openPr(41, "root", "main"),
+      openPr(Number(context.number), "child-a", "root"),
+      openPr(43, "child-b", "root"),
+      openPr(44, "grandchild", "child-a"),
+    ]);
+    expect(ordered.map((item) => Number(item.number))).toEqual([41, 42, 44]);
+  });
+
+  it("ne confond pas un fork homonyme avec le parent réel", () => {
+    const ordered = orderStack(context, [
+      openPr(41, "base-feature", "main"),
+      openPr(Number(context.number), "feature", "base-feature"),
+      openPr(43, "upstack", "feature"),
+      openPr(44, "base-feature", "main", "fork"),
+    ]);
+    expect(ordered.map((item) => Number(item.number))).toEqual([41, 42, 43]);
+  });
+
+  it("ne dépend pas de l’ordre d’une PR de fork homonyme", () => {
+    const ordered = orderStack(context, [
+      openPr(44, "base-feature", "main", "fork"),
+      openPr(43, "upstack", "feature"),
+      openPr(Number(context.number), "feature", "base-feature"),
+      openPr(41, "base-feature", "main"),
+    ]);
+    expect(ordered.map((item) => Number(item.number))).toEqual([41, 42, 43]);
+  });
+
+  it("ne crée ni cycle ni enfants entre fork main et dépôt cible main", () => {
+    const ordered = orderStack(
+      { owner: context.owner, repo: context.repo, number: parsePrNumber(44) },
+      [
+        openPr(41, "feature", "main"),
+        openPr(44, "main", "main", "fork"),
+      ]
+    );
+    expect(ordered.map((item) => Number(item.number))).toEqual([44]);
+  });
+
+  it("accepte une PR sélectionnée depuis un fork", () => {
+    const ordered = orderStack(
+      { owner: context.owner, repo: context.repo, number: parsePrNumber(44) },
+      [
+        openPr(41, "base-feature", "main"),
+        openPr(44, "fork-feature", "base-feature", "fork"),
+      ]
+    );
+    expect(ordered.map((item) => Number(item.number))).toEqual([41, 44]);
+  });
+
+  it("compare owner/repo sans casse mais garde la casse des branches", () => {
+    const ordered = orderStack(context, [
+      {
+        ...openPr(41, "Base", "main", "OWNER", "REPO"),
+        baseRepository: source("OWNER", "REPO"),
+      },
+      openPr(Number(context.number), "feature", "Base"),
+      openPr(43, "case-mismatch", "base"),
+    ]);
+    expect(ordered.map((item) => Number(item.number))).toEqual([41, 42]);
+  });
+
   it("échoue ferme sur un cycle de base-ref", () => {
     const cyclic = [
-      {
-        number: context.number,
-        headRefName: "feature",
-        baseRefName: "base-feature",
-      },
-      {
-        number: parsePrNumber(41),
-        headRefName: "base-feature",
-        baseRefName: "feature",
-      },
+      openPr(Number(context.number), "feature", "base-feature"),
+      openPr(41, "base-feature", "feature"),
     ];
     expect(() => orderStack(context, cyclic)).toThrow(WatcherQueryError);
     try {
@@ -333,6 +403,26 @@ describe("découverte du contexte et de la pile", () => {
       if (!(error instanceof WatcherQueryError)) throw error;
       expect(error.failure).toMatchObject({
         kind: "stack-cycle",
+        retryable: false,
+      });
+    }
+  });
+
+  it("échoue ferme quand deux parents ont la même identité source", () => {
+    const ambiguous = [
+      openPr(Number(context.number), "feature", "base-feature"),
+      openPr(41, "base-feature", "main"),
+      openPr(40, "base-feature", "release"),
+    ];
+    expect(() => orderStack(context, ambiguous)).toThrow(WatcherQueryError);
+    try {
+      orderStack(context, ambiguous);
+      throw new Error("parent ambigu attendu en echec");
+    } catch (error) {
+      expect(error).toBeInstanceOf(WatcherQueryError);
+      if (!(error instanceof WatcherQueryError)) throw error;
+      expect(error.failure).toMatchObject({
+        kind: "stack-ambiguous",
         retryable: false,
       });
     }
@@ -397,11 +487,15 @@ describe("troncature de la liste des PR ouvertes", () => {
     const rows = Array.from({ length: OPEN_PR_LIST_LIMIT }, (_, index) => ({
       number: index + 1,
       headRefName: `branch-${index}`,
+      headRepository: { nameWithOwner: "owner/repo" },
+      headRepositoryOwner: { login: "owner" },
       baseRefName: "main",
     }));
-    expect(() => parseOpenPullRequests(rows)).toThrow(WatcherQueryError);
+    expect(() => parseOpenPullRequests(rows, context)).toThrow(
+      WatcherQueryError
+    );
     try {
-      parseOpenPullRequests(rows);
+      parseOpenPullRequests(rows, context);
       throw new Error("decouverte de pile tronquee attendue en echec");
     } catch (error) {
       expect(error).toBeInstanceOf(WatcherQueryError);
@@ -420,10 +514,48 @@ describe("troncature de la liste des PR ouvertes", () => {
       (_, index) => ({
         number: index + 1,
         headRefName: `branch-${index}`,
+        headRepository: { nameWithOwner: "owner/repo" },
+        headRepositoryOwner: { login: "owner" },
         baseRefName: "main",
       })
     );
-    expect(parseOpenPullRequests(rows)).toHaveLength(OPEN_PR_LIST_LIMIT - 1);
+    expect(parseOpenPullRequests(rows, context)).toHaveLength(
+      OPEN_PR_LIST_LIMIT - 1
+    );
+  });
+
+  it("analyse strictement l’identité source des PR ouvertes", () => {
+    expect(
+      parseOpenPullRequests(
+        [
+          {
+            number: 41,
+            headRefName: "feature",
+            headRepository: { nameWithOwner: "Fork/Repo" },
+            headRepositoryOwner: { login: "fork" },
+            baseRefName: "main",
+          },
+        ],
+        context
+      )
+    ).toEqual([
+      {
+        number: parsePrNumber(41),
+        headRefName: "feature",
+        headRepository: { owner: "Fork", repo: "Repo" },
+        baseRefName: "main",
+        baseRepository: { owner: context.owner, repo: context.repo },
+      },
+    ]);
+  });
+
+  it("échoue ferme quand l’identité source d’une PR ouverte manque", () => {
+    expect(() =>
+      parseOpenPullRequests(
+        [{ number: 41, headRefName: "feature", baseRefName: "main" }],
+        context
+      )
+    ).toThrow(WatcherQueryError);
   });
 });
 

@@ -24,7 +24,7 @@ Inspecte le dépôt avant de choisir chemins ou formats.
 
 Pour chaque terme dispute ou surcharge :
 
-1. Trouve ses usages réels dans le code et les documents de domaine existants, en reutilisant [`$cstack:how`](../how/SKILL.md) quand le flux ou la responsabilité est large. Utilise le code observe comme preuve, pas comme substitut à la décision produit de l'utilisateur.
+1. Trouve ses usages réels dans le code et les documents de domaine existants, en réutilisant [`$cstack:how`](../how/SKILL.md) quand le flux ou la responsabilité est large. Utilise le code observé comme preuve, pas comme substitut à la décision produit de l'utilisateur.
 2. Signale les définitions ou synonymes conflictuels et propose un terme canonique précis.
 3. Teste la frontière avec un scénario concret. Demande à l'utilisateur de choisir quand le sens affecte les règles métier, la responsabilité où le comportement visible de l'extérieur. N'infère jamais une décision métier matérielle.
 4. Redige une entrée de glossaire qui définit ce que la chose **est**, en une ou deux phrases, et liste les synonymes rejetés sous `_Avoid_`. Garde les détails d'implémentation, specs et notes scratch hors de `CONTEXT.md`.
