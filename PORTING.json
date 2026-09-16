@@ -533,7 +533,7 @@
       "source": "pstack/skills/poteto-mode/scripts/orch/orch.test.ts",
       "target": "plugins/cstack/skills/cstack/scripts/orch/orch.test.ts",
       "status": "ported",
-      "reason": "Adapté ou conservé dans le plugin Codex."
+      "reason": "Tests français et régressions déterministes des reprises concurrentes, de la migration et de la libération des verrous."
     },
     {
       "source": "pstack/skills/poteto-mode/scripts/orch/orch.ts",
@@ -545,7 +545,7 @@
       "source": "pstack/skills/poteto-mode/scripts/orch/store.ts",
       "target": "plugins/cstack/skills/cstack/scripts/orch/store.ts",
       "status": "ported",
-      "reason": "Adapté ou conservé dans le plugin Codex."
+      "reason": "Textes français et verrou par génération : reprise atomique, migration des fichiers PID et libération limitée au détenteur exact."
     },
     {
       "source": "pstack/skills/poteto-mode/scripts/package.json",

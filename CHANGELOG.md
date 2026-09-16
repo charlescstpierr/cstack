@@ -2,6 +2,11 @@
 
 Les versions suivent SemVer. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## À publier
+
+- Correction de la double acquisition du verrou d’orchestration lors d’une reprise concurrente. Chaque acquisition possède désormais un marqueur unique ; un ancien détenteur ne peut plus libérer le verrou de son remplaçant, même dans le même processus.
+- Migration automatique des anciens fichiers PID, reprise après interruption et tests de concurrence déterministes.
+
 ## [0.4.0] - 2026-09-12
 
 ### Ajouté

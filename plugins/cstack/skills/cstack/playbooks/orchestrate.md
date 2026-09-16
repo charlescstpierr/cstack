@@ -36,6 +36,8 @@ Crée `.cstack/orchestrate/<project-slug>/` dans le workspace cible. Chaque fich
 
 N’écris pas l’état du programme dans le répertoire de plugin installé.
 
+Le verrou interne `.orch.lock/` contient un marqueur `owner.<pid>.<uuid>` propre à chaque acquisition. Une reprise vise uniquement le marqueur observé et la fermeture retire uniquement celui du détenteur. Les anciens fichiers PID sont migrés sous le verrou temporaire `.orch.lock.migration/`, récupérable après la mort de son détenteur. `--force` remplace un détenteur vivant sans arrêter son processus ; cette option ne garantit pas l’exclusion des écritures déjà en cours.
+
 #### Format de brief
 
 Chaque brief de propriétaire contient ces champs. Raccourcis la forme pour une toute petite unité, mais garde les faits.

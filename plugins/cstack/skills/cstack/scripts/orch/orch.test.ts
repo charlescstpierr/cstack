@@ -6,9 +6,11 @@ import {
   readFile,
   readdir,
   rm,
+  symlink,
   writeFile,
 } from "node:fs/promises";
-import { realpathSync } from "node:fs";
+import { existsSync, realpathSync } from "node:fs";
+import { randomUUID } from "node:crypto";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
@@ -364,62 +366,102 @@ describe("Magasin", () => {
     expect(await readdir(join(directory, "inbox"))).toEqual(["notes.md"]);
   });
 
-  it("laisse un seul processus reprendre un verrou périmé", async () => {
-    const { directory, store } = await initializedStore();
-    await store.close();
-    const exited = Bun.spawn(["true"]);
-    await exited.exited;
-    await writeFile(join(directory, ".orch.lock"), `${exited.pid}\n`);
+  for (const format of ["fichier PID", "répertoire"] as const) {
+    it(`laisse un seul processus reprendre un verrou périmé (${format})`, async () => {
+      const { directory, store } = await initializedStore();
+      await store.close();
+      const exited = Bun.spawn(["true"]);
+      await exited.exited;
+      const lock = join(directory, ".orch.lock");
+      if (format === "fichier PID") {
+        await writeFile(lock, `${exited.pid}\n`);
+      } else {
+        await mkdir(lock);
+        await writeFile(join(lock, `owner.${exited.pid}.${randomUUID()}`), "");
+      }
 
-    const startFile = join(directory, "start");
-    const worker = join(directory, "takeover-worker.ts");
-    await writeFile(
-      worker,
-      `import { access } from "node:fs/promises";
-import { openStore } from ${JSON.stringify(join(import.meta.dir, "store.ts"))};
-const storeDir = ${JSON.stringify(directory)};
-const start = ${JSON.stringify(startFile)};
-while (true) {
+      const worker = join(directory, "takeover-worker.ts");
+      await writeFile(
+        worker,
+        `import { existsSync, writeFileSync } from "node:fs";
+  import { join } from "node:path";
+  import { openStore } from ${JSON.stringify(join(import.meta.dir, "store.ts"))};
+  const storeDir = ${JSON.stringify(directory)};
+  const id = process.argv[2];
+  const handle = openStore(storeDir, { onStaleLock() {
+    writeFileSync(join(storeDir, "ready-" + id), "");
+    const deadline = Date.now() + 10000;
+    while (!existsSync(join(storeDir, "go-" + id))) {
+      if (Date.now() > deadline) throw new Error("délai de coordination dépassé");
+      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 5);
+    }
+  }});
   try {
-    await access(start);
-    break;
-  } catch {
-    await Bun.sleep(10);
+    await handle.units.add({ id: "u-" + process.pid, track: "build" });
+    writeFileSync(join(storeDir, "result-" + id), "WON");
+  } catch (error) {
+    writeFileSync(join(storeDir, "result-" + id), "LOST: " + error.message);
+    process.exitCode = 1;
+  } finally {
+    const deadline = Date.now() + 10000;
+    while (!existsSync(join(storeDir, "finish"))) {
+      if (Date.now() > deadline) throw new Error("délai de libération dépassé");
+      await Bun.sleep(5);
+    }
+    await handle.close();
   }
-}
-const handle = openStore(storeDir);
-try {
-  await handle.units.add({ id: "u-" + process.pid, track: "build" });
-  process.stdout.write("WON\\n");
-  await Bun.sleep(800);
-  await handle.close();
-} catch {
-  process.stdout.write("LOST\\n");
-  process.exitCode = 1;
-}
-`
-    );
-    const first = Bun.spawn([process.execPath, worker], {
-      stdout: "pipe",
-      stderr: "pipe",
-    });
-    const second = Bun.spawn([process.execPath, worker], {
-      stdout: "pipe",
-      stderr: "pipe",
-    });
-    await writeFile(startFile, "go\n");
-    const [firstOut, secondOut] = await Promise.all([
-      new Response(first.stdout).text(),
-      new Response(second.stdout).text(),
-    ]);
-    await Promise.all([first.exited, second.exited]);
-    const outcomes = [firstOut.trim(), secondOut.trim()];
-    expect(outcomes.filter((line) => line === "WON")).toHaveLength(1);
-    expect(outcomes.filter((line) => line === "LOST")).toHaveLength(1);
+  `
+      );
+      const first = Bun.spawn([process.execPath, worker, "A"], {
+        stdout: "pipe",
+        stderr: "pipe",
+      });
+      const second = Bun.spawn([process.execPath, worker, "B"], {
+        stdout: "pipe",
+        stderr: "pipe",
+      });
+      const waitFor = async (condition: () => boolean): Promise<void> => {
+        const deadline = Date.now() + 5000;
+        while (!condition()) {
+          if (Date.now() > deadline) throw new Error("délai de coordination dépassé");
+          await Bun.sleep(5);
+        }
+      };
+      try {
+        await waitFor(() => existsSync(join(directory, "ready-A")) || existsSync(join(directory, "ready-B")));
+        const winner = existsSync(join(directory, "ready-A")) ? "A" : "B";
+        const loser = winner === "A" ? "B" : "A";
+        await waitFor(() => existsSync(join(directory, `ready-${loser}`)) || existsSync(join(directory, `result-${loser}`)));
+        await writeFile(join(directory, `go-${winner}`), "");
+        await waitFor(() => existsSync(join(directory, `result-${winner}`)));
+        expect(await readFile(join(directory, `result-${winner}`), "utf8")).toBe("WON");
+        await writeFile(join(directory, `go-${loser}`), "");
+        await waitFor(() => existsSync(join(directory, `result-${loser}`)));
+        expect(await readFile(join(directory, `result-${loser}`), "utf8")).toContain("LOST: verrou");
+        expect((await useStore(directory).units.list()).length).toBe(1);
+      } finally {
+        await writeFile(join(directory, "go-A"), "");
+        await writeFile(join(directory, "go-B"), "");
+        await writeFile(join(directory, "finish"), "");
+        await Promise.all([first.exited, second.exited]);
+      }
+    }, 20000);
+  }
+
+  it("un ancien détenteur ne libère pas le verrou de son remplaçant dans le même processus", async () => {
+    const { directory, store } = await initializedStore();
+    const replacement = useStore(directory, { force: true });
+    await replacement.units.add({ id: "remplacement", track: "build" });
+    await store.close();
+    const contender = useStore(directory);
+    await expect(contender.units.add({ id: "concurrent", track: "build" })).rejects.toThrow("verrou");
+    await replacement.close();
+    await expect(contender.units.add({ id: "après-libération", track: "build" })).resolves.toMatchObject({ id: "après-libération" });
   });
 
   it("remplace un verrou périmé dont le pid détenteur est mort", async () => {
-    const { directory } = await initializedStore();
+    const { directory, store } = await initializedStore();
+    await store.close();
     const exited = Bun.spawn(["true"]);
     await exited.exited;
     await writeFile(join(directory, ".orch.lock"), `${exited.pid}\n`);
@@ -434,6 +476,66 @@ try {
     expect(stale).toEqual([String(exited.pid)]);
     await recovered.close();
     expect(await readdir(directory)).not.toContain(".orch.lock");
+  });
+
+  it("reprend une migration abandonnée sans laisser de verrou temporaire", async () => {
+    const { directory, store } = await initializedStore();
+    await store.close();
+    const exited = Bun.spawn(["true"]);
+    await exited.exited;
+    await writeFile(join(directory, ".orch.lock"), `${exited.pid}\n`);
+    const migration = join(directory, ".orch.lock.migration");
+    await mkdir(migration);
+    await writeFile(join(migration, `owner.${exited.pid}.${randomUUID()}`), "");
+    const recovered = useStore(directory);
+    await expect(recovered.units.add({ id: "récupérée", track: "build" })).resolves.toMatchObject({ id: "récupérée" });
+    await recovered.close();
+    expect((await readdir(directory)).filter((name) => name.startsWith(".orch.lock"))).toEqual([]);
+  });
+
+  it("ne force pas une migration encore active", async () => {
+    const { directory, store } = await initializedStore();
+    await store.close();
+    await writeFile(join(directory, ".orch.lock"), `${process.pid}\n`);
+    const migration = join(directory, ".orch.lock.migration");
+    await mkdir(migration);
+    const marker = `owner.${process.pid}.${randomUUID()}`;
+    await writeFile(join(migration, marker), "");
+    const contender = useStore(directory, { force: true });
+    await expect(contender.units.add({ id: "refusée", track: "build" })).rejects.toThrow("verrou");
+    expect(await readFile(join(directory, ".orch.lock"), "utf8")).toBe(`${process.pid}\n`);
+    expect(await readdir(migration)).toEqual([marker]);
+    expect((await readdir(directory)).filter((name) => name.includes(".tmp."))).toEqual([]);
+  });
+
+  it("récupère un répertoire de verrou vide après interruption", async () => {
+    const { directory, store } = await initializedStore();
+    await store.close();
+    await mkdir(join(directory, ".orch.lock"));
+    const recovered = useStore(directory);
+    await recovered.units.add({ id: "récupérée", track: "build" });
+    const markers = await readdir(join(directory, ".orch.lock"));
+    expect(markers).toHaveLength(1);
+    expect(markers[0]).toMatch(new RegExp(`^owner\\.${process.pid}\\.`));
+    await recovered.close();
+    expect((await readdir(directory)).filter((name) => name.startsWith(".orch.lock"))).toEqual([]);
+  });
+
+  it("préserve les verrous mal formés et refuse les liens symboliques même avec force", async () => {
+    const { directory, store } = await initializedStore();
+    await store.close();
+    const lock = join(directory, ".orch.lock");
+    await mkdir(lock);
+    await writeFile(join(lock, "note.txt"), "à conserver");
+    await expect(useStore(directory, { force: true }).units.add({ id: "refusée", track: "build" })).rejects.toThrow("verrou de magasin invalide");
+    expect(await readFile(join(lock, "note.txt"), "utf8")).toBe("à conserver");
+    await rm(lock, { recursive: true });
+    const outside = await makeDirectory();
+    const marker = `owner.${process.pid}.${randomUUID()}`;
+    await writeFile(join(outside, marker), "à conserver");
+    await symlink(outside, lock);
+    await expect(useStore(directory, { force: true }).units.add({ id: "refusée", track: "build" })).rejects.toThrow("lien symbolique interdit");
+    expect(await readFile(join(outside, marker), "utf8")).toBe("à conserver");
   });
 
   it("bloque un rédacteur et ne vole le verrou pid qu’avec force", async () => {
