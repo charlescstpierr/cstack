@@ -1,29 +1,29 @@
-# Prove It Works
+# Prouver que ça marche
 
-Read this reference when an active cstack workflow routes here or the user names this principle. Follow the [Codex runtime contract](../codex-runtime.md) for scope and permissions.
+Lisez cette référence lorsqu'un processus cstack actif vous route ici ou lorsque l'utilisateur nomme ce principe. Suivez le [contrat d'exécution Codex](../codex-runtime.md) pour le périmètre et les permissions.
 
-Verify every task output by checking the real thing directly. Do not infer from proxies, self-reports, or "it compiles."
+Vérifiez chaque sortie de tâche en contrôlant directement la chose réelle. N'inférez pas depuis des proxys, auto-rapports ou « ça compile ».
 
-**Why:** Unverified work has unknown correctness. Indirect verification (file mtimes, output freshness, agent self-reports, cached screenshots) feels cheaper than direct observation. Acting on a wrong inference costs far more than checking the source.
+**Pourquoi :** un travail non vérifié a une correction inconnue. La vérification indirecte (mtimes de fichiers, fraîcheur de sorties, auto-rapports d'agents, captures mises en cache) semble moins chère que l'observation directe. Agir sur une mauvaise inférence coûte bien plus cher que vérifier la source.
 
-**Pattern:** After completing any task, ask: "how do I prove this actually works?"
+**Motif :** après toute tâche terminée, demandez : « comment prouver que cela marche vraiment ? »
 
-Check the real thing, not a proxy:
-- Check process liveness directly, not indirectly through derived state
-- Read the actual value, not a cached or derived representation
-- When verification fails, suspect the observation method before suspecting the system
+Contrôlez la chose réelle, pas un proxy :
+- Vérifiez directement la vivacité du processus, pas indirectement via un état dérivé
+- Lisez la valeur réelle, pas une représentation mise en cache ou dérivée
+- Quand la vérification échoue, soupçonnez la méthode d'observation avant de soupçonner le système
 
-Code and features:
-1. Build it (necessary but not sufficient)
-2. Run it and exercise the actual feature path
-3. Check the full chain: does data flow from input to output?
-4. For integrations, test the full communication path end-to-end
+Code et fonctionnalités :
+1. Construisez-le (nécessaire mais pas suffisant)
+2. Lancez-le et exercez le vrai chemin de fonctionnalité
+3. Vérifiez la chaîne complète : les données circulent-elles de l'entrée à la sortie ?
+4. Pour les intégrations, testez le chemin de communication complet de bout en bout
 
-Delegation: trust artifacts, not self-reports.
-When verifying delegated work, inspect the actual output artifact (git diff, file contents, runtime behavior), not the delegate's summary.
+Délégation : faites confiance aux artefacts, pas aux auto-rapports.
+Lorsque vous vérifiez un travail délégué, inspectez l'artefact de sortie réel (git diff, contenu des fichiers, comportement à l'exécution), pas le résumé du délégué.
 
-## Script the check when you can
+## Scripter le contrôle quand vous le pouvez
 
-The strongest proof is a deterministic script that re-runs the same comparison, not a one-time eyeball. Write the script, run it, and keep its output as an artifact a reviewer can re-run instead of trusting your word.
+La preuve la plus forte est un script déterministe qui relance la même comparaison, pas un coup d'œil ponctuel. Écrivez le script, lancez-le et gardez sa sortie comme artefact qu'un relecteur peut relancer au lieu de vous croire sur parole.
 
-Keep the artifact visible for the human. Commit it only for large or complex work where the trail has to be auditable later, like a big port or migration (the **show-me-your-work** skill).
+Gardez l'artefact visible pour l'humain. Commitez-le seulement pour du travail grand ou complexe où la trace doit rester auditée plus tard, comme un gros portage ou une migration (la compétence **show-me-your-work**).

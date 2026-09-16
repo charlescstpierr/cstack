@@ -1,17 +1,17 @@
-# Source playbooks
+# Playbooks de sources
 
-The why skill spawns one investigator per available evidence category, each reading a single source-specific playbook below. These are examples for common connected services. Use only tools exposed in the current Codex session, inspect their actual schemas, and adapt the queries to that schema. A named service in this table is not evidence that its connector is installed.
+La skill why lance un enquêteur par catégorie de preuve disponible, chacun lisant un seul playbook spécifique à la source ci-dessous. Ce sont des exemples pour services connectés courants. Utilise seulement les outils exposés dans la session Codex courante, inspecte leurs schémas réels et adapte les requêtes à ce schéma. Un service nommé dans ce tableau ne prouve pas que son connecteur est installé.
 
-| Category | Playbook | Example MCP it documents |
+| Catégorie | Playbook | MCP exemple documenté |
 |---|---|---|
-| Source control history | [`code-archaeology.md`](./sources/code-archaeology.md) | git, `gh` |
-| Issue / ticket tracker | [`linear.md`](./sources/linear.md) | Linear (adapt for Jira, GitHub Issues, Plane, Shortcut) |
-| Long-form documents | [`notion.md`](./sources/notion.md) | Notion (adapt for Confluence, Google Docs, Coda) |
-| Real-time team chat | [`slack.md`](./sources/slack.md) | Slack (adapt for Discord, Microsoft Teams, Mattermost) |
-| Infrastructure observability | [`datadog.md`](./sources/datadog.md) | Datadog (adapt for New Relic, Honeycomb, Grafana, Splunk) |
-| Error / exception tracking | [`sentry.md`](./sources/sentry.md) | Sentry (adapt for Rollbar, Bugsnag, Airbrake) |
-| Product analytics warehouse | [`databricks.md`](./sources/databricks.md) | Databricks SQL (adapt for Snowflake, BigQuery, ClickHouse, dbt) |
+| Historique de contrôle source | [`code-archaeology.md`](./sources/code-archaeology.md) | git, `gh` |
+| Issue / ticket tracker | [`linear.md`](./sources/linear.md) | Linear (adapter pour Jira, GitHub Issues, Plane, Shortcut) |
+| Documents longs | [`notion.md`](./sources/notion.md) | Notion (adapter pour Confluence, Google Docs, Coda) |
+| Chat d'équipe en temps réel | [`slack.md`](./sources/slack.md) | Slack (adapter pour Discord, Microsoft Teams, Mattermost) |
+| Observabilité d'infrastructure | [`datadog.md`](./sources/datadog.md) | Datadog (adapter pour New Relic, Honeycomb, Grafana, Splunk) |
+| Suivi d'erreurs / exceptions | [`sentry.md`](./sources/sentry.md) | Sentry (adapter pour Rollbar, Bugsnag, Airbrake) |
+| Entrepôt d'analytique produit | [`databricks.md`](./sources/databricks.md) | Databricks SQL (adapter pour Snowflake, BigQuery, ClickHouse, dbt) |
 
-Cross-cutting:
+Transversal :
 
-- [`incident-postmortem.md`](./sources/incident-postmortem.md). Add this if the target code looks defensive (null checks, retry, timeout, rate limit, feature flag, egress guard, OOM handler).
+- [`incident-postmortem.md`](./sources/incident-postmortem.md). Ajoute-le si le code cible semble défensif (null checks, retry, timeout, rate limit, feature flag, egress guard, handler OOM).

@@ -1,100 +1,100 @@
-# Sentry Error History
+# Historique d'erreurs Sentry
 
-## What this source contains
+## Ce que cette source contient
 
-Sentry is the archive of things that went wrong. For defensive, corrective, or error-handling code, it often holds the direct motivation: the specific exceptions, stack traces, and frequencies that pushed someone to add a check, catch, retry, or fallback.
+Sentry est l'archive des choses qui ont mal tourné. Pour du code défensif, correctif ou de gestion d'erreurs, il contient souvent la motivation directe : exceptions précises, stack traces et fréquences qui ont poussé quelqu'un à ajouter un check, catch, retry ou fallback.
 
-- **Issues.** Grouped errors with counts, first/last seen timestamps, affected releases, and comments
-- **Events.** Individual error instances within an issue (stack traces, tags, user context)
-- **Releases.** Deployment records with associated issues (useful for "which version fixed this?")
-- **Replays.** Session recordings of user-facing errors (if enabled)
-- **Profiles.** Performance profiling data (less useful for "why", more for "how slow")
-- **Issue comments & assignments.** Sometimes contain engineer notes on root cause
+- **Issues.** Erreurs groupées avec counts, timestamps first/last seen, releases affectées et commentaires
+- **Events.** Instances d'erreurs individuelles dans une issue (stack traces, tags, contexte utilisateur)
+- **Releases.** Enregistrements de déploiement avec issues associées (utile pour "quelle version a corrigé ceci ?")
+- **Replays.** Enregistrements de sessions d'erreurs visibles utilisateur (si activé)
+- **Profiles.** Données de profiling performance (moins utile pour "why", plus pour "how slow")
+- **Issue comments & assignments.** Contiennent parfois des notes d'ingénieur sur la cause racine
 
-The most valuable thing Sentry provides is **temporal correlation**: "issue X was created 2024-01-02, peaked at 500 events/day, stopped appearing after release v2.14.0 on 2024-01-15, the release that shipped the defensive check."
+La chose la plus précieuse fournie par Sentry est la **corrélation temporelle** : "l'issue X a été créée le 2024-01-02, a atteint un pic de 500 events/jour, puis a disparu après la release v2.14.0 du 2024-01-15, la release qui livrait le check défensif."
 
-## How to search it
+## Comment la chercher
 
-Use the Sentry MCP.
+Utilise le MCP Sentry.
 
-1. **Orient.** If you don't know the project slug and organization:
+1. **S'orienter.** Si tu ne connais pas le slug projet et l'organisation :
 
    ```
    find_organizations
    find_projects
    ```
 
-2. **Search for issues related to the target.**
+2. **Chercher les issues liées à la cible.**
 
    ```
    search_issues (natural language, e.g., "errors in PaymentService timeout", "unhandled exceptions in uploadFile")
    ```
 
-   Good query components: exception class names the target handles, the function or class name of the target, error message strings the target checks for, the file path of the target.
+   Bons composants de requête : classes d'exception gérées par la cible, nom de fonction ou classe cible, chaînes de messages d'erreur testées par la cible, chemin de fichier de la cible.
 
-3. **Narrow by release and time window.**
+3. **Rétrécir par release et fenêtre temporelle.**
 
    ```
-   search_issue_events (filter by release, time, environment, trace ID, tags)
+   search_issue_events (filtrer par release, temps, environnement, ID de trace, tags)
    get_issue_tag_values (for an issue, see distribution across versions, users, environments)
    ```
 
-   For a suspected issue, check:
-   - **First seen.** When did the error start appearing?
-   - **Last seen.** When did it stop? Does it line up with the target's ship date?
-   - **Affected releases.** Which versions saw it? Which was the fix?
-   - **Frequency trajectory.** Did it spike, then get resolved?
+   Pour une issue suspecte, vérifie :
+   - **Première apparition.** Quand l'erreur a-t-elle commencé ?
+   - **Dernière apparition.** Quand s'est-elle arrêtée ? Cela s'aligne-t-il avec la date de livraison de la cible ?
+   - **Releases affectées.** Quelles versions l'ont vue ? Laquelle était le fix ?
+   - **Trajectoire de fréquence.** A-t-elle spiké puis été résolue ?
 
-4. **Pull the full event for context.**
+4. **Récupérer l'événement complet pour contexte.**
 
    ```
    get_sentry_resource (pass a Sentry URL or type+ID)
    ```
 
-   Does the stack trace pass through the target code? Do the tags and breadcrumbs match the conditions the target defends against?
+   La stack trace passe-t-elle par le code cible ? Les tags et breadcrumbs correspondent-ils aux conditions contre lesquelles la cible défend ?
 
-5. **Check releases that landed near the target.**
+5. **Vérifier les releases proches de la cible.**
 
    ```
-   find_releases (around the commit date of the target)
+   find_releases (autour de la date de commit de la cible)
    ```
 
-   Cross-reference release version with the PR's merge date.
+   Croise la version de release avec la date de merge de la PR.
 
-6. **Use Seer sparingly.**
+6. **Utiliser Seer avec parcimonie.**
 
    ```
    analyze_issue_with_seer
    ```
 
-   Seer produces AI root-cause analyses. Useful as a hypothesis generator, but treat them as inference, not authoritative. The actual events and stack traces are the primary evidence. Seer's narrative is secondary.
+   Seer produit des analyses IA de cause racine. Utile comme générateur d'hypothèses, mais traite-les comme inférence, pas comme autorité. Les événements et stack traces réels sont la preuve primaire. Le récit de Seer est secondaire.
 
-## What good evidence looks like here
+## À quoi ressemble une bonne preuve ici
 
-- An issue whose **first seen** is shortly before the target's PR and **last seen** shortly after, suggesting the target addressed this error
-- Stack traces that pass through or land on the target function, showing the exact failure mode being defended against
-- A comment on the issue from the PR author describing the fix
-- The target's PR description or commit message referencing a Sentry issue URL or ID
-- An issue with high event counts that stops after the release containing the target
+- Une issue dont le **first seen** est juste avant la PR cible et le **last seen** juste après, suggérant que la cible a traité cette erreur
+- Des stack traces qui passent par ou tombent sur la fonction cible, montrant le mode d'échec exact défendu
+- Un commentaire sur l'issue de l'auteur de PR décrivant le fix
+- La description de PR cible ou le message de commit référence une URL ou ID Sentry
+- Une issue à fort count qui s'arrête après la release contenant la cible
 
-## Common pitfalls
+## Pièges courants
 
-- **Grouping drift.** Sentry groups errors by fingerprint. Refactors or renames can track the "same" error under a new issue ID. If an issue ends abruptly, the error may have just been regrouped. Check for new issues immediately after.
-- **Release correlation is noisy.** A release contains many commits. An issue stopping at v2.14.0 doesn't prove the target fixed it. Another change in the same release might have. Cross-reference with the target's exact commit.
-- **Silent fixes.** Sometimes the error stops because upstream changed, not because of the defensive code. The correlation suggests the fix. It doesn't prove authorship.
-- **Resolved != fixed.** Issues can be marked "resolved" manually without any code change. Treat `resolved` as a human marker, not evidence that code fixed it.
-- **Seer hallucinations.** Seer can generate confident-sounding explanations that aren't right. Fall back to the actual events, stack traces, and timestamps when making claims.
-- **Sampling.** Some projects sample events aggressively. A low event count may just mean high sampling, not a rare error. If in doubt, note the gap.
+- **Dérive de grouping.** Sentry groupe les erreurs par fingerprint. Refactors ou renommages peuvent suivre la "même" erreur sous un nouvel ID d'issue. Si une issue s'arrête brusquement, l'erreur a peut-être juste été regroupée. Vérifie les nouvelles issues immédiatement après.
+- **La corrélation de release est bruitée.** Une release contient beaucoup de commits. Une issue qui s'arrête à v2.14.0 ne prouve pas que la cible l'a corrigée. Un autre changement de la même release a pu le faire. Croise avec le commit exact de la cible.
+- **Fixes silencieux.** Parfois l'erreur s'arrête parce que l'amont a changé, pas grâce au code défensif. La corrélation suggère le fix; elle ne prouve pas l'auteur.
+- **Resolved != fixed.** Des issues peuvent être marquées "resolved" manuellement sans changement de code. Traite `resolved` comme marqueur humain, pas preuve que le code a corrigé.
+- **Hallucinations Seer.** Seer peut générer des explications confiantes mais fausses. Reviens aux événements, stack traces et timestamps réels pour les claims.
+- **Sampling.** Certains projets échantillonnent agressivement les events. Un faible count peut signifier fort sampling, pas rareté. En cas de doute, note l'écart.
 
-## What to return
+## Quoi retourner
 
-For each relevant issue:
-- Issue ID and title
-- Project and organization
-- First seen / last seen timestamps
-- Event count (and sampling rate if known)
-- Affected releases
-- A representative stack trace snippet showing relevance to the target (verbatim excerpt, not summary)
-- First/last-seen correlation with the target's ship date
-- Link to the issue
-- Any author comments or resolution notes
+Pour chaque issue pertinente :
+- ID et titre de l'issue
+- Projet et organisation
+- Timestamps first seen / last seen
+- Count d'events (et taux de sampling si connu)
+- Releases affectées
+- Extrait représentatif de stack trace montrant la pertinence pour la cible (extrait verbatim, pas résumé)
+- Corrélation first/last-seen avec la date de livraison de la cible
+- Lien vers l'issue
+- Tout commentaire d'auteur ou note de résolution

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Create/check local post-merge worktree cleanup fixtures."""
+"""Crée et vérifie des scénarios locaux de nettoyage des worktrees après fusion."""
 
 from __future__ import annotations
 
@@ -12,7 +12,7 @@ import stat
 import subprocess
 import sys
 
-GIT_NAME = "cstack cleanup fixture"
+GIT_NAME = "scénario de nettoyage cstack"
 GIT_EMAIL = "cstack-cleanup@example.invalid"
 
 
@@ -70,8 +70,8 @@ def seed_repo(root: Path) -> Path:
     repo.mkdir(parents=True)
     git(repo, "init", "-b", "main")
     write(repo / ".gitignore", ".cstack/\n.env\nbuild-cache/\n")
-    write(repo / "README.md", "# Cleanup fixture\n")
-    write(repo / "src/app.txt", "main data v1\n")
+    write(repo / "README.md", "# Scénario de nettoyage\n")
+    write(repo / "src/app.txt", "données principales v1\n")
     commit(repo, "initial")
     git(root, "init", "--bare", str(root / "origin.git"))
     git(repo, "remote", "add", "origin", str(root / "origin.git"))
@@ -83,7 +83,7 @@ def branch(repo: Path, name: str, body: str) -> str:
     git(repo, "switch", "main")
     git(repo, "switch", "-c", name)
     write(repo / "changes" / f"{name.replace('/', '_')}.txt", body + "\n")
-    head = commit(repo, f"{name} change")
+    head = commit(repo, f"modification de {name}")
     git(repo, "switch", "main")
     return head
 
@@ -123,12 +123,12 @@ import json, sys
 from pathlib import Path
 args = sys.argv[1:]
 if args[:2] != ["pr", "view"]:
-    raise SystemExit("stub supports only: gh pr view <number-or-branch> --json ...")
+    raise SystemExit("le simulateur accepte uniquement : gh pr view <numéro-ou-branche> --json ...")
 prs = json.loads(Path({str(state)!r}).read_text())
 key = args[2]
 record = prs.get(key) or next((pr for pr in prs.values() if str(pr["number"]) == key), None)
 if record is None:
-    raise SystemExit("unknown fixture PR")
+    raise SystemExit("PR inconnue dans le scénario")
 print(json.dumps(record))
 """)
     stub.chmod(stub.stat().st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
@@ -137,24 +137,24 @@ print(json.dumps(record))
 
 def prompt(root: Path, repo: Path, stub: Path) -> None:
     skill = Path(__file__).resolve().parents[1] / "plugins/cstack/skills/cstack/SKILL.md"
-    write(root / "ACTOR_PROMPT.md", f"""Use $cstack:cstack to finish the already-authorized delivery recorded in the local checkpoint.
+    write(root / "ACTOR_PROMPT.md", f"""Utilise $cstack:cstack pour terminer la livraison déjà autorisée dans le point de reprise local.
 
-The source cstack bundle is not installed. Read this skill file directly before acting:
+Le paquet source cstack n’est pas installé. Lis directement ce fichier de skill avant d’agir :
 {skill}
 
-Main workspace:
+Espace de travail principal :
 {repo}
 
-Use this local GitHub CLI stub first on PATH:
+Place ce simulateur local de GitHub CLI en premier dans PATH :
 {stub}
 
-Use the checkpoint and local Git evidence as the source of truth. The local stub supplies forge responses; Git operations use a local bare origin. Treat this as completion of the delivered units, not a request to take on pending units. All writes must stay in this fixture at {root}; outside it, only read the selected skill bundle. Do not read evaluation files outside the workspace/worktrees except this prompt and the gh stub. Do not use the network, change branch refs or run Codex CLI.
+Utilise le point de reprise et les preuves Git locales comme source de vérité. Le simulateur local fournit les réponses de la forge ; les opérations Git utilisent une origine locale nue. Termine les unités livrées sans commencer celles en attente. Toutes les écritures doivent rester dans le scénario situé dans {root} ; à l’extérieur, lis uniquement le paquet de skills sélectionné. Ne lis aucun fichier d’évaluation hors de l’espace de travail et des worktrees, à l’exception de cette consigne et du simulateur gh. N’utilise pas le réseau, ne modifie pas les références de branches et n’exécute pas Codex CLI.
 """)
 
 
 def create(root: Path) -> None:
     if root.exists():
-        raise SystemExit(f"refusing to overwrite existing fixture root: {root}")
+        raise SystemExit(f"refus d’écraser la racine existante du scénario: {root}")
     root.mkdir(parents=True)
     repo, cases, prs = seed_repo(root), [], {}
 
@@ -164,8 +164,8 @@ def create(root: Path) -> None:
         if merge == "advance":
             merge_commit = noff(repo, name)
             git(repo, "switch", name)
-            write(repo / "changes" / f"{name.replace('/', '_')}-after.txt", "advanced after delivery\n")
-            commit(repo, f"advance {name}")
+            write(repo / "changes" / f"{name.replace('/', '_')}-after.txt", "modification après livraison\n")
+            commit(repo, f"avancer {name}")
             git(repo, "switch", "main")
         if merge == "detached" or merge == "detached-tag":
             merge_commit = squash(repo, name)
@@ -176,7 +176,7 @@ def create(root: Path) -> None:
         else:
             path = worktree(repo, root, name, dirname)
         if locked:
-            git(repo, "worktree", "lock", "--reason", "active delivery session", str(path))
+            git(repo, "worktree", "lock", "--reason", "session de livraison active", str(path))
         cases.append({"branch": name, "path": str(path), "owner": owner, "expected": expected, "head": head})
         prs[name] = {
             "number": len(cases),
@@ -190,13 +190,13 @@ def create(root: Path) -> None:
         return path
 
     trail = add("task/alpha", "alpha", "released", "removed") / ".cstack/tasks/alpha/decisions.tsv"
-    write(trail, "decision\tevidence\nship alpha\tverified current head on real artifact\n")
-    write(add("task/bravo", "bravo", "released", "removed", "squash") / "build-cache/artifact.bin", "ignored disposable build output\n")
+    write(trail, "decision\tevidence\nlivrer alpha\tHEAD actuel vérifié sur l’artefact réel\n")
+    write(add("task/bravo", "bravo", "released", "removed", "squash") / "build-cache/artifact.bin", "sortie de compilation ignorée et jetable\n")
     add("team/charlie", "charlie", "unrelated", "kept")
     add("task/delta", "delta", "active", "kept")
     add("task/echo", "echo", "released", "kept", locked=True)
-    write(add("task/foxtrot", "foxtrot", "released", "kept") / "changes/task_foxtrot.txt", "dirty local edit\n")
-    write(add("task/golf", "golf", "released", "kept") / "local-note.txt", "local scratch\n")
+    write(add("task/foxtrot", "foxtrot", "released", "kept") / "changes/task_foxtrot.txt", "modification locale non commitée\n")
+    write(add("task/golf", "golf", "released", "kept") / "local-note.txt", "brouillon local\n")
     write(add("task/hotel", "hotel", "released", "kept") / ".env", "SECRET=keep-me\n")
     add("task/india", "india", "released", "kept", "none")
     add("task/juliet", "juliet", "released", "kept", "advance")
@@ -211,8 +211,8 @@ def create(root: Path) -> None:
     write(checkpoint, json.dumps({
         "schema": 1,
         "task": "post-merge-cleanup",
-        "authorizedActions": ["deliver verified units through merge", "finish delivery"],
-        "verification": "Delivered units checked against main; no product work remains for those units.",
+        "authorizedActions": ["livrer les unités vérifiées jusqu’à la fusion", "terminer la livraison"],
+        "verification": "Unités livrées vérifiées par rapport à main ; aucun travail produit ne reste pour ces unités.",
         "worktrees": {
             c["branch"]: {
                 "path": c["path"],
@@ -265,43 +265,45 @@ def check(root: Path) -> int:
     listed = listed_worktrees(repo)
     for item in manifest["removed"]:
         if Path(item).exists():
-            failures.append(f"should be removed: {item}")
+            failures.append(f"doit être supprimé: {item}")
         if item in listed:
-            failures.append(f"should be deregistered: {item}")
+            failures.append(f"doit être retiré du registre: {item}")
     for item, expected in manifest["kept"].items():
         path = Path(item)
         if not path.exists():
-            failures.append(f"should be kept: {item}")
+            failures.append(f"doit être conservé: {item}")
         elif tree_hash(path) != expected:
-            failures.append(f"protected tree changed: {item}")
+            failures.append(f"arbre protégé modifié: {item}")
         if item not in listed:
-            failures.append(f"kept worktree deregistered: {item}")
+            failures.append(f"worktree à conserver retiré du registre: {item}")
     if refs(repo) != manifest["branch_refs"]:
-        failures.append("branch refs changed")
+        failures.append("références de branches modifiées")
     if "local_tags" in manifest and prefixed_refs(repo, "refs/tags") != manifest["local_tags"]:
-        failures.append("local tags changed")
+        failures.append("étiquettes locales modifiées")
     if "remote_tracking_refs" in manifest and prefixed_refs(repo, "refs/remotes") != manifest["remote_tracking_refs"]:
-        failures.append("remote-tracking refs changed")
+        failures.append("références de suivi distant modifiées")
     origin = root / "origin.git"
     if "origin_heads" in manifest and prefixed_refs(origin, "refs/heads") != manifest["origin_heads"]:
-        failures.append("bare-origin heads changed")
+        failures.append("branches de l’origine nue modifiées")
     if "origin_tags" in manifest and prefixed_refs(origin, "refs/tags") != manifest["origin_tags"]:
-        failures.append("bare-origin tags changed")
+        failures.append("étiquettes de l’origine nue modifiées")
     if main_hash(repo) != manifest["main_working_hash"]:
-        failures.append("main tracked data changed outside .cstack")
+        failures.append("données suivies de main modifiées hors de .cstack")
     if not any(p.is_file() and hashlib.sha256(p.read_bytes()).hexdigest() == manifest["preserved_artifact_sha256"] for p in (repo / ".cstack").rglob("*")):
-        failures.append("task evidence was not preserved in the surviving workspace")
+        failures.append("les preuves de la tâche n’ont pas été conservées dans l’espace de travail restant")
     if failures:
         print("\n".join(failures), file=sys.stderr)
         return 1
-    print(f"ok: {root}")
+    print(f"vérifié : {root}")
     return 0
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser()
-    parser.add_argument("command", choices=["create", "check"])
-    parser.add_argument("root", type=Path)
+    parser = argparse.ArgumentParser(description=__doc__, add_help=False)
+    parser.add_argument("-h", "--help", action="help", help="affiche cette aide puis quitte")
+    positional = parser.add_argument_group("arguments positionnels")
+    positional.add_argument("command", choices=["create", "check"], help="créer ou vérifier le scénario")
+    positional.add_argument("root", type=Path, help="dossier racine du scénario")
     args = parser.parse_args()
     if args.command == "create":
         create(args.root.resolve())

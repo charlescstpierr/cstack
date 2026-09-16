@@ -1,45 +1,45 @@
-# Search notes
+# Rechercher des notes
 
-Search lets a user find notes by title or body text, inspect a matching note, and distinguish no matches from an unavailable search.
+La recherche permet à un utilisateur de trouver des notes par titre ou texte de corps, d'inspecter une note correspondante et de distinguer l'absence de résultats d'une recherche indisponible.
 
-## Sub-features
+## Sous-fonctionnalités
 
-- `search-open` opens search from each supported browser entry point.
-- `search-match` returns title and body matches without changing note data.
-- `search-open-result` opens a result in the note editor.
-- `search-empty` shows a complete empty state for a query with no matches.
-- `search-clear` removes the query and restores the recent-notes view.
-- `search-cli` returns the same matching notes from the terminal.
+- `search-open` ouvre la recherche depuis chaque point d'entrée navigateur pris en charge.
+- `search-match` renvoie des correspondances dans le titre et le corps sans changer les données de note.
+- `search-open-result` ouvre un résultat dans l'éditeur de note.
+- `search-empty` montre un état vide complet pour une requête sans correspondance.
+- `search-clear` retire la requête et restaure la vue des notes récentes.
+- `search-cli` renvoie les mêmes notes correspondantes depuis le terminal.
 
-## How to get to it (user POV)
+## Comment y accéder (point de vue utilisateur)
 
-- Choose the `Search` button in the browser toolbar.
-- Press `/` in the browser while focus is outside an editable field.
-- Run `notes search <query>` in a terminal.
+- Choisir le bouton `Search` dans la barre d'outils du navigateur.
+- Appuyer sur `/` dans le navigateur quand le focus est hors d'un champ editable.
+- Exécuter `notes search <query>` dans un terminal.
 
-## Driving it with control-notes
+## Pilotage avec control-notes
 
-Preconditions:
+Préconditions :
 
-- Notes is healthy at `http://127.0.0.1:4173`.
-- The disposable data directory contains `Quarterly plan` with body text `Draft budget`.
-- `control-notes doctor` reports the expected URL and data directory.
+- Notes est sain sur `http://127.0.0.1:4173`.
+- Le répertoire de données jetable contient `Quarterly plan` avec le texte de corps `Draft budget`.
+- `control-notes doctor` signale l'URL et le répertoire de données attendus.
 
-- **Toolbar entry.** Choose the `Search` button. Run `control-notes browser click --role button --name "Search"`. A dialog named `Search notes` appears with focus in its searchbox.
-- **Keyboard entry.** Close the dialog, focus the page, and press `/`. Run `control-notes browser press --key "/"`. The same dialog appears and the page does not insert a slash.
-- **Title match.** Type `quarterly`. Run `control-notes browser fill --role searchbox --name "Search notes" --value "quarterly"`. The `Search results` list contains `Quarterly plan` and does not contain `Grocery list`.
-- **Body match.** Replace the query with `budget`. Run `control-notes browser fill --role searchbox --name "Search notes" --value "budget"`. The result `Quarterly plan` remains visible with a body-match excerpt.
-- **Open result.** Choose `Quarterly plan`. Run `control-notes browser click --role link --name "Quarterly plan"`. The dialog closes and the editor heading reads `Quarterly plan`.
-- **Empty state.** Reopen search and enter `volcano`. Run `control-notes browser fill --role searchbox --name "Search notes" --value "volcano"`. A status named `No matching notes` appears after search completes.
-- **Clear query.** Choose `Clear search`. Run `control-notes browser click --role button --name "Clear search"`. The searchbox is empty and the `Recent notes` region replaces the result list.
-- **CLI match.** Search from the terminal. Run `control-notes cli -- notes search "quarterly" --format json`. Exit code `0` and stdout contain one object whose title is `Quarterly plan`.
-- **CLI miss.** Search for an absent value. Run `control-notes cli -- notes search "volcano" --format json`. Exit code `0` and stdout are `[]`.
-- **Proof.** Capture the populated result state. Run `control-notes browser snapshot --aria --path artifacts/search/results.aria.txt` and `control-notes browser screenshot --path artifacts/search/results.png`. Both artifacts identify Notes, the query, and `Quarterly plan`.
+- **Entrée barre d'outils.** Choisir le bouton `Search`. Exécuter `control-notes browser click --role button --name "Search"`. Une boîte de dialogue nommée `Search notes` apparaît avec le focus dans sa searchbox.
+- **Entrée clavier.** Fermer la boîte de dialogue, donner le focus à la page et appuyer sur `/`. Exécuter `control-notes browser press --key "/"`. La même boîte de dialogue apparaît et la page n'insère pas de barre oblique.
+- **Correspondance de titre.** Taper `quarterly`. Exécuter `control-notes browser fill --role searchbox --name "Search notes" --value "quarterly"`. La liste `Search results` contient `Quarterly plan` et ne contient pas `Grocery list`.
+- **Correspondance de corps.** Remplacer la requête par `budget`. Exécuter `control-notes browser fill --role searchbox --name "Search notes" --value "budget"`. Le résultat `Quarterly plan` reste visible avec un extrait de correspondance de corps.
+- **Ouvrir le résultat.** Choisir `Quarterly plan`. Exécuter `control-notes browser click --role link --name "Quarterly plan"`. La boîte de dialogue se ferme et le titre de l'éditeur affiche `Quarterly plan`.
+- **État vide.** Rouvrir la recherche et entrer `volcano`. Exécuter `control-notes browser fill --role searchbox --name "Search notes" --value "volcano"`. Un statut nommé `No matching notes` apparaît après la fin de la recherche.
+- **Effacer la requête.** Choisir `Clear search`. Exécuter `control-notes browser click --role button --name "Clear search"`. La searchbox est vide et la région `Recent notes` remplace la liste de résultats.
+- **Correspondance CLI.** Rechercher depuis le terminal. Exécuter `control-notes cli -- notes search "quarterly" --format json`. Le code de sortie `0` et stdout contiennent un objet dont le titre est `Quarterly plan`.
+- **Absence CLI.** Rechercher une valeur absenté. Exécuter `control-notes cli -- notes search "volcano" --format json`. Le code de sortie `0` et stdout vaut `[]`.
+- **Preuve.** Capturer l'état de résultat peuplé. Exécuter `control-notes browser snapshot --aria --path artifacts/search/results.aria.txt` et `control-notes browser screenshot --path artifacts/search/results.png`. Les deux artefacts identifient Notes, la requête et `Quarterly plan`.
 
-## Gotchas
+## Pièges
 
-- Pressing `/` while the editor or searchbox has focus inserts text instead of opening search.
-- Results update after a short debounce. Wait for the results list or empty status, not a fixed sleep.
-- Archived notes are excluded unless the user enables `Include archived`.
-- The CLI defaults to human-readable output. Use `--format json` for stable assertions.
-- Opening a result changes browser state. Reopen search before proving another query.
+- Appuyer sur `/` pendant que l'éditeur ou la searchbox à le focus insère du texte au lieu d'ouvrir la recherche.
+- Les résultats se mettent à jour après un court debounce. Attendre la liste de résultats où le statut vide, pas un sleep fixe.
+- Les notes archivees sont exclues sauf si l'utilisateur active `Include archived`.
+- La CLI sort par défaut un format lisible par l'humain. Utiliser `--format json` pour des assertions stables.
+- Ouvrir un résultat change l'état du navigateur. Rouvrir la recherche avant de prouver une autre requête.

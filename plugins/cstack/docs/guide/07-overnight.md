@@ -1,6 +1,6 @@
 # Faire avancer une tâche pendant votre absence
 
-Une tâche autonome doit avoir une condition d'arrêt, un périmètre et une trace lisible. Codex peut continuer une attente au premier plan quand le runtime le permet. Il ne faut pas promettre qu'un agent local survivra à la fermeture de l'application.
+Une tâche autonome doit avoir une condition d'arrêt, un périmètre et une trace lisible. Codex peut continuer une attente au premier plan quand l'exécution le permet. Il ne faut pas promettre qu'un agent local survivra à la fermeture de l'application.
 
 ## Le contrat d'une tâche autonome
 
@@ -11,7 +11,7 @@ Donnez :
 - les actions externes interdites ou explicitement permises ;
 - la condition d'arrêt et la forme du rapport.
 
-Pour les migrations ou tâches longues, utilisez [`$cstack:figure-it-out`](../../skills/figure-it-out/SKILL.md) et [`$cstack:show-me-your-work`](../../skills/show-me-your-work/SKILL.md). Le journal reste dans le workspace afin d'être relu.
+Pour les migrations ou tâches longues, utilisez [`$cstack:figure-it-out`](../../skills/figure-it-out/SKILL.md) et [`$cstack:show-me-your-work`](../../skills/show-me-your-work/SKILL.md). Le journal reste dans l'espace de travail afin d'être relu.
 
 ## Ce que fait la boucle
 

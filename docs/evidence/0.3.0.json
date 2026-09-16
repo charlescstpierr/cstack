@@ -31,7 +31,7 @@
         "skill": "8f1eacb9cbda8649ff457f503f2c29aad55b63dce733c1a5433b6c9f44c68a47"
       },
       "raw_stream_sha256": "1ab319c71e0c1658a578da2e76b4aedcef339cc3c065dc8f4ea152c4512b0f7a",
-      "result": "Inclusive lower bound and future exclusion verified independently; only requested Python files changed."
+      "result": "Borne inférieure inclusive et exclusion des événements futurs vérifiées indépendamment ; seuls les fichiers Python demandés ont changé."
     },
     {
       "id": "clear_python_correction_proposed",
@@ -51,7 +51,7 @@
         "skill": "b9ab7733c465d64849d4b0d05f138733be944006b07b516cf05b923206c017cb"
       },
       "raw_stream_sha256": "f356f6d008aa9b8db6cdf2f27bc13c1ccc8acd476731aa16e117e011c6d326f9",
-      "result": "Same boundary behavior and assertions; no added question or delegate in explicitly solo request."
+      "result": "Mêmes bornes et assertions ; aucune question ni délégation ajoutée à une demande explicitement individuelle."
     },
     {
       "id": "readonly_explanation_baseline",
@@ -71,7 +71,7 @@
         "skill": "daa4b7476b2bbdc465e541dc191791657fb7dcec63e8f2218f18871008005cc0"
       },
       "raw_stream_sha256": "d62200d6cbd191c0fc3d19ea8d92530cd51df8d88c9e000596edd035e6de6d66",
-      "result": "Correct function and bound explanation; project hash unchanged."
+      "result": "Explication correcte de la fonction et des bornes ; empreinte du projet inchangée."
     },
     {
       "id": "readonly_explanation_proposed",
@@ -91,7 +91,7 @@
         "skill": "daa4b7476b2bbdc465e541dc191791657fb7dcec63e8f2218f18871008005cc0"
       },
       "raw_stream_sha256": "063ebe8589ebceab5fb2bfd99f4c5a72f1602caf8513ac99faa0b287ce8e1eb2",
-      "result": "Correct function and bound explanation; project hash unchanged."
+      "result": "Explication correcte de la fonction et des bornes ; empreinte du projet inchangée."
     },
     {
       "id": "clarify_overwrite",
@@ -111,7 +111,7 @@
         "skill": "0db21625fd45c5c923b260a0b50b7e85740d2218554c77d8b011773d07079264"
       },
       "raw_stream_sha256": "d7d6019625f368f828956124a74757e56db4071a7dfea9abb891c20a38f6c7ee",
-      "result": "Asks collision policy and absence representation, recommends without deciding; no writes."
+      "result": "Questionne la politique de collision et la représentation de l’absence, recommande sans décider ; aucune écriture."
     },
     {
       "id": "domain_readonly",
@@ -131,7 +131,7 @@
         "skill": "42d4581be1b073964b37929ba60f3cee98d24b788e238c8c4712c0c439495ab4"
       },
       "raw_stream_sha256": "c30ede71dbe2fc69ef659c95141977335229cdd8c393686c2862c2aafe5fd070",
-      "result": "Draft terminology with source citations and explicit human choice; no writes."
+      "result": "Proposition de terminologie avec sources citées et choix humain explicite ; aucune écriture."
     },
     {
       "id": "domain_authorized_write",
@@ -151,7 +151,7 @@
         "skill": "42d4581be1b073964b37929ba60f3cee98d24b788e238c8c4712c0c439495ab4"
       },
       "raw_stream_sha256": "2a43a90acbbd810581287068278765ea0252a4344263bafaf5fbe9387087453d",
-      "result": "Member entry appended; original CONTEXT.md bytes preserved; no code or ADR edits."
+      "result": "Entrée Member ajoutée ; octets originaux de CONTEXT.md préservés ; aucune modification de code ni d’ADR."
     },
     {
       "id": "clarify_complete",
@@ -171,7 +171,7 @@
         "skill": "0db21625fd45c5c923b260a0b50b7e85740d2218554c77d8b011773d07079264"
       },
       "raw_stream_sha256": "190b48bbf7584159b906a2932825cdaaf73067a24edff05d02ed05d3c27249ba",
-      "result": "Existing missing-ID error inspected; no material ambiguity or invented question; no writes."
+      "result": "Erreur existante pour identifiant absent examinée ; aucune ambiguïté importante ni question inventée ; aucune écriture."
     },
     {
       "id": "setup_project_twice",
@@ -191,7 +191,7 @@
         "skill": "9b8b888cedfac3c4e5d736b1c11a80433ce253c7d2071e9fc4e01b6c85349756"
       },
       "raw_stream_sha256": "4be5be12c4cfc9c6bd2259a0dbda864d1eb4d793c138dc8414f3029e6b3173c8",
-      "result": "Authorized managed block, guides and ignore entry applied; second apply noop; manual CRLF, CLAUDE and saved model bytes preserved."
+      "result": "Bloc géré, guides et exclusion autorisés appliqués ; seconde application sans modification ; CRLF manuels, CLAUDE et octets des modèles enregistrés préservés."
     },
     {
       "id": "interrogate_current_work_baseline",
@@ -211,7 +211,7 @@
         "skill": "e023784c5a8f6691bdf98cf976ac441187cd2e1a1d293b8ecc56c3ed71035677"
       },
       "raw_stream_sha256": "2ca073e5237d1472e3181179eaf10bdce6b304fa33fe2cabf5f5d5f34b5b883f",
-      "result": "Three reviewers find missing approved README guarantees; requested staged scope only; all files preserved."
+      "result": "Trois réviseurs détectent les garanties approuvées manquantes du README ; uniquement le périmètre indexé demandé ; tous les fichiers préservés."
     },
     {
       "id": "interrogate_current_work_proposed",
@@ -231,7 +231,7 @@
         "skill": "b8223af308c75e42e6ea92e80c6b5c6af8cc4424c52c449640c569dd4dab9929"
       },
       "raw_stream_sha256": "b80622e3152e42647a5d7e06253566577968e06cf4a3f6ddace1efd15ba45c87",
-      "result": "Three distinct primary axes; missing approved README guarantees retained as Spec finding; all files preserved."
+      "result": "Trois axes principaux distincts ; garanties approuvées manquantes du README conservées comme constat de spécification ; tous les fichiers préservés."
     },
     {
       "id": "audit_architecture_username_scope",
@@ -251,7 +251,7 @@
         "skill": "6c8c483fbea093765e49638b67a73791078fc667b5277a24eb0a0e29186096c9"
       },
       "raw_stream_sha256": "3d9096c15e6a7d2d512bfd194ebedcdd3f558379f5a1c052b6ba70843c95303b",
-      "result": "One explorer; cited three source symbols; speculative normalization proposal, no automatic refactor; all files preserved."
+      "result": "Un explorateur ; trois symboles source cités ; proposition de normalisation hypothétique, sans refactorisation automatique ; tous les fichiers préservés."
     },
     {
       "id": "horizon_two_research_then_policy",
@@ -271,17 +271,17 @@
         "skill": "60ff5b145d217e6e11101209db67b4bc0e52b3401f2e91f2ba84619cf9e00dc0"
       },
       "raw_stream_sha256": "772e418c8a4f37e742380ffc0f0c70199642ca5b44697e6c9f0fb96f5a5416f0",
-      "result": "Two research children completed. Research 001/002 and supplied human decision 003 resolved; 004 open and unanswered; no product edits or automatic goal."
+      "result": "Deux sous-agents de recherche ont terminé. Recherches 001 et 002 et décision humaine fournie 003 résolues ; 004 ouvert et sans réponse ; aucune modification produit ni création automatique d’objectif."
     }
   ],
   "limits": [
-    "Finite synthetic scenarios; no guarantee against all regressions or token-saving claim.",
-    "Native review uses a configured panel of three. Other panel lengths are preserved by model-helper compatibility tests and reviewed instructions.",
-    "Review scenario scopes staged README; dirty implementation and untracked notes are explicitly excluded and preserved.",
-    "Accepted dispatch model/effort and completed child execution are observed. Closed ephemeral children prevented subsequent effective thread/read metadata for nine child lookups.",
-    "Native setup uses the r4 source snapshot; the later pre-replace concurrent-edit guard is verified by its regression test and the complete Python suite.",
-    "Invalid early harness runs and 300-second timeouts are excluded. Final long trials use an explicit 900-second limit per turn.",
-    "Historical snapshot of plugin commit 95df6b48c7c86142567c2ebf0ddab2083fa562e9, when plugin.json said 0.3.0 and the catalog had 51 skills. Hashes describe that commit, not later trees."
+    "Nombre fini de scénarios synthétiques ; aucune garantie contre toutes les régressions ni affirmation d’économie de jetons.",
+    "La revue native utilise un panel configuré de trois réviseurs. Les autres tailles de panel sont préservées par les tests de compatibilité de l’utilitaire de modèles et les consignes relues.",
+    "Le scénario de revue porte sur le README indexé ; l’implémentation modifiée et les notes non suivies sont explicitement exclues et préservées.",
+    "Le modèle et l’effort acceptés à la délégation ainsi que l’exécution terminée des sous-agents sont observés. La fermeture des sous-agents éphémères a empêché l’obtention ultérieure des métadonnées effectives par thread/read pour neuf recherches.",
+    "La configuration native utilise l’instantané source r4 ; la protection ultérieure contre une édition concurrente avant remplacement est vérifiée par son test de régression et la suite Python complète.",
+    "Les premières exécutions invalides du banc de vérification et les dépassements de 300 secondes sont exclus. Les essais longs finaux utilisent une limite explicite de 900 secondes par tour.",
+    "Instantané historique du commit de plugin 95df6b48c7c86142567c2ebf0ddab2083fa562e9, lorsque plugin.json indiquait 0.3.0 et que le catalogue contenait 51 skills. Les empreintes décrivent ce commit, pas les versions ultérieures."
   ],
   "implementation_commit": "95df6b48c7c86142567c2ebf0ddab2083fa562e9"
 }

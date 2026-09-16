@@ -1,46 +1,46 @@
 ---
 name: clarify
-description: "Use when explicitly selected as $cstack:clarify or routed during an explicitly selected cstack task to resolve material requirements ambiguity through repository facts and frontier decision rounds."
+description: "Utiliser quand $cstack:clarify est sélectionne explicitement ou route pendant une tâche cstack explicite afin de résoudre les ambiguïtés matérielles d'exigences avec les faits du dépôt et des tours de décision sur la frontière."
 ---
 
-# Clarify
+# Clarifier
 
-Runtime: [`../cstack/references/codex-runtime.md`](../cstack/references/codex-runtime.md).
+Contrat d’exécution : [`../cstack/references/codex-runtime.md`](../cstack/references/codex-runtime.md).
 
-Use this skill when the user explicitly selects `$cstack:clarify`, or when the active cstack coordinator or its preparation skills route here. Do not activate outside an explicitly selected cstack task or preparation request. Use it when an unresolved requirement could change scope, behavior, ownership, or acceptance. If the request is already clear, say so and return to the caller's workflow.
+Utilise cette skill quand l'utilisateur sélectionne explicitement `$cstack:clarify`, ou quand le coordinateur cstack actif ou ses skills de préparation routent ici. Ne l'active pas hors d'une tâche cstack ou demande de préparation explicitement sélectionnée. Utilise-la quand une exigence non résolue pourrait changer la portée, le comportement, la responsabilité ou l'acceptation. Si la demande est déjà claire, dis-le et retourne au flux de travail de l'appelant.
 
-## Find facts before asking
+## Trouver les faits avant de demander
 
-Separate discoverable facts from human decisions before forming questions.
+Sépare les faits découvrables des décisions humaines avant de formuler les questions.
 
-- Read the request, current files, project instructions, mode, and authorization.
-- Establish repository facts yourself, reusing [`$cstack:how`](../how/SKILL.md) for code-flow and ownership questions. Mark an inference as an inference and keep it separate from observed behavior.
-- If an independent fact needs a separate read-only pass, use one native delegate per fact only when that adds useful coverage. Resolve it as the configured `how explorer` role and forward the complete model and reasoning-effort selection. With no useful delegation capability, investigate in the parent, label the result `single-agent`, and report the missing independence.
-- Never ask the user for a fact the repository or exposed tools can establish. Never invent a fact, answer a material business decision, or turn a recommendation into a decision.
+- Lis la demande, les fichiers courants, les consignes de projet, le mode et l'autorisation.
+- Etablis toi-même les faits du dépôt, en reutilisant [`$cstack:how`](../how/SKILL.md) pour les questions de flux de code et de responsabilité. Marque une inférence comme inférence et garde-la séparée du comportement observe.
+- Si un fait indépendant exige une passe séparée en lecture seule, utilise un délégué natif par fait seulement quand cela ajoute une couverture utile. Résous-le comme le rôle configuré `how explorer` et transmets la sélection complète de modèle et d'effort de raisonnement. Sans capacité de délégation utile, enquête dans le parent, étiquette le résultat `single-agent`, puis signale l'indépendance manquante.
+- Ne demande jamais à l'utilisateur un fait que le dépôt où les outils exposés peuvent établir. N'invente jamais un fait, ne réponds jamais à une décision métier matérielle et ne transforme jamais une recommandation en décision.
 
-The default is zero extra agents. If a separate recommendation or synthesis pass is genuinely useful, use the configured `judgment and prose` role, preserving its complete selection. Do not create a new role or panel.
+Le défaut est zéro agent supplémentaire. Si une passe séparée de recommandation ou de synthèse est vraiment utile, utilise le rôle configuré `judgment and prose`, en préservant sa sélection complète. Ne crée pas de nouveau rôle ou panel.
 
-## Ask the current frontier
+## Interroger la frontière courante
 
-Map the unsettled decisions and the prerequisites between them. The **frontier** is every decision whose prerequisites are settled. Ask the whole current frontier in one round; defer a question that depends on another answer to the next round.
+Cartographie les décisions non tranchées et leurs prérequis. La **frontière** contient chaque décision dont les prérequis sont règles. Pose toute la frontière courante en un tour; reporte au prochain tour toute question qui dépend d'une autre réponse.
 
-When structured user input is available, use it. Otherwise use this compact form:
+Quand l'entrée utilisateur structurée est disponible, utilise-la. Sinon, utilise cette forme compacte :
 
 ```text
-Q1: <decision>: <one decision, with the relevant options or constraint>
+Q1 : <décision> : <une décision, avec les options ou la contrainte pertinente>
 
-Recommendation: <the best-supported choice and why it fits the stated goal>
+Recommandation : <le choix le mieux étayé et pourquoi il correspond à l'objectif énoncé>
 ```
 
-Number questions and include a recommendation for each. Recommendations are proposals for the user to accept, reject, or revise. The user owns product direction and material business decisions. An answer of "I don't know" keeps the decision open; it is not permission to guess.
+Numerote les questions et inclus une recommandation pour chacune. Les recommandations sont des propositions que l'utilisateur peut accepter, rejetér ou réviser. L'utilisateur possède la direction produit et les décisions métier matérielles. Une réponse "I don't know" garde la décision ouverte; ce n'est pas une permission de deviner.
 
-After each answer, mark what is settled, recompute the frontier, and ask only newly unblocked questions. Keep asking until the frontier is empty or name the concrete unresolved decision that blocks progress. Do not repeat a settled question or request approval again after the user's decisions and implementation authority already cover the next reversible step.
+Après chaque réponse, marque ce qui est tranché, recalcule la frontière et pose seulement les questions nouvellement débloquées. Continue jusqu'à ce que la frontière soit vide ou nomme la décision concrète non résolue qui bloque le progrès. Ne répète pas une question tranchée et ne redemande pas d'approbation quand les décisions de l'utilisateur et l'autorité d'implémentation couvrent déjà la prochaine étape réversible.
 
-## Finish cleanly
+## Finir proprement
 
-When clarification ends, return a concise settled record to the caller: decisions, evidence-backed constraints, unresolved items, and recommended next action.
+Quand la clarification se termine, retourne à l'appelant un registre tranché concis : décisions, contraintes étayées par des preuves, éléments non résolus et prochaine action recommandée.
 
-- If implementation is authorized and the requirements are settled, continue or return to the caller's workflow without another approval gate.
-- When routed by `$cstack:cstack`, do not ask "continue?". Hand back the settled record so the coordinator can select the appropriate existing playbook and keep working inside the user's prior authorization.
-- In Plan mode, read-only work, or design-only work, return the draft in chat and do not edit code or documents.
-- Clarify itself creates no goals, trackers, PRs, messages, or implementation changes. After receiving the settled record, the caller may continue its already-authorized workflow. Durable vocabulary and ADR records belong to [`$cstack:domain`](../domain/SKILL.md), subject to that skill's write rules.
+- Si l'implémentation est autorisée et que les exigences sont tranchées, continue ou retourne au flux de travail de l'appelant sans autre portail d'approbation.
+- Quand le routage vient de `$cstack:cstack`, ne demande pas "continue?". Rends le registre tranché pour que le coordinateur puisse choisir le playbook existant approprié et continuer à travailler dans l'autorisation déjà donnée par l'utilisateur.
+- En mode Plan, pour du travail en lecture seule ou pour du travail uniquement design, retourne le brouillon dans le chat et ne modifie ni code ni documents.
+- Clarify ne crée lui-même aucun objectif, tracker, PR, message ou changement d'implémentation. Après réception du registre tranché, l'appelant peut continuer son flux de travail déjà autorisé. Le vocabulaire durable et les registres ADR appartiennent à [`$cstack:domain`](../domain/SKILL.md), sous réserve des règles d'écriture de cette skill.

@@ -1,31 +1,31 @@
-### Opening a PR
+### Ouvrir une PR
 
-Follow [the Codex runtime contract](../references/codex-runtime.md).
+Suivez [le contrat d’exécution Codex](../references/codex-runtime.md).
 
-**You own the PR that goes out. Clean the diff, get an independent verdict, then open it only with the user's grant.** Run this playbook only when the user authorized PR creation. Preparing commits or finishing another playbook does not grant that authority.
+**Tu possèdes la PR qui sort. Nettoie le diff, obtiens un verdict indépendant, puis ouvre-la seulement avec l’accord de l’utilisateur.** Lance ce playbook seulement quand l’utilisateur a autorisé la création de PR. Préparer des commits ou terminer un autre playbook n’accorde pas cette autorité.
 
-1. **Worktree.** Use a clean git worktree based on the intended base branch. Give parallel writers separate worktrees and branches. Preserve unrelated user changes. Do not reset or discard a dirty tree to make room.
-2. **Deslop.** Run `../../deslop/SKILL.md` over the diff before each commit. Keep `deslop skipped: <reason>` when a step genuinely cannot run it.
-3. **Commits.** Follow the runtime contract’s [local commit rule](../references/codex-runtime.md#local-commits). Authorized implementation includes small, ordered local commits by default. Do not defer them until PR creation. Each commit must be coherent and pass its relevant check. Amend when a correction belongs to the commit just made. Create a new commit for a separable change.
-4. **Comment review.** Read and apply `../../no-comments/SKILL.md` before review. This step is mandatory. It is not only for an explicit request.
-5. **Independent verdict.** Before the PR is presented as ready, a verdict comes from an actor that did not write the diff. When no subagent is available, run a separate review pass with a clean re-read of the diff and label it `single-agent review`. Name the missing independence. For a contested design or a high-impact change, also read and apply `../../interrogate/SKILL.md`.
-6. **Prose.** Read and apply `../../technical-writing/SKILL.md` and `../../unslop/SKILL.md` to the title, description, and commit body. Inspect the full diff, including comments and suppressions, for generated filler, redundant comments, speculative abstractions, and unrelated edits.
-7. **Titles.** Use `type(scope): subject`. Choose `feat`, `fix`, `docs`, `refactor`, `test`, `chore`, or `perf`. Use the changed area as the scope. Keep the subject short and imperative. Do not add a trailing period.
-8. **Descriptions.** Explain why the change exists, what the diff changes, its meaningful boundary, and how you proved it. Keep the body short enough to become a useful squash commit. Use these sections when they have content:
+1. **Worktree.** Utilise un worktree git propre basé sur la branche de base prévue. Donne aux rédacteurs parallèles des worktrees et branches séparés. Préserve les changements utilisateur non liés. Ne reset pas et ne jette pas un arbre sale pour faire de la place.
+2. **Deslop.** Lance `../../deslop/SKILL.md` sur le diff avant chaque commit. Garde `deslop skipped: <reason>` quand une étape ne peut vraiment pas s’exécuter.
+3. **Commits.** Suis la [règle de commit local](../references/codex-runtime.md#commits-locaux) du contrat d’exécution. Une implémentation autorisée inclut par défaut de petits commits locaux ordonnés. Ne les reporte pas jusqu’à la création de PR. Chaque commit doit être cohérent et passer son contrôle pertinent. Amende quand une correction appartient au commit qui vient d’être fait. Crée un nouveau commit pour un changement séparable.
+4. **Revue des commentaires.** Lis et applique `../../no-comments/SKILL.md` avant revue. Cette étape est obligatoire. Elle n’est pas seulement pour une demande explicite.
+5. **Verdict indépendant.** Avant que la PR soit présentée comme prête, un verdict vient d’un acteur qui n’a pas écrit le diff. Quand aucun sous-agent n’est disponible, lance une passe de revue séparée avec une relecture propre du diff et étiquette-la `single-agent review`. Nomme l’indépendance manquante. Pour une conception contestée ou un changement à fort impact, lis et applique aussi `../../interrogate/SKILL.md`.
+6. **Prose.** Lis et applique `../../technical-writing/SKILL.md` et `../../unslop/SKILL.md` au titre, à la description et au corps de commit. Inspecte le diff complet, y compris commentaires et suppressions, pour le remplissage généré, les commentaires redondants, abstractions spéculatives et éditions non liées.
+7. **Titres.** Utilise `type(scope): subject`. Choisis `feat`, `fix`, `docs`, `refactor`, `test`, `chore` ou `perf`. Utilise la zone changée comme scope. Garde le sujet court et impératif. N’ajoute pas de point final.
+8. **Descriptions.** Explique pourquoi le changement existe, ce que le diff change, sa frontière significative et comment tu l’as prouvé. Garde le corps assez court pour devenir un squash commit utile. Utilise ces sections quand elles ont du contenu :
 
-- `## Why` states the intent and approach.
-- `## Scope` names the important symbols and paths.
-- `## Tradeoffs` names rejected alternatives a reviewer may ask about.
-- `## Blast radius` names affected callers, users, or systems and the main risk. Read and apply `../../blast-radius/SKILL.md` when the diff changes a widely used symbol, a module boundary, or a shared contract.
-- `## Verification` names each command or real interface check and its result.
+- `## Why` énonce l’intention et l’approche.
+- `## Scope` nomme les symboles et chemins importants.
+- `## Tradeoffs` nomme les alternatives rejetées qu’un reviewer pourrait demander.
+- `## Blast radius` nomme les appelants, utilisateurs ou systèmes touchés et le risque principal. Lis et applique `../../blast-radius/SKILL.md` quand le diff change un symbole largement utilisé, une frontière de module ou un contrat partagé.
+- `## Verification` nomme chaque commande ou contrôle d’interface réel et son résultat.
 
-Attach screenshots or video when they prove a visual or interaction claim. Keep full logs, lane reports, and long decision trails in linked artifacts under `.cstack/` or a repository-approved path.
+Joins captures d’écran ou vidéo quand elles prouvent une affirmation visuelle ou d’interaction. Garde les logs complets, rapports de voie et longues traces de décision dans des artéfacts liés sous `.cstack/` ou un chemin approuvé par le dépôt.
 
-9. **GitHub.** Use git and `gh` for all branch and PR work. Resolve the repository, base branch, current branch, and remote before the first write.
-10. **Size and stacks.** Prefer narrow PRs that each pass their own checks. A stack is a base-branch chain. The root PR targets trunk. Each child branch is based on its parent's exact tip and its PR targets the parent branch. Use `gh pr create --base <parent-branch>` to create a child and `gh pr edit <pr> --base <parent-branch>` to retarget one. Branch directly from trunk only for independent work.
-11. **Readiness.** Open PRs ready for review unless the user asked for drafts. Verify the result with `gh pr view <number>` before reporting its state. If a PR opened as a draft by mistake, run `gh pr ready <number>`.
-12. **Babysit.** Opening a PR does not start `babysit.md`. Return the URL and finish the current authorized scope. Start a babysit only when the user asks to inspect or drive PR status.
+9. **GitHub.** Utilise git et `gh` pour tout travail de branche et PR. Résous le dépôt, la branche de base, la branche courante et le remote avant la première écriture.
+10. **Taille et piles.** Préfère des PR étroites qui passent chacune leurs propres contrôles. Une pile est une chaîne de branches de base. La PR racine cible trunk. Chaque branche enfant est basée sur le tip exact de son parent et sa PR cible la branche parent. Utilise `gh pr create --base <parent-branch>` pour créer un enfant et `gh pr edit <pr> --base <parent-branch>` pour en recibler un. Branche directement depuis trunk seulement pour du travail indépendant.
+11. **État prêt.** Ouvre des PR prêtes pour revue sauf si l’utilisateur a demandé des brouillons. Vérifie le résultat avec `gh pr view <number>` avant de rapporter son état. Si une PR s’est ouverte comme draft par erreur, lance `gh pr ready <number>`.
+12. **Babysit.** Ouvrir une PR ne lance pas `babysit.md`. Retourne l’URL et termine le périmètre autorisé courant. Lance un babysit seulement quand l’utilisateur demande d’inspecter ou de piloter l’état de PR.
 
-A subagent that opens an authorized PR runs this same sequence, including deslop, no-comments, the independent verdict, interrogate when the change is contested or high-impact, then technical-writing and unslop. It returns the URL and exact head SHA. The parent reviews the result and owns the final report.
+Un sous-agent qui ouvre une PR autorisée exécute cette même séquence, y compris deslop, no-comments, le verdict indépendant, interrogate quand le changement est contesté ou à fort impact, puis technical-writing et unslop. Il retourne l’URL et le SHA head exact. Le parent relit le résultat et possède le rapport final.
 
-**Reply:** the PR URL, the head SHA, the deslop result, the comment-review result, and the verdict with its author. Every claim carries its evidence or its label in the same sentence. Measured, inferred, or guess. A prediction or an unseen cause is a guess. Never hand the human a check you could run.
+**Réponse :** l’URL de PR, le SHA head, le résultat deslop, le résultat de revue des commentaires et le verdict avec son auteur. Chaque affirmation porte sa preuve ou son étiquette dans la même phrase. Mesuré, inféré ou supposition. Une prédiction ou une cause non observée est une supposition. Ne remets jamais à l’humain un contrôle que tu pourrais lancer.

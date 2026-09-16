@@ -1,6 +1,6 @@
 interface:
   display_name: "reflect"
-  short_description: "Review task evidence and propose lasting improvements"
-  default_prompt: "Use $cstack:reflect for this task."
+  short_description: "Relire les preuves et proposer des améliorations"
+  default_prompt: "Utilise $cstack:reflect pour cette tâche."
 policy:
   allow_implicit_invocation: false

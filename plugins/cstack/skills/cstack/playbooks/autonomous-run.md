@@ -1,15 +1,15 @@
-### Autonomous run
+### Exécution autonome
 
-Follow [the Codex runtime contract](../references/codex-runtime.md).
+Suivez [le contrat d’exécution Codex](../references/codex-runtime.md).
 
-**You own the exit condition. Define done, then drive to it without stopping.**
+**Tu possèdes la condition de sortie. Définis ce que signifie terminé, puis avances jusqu’à l’atteindre sans t’arrêter.**
 
-1. State the exit condition as a checkable predicate before the first iteration (tests green, repro fixed, all N PRs merged, pixel-diff zero).
-2. Continue in the foreground with native waits. For CI, a merge, or a ref change, use the event-aware tool or the bundled watcher through the plugin launcher. Use a native scheduler only when it is available and the user requested scheduled continuation. Size polling to when a result is worth checking. Do not promise that work survives an app exit.
-3. Each iteration makes the smallest change the evidence justifies, verifies it against the predicate, commits if it advanced, discards changes that didn't help. Belt-and-suspenders that "might help" gets reverted, not left to ride. Discard only the files that iteration touched, with `git checkout -- <paths>` or `git stash push <paths>`. Never `reset --hard`, never `git clean`, never `checkout -- .`. Run `../../deslop/SKILL.md` over the diff before each commit. Keep `deslop skipped: <reason>` when a step genuinely cannot run it.
-   Sequence the work via the [Sequence work into verifiable units](../references/principles/sequence-verifiable-units.md) principle reference, verifying each unit before the next instead of batching checks at the end.
-4. Address in-scope broken skills, related bugs, flaky verifiers, review noise, tooling failures, orphaned follow-ups, and fixable drift. Put unrelated fixes in a separate proposed change and do not create its PR without authorization. Ask only for destructive or irreversible work, missing authority, a genuine product choice, or a real dead end. Return to the predicate after each side fix.
-5. Checkpoint every iteration via the **show-me-your-work** skill, a row for what changed and whether the predicate moved.
-6. Stop when the predicate is met. A plateau is not a stop, so keep going and pivot your approach to push past it. Surface a genuine dead end rather than spinning, and never relax the predicate to declare victory.
+1. Énonce la condition de sortie comme prédicat vérifiable avant la première itération (tests verts, repro corrigée, les N PR toutes fusionnées, pixel-diff à zéro).
+2. Continue au premier plan avec les attentes natives. Pour la CI, un merge ou un changement de ref, utilise l’outil sensible aux événements ou le watcher fourni via le lanceur du plugin. Utilise un planificateur natif seulement s’il est disponible et si l’utilisateur a demandé une continuation planifiée. Calibre le polling au moment où un résultat vaut la peine d’être vérifié. Ne promets pas que le travail survit à la fermeture de l’app.
+3. Chaque itération effectue le plus petit changement justifié par les preuves, le vérifie contre le prédicat, committe s’il fait avancer, et abandonne les changements qui n’aident pas. Un double garde-fou qui « pourrait aider » est rétabli, pas laissé en place. Abandonne seulement les fichiers touchés par cette itération, avec `git checkout -- <paths>` ou `git stash push <paths>`. Jamais `reset --hard`, jamais `git clean`, jamais `checkout -- .`. Lance `../../deslop/SKILL.md` sur le diff avant chaque commit. Garde `deslop skipped: <reason>` quand une étape ne peut vraiment pas s’exécuter.
+   Séquence le travail avec la référence de principe [Séquencer le travail en unités vérifiables](../references/principles/sequence-verifiable-units.md), en vérifiant chaque unité avant la suivante plutôt que de regrouper les contrôles à la fin.
+4. Traite les compétences cassées dans le périmètre, bugs liés, vérificateurs flaky, bruit de revue, pannes d’outillage, suivis orphelins et dérive réparable. Mets les correctifs non liés dans un changement proposé séparé et ne crée pas sa PR sans autorisation. Demande seulement pour un travail destructeur ou irréversible, une autorité manquante, un vrai choix produit ou une véritable impasse. Reviens au prédicat après chaque correctif latéral.
+5. Crée un point de reprise à chaque itération via la compétence **show-me-your-work**, avec une ligne indiquant ce qui a changé et si le prédicat a progressé.
+6. Arrête quand le prédicat est atteint. Un plateau n’est pas un arrêt : continue et change d’approche pour le dépasser. Remonte une vraie impasse au lieu de tourner en rond, et n’assouplis jamais le prédicat pour déclarer victoire.
 
-**Reply:** the exit condition, iterations run, what landed, what was discarded, final predicate state. Every claim carries its evidence or its label in the same sentence. Measured, inferred, or guess. A prediction or an unseen cause is a guess. Never hand the human a check you could run.
+**Réponse :** la condition de sortie, les itérations lancées, ce qui a atterri, ce qui a été abandonné, l’état final du prédicat. Chaque affirmation porte sa preuve ou son étiquette dans la même phrase. Mesuré, inféré ou supposition. Une prédiction ou une cause non observée est une supposition. Ne remets jamais à l’humain un contrôle que tu pourrais lancer.

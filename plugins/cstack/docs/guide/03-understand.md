@@ -32,7 +32,7 @@ $cstack:teach comment cette PR change les retries et pourquoi elle corrige la ca
 $cstack:recall mon travail sur l'export de la semaine dernière.
 ```
 
-[`$cstack:recall`](../../skills/recall/SKILL.md) reconstruit le contexte récent à partir des traces disponibles. Il aide à reprendre un sujet, tandis que la reprise d'une tâche précise passe par le playbook de session.
+[`$cstack:recall`](../../skills/recall/SKILL.md) reconstruit le contexte récent à partir des traces disponibles. Il aide à reprendre un sujet, tandis que la reprise d'une tâche précise passe par le guide d'exécution de session.
 
 ## Reprendre un travail précédent
 
@@ -40,6 +40,6 @@ $cstack:recall mon travail sur l'export de la semaine dernière.
 $cstack:cstack reprends cette worktree. Lis les décisions et vérifie le point de reprise sans refaire le travail terminé.
 ```
 
-Le [playbook de reprise de session](../../skills/cstack/playbooks/session-pickup.md) vérifie les affirmations héritées contre l'objectif original. Il conserve les preuves utiles et évite de réinventer l'analyse.
+Le [guide d'exécution de reprise de session](../../skills/cstack/playbooks/session-pickup.md) vérifie les affirmations héritées contre l'objectif original. Il conserve les preuves utiles et évite de réinventer l'analyse.
 
 Suivant : [concevoir le changement](./04-design.md).

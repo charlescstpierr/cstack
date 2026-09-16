@@ -1,18 +1,18 @@
-# Outcome-Oriented Execution
+# Exécution orientée résultat
 
-Read this reference when an active cstack workflow routes here or the user names this principle. Follow the [Codex runtime contract](../codex-runtime.md) for scope and permissions.
+Lisez cette référence lorsqu'un processus cstack actif vous route ici ou lorsque l'utilisateur nomme ce principe. Suivez le [contrat d'exécution Codex](../codex-runtime.md) pour le périmètre et les permissions.
 
-Optimize for the intended, verifiable end state rather than preserving smooth intermediate states.
+Optimisez pour l'état final voulu et vérifiable plutôt que pour la préservation d'états intermédiaires fluides.
 
-**Why:** Keeping every intermediate step fully stable often creates temporary compatibility code that becomes long-lived debt. Converge on the target architecture and prove correctness at explicit verification boundaries.
+**Pourquoi :** garder chaque étape intermédiaire entièrement stable crée souvent du code de compatibilité temporaire qui devient une dette durable. Convergez vers l'architecture cible et prouvez la correction à des frontières de vérification explicites.
 
-**Core rule:**
-- Prioritize end-state integrity over transitional stability
-- Intermediate breakage is acceptable when it is planned, scoped, and reversible
-- Always run final verification before declaring done
+**Règle centrale :**
+- Prioriser l'intégrité de l'état final plutôt que la stabilité transitionnelle
+- La casse intermédiaire est acceptable lorsqu'elle est planifiée, bornée et réversible
+- Toujours exécuter la vérification finale avant de déclarer terminé
 
-**Guardrails:**
-- Use this for planned rewrites and migrations with explicit phase boundaries
-- Declare where temporary breakage is acceptable
-- Keep high-signal checks for actively touched areas while migrating
-- Require full static and runtime verification at plan completion
+**Garde-fous :**
+- Utiliser ceci pour les réécritures et migrations planifiées avec frontières de phases explicites
+- Déclarer où la casse temporaire est acceptable
+- Garder des contrôles à fort signal pour les zones activement touchées pendant la migration
+- Exiger une vérification statique et à l'exécution complète à la fin du plan

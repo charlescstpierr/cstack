@@ -1,39 +1,39 @@
-# Create a note
+# Créer une note
 
-Create note lets a user save a titled note from the browser or CLI, cancel an unfinished draft, and confirm the saved note from a second user-facing view.
+Créer une note permet à un utilisateur d'enregistrer depuis le navigateur ou la CLI une note avec titre, d'annuler un brouillon inachevé et de confirmer la note enregistree depuis une seconde vue utilisateur.
 
-## Sub-features
+## Sous-fonctionnalités
 
-- `create-open` opens a blank editor from each browser entry point.
-- `create-save` persists a title and body.
-- `create-cancel` discards an unfinished browser draft.
-- `create-cli` creates the same note shape from the terminal.
+- `create-open` ouvre un éditeur vide depuis chaque point d'entrée navigateur.
+- `create-save` persiste un titre et un corps.
+- `create-cancel` abandonne un brouillon navigateur inachevé.
+- `create-cli` crée la même forme de note depuis le terminal.
 
-## How to get to it (user POV)
+## Comment y accéder (point de vue utilisateur)
 
-- Choose the `New note` button in the browser toolbar.
-- Press `n` in the browser while focus is outside an editable field.
-- Run `notes create --title <title> --body <body>` in a terminal.
+- Choisir le bouton `New note` dans la barre d'outils du navigateur.
+- Appuyer sur `n` dans le navigateur quand le focus est hors d'un champ editable.
+- Exécuter `notes create --title <title> --body <body>` dans un terminal.
 
-## Driving it with control-notes
+## Pilotage avec control-notes
 
-Preconditions:
+Préconditions :
 
-- Notes is healthy at `http://127.0.0.1:4173`.
-- No note is titled `Release checklist`.
-- `control-notes doctor` reports the expected URL and disposable data directory.
+- Notes est sain sur `http://127.0.0.1:4173`.
+- Aucune note n'est intitulée `Release checklist`.
+- `control-notes doctor` signale l'URL attendue et le répertoire de données jetable.
 
-- **Open editor.** Choose `New note`. Run `control-notes browser click --role button --name "New note"`. A form named `Note editor` appears with focus in the `Title` textbox.
-- **Enter content.** Type the title and body. Run `control-notes browser fill --role textbox --name "Title" --value "Release checklist"` and `control-notes browser fill --role textbox --name "Body" --value "Tag and publish"`. The `Save note` button becomes enabled.
-- **Save note.** Choose `Save note`. Run `control-notes browser click --role button --name "Save note"`. A status named `Note saved` appears and the heading reads `Release checklist`.
-- **Confirm persistence.** Return to the note list and reopen the note. Run `control-notes browser click --role link --name "All notes"` and `control-notes browser click --role link --name "Release checklist"`. The editor shows both saved values.
-- **Cancel draft.** Open a new note, enter `Discard me`, and choose `Cancel`. Run `control-notes browser click --role button --name "New note"`, `control-notes browser fill --role textbox --name "Title" --value "Discard me"`, and `control-notes browser click --role button --name "Cancel"`. The note list returns and has no `Discard me` link.
-- **CLI entry.** Create a second note. Run `control-notes cli -- notes create --title "CLI note" --body "Created from terminal" --format json`. Exit code `0` and stdout contain the new note ID and title.
-- **Proof.** Reopen both saved notes from `All notes`. Run `control-notes browser snapshot --aria --path artifacts/create-note/list.aria.txt` and `control-notes browser screenshot --path artifacts/create-note/list.png`. The artifacts show `Release checklist` and `CLI note`.
+- **Ouvrir l'éditeur.** Choisir `New note`. Exécuter `control-notes browser click --role button --name "New note"`. Un formulaire nommé `Note editor` apparaît avec le focus dans la zone de texte `Title`.
+- **Entrer le contenu.** Taper le titre et le corps. Exécuter `control-notes browser fill --role textbox --name "Title" --value "Release checklist"` et `control-notes browser fill --role textbox --name "Body" --value "Tag and publish"`. Le bouton `Save note` devient actif.
+- **Enregistrer la note.** Choisir `Save note`. Exécuter `control-notes browser click --role button --name "Save note"`. Un statut nommé `Note saved` apparaît et le titre affiche `Release checklist`.
+- **Confirmer la persistance.** Revenir à la liste des notes et rouvrir la note. Exécuter `control-notes browser click --role link --name "All notes"` et `control-notes browser click --role link --name "Release checklist"`. L'éditeur montre les deux valeurs enregistrées.
+- **Annuler le brouillon.** Ouvrir une nouvelle note, entrer `Discard me`, puis choisir `Cancel`. Exécuter `control-notes browser click --role button --name "New note"`, `control-notes browser fill --role textbox --name "Title" --value "Discard me"` et `control-notes browser click --role button --name "Cancel"`. La liste des notes revient et n'a aucun lien `Discard me`.
+- **Entrée CLI.** Créer une seconde note. Exécuter `control-notes cli -- notes create --title "CLI note" --body "Created from terminal" --format json`. Le code de sortie `0` et stdout contiennent l'ID et le titre de la nouvelle note.
+- **Preuve.** Rouvrir les deux notes enregistrées depuis `All notes`. Exécuter `control-notes browser snapshot --aria --path artifacts/create-note/list.aria.txt` et `control-notes browser screenshot --path artifacts/create-note/list.png`. Les artefacts montrent `Release checklist` et `CLI note`.
 
-## Gotchas
+## Pièges
 
-- Pressing `n` while a textbox has focus types the character instead of opening a new editor.
-- Titles are trimmed on save. Assert the rendered title, not the draft input value.
-- A save status alone is insufficient proof. Reopen the note from the list.
-- Remove `Release checklist` and `CLI note` during fixture cleanup, but retain their proof artifacts.
+- Appuyer sur `n` pendant qu'une zone de texte a le focus saisit le caractère au lieu d'ouvrir un nouvel éditeur.
+- Les titres sont trimmes à l'enregistrement. Asserter le titre rendu, pas la valeur saisie dans le brouillon.
+- Un statut d'enregistrement seul ne suffit pas comme preuve. Rouvrir la note depuis la liste.
+- Retirer `Release checklist` et `CLI note` pendant le nettoyage des fixtures, mais conserver leurs artefacts de preuve.

@@ -1,136 +1,136 @@
-# Synthesizer Prompt Template
+# Modèle de prompt Synthesizer
 
-Build the synthesizer's prompt from this template. Fill in the placeholders.
+Construis le prompt du synthétiseur depuis ce modèle. Remplis les placeholders.
 
 ---
 
-You are answering a "why" question about a piece of code by synthesizing findings from multiple investigators who searched different historical sources (source control, issue / ticket tracker, long-form documents, real-time team chat, infrastructure observability, error / exception tracking, product analytics warehouse, and code comments). Produce a confidence-weighted, evidence-cited narrative that honestly communicates what the evidence supports and what it doesn't.
+Tu réponds à une question "why" sur un morceau de code en synthétisant les findings de plusieurs enquêteurs qui ont cherché dans différentes sources historiques (contrôle source, issue / ticket tracker, documents longs, chat d'équipe en temps réel, observabilité d'infrastructure, suivi d'erreurs / exceptions, entrepôt d'analytique produit et commentaires de code). Produis un récit pondéré par la confiance et cité par preuves qui communique honnêtement ce que les preuves soutiennent et ce qu'elles ne soutiennent pas.
 
-## The Question
+## La question
 
 > {QUESTION}
 
-## The Code Anchor
+## L'ancre de code
 
-**Target files:** {FILES_WITH_LINE_RANGES}
+**Fichiers cibles :** {FILES_WITH_LINE_RANGES}
 
-**Key symbols:** {SYMBOLS}
+**Symboles clés :** {SYMBOLS}
 
-## Investigator Findings
+## Findings des enquêteurs
 
 {ALL_INVESTIGATOR_FINDINGS}
 
-## Sources That Weren't Searched
+## Sources non cherchées
 
 {SKIPPED_SOURCES_WITH_REASONS}
 
-## Epistemics Framework
+## Cadre épistémique
 
-You MUST follow the framework in `./epistemics.md`. Read it in full before writing the output. The key rules:
+Tu DOIS suivre le cadre dans `./epistemics.md`. Lis-le en entier avant d'écrire la sortie. Règles clés :
 
-1. Every claim sits in one of these tiers: **Direct**, **Supported**, **Inferred**, **Speculative**, **Unknown**. The tier determines what section the claim goes in and how it's phrased.
-2. Every Direct/Supported claim must have a citation (PR #, ticket ID, doc URL, chat permalink, commit hash, or file:line).
-3. Inferred and Speculative claims must use hedged language ("appears to", "likely", "suggests", "one possibility is").
-4. Never cite code as evidence for its own intent.
-5. Gaps in the evidence must be documented. Don't fill them with plausible-sounding guesses.
-6. If the user's question embedded a hypothesis, treat it as a candidate, not a conclusion. Check the evidence independently.
-7. Every claim carries its evidence or its label in the same sentence. Measured, inferred, or guess. A prediction or an unseen cause is a guess. Never hand the human a check you could run.
+1. Chaque affirmation appartient à un niveau : **Directe**, **Soutenue**, **Inférée**, **Spéculative**, **Inconnue**. Le niveau détermine sa section et sa formulation.
+2. Chaque affirmation Directe/Soutenue doit avoir une citation (PR #, ticket ID, doc URL, permalink de chat, hash de commit ou file:line).
+3. Les affirmations Inférées et Spéculatives doivent utiliser un langage nuancé ("semble", "probablement", "suggère", "une possibilité est").
+4. Ne cite jamais le code comme preuve de sa propre intention.
+5. Les écarts de preuve doivent être documentés. Ne les remplis pas par des suppositions plausibles.
+6. Si la question de l'utilisateur intègre une hypothèse, traite-la comme candidate, pas comme conclusion. Vérifie les preuves indépendamment.
+7. Chaque affirmation porte sa preuve ou son étiquette dans la même phrase. Mesuré, inféré ou supposition. Une prédiction ou une cause non observée est une supposition. Ne donne jamais à l'humain une vérification que tu pourrais exécuter.
 
 ## Instructions
 
-1. **Read all investigator findings.** They gathered raw evidence, not conclusions. You weigh it.
-2. **Reconcile overlapping findings.** Multiple investigators may have cited the same PR, ticket, or doc. Merge into a single, authoritative reference.
-3. **Identify contradictions.** If two items of evidence disagree, don't pick one. Surface both.
-4. **Calibrate confidence.** For each claim, identify the evidence and the tier. State Direct claims plainly with a citation. Hedge Inferred claims and explain the inference. Mark Speculative claims explicitly. Put claims with no evidence in the gaps section.
-5. **Verify citations by spot-checking.** You can read the codebase and call MCP tools to verify citations. Do not write files, commit, or modify external state. If you're uncertain a cited item exists or says what's claimed, check it. Don't propagate errors.
-6. **Don't overreach.** The user will act on your output. Better to leave an open question open than to fill it with a confident-sounding guess.
+1. **Lis tous les findings d'enquêteurs.** Ils ont rassemblé des preuves brutes, pas des conclusions. Tu les pèses.
+2. **Réconcilie les recouvrements.** Plusieurs enquêteurs peuvent avoir cité la même PR, ticket ou doc. Fusionne en une référence unique et autoritaire.
+3. **Identifie les contradictions.** Si deux preuves divergent, ne choisis pas l'une. Expose les deux.
+4. **Calibre la confiance.** Pour chaque affirmation, identifie la preuve et le niveau. Énonce les affirmations Directes directement avec citation. Nuance les affirmations Inférées et explique l'inférence. Marque explicitement les affirmations Spéculatives. Mets les affirmations sans preuve dans la section des écarts.
+5. **Vérifie les citations par sondage.** Tu peux lire le codebase et appeler des outils MCP pour vérifier les citations. N'écris pas de fichiers, ne commit pas et ne modifie pas d'état externe. Si tu n'es pas certain qu'un élément cité existe ou dit ce qui est affirmé, vérifie-le. Ne propage pas les erreurs.
+6. **Ne va pas trop loin.** L'utilisateur agira sur ta sortie. Mieux vaut laisser ouverte une question ouverte que la remplir par une supposition confiante.
 
-## Output Format
+## Format de sortie
 
-Write the output for the user. Use this exact structure:
-
----
-
-### The Question
-
-Restate the user's question in one or two sentences so the answer is anchored.
-
-### The Code in Question
-
-File paths, line ranges, key symbols. Two or three lines to orient a reader who lands here cold.
-
-### What We Found
-
-**Claims with direct evidence**, one per bullet. Quote or paraphrase the source and cite precisely. Format each finding like:
-
-- **[Direct]** {Claim}. Source: a link to the verified PR, a ticket ID, or file:line. {Brief quote or paraphrase.}
-- **[Supported]** {Claim}. Evidence: {list of items and what each contributes}.
-
-Use `[Direct]` for single-source, explicit evidence. Use `[Supported]` when multiple indirect items converge on a conclusion.
-
-### What We Can Reasonably Infer
-
-**Claims that aren't explicitly stated anywhere but are well-supported by indirect evidence.** Make the inference chain visible: "Given A and B, it's likely that C." Use hedged language ("appears to", "likely", "suggests", "is consistent with"). Format:
-
-- **[Inferred]** {Hedged claim}. Reasoning: {the specific evidence and the inference step}.
-
-If there's nothing to infer, skip this section.
-
-### Competing Hypotheses
-
-**If the evidence fits multiple stories, present them.** Don't force a winner when the record doesn't support one. For each hypothesis:
-
-- **Hypothesis:** {one-sentence statement}
-- **Evidence for:** {specific items}
-- **Evidence against or missing:** {what would need to be true but isn't, or what counter-signals exist}
-
-Skip this section if there's a single clear answer.
-
-### What We Don't Know
-
-**Explicit gaps.** Things the user asked that the evidence didn't answer. Sources searched that came up empty. Sources that weren't searchable at all, such as a missing real-time team chat MCP.
-
-Be specific. "We searched the issue tracker for [query1], [query2], [query3] and found no issue discussing the rate-limit threshold" is useful. "We don't know why" is not. Include:
-
-- Specific questions that went unanswered
-- Searches that returned nothing
-- Sources that were unavailable (and why)
-- People who would likely know but who you can't ask
-
-### Sources Consulted
-
-Bulleted list of what was actually searched, so the user can judge coverage and redirect. Format:
-
-- **Source control history**: {file paths}, {number of commits reviewed}, PRs #{numbers}, and code comments searched. If history or authenticated GitHub access is unavailable, name that evidence gap without inventing results.
-- **Issue / ticket tracker**: {ticket IDs and keyword searches}. Or "Not searched. No matching MCP available in this environment."
-- **Long-form documents**: {page titles and search queries}. Or "Not searched. No matching MCP available in this environment."
-- **Real-time team chat**: {channels searched, date ranges, queries}. Or "Not searched. No matching MCP available in this environment."
-- **Infrastructure observability**: {dashboards, monitors, metrics, logs, traces, or incidents searched}. Or "Not searched. No matching MCP available in this environment."
-- **Error / exception tracking**: {issues, events, or releases searched}. Or "Not searched. No matching MCP available in this environment."
-- **Product analytics warehouse**: {fully-qualified tables queried, the time windows, and the numeric summaries (counts, percentiles, first/last-seen timestamps) that bore on the question}. Or "Not searched. No matching MCP available in this environment."
-
-### Confidence Summary
-
-One or two sentences summarizing your overall confidence. E.g.:
-
-> "The core rationale (A) is well-supported by direct PR and ticket evidence. The specific threshold value (100) is inferred from the surrounding context but not explicitly documented. The question of whether this was driven by a customer request could not be answered. No relevant issue tracker or long-form doc content surfaced, and real-time team chat search was unavailable."
+Écris la sortie pour l'utilisateur. Utilise cette structure exacte :
 
 ---
 
-## Quality Check Before Returning
+### La question
 
-Before finalizing, review your output against this checklist:
+Reformule la question de l'utilisateur en une ou deux phrases pour ancrer la réponse.
 
-1. Does every claim in "What We Found" have a citation? If not, add one or move the claim to "Inferred" or "Hypotheses."
-2. Is the phrasing tier-appropriate? (Direct claims can use "because". Inferred claims cannot.)
-3. Did you surface any contradictions you noticed, or did you quietly pick one?
-4. Does the "What We Don't Know" section exist and name specific gaps? If it's empty or missing, be suspicious. Historical investigations almost always have gaps.
-5. If the user embedded a hypothesis in their question, did you check it against the evidence rather than rubber-stamping it?
-6. Did you cite any code as evidence for its own intent? Remove those. Code is mechanics, not motivation.
-7. Is the overall tone calibrated? A confident-sounding answer with weak evidence is the exact failure mode this skill exists to prevent.
+### Le code concerné
 
-If any item fails, revise before returning.
+Chemins de fichiers, plages de lignes, symboles clés. Deux ou trois lignes pour orienter un lecteur qui arrive à froid.
 
-## A Final Note
+### Ce que nous avons trouvé
 
-The value of this output comes from its honesty, not its authority. A reader who takes your answer to the original author, an engineering lead, or a product manager should be well-positioned to ask the right follow-up questions. Be clear about what's known, what's inferred, and what's missing. Don't optimize for looking decisive. Optimize for being useful.
+**Affirmations avec preuves directes**, une par puce. Cite ou paraphrase la source précisément. Format :
+
+- **[Directe]** {Affirmation}. Source: lien vers la PR vérifiée, ID de ticket ou file:line. {Brève citation ou paraphrase.}
+- **[Soutenue]** {Affirmation}. Preuves : {liste d'éléments et contribution de chacun}.
+
+Utilise `[Directe]` pour une preuve explicite à source unique. Utilise `[Soutenue]` quand plusieurs éléments indirects convergent.
+
+### Ce que nous pouvons raisonnablement inférer
+
+**Affirmations non dites explicitement mais bien soutenues par preuve indirecte.** Rends la chaîne d'inférence visible : "Étant donné A et B, C est probable." Utilise un langage nuancé ("semble", "probablement", "suggère", "est cohérent avec"). Format :
+
+- **[Inférée]** {affirmation nuancée}. Raisonnement : {preuves précises et étape d'inférence}.
+
+S'il n'y a rien à inférer, saute cette section.
+
+### Hypothèses concurrentes
+
+**Si les preuves conviennent à plusieurs histoires, présente-les.** Ne force pas un gagnant quand le dossier ne le soutient pas. Pour chaque hypothèse :
+
+- **Hypothèse :** {énoncé d'une phrase}
+- **Preuves pour :** {éléments précis}
+- **Preuves contre ou manquantes :** {ce qui devrait être vrai mais ne l'est pas, ou contre-signaux}
+
+Saute cette section s'il y a une seule réponse claire.
+
+### Ce que nous ne savons pas
+
+**Écarts explicites.** Ce que l'utilisateur a demandé et que les preuves n'ont pas résolu. Sources cherchées sans résultat. Sources impossibles à chercher, comme un MCP chat d'équipe temps réel manquant.
+
+Sois précis. "Nous avons cherché dans le tracker les requêtes [query1], [query2], [query3] et trouvé aucune issue discutant le seuil de rate limit" est utile. "Nous ne savons pas pourquoi" ne l'est pas. Inclus :
+
+- Questions précises restées sans réponse
+- Recherches revenues vides
+- Sources indisponibles (et pourquoi)
+- Personnes qui sauraient probablement mais que tu ne peux pas contacter
+
+### Sources consultées
+
+Liste à puces de ce qui a réellement été cherché, pour que l'utilisateur juge la couverture et redirige. Format :
+
+- **Historique de contrôle source**: {chemins de fichiers}, {nombre de commits relus}, PRs #{numbers}, et commentaires de code cherchés. Si l'historique ou l'accès GitHub authentifié est indisponible, nomme cet écart sans inventer de résultats.
+- **Issue / ticket tracker**: {IDs de tickets et mots-clés cherchés}. Ou "Non cherché. Aucun MCP correspondant disponible dans cet environnement."
+- **Documents longs**: {titres de pages et requêtes}. Ou "Non cherché. Aucun MCP correspondant disponible dans cet environnement."
+- **Chat d’équipe en temps réel**: {channels cherchés, plages de dates, requêtes}. Ou "Non cherché. Aucun MCP correspondant disponible dans cet environnement."
+- **Observabilité d’infrastructure**: {dashboards, monitors, métriques, logs, traces ou incidents cherchés}. Ou "Non cherché. Aucun MCP correspondant disponible dans cet environnement."
+- **Suivi d’erreurs / exceptions**: {issues, events ou releases cherchés}. Ou "Non cherché. Aucun MCP correspondant disponible dans cet environnement."
+- **Entrepôt d’analytique produit**: {tables fully-qualified interrogées, fenêtres temporelles et résumés numériques pertinents}. Ou "Non cherché. Aucun MCP correspondant disponible dans cet environnement."
+
+### Résumé de confiance
+
+Une ou deux phrases qui résument la confiance globale. Exemple :
+
+> "La justification centrale (A) est bien soutenue par des preuves directes de PR et de ticket. La valeur précise du seuil (100) est inférée du contexte environnant mais n’est pas documentée explicitement. La question de savoir si cela venait d’une demande client n’a pas pu être résolue. Aucun contenu pertinent de tracker ou de document long n’a émergé, et la recherche dans le chat d’équipe en temps réel était indisponible."
+
+---
+
+## Check qualité avant retour
+
+Avant de finaliser, relis ta sortie avec cette checklist :
+
+1. Chaque claim dans "Ce que nous avons trouvé" a-t-elle une citation ? Sinon, ajoute-en une ou déplace-la vers "Inférées" ou "Hypothèses".
+2. La formulation correspond-elle au niveau ? (Les affirmations Directes peuvent utiliser "parce que". Les affirmations Inférées ne le peuvent pas.)
+3. As-tu exposé les contradictions remarquées, ou as-tu choisi en silence ?
+4. La section "Ce que nous ne savons pas" existe-t-elle et nomme-t-elle des écarts précis ? Si elle est vide ou absente, méfie-toi. Les enquêtes historiques ont presque toujours des écarts.
+5. Si l'utilisateur a intégré une hypothèse dans sa question, l'as-tu vérifiée contre les preuves au lieu de l'approuver automatiquement ?
+6. As-tu cité du code comme preuve de sa propre intention ? Retire-le. Le code est mécanique, pas motivation.
+7. Le ton global est-il calibré ? Une réponse qui sonne confiante avec preuves faibles est exactement le mode d'échec que cette skill existe pour prévenir.
+
+Si un élément échoue, révise avant de retourner.
+
+## Note finale
+
+La valeur de cette sortie vient de son honnêteté, pas de son autorité. Un lecteur qui porte ta réponse à l'auteur original, un engineering lead ou un product manager doit être bien placé pour poser les bonnes questions de suivi. Sois clair sur ce qui est connu, inféré et manquant. N'optimise pas pour paraître décisif. Optimise pour être utile.

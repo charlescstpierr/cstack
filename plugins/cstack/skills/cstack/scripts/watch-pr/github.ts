@@ -43,14 +43,14 @@ function spawnFailure(command: string, error: unknown): WatcherQueryError {
     return new WatcherQueryError({
       kind: "missing-command",
       retryable: false,
-      detail: `${command} is not installed`,
+      detail: `${command} n'est pas installe`,
     });
   }
   return new WatcherQueryError({
     kind: "command-exit",
     retryable: true,
     code: -1,
-    detail: `${command} failed to start: ${error instanceof Error ? error.message : String(error)}`,
+    detail: `${command} n'a pas demarre: ${error instanceof Error ? error.message : String(error)}`,
   });
 }
 function isAuthFailure(stderr: string): boolean {
@@ -117,7 +117,7 @@ async function runJson(argv: readonly [string, ...string[]]): Promise<unknown> {
   const result = await run(argv);
   if (result.code !== 0) {
     const detail =
-      firstLine(result.stderr) || `${argv.join(" ")} exited ${result.code}`;
+      firstLine(result.stderr) || `${argv.join(" ")} s'est termine avec ${result.code}`;
     if (isAuthFailure(result.stderr))
       throw new WatcherQueryError({
         kind: "auth",
@@ -147,8 +147,8 @@ function missing(path: string, value?: unknown): never {
     retryable: true,
     detail:
       value === undefined
-        ? `missing ${path}`
-        : `invalid ${path}: ${raw(value)}`,
+        ? `${path} manquant`
+        : `${path} invalide: ${raw(value)}`,
     ...(value === undefined ? {} : { rawValue: raw(value) }),
   });
 }
@@ -215,9 +215,10 @@ const REVIEW_DECISIONS = [
   "CHANGES_REQUESTED",
   "REVIEW_REQUIRED",
 ] as const;
-// `gh pr view` reports no review decision as "", not null. Only this field does
-// it, so the normalization stays here rather than in nullableEnum, where it
-// would stop a genuinely unexpected rollup state from failing closed.
+// `gh pr view` signale l'absence de decision de revue par "", pas par null.
+// Seul ce champ le fait; la normalisation reste donc ici plutot que dans
+// nullableEnum, où elle empêcherait un état rollup vraiment inattendu
+// d’échouer fermé.
 const reviewDecision = (value: unknown): T.ReviewDecision =>
   nullableEnum(
     value === "" ? null : value,
@@ -267,7 +268,7 @@ function parsePrUrl(value: string): T.PrContext {
       parts.length !== 4 ||
       parts[2] !== "pull"
     )
-      throw new Error("not a canonical GitHub pull URL");
+      throw new Error("URL de pull GitHub non canonique");
     return {
       owner: parts[0],
       repo: parts[1],
@@ -278,7 +279,7 @@ function parsePrUrl(value: string): T.PrContext {
       kind: "invalid-context-url",
       retryable: false,
       rawValue: value,
-      detail: `could not infer owner/repo from PR URL: ${value} (${error instanceof Error ? error.message : String(error)})`,
+      detail: `impossible de deduire owner/repo depuis l'URL de PR: ${value} (${error instanceof Error ? error.message : String(error)})`,
     });
   }
 }
@@ -433,7 +434,7 @@ export function parseReviewThreads(value: unknown): readonly T.ReviewThread[] {
       kind: "truncated",
       retryable: false,
       detail:
-        "reviewThreads page is full and more pages exist; unresolved threads may be hidden",
+        "la page reviewThreads est pleine et d’autres pages existent; des fils non résolus peuvent être masqués",
     });
   }
   const nodes = list(connection.nodes, "reviewThreads.nodes");
@@ -533,7 +534,7 @@ export function parseOpenPullRequests(
     throw new WatcherQueryError({
       kind: "truncated",
       retryable: false,
-      detail: `gh pr list returned ${OPEN_PR_LIST_LIMIT} PRs; stack discovery may be incomplete`,
+      detail: `gh pr list a renvoyé ${OPEN_PR_LIST_LIMIT} PR; la découverte de pile peut être incomplète`,
     });
   }
   return rows.map((item, index) => {
@@ -707,9 +708,9 @@ export async function resolveChecks(
   if (fallback !== null) return { source: "graphql-rollup", checks: fallback };
   const suffix =
     fast.kind === "unusable"
-      ? `fast path exit=${fast.exitCode}; GraphQL rollup was empty${firstLine(fast.stderr) ? `; ${firstLine(fast.stderr)}` : ""}`
-      : "fast path and GraphQL rollup were empty";
-  throw new ChecksUnavailable(`could not read PR checks: ${suffix}`);
+      ? `sortie fast path=${fast.exitCode}; le rollup GraphQL était vide${firstLine(fast.stderr) ? `; ${firstLine(fast.stderr)}` : ""}`
+      : "fast path et rollup GraphQL étaient vides";
+  throw new ChecksUnavailable(`impossible de lire les checks de PR: ${suffix}`);
 }
 export async function resolveContext(args: {
   readonly reader: T.GitHubReader;
@@ -758,7 +759,7 @@ export function orderStack(
       throw new WatcherQueryError({
         kind: "stack-cycle",
         retryable: false,
-        detail: `PR stack contains a cycle at ${parent.headRefName}`,
+        detail: `la pile de PR contient un cycle a ${parent.headRefName}`,
       });
     }
     seen.add(parent.number);

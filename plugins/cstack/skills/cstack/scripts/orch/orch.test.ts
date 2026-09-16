@@ -175,8 +175,8 @@ afterEach(async () => {
   }
 });
 
-describe("Store", () => {
-  it("initializes an idempotent plain-file store and releases its lock", async () => {
+describe("Magasin", () => {
+  it("initialise un magasin de fichiers idempotent et libère son verrou", async () => {
     const directory = await makeDirectory();
     const store = useStore(directory);
 
@@ -208,7 +208,7 @@ describe("Store", () => {
     expect(await readdir(directory)).not.toContain(".orch.lock");
   });
 
-  it("composes unit add, set, get, list, and counts", async () => {
+  it("compose ajout, mise à jour, lecture, liste et comptes d’unité", async () => {
     const { store } = await initializedStore();
 
     expect(
@@ -245,18 +245,18 @@ describe("Store", () => {
     expect(await store.units.counts()).toEqual({ done: 1, pending: 1 });
     await expect(
       store.units.add({ id: "u1", track: "build" })
-    ).rejects.toThrow("unit u1 already exists");
+    ).rejects.toThrow("l’unité u1 existe déjà");
     await expect(
       store.units.set({ id: "missing", state: "done" })
     ).rejects.toBeInstanceOf(NotFoundError);
   });
 
-  it("records, replaces, checks, and summarizes typed ledger verdicts", async () => {
+  it("enregistre, remplace, vérifie et résume les verdicts types du registre", async () => {
     const { store } = await initializedStore();
 
     try {
       await store.ledger.check({ pr: 184530, sha: "abc123" });
-      throw new Error("expected ledger check to fail");
+      throw new Error("verification du registre attendue en echec");
     } catch (error) {
       expect(error).toBeInstanceOf(NotFoundError);
       if (error instanceof NotFoundError) {
@@ -270,7 +270,7 @@ describe("Store", () => {
         });
       }
     }
-    expect(() => parseVerdict("looks-good")).toThrow("verdict must be");
+    expect(() => parseVerdict("looks-good")).toThrow("le verdict doit être");
 
     const recorded = await store.ledger.record({
       pr: 184530,
@@ -297,7 +297,7 @@ describe("Store", () => {
     });
   });
 
-  it("pushes, peeks, and atomically drains inbox pointers", async () => {
+  it("ajoute, consulte et vide atomiquement les pointeurs de boîte de réception", async () => {
     const { directory, store } = await initializedStore();
 
     const first = await store.inbox.push({
@@ -327,7 +327,7 @@ describe("Store", () => {
     ).toEqual([]);
   });
 
-  it("pushes inbox pointers without taking the store lock", async () => {
+  it("ajoute des pointeurs de boîte de réception sans prendre le verrou du magasin", async () => {
     const { directory, store } = await initializedStore();
     const other = useStore(directory);
     const results = await Promise.all([
@@ -339,20 +339,20 @@ describe("Store", () => {
     expect(await store.inbox.count()).toBe(3);
   });
 
-  it("refuses to drain an uninitialized directory", async () => {
+  it("refuse de vider un répertoire non initialisé", async () => {
     const directory = await makeDirectory();
     const inbox = join(directory, "inbox");
     await mkdir(inbox);
     await writeFile(join(inbox, "keep.txt"), "secret\n");
     const store = useStore(directory);
     await expect(store.inbox.drain()).rejects.toThrow(
-      "store is not initialized"
+      "le magasin n'est pas initialise"
     );
     expect(await readFile(join(inbox, "keep.txt"), "utf8")).toBe("secret\n");
     expect(await readdir(inbox)).toEqual(["keep.txt"]);
   });
 
-  it("drains only parsed inbox pointers and leaves other entries", async () => {
+  it("vide seulement les pointeurs de boîte de réception parsés et laisse les autres entrées", async () => {
     const { directory, store } = await initializedStore();
     await store.inbox.push({
       agent: "worker-1",
@@ -364,7 +364,7 @@ describe("Store", () => {
     expect(await readdir(join(directory, "inbox"))).toEqual(["notes.md"]);
   });
 
-  it("lets only one process take over a stale lock", async () => {
+  it("laisse un seul processus reprendre un verrou périmé", async () => {
     const { directory, store } = await initializedStore();
     await store.close();
     const exited = Bun.spawn(["true"]);
@@ -418,7 +418,7 @@ try {
     expect(outcomes.filter((line) => line === "LOST")).toHaveLength(1);
   });
 
-  it("replaces a stale lock whose holder pid is dead", async () => {
+  it("remplace un verrou périmé dont le pid détenteur est mort", async () => {
     const { directory } = await initializedStore();
     const exited = Bun.spawn(["true"]);
     await exited.exited;
@@ -436,7 +436,7 @@ try {
     expect(await readdir(directory)).not.toContain(".orch.lock");
   });
 
-  it("blocks a writer and steals the pid lock only with force", async () => {
+  it("bloque un rédacteur et ne vole le verrou pid qu’avec force", async () => {
     const { directory, store } = await initializedStore();
     await store.close();
     await writeFile(join(directory, ".orch.lock"), `${process.pid}\n`);
@@ -444,7 +444,7 @@ try {
     const blocked = useStore(directory);
     await expect(
       blocked.units.add({ id: "u1", track: "build" })
-    ).rejects.toThrow(`store lock held by pid ${process.pid}`);
+    ).rejects.toThrow(`verrou de magasin detenu par le pid ${process.pid}`);
 
     const stolen: string[] = [];
     const forced = useStore(directory, {
@@ -459,40 +459,40 @@ try {
     expect(await readdir(directory)).not.toContain(".orch.lock");
   });
 
-  it("parks gates, stores standing orders, and renders status", async () => {
+  it("met les barrières en attente, stocke les consignes permanentes et rend le statut", async () => {
     const { directory, store } = await initializedStore();
     await store.units.add({ id: "u1", track: "build" });
     expect(
       await store.gates.park({
         id: "release",
-        question: "Ship now?",
+        question: "Livrer maintenant?",
         options: "ship,wait",
         defaultAnswer: "wait",
       })
     ).toMatchObject({ kind: "open", id: "release" });
     expect(
-      await store.standing.add({ line: "Never force push." })
-    ).toEqual({ number: 1, line: "Never force push." });
+      await store.standing.add({ line: "Ne jamais force-push." })
+    ).toEqual({ number: 1, line: "Ne jamais force-push." });
 
     const first = await store.status.render();
-    expect(first.changed).toBe("first render");
+    expect(first.changed).toBe("premier rendu");
     expect(first.summary.openGateIds).toEqual(["release"]);
     expect(await readFile(join(directory, "status.md"), "utf8")).toContain(
-      "| release | open | Ship now? |"
+      "| release | open | Livrer maintenant? |"
     );
-    expect((await store.status.render()).changed).toBe("no derived changes");
+    expect((await store.status.render()).changed).toBe("aucun changement derive");
 
     expect(
       await store.gates.resolve({ id: "release", answer: "ship" })
     ).toMatchObject({ kind: "resolved", answer: "ship" });
-    expect((await store.status.render()).changed).toBe("open gates 1->0");
+    expect((await store.status.render()).changed).toBe("barrières ouvertes 1->0");
     expect(await store.gates.list()).toEqual([]);
     expect(await store.standing.show()).toEqual([
-      { number: 1, line: "Never force push." },
+      { number: 1, line: "Ne jamais force-push." },
     ]);
   });
 
-  it("resolves the ordered GitHub frontier and validates an optional pin", async () => {
+  it("résout la frontière GitHub ordonnée et valide un pin facultatif", async () => {
     const { directory, store } = await initializedStore();
     const stack = await makeGitStack(directory);
     const output = JSON.stringify([
@@ -562,7 +562,7 @@ try {
             prs: [10, 11, 12],
           })
         ).rejects.toThrow(
-          "frontier pin mismatch: missing from GitHub: 12; extra in GitHub: 13"
+          "l'ancrage de frontiere ne correspond pas: manquantes dans GitHub: 12; en trop dans GitHub: 13"
         );
         await expect(
           store.frontier.set({
@@ -570,19 +570,19 @@ try {
             prs: [13, 10, 11],
           })
         ).rejects.toThrow(
-          "frontier pin mismatch: order differs: expected 13,10,11; GitHub 10,13,11"
+          "l'ancrage de frontiere ne correspond pas: ordre différent: attendu 13,10,11; GitHub 10,13,11"
         );
         await expect(
           store.frontier.set({
             repo: stack.repo,
             prs: [10, 10],
           })
-        ).rejects.toThrow("--prs must not contain duplicates");
+        ).rejects.toThrow("--prs ne doit pas contenir de doublons");
       },
     });
   });
 
-  it("rejects ambiguous, cyclic, and incomplete GitHub stacks", async () => {
+  it("rejette les piles GitHub ambiguës, cycliques et incomplètes", async () => {
     const { directory, store } = await initializedStore();
     const stack = await makeGitStack(directory);
     const row = (
@@ -620,7 +620,7 @@ try {
         await expect(
           store.frontier.set({ repo: stack.repo })
         ).rejects.toThrow(
-          "gh pr list returned 1000 PRs; stack history may be incomplete"
+          "gh pr list a renvoyé 1000 PR; l’historique de pile peut être incomplet"
         );
 
         await writeFile(
@@ -644,7 +644,7 @@ try {
         await expect(
           store.frontier.set({ repo: stack.repo })
         ).rejects.toThrow(
-          "GitHub returned multiple PRs for head branch stack/open: 11,12"
+          "GitHub a renvoye plusieurs PR pour la branche de tete stack/open: 11,12"
         );
 
         await writeFile(
@@ -657,7 +657,7 @@ try {
         );
         await expect(
           store.frontier.set({ repo: stack.repo })
-        ).rejects.toThrow("GitHub PR stack branches at stack/open: 14,15");
+        ).rejects.toThrow("la pile de PR GitHub bifurque à stack/open: 14,15");
 
         await writeFile(
           outputPath,
@@ -669,7 +669,7 @@ try {
         );
         await expect(
           store.frontier.set({ repo: stack.repo })
-        ).rejects.toThrow("GitHub PR stack contains a cycle at stack/open");
+        ).rejects.toThrow("la pile de PR GitHub contient un cycle a stack/open");
 
         await writeFile(
           outputPath,
@@ -680,7 +680,7 @@ try {
         await expect(
           store.frontier.set({ repo: stack.repo })
         ).rejects.toThrow(
-          "GitHub stack is missing a PR for base branch stack/missing"
+          "la pile GitHub n'a pas de PR pour la branche de base stack/missing"
         );
 
         await writeFile(
@@ -692,7 +692,7 @@ try {
         );
         await expect(
           store.frontier.set({ repo: stack.repo })
-        ).rejects.toThrow("GitHub stack branch stack/upstack is missing locally");
+        ).rejects.toThrow("la branche de pile GitHub stack/upstack manque localement");
 
         await writeFile(
           outputPath,
@@ -705,13 +705,13 @@ try {
         await expect(
           store.frontier.set({ repo: stack.repo })
         ).rejects.toThrow(
-          `PR #11 head SHA mismatch for branch stack/open: GitHub ${stack.closedSha}; local ${stack.openSha}`
+          `SHA de tete non concordant pour la PR #11 sur la branche stack/open: GitHub ${stack.closedSha}; local ${stack.openSha}`
         );
       },
     });
   });
 
-  it("holds a worktree when its dirty-state probe fails", async () => {
+  it("conserve un worktree quand sa sonde d’état sale échoue", async () => {
     const directory = await makeDirectory();
     const stack = await makeGitStack(directory);
     const worktree = join(directory, "audit worktree");
@@ -721,7 +721,7 @@ try {
     });
 
     const realGit = Bun.which("git");
-    if (realGit === null) throw new Error("git is unavailable");
+    if (realGit === null) throw new Error("git est indisponible");
     const bin = join(directory, "audit-bin");
     await mkdir(bin);
     await writeFile(
@@ -758,25 +758,25 @@ exec "$REAL_GIT" "$@"
     expect(row?.split("\t")[7]).toBe("hold-unknown");
   });
 
-  it("parses under bash -n", () => {
+  it("s’analyse avec bash -n", () => {
     const syntax = Bun.spawnSync(["bash", "-n", WORKTREE_AUDIT]);
     expect(syntax.exitCode).toBe(0);
     expect(syntax.stderr.toString()).toBe("");
   });
 
-  it("rejects malformed TSV, verdict, frontier, and inbox data", async () => {
+  it("rejette les données TSV, verdict, frontière et inbox mal formés", async () => {
     const { directory, store } = await initializedStore();
 
     await writeFile(join(directory, "units.tsv"), "wrong\n");
     await expect(store.units.list()).rejects.toThrow(
-      "units.tsv has an invalid header"
+      "units.tsv a un en-tete invalide"
     );
     await writeFile(
       join(directory, "units.tsv"),
       "id\ttrack\tstate\tbranch\tpr\tsha\tbrief\nshort\trow\n"
     );
     await expect(store.units.list()).rejects.toThrow(
-      "units.tsv has a malformed row"
+      "units.tsv contient une ligne mal formee"
     );
 
     await writeFile(
@@ -784,30 +784,30 @@ exec "$REAL_GIT" "$@"
       "pr\tsha\tverdict\tevidence\tverifier\tts\n1\tsha\tinvalid\treport\tme\tnow\n"
     );
     await expect(store.ledger.summary()).rejects.toThrow(
-      "ledger.tsv has invalid verdict invalid"
+      "ledger.tsv contient le verdict invalide invalid"
     );
 
     await writeFile(join(directory, "frontier.json"), '{"generation":"1"}\n');
     await expect(store.frontier.show()).rejects.toThrow(
-      "frontier.json has an invalid shape"
+      "frontier.json a une forme invalide"
     );
 
     await writeFile(join(directory, "inbox", "bad.tsv"), "too\tshort\n");
     await expect(store.inbox.peek()).rejects.toThrow(
-      "inbox pointer bad.tsv is malformed"
+      "le pointeur de boite de reception bad.tsv est mal forme"
     );
   });
 
-  it("rejects operations after close", async () => {
+  it("rejette les opérations après fermeture", async () => {
     const { store } = await initializedStore();
     await store.close();
-    await expect(store.units.list()).rejects.toThrow("store is closed");
+    await expect(store.units.list()).rejects.toThrow("le magasin est ferme");
     await expect(store.status.render()).rejects.toBeInstanceOf(UserError);
   });
 });
 
-describe("orch CLI", () => {
-  it("prints commander help and rejects invalid parsing with exit 1", async () => {
+describe("CLI orch", () => {
+  it("affiche l’aide de commande et rejette l’analyse invalide avec le code 1", async () => {
     const help = runCli(["--help"]);
     expect(help.code).toBe(0);
     expect(help.stdout).toContain("Commands:");
@@ -825,7 +825,7 @@ describe("orch CLI", () => {
     expect(invalid.stderr).toContain("required option '--track <track>'");
   });
 
-  it("accepts ORCH_STORE and emits complete JSON", async () => {
+  it("accepte ORCH_STORE et émet du JSON complet", async () => {
     const directory = await makeDirectory();
     const env = { ...process.env, ORCH_STORE: directory };
     expect(runCli(["init"], env).code).toBe(0);
@@ -846,7 +846,7 @@ describe("orch CLI", () => {
     });
   });
 
-  it("maps user and not-found outcomes to the preserved exit codes", async () => {
+  it("mappe les résultats utilisateur et introuvables vers les codes de sortie préservés", async () => {
     const directory = await makeDirectory();
     expect(runCli(["--store", directory, "init"]).code).toBe(0);
 
@@ -858,7 +858,7 @@ describe("orch CLI", () => {
     ]);
     expect(missingRepo.code).toBe(1);
     expect(missingRepo.stderr).toContain(
-      "set --repo <dir> or ORCH_REPO"
+      "définir --repo <dir> ou ORCH_REPO"
     );
 
     const userError = runCli([
@@ -871,7 +871,7 @@ describe("orch CLI", () => {
       "build",
     ]);
     expect(userError.code).toBe(1);
-    expect(userError.stderr).toContain("unit id must not be empty");
+    expect(userError.stderr).toContain("unit id ne doit pas être vide");
 
     const missingUnit = runCli([
       "--store",
@@ -881,7 +881,7 @@ describe("orch CLI", () => {
       "missing",
     ]);
     expect(missingUnit.code).toBe(2);
-    expect(missingUnit.stderr).toContain("unit missing not found");
+    expect(missingUnit.stderr).toContain("unité missing introuvable");
 
     const missingLedger = runCli([
       "--store",

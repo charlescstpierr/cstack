@@ -5,1127 +5,1127 @@
       "source": "pstack/.cursor-plugin/plugin.json",
       "target": "plugins/cstack/.codex-plugin/plugin.json",
       "status": "ported",
-      "reason": "Native Codex manifest replaces the Cursor manifest."
+      "reason": "Le manifeste natif Codex remplace celui de Cursor."
     },
     {
       "source": "pstack/.gitignore",
       "target": "plugins/cstack/.gitignore",
       "status": "retained",
-      "reason": "Portable upstream content retained under its original MIT license."
+      "reason": "Contenu portable de la source amont conservé sous sa licence MIT originale."
     },
     {
       "source": "pstack/LICENSE",
       "target": "plugins/cstack/LICENSE",
       "status": "retained",
-      "reason": "Portable upstream content retained under its original MIT license."
+      "reason": "Contenu portable de la source amont conservé sous sa licence MIT originale."
     },
     {
       "source": "pstack/README.md",
       "target": "plugins/cstack/README.md",
       "status": "ported",
-      "reason": "Adapted or preserved within the Codex plugin."
+      "reason": "Adapté ou conservé dans le plugin Codex."
     },
     {
       "source": "pstack/agents/comment-sicko.md",
       "target": "plugins/cstack/skills/cstack/references/agents/comment-reviewer.md",
       "status": "ported",
-      "reason": "Evidence-based read-only comment reviewer prompt."
+      "reason": "Consignes de revue des commentaires en lecture seule, fondées sur des preuves."
     },
     {
       "source": "pstack/agents/poteto-agent.md",
       "target": "plugins/cstack/skills/cstack/references/agents/cstack-agent.md",
       "status": "ported",
-      "reason": "Prompt resource supplied to native Codex subagents."
+      "reason": "Consignes fournies aux sous-agents natifs Codex."
     },
     {
       "source": "pstack/assets/logo.png",
       "target": "plugins/cstack/assets/logo.svg",
       "status": "replaced",
-      "reason": "Independent cstack visual identity."
+      "reason": "Identité visuelle propre à cstack."
     },
     {
       "source": "pstack/automations/benny/FOR_AGENTS.md",
       "target": "plugins/cstack/automations/benny/README.md",
       "status": "unsupported",
-      "reason": "Cursor event-driven setup is not executed; native limitations and original source are documented."
+      "reason": "La configuration événementielle Cursor ne s’exécute pas ; les limites natives et la source originale sont documentées."
     },
     {
       "source": "pstack/automations/benny/README.md",
       "target": "plugins/cstack/automations/benny/README.md",
       "status": "unsupported",
-      "reason": "Cursor event-driven setup is not executed; native limitations and original source are documented."
+      "reason": "La configuration événementielle Cursor ne s’exécute pas ; les limites natives et la source originale sont documentées."
     },
     {
       "source": "pstack/automations/benny/skills/reproduce-and-fix-issues/SKILL.md",
       "target": "plugins/cstack/automations/benny/README.md",
       "status": "unsupported",
-      "reason": "Cursor event-driven setup is not executed; native limitations and original source are documented."
+      "reason": "La configuration événementielle Cursor ne s’exécute pas ; les limites natives et la source originale sont documentées."
     },
     {
       "source": "pstack/automations/benny/skills/reproduce-and-fix-issues/references/control-adapter.md",
       "target": "plugins/cstack/automations/benny/README.md",
       "status": "unsupported",
-      "reason": "Cursor event-driven setup is not executed; native limitations and original source are documented."
+      "reason": "La configuration événementielle Cursor ne s’exécute pas ; les limites natives et la source originale sont documentées."
     },
     {
       "source": "pstack/automations/benny/skills/reproduce-and-fix-issues/references/feature-map.example.md",
       "target": "plugins/cstack/automations/benny/README.md",
       "status": "unsupported",
-      "reason": "Cursor event-driven setup is not executed; native limitations and original source are documented."
+      "reason": "La configuration événementielle Cursor ne s’exécute pas ; les limites natives et la source originale sont documentées."
     },
     {
       "source": "pstack/automations/benny/skills/reproduce-and-fix-issues/references/verify-existing-fix.md",
       "target": "plugins/cstack/automations/benny/README.md",
       "status": "unsupported",
-      "reason": "Cursor event-driven setup is not executed; native limitations and original source are documented."
+      "reason": "La configuration événementielle Cursor ne s’exécute pas ; les limites natives et la source originale sont documentées."
     },
     {
       "source": "pstack/automations/benny/skills/setup-benny/SKILL.md",
       "target": "plugins/cstack/automations/benny/README.md",
       "status": "unsupported",
-      "reason": "Cursor event-driven setup is not executed; native limitations and original source are documented."
+      "reason": "La configuration événementielle Cursor ne s’exécute pas ; les limites natives et la source originale sont documentées."
     },
     {
       "source": "pstack/automations/benny/skills/triage-issue-reports/SKILL.md",
       "target": "plugins/cstack/automations/benny/README.md",
       "status": "unsupported",
-      "reason": "Cursor event-driven setup is not executed; native limitations and original source are documented."
+      "reason": "La configuration événementielle Cursor ne s’exécute pas ; les limites natives et la source originale sont documentées."
     },
     {
       "source": "pstack/automations/benny/skills/triage-issue-reports/references/routing.example.md",
       "target": "plugins/cstack/automations/benny/README.md",
       "status": "unsupported",
-      "reason": "Cursor event-driven setup is not executed; native limitations and original source are documented."
+      "reason": "La configuration événementielle Cursor ne s’exécute pas ; les limites natives et la source originale sont documentées."
     },
     {
       "source": "pstack/automations/benny/templates/configuration.example.yaml",
       "target": "plugins/cstack/automations/benny/README.md",
       "status": "unsupported",
-      "reason": "Cursor event-driven setup is not executed; native limitations and original source are documented."
+      "reason": "La configuration événementielle Cursor ne s’exécute pas ; les limites natives et la source originale sont documentées."
     },
     {
       "source": "pstack/automations/benny/templates/reproduce-automation-prompt.md",
       "target": "plugins/cstack/automations/benny/README.md",
       "status": "unsupported",
-      "reason": "Cursor event-driven setup is not executed; native limitations and original source are documented."
+      "reason": "La configuration événementielle Cursor ne s’exécute pas ; les limites natives et la source originale sont documentées."
     },
     {
       "source": "pstack/automations/benny/templates/triage-automation-prompt.md",
       "target": "plugins/cstack/automations/benny/README.md",
       "status": "unsupported",
-      "reason": "Cursor event-driven setup is not executed; native limitations and original source are documented."
+      "reason": "La configuration événementielle Cursor ne s’exécute pas ; les limites natives et la source originale sont documentées."
     },
     {
       "source": "pstack/docs/guide/01-setup.md",
       "target": "plugins/cstack/docs/guide/01-setup.md",
       "status": "ported",
-      "reason": "Adapted or preserved within the Codex plugin."
+      "reason": "Adapté ou conservé dans le plugin Codex."
     },
     {
       "source": "pstack/docs/guide/02-poteto-mode.md",
       "target": "plugins/cstack/docs/guide/02-cstack.md",
       "status": "ported",
-      "reason": "Codex activation guide replaces personal Cursor mode instructions."
+      "reason": "Le guide d’activation Codex remplace les consignes personnelles du mode Cursor."
     },
     {
       "source": "pstack/docs/guide/03-understand.md",
       "target": "plugins/cstack/docs/guide/03-understand.md",
       "status": "ported",
-      "reason": "Adapted or preserved within the Codex plugin."
+      "reason": "Adapté ou conservé dans le plugin Codex."
     },
     {
       "source": "pstack/docs/guide/04-design.md",
       "target": "plugins/cstack/docs/guide/04-design.md",
       "status": "ported",
-      "reason": "Adapted or preserved within the Codex plugin."
+      "reason": "Adapté ou conservé dans le plugin Codex."
     },
     {
       "source": "pstack/docs/guide/05-build-and-clean.md",
       "target": "plugins/cstack/docs/guide/05-build-and-clean.md",
       "status": "ported",
-      "reason": "Adapted or preserved within the Codex plugin."
+      "reason": "Adapté ou conservé dans le plugin Codex."
     },
     {
       "source": "pstack/docs/guide/06-verify-and-ship.md",
       "target": "plugins/cstack/docs/guide/06-verify-and-ship.md",
       "status": "ported",
-      "reason": "Adapted or preserved within the Codex plugin."
+      "reason": "Adapté ou conservé dans le plugin Codex."
     },
     {
       "source": "pstack/docs/guide/07-overnight.md",
       "target": "plugins/cstack/docs/guide/07-overnight.md",
       "status": "ported",
-      "reason": "Adapted or preserved within the Codex plugin."
+      "reason": "Adapté ou conservé dans le plugin Codex."
     },
     {
       "source": "pstack/docs/guide/08-principles.md",
       "target": "plugins/cstack/docs/guide/08-principles.md",
       "status": "ported",
-      "reason": "Adapted or preserved within the Codex plugin."
+      "reason": "Adapté ou conservé dans le plugin Codex."
     },
     {
       "source": "pstack/docs/guide/09-make-it-yours.md",
       "target": "plugins/cstack/docs/guide/09-make-it-yours.md",
       "status": "ported",
-      "reason": "Adapted or preserved within the Codex plugin."
+      "reason": "Adapté ou conservé dans le plugin Codex."
     },
     {
       "source": "pstack/docs/guide/10-recipes-and-pitfalls.md",
       "target": "plugins/cstack/docs/guide/10-recipes-and-pitfalls.md",
       "status": "ported",
-      "reason": "Adapted or preserved within the Codex plugin."
+      "reason": "Adapté ou conservé dans le plugin Codex."
     },
     {
       "source": "pstack/docs/guide/README.md",
       "target": "plugins/cstack/docs/guide/README.md",
       "status": "ported",
-      "reason": "Adapted or preserved within the Codex plugin."
+      "reason": "Adapté ou conservé dans le plugin Codex."
     },
     {
       "source": "pstack/docs/guide/images/design.jpg",
       "target": "plugins/cstack/docs/guide/README.md",
       "status": "replaced",
-      "reason": "Text guide replaces Cursor-specific screenshots."
+      "reason": "Un guide textuel remplace les captures propres à Cursor."
     },
     {
       "source": "pstack/docs/guide/images/overnight.jpg",
       "target": "plugins/cstack/docs/guide/README.md",
       "status": "replaced",
-      "reason": "Text guide replaces Cursor-specific screenshots."
+      "reason": "Un guide textuel remplace les captures propres à Cursor."
     },
     {
       "source": "pstack/docs/guide/images/recipes.jpg",
       "target": "plugins/cstack/docs/guide/README.md",
       "status": "replaced",
-      "reason": "Text guide replaces Cursor-specific screenshots."
+      "reason": "Un guide textuel remplace les captures propres à Cursor."
     },
     {
       "source": "pstack/docs/guide/images/router.jpg",
       "target": "plugins/cstack/docs/guide/README.md",
       "status": "replaced",
-      "reason": "Text guide replaces Cursor-specific screenshots."
+      "reason": "Un guide textuel remplace les captures propres à Cursor."
     },
     {
       "source": "pstack/docs/guide/images/understanding.jpg",
       "target": "plugins/cstack/docs/guide/README.md",
       "status": "replaced",
-      "reason": "Text guide replaces Cursor-specific screenshots."
+      "reason": "Un guide textuel remplace les captures propres à Cursor."
     },
     {
       "source": "pstack/docs/guide/images/verification.jpg",
       "target": "plugins/cstack/docs/guide/README.md",
       "status": "replaced",
-      "reason": "Text guide replaces Cursor-specific screenshots."
+      "reason": "Un guide textuel remplace les captures propres à Cursor."
     },
     {
       "source": "pstack/skills/architect/SKILL.md",
       "target": "plugins/cstack/skills/architect/SKILL.md",
       "status": "ported",
-      "reason": "Adapted or preserved within the Codex plugin."
+      "reason": "Adapté ou conservé dans le plugin Codex."
     },
     {
       "source": "pstack/skills/architect/references/design-red-flags.md",
       "target": "plugins/cstack/skills/architect/references/design-red-flags.md",
-      "status": "retained",
-      "reason": "Portable upstream content retained under its original MIT license."
+      "status": "ported",
+      "reason": "Textes et commentaires traduits en français ; contrats techniques et provenance conservés."
     },
     {
       "source": "pstack/skills/architect/references/rationale-template.md",
       "target": "plugins/cstack/skills/architect/references/rationale-template.md",
-      "status": "retained",
-      "reason": "Portable upstream content retained under its original MIT license."
+      "status": "ported",
+      "reason": "Textes et commentaires traduits en français ; contrats techniques et provenance conservés."
     },
     {
       "source": "pstack/skills/architect/references/runner-prompt.md",
       "target": "plugins/cstack/skills/architect/references/runner-prompt.md",
       "status": "ported",
-      "reason": "Principle skill mentions rewritten as principle reference links."
+      "reason": "Les mentions des skills de principes deviennent des liens vers leurs références."
     },
     {
       "source": "pstack/skills/arena/SKILL.md",
       "target": "plugins/cstack/skills/arena/SKILL.md",
       "status": "ported",
-      "reason": "Adapted or preserved within the Codex plugin."
+      "reason": "Adapté ou conservé dans le plugin Codex."
     },
     {
       "source": "pstack/skills/automate-me/SKILL.md",
       "target": "plugins/cstack/skills/automate-me/SKILL.md",
       "status": "ported",
-      "reason": "Adapted or preserved within the Codex plugin."
+      "reason": "Adapté ou conservé dans le plugin Codex."
     },
     {
       "source": "pstack/skills/blast-radius/SKILL.md",
       "target": "plugins/cstack/skills/blast-radius/SKILL.md",
       "status": "ported",
-      "reason": "Adapted or preserved within the Codex plugin."
+      "reason": "Adapté ou conservé dans le plugin Codex."
     },
     {
       "source": "pstack/skills/bro/SKILL.md",
       "target": "plugins/cstack/skills/bro/SKILL.md",
       "status": "ported",
-      "reason": "Adapted or preserved within the Codex plugin."
+      "reason": "Adapté ou conservé dans le plugin Codex."
     },
     {
       "source": "pstack/skills/create-verification-skill/SKILL.md",
       "target": "plugins/cstack/skills/create-verification-skill/SKILL.md",
       "status": "ported",
-      "reason": "Adapted or preserved within the Codex plugin."
+      "reason": "Adapté ou conservé dans le plugin Codex."
     },
     {
       "source": "pstack/skills/create-verification-skill/references/feature-map-example/README.md",
       "target": "plugins/cstack/skills/create-verification-skill/references/feature-map-example/README.md",
-      "status": "retained",
-      "reason": "Portable upstream content retained under its original MIT license."
+      "status": "ported",
+      "reason": "Textes et commentaires traduits en français ; contrats techniques et provenance conservés."
     },
     {
       "source": "pstack/skills/create-verification-skill/references/feature-map-example/create-note.md",
       "target": "plugins/cstack/skills/create-verification-skill/references/feature-map-example/create-note.md",
-      "status": "retained",
-      "reason": "Portable upstream content retained under its original MIT license."
+      "status": "ported",
+      "reason": "Textes et commentaires traduits en français ; contrats techniques et provenance conservés."
     },
     {
       "source": "pstack/skills/create-verification-skill/references/feature-map-example/search.md",
       "target": "plugins/cstack/skills/create-verification-skill/references/feature-map-example/search.md",
-      "status": "retained",
-      "reason": "Portable upstream content retained under its original MIT license."
+      "status": "ported",
+      "reason": "Textes et commentaires traduits en français ; contrats techniques et provenance conservés."
     },
     {
       "source": "pstack/skills/figure-it-out/SKILL.md",
       "target": "plugins/cstack/skills/figure-it-out/SKILL.md",
       "status": "ported",
-      "reason": "Adapted or preserved within the Codex plugin."
+      "reason": "Adapté ou conservé dans le plugin Codex."
     },
     {
       "source": "pstack/skills/how/SKILL.md",
       "target": "plugins/cstack/skills/how/SKILL.md",
       "status": "ported",
-      "reason": "Adapted or preserved within the Codex plugin."
+      "reason": "Adapté ou conservé dans le plugin Codex."
     },
     {
       "source": "pstack/skills/how/references/explainer-prompt.md",
       "target": "plugins/cstack/skills/how/references/explainer-prompt.md",
-      "status": "retained",
-      "reason": "Portable upstream content retained under its original MIT license."
+      "status": "ported",
+      "reason": "Textes et commentaires traduits en français ; contrats techniques et provenance conservés."
     },
     {
       "source": "pstack/skills/how/references/explorer-prompt.md",
       "target": "plugins/cstack/skills/how/references/explorer-prompt.md",
-      "status": "retained",
-      "reason": "Portable upstream content retained under its original MIT license."
+      "status": "ported",
+      "reason": "Textes et commentaires traduits en français ; contrats techniques et provenance conservés."
     },
     {
       "source": "pstack/skills/interrogate/SKILL.md",
       "target": "plugins/cstack/skills/interrogate/SKILL.md",
       "status": "ported",
-      "reason": "Adapted or preserved within the Codex plugin."
+      "reason": "Adapté ou conservé dans le plugin Codex."
     },
     {
       "source": "pstack/skills/interrogate/references/code-quality-review.md",
       "target": "plugins/cstack/skills/interrogate/references/code-quality-review.md",
-      "status": "retained",
-      "reason": "Portable upstream content retained under its original MIT license."
+      "status": "ported",
+      "reason": "Textes et commentaires traduits en français ; contrats techniques et provenance conservés."
     },
     {
       "source": "pstack/skills/interrogate/references/lead-judgment.md",
       "target": "plugins/cstack/skills/interrogate/references/lead-judgment.md",
       "status": "ported",
-      "reason": "Axis separation, frozen-snapshot, and Spec-gap rules added for Codex interrogate."
+      "reason": "Ajout des règles de séparation des axes, d’instantané figé et de lacune de spécification pour interrogate sur Codex."
     },
     {
       "source": "pstack/skills/interrogate/references/reviewer-prompt.md",
       "target": "plugins/cstack/skills/interrogate/references/reviewer-prompt.md",
       "status": "ported",
-      "reason": "Assigned-axis, frozen-scope, and no-delegation instructions added for Codex reviewers."
+      "reason": "Ajout des consignes d’axe attribué, de périmètre figé et d’interdiction de délégation pour les réviseurs Codex."
     },
     {
       "source": "pstack/skills/interrogate/references/rubric.md",
       "target": "plugins/cstack/skills/interrogate/references/rubric.md",
       "status": "ported",
-      "reason": "Spec and Standards fidelity axes added for Codex interrogate."
+      "reason": "Ajout des axes de fidélité à la spécification et aux normes pour interrogate sur Codex."
     },
     {
       "source": "pstack/skills/maintain-verification-skill/SKILL.md",
       "target": "plugins/cstack/skills/maintain-verification-skill/SKILL.md",
       "status": "ported",
-      "reason": "Adapted or preserved within the Codex plugin."
+      "reason": "Adapté ou conservé dans le plugin Codex."
     },
     {
       "source": "pstack/skills/make-bot-ui/SKILL.md",
       "target": "plugins/cstack/skills/make-bot-ui/SKILL.md",
       "status": "unsupported",
-      "reason": "No native Grok Bot webhook endpoint; explicit notice instead of an invented API."
+      "reason": "Aucun point d’entrée webhook natif pour Grok Bot ; une notice explicite remplace toute API inventée."
     },
     {
       "source": "pstack/skills/no-comments/SKILL.md",
       "target": "plugins/cstack/skills/no-comments/SKILL.md",
       "status": "ported",
-      "reason": "Adapted or preserved within the Codex plugin."
+      "reason": "Adapté ou conservé dans le plugin Codex."
     },
     {
       "source": "pstack/skills/poteto-mode/SKILL.md",
       "target": "plugins/cstack/skills/cstack/SKILL.md",
       "status": "ported",
-      "reason": "Adapted or preserved within the Codex plugin."
+      "reason": "Adapté ou conservé dans le plugin Codex."
     },
     {
       "source": "pstack/skills/poteto-mode/playbooks/authoring-a-skill.md",
       "target": "plugins/cstack/skills/cstack/playbooks/authoring-a-skill.md",
       "status": "ported",
-      "reason": "Adapted or preserved within the Codex plugin."
+      "reason": "Adapté ou conservé dans le plugin Codex."
     },
     {
       "source": "pstack/skills/poteto-mode/playbooks/autonomous-run.md",
       "target": "plugins/cstack/skills/cstack/playbooks/autonomous-run.md",
       "status": "ported",
-      "reason": "Adapted or preserved within the Codex plugin."
+      "reason": "Adapté ou conservé dans le plugin Codex."
     },
     {
       "source": "pstack/skills/poteto-mode/playbooks/autopilot-full.md",
       "target": "plugins/cstack/skills/cstack/playbooks/autopilot-full.md",
       "status": "ported",
-      "reason": "Adapted or preserved within the Codex plugin."
+      "reason": "Adapté ou conservé dans le plugin Codex."
     },
     {
       "source": "pstack/skills/poteto-mode/playbooks/autopilot-stack.md",
       "target": "plugins/cstack/skills/cstack/playbooks/autopilot-stack.md",
       "status": "ported",
-      "reason": "Adapted or preserved within the Codex plugin."
+      "reason": "Adapté ou conservé dans le plugin Codex."
     },
     {
       "source": "pstack/skills/poteto-mode/playbooks/babysit.md",
       "target": "plugins/cstack/skills/cstack/playbooks/babysit.md",
       "status": "ported",
-      "reason": "Adapted or preserved within the Codex plugin."
+      "reason": "Adapté ou conservé dans le plugin Codex."
     },
     {
       "source": "pstack/skills/poteto-mode/playbooks/bug-fix.md",
       "target": "plugins/cstack/skills/cstack/playbooks/bug-fix.md",
       "status": "ported",
-      "reason": "Adapted or preserved within the Codex plugin."
+      "reason": "Adapté ou conservé dans le plugin Codex."
     },
     {
       "source": "pstack/skills/poteto-mode/playbooks/eval.md",
       "target": "plugins/cstack/skills/cstack/playbooks/eval.md",
       "status": "ported",
-      "reason": "Adapted or preserved within the Codex plugin."
+      "reason": "Adapté ou conservé dans le plugin Codex."
     },
     {
       "source": "pstack/skills/poteto-mode/playbooks/feature.md",
       "target": "plugins/cstack/skills/cstack/playbooks/feature.md",
       "status": "ported",
-      "reason": "Adapted or preserved within the Codex plugin."
+      "reason": "Adapté ou conservé dans le plugin Codex."
     },
     {
       "source": "pstack/skills/poteto-mode/playbooks/hillclimb.md",
       "target": "plugins/cstack/skills/cstack/playbooks/hillclimb.md",
       "status": "ported",
-      "reason": "Adapted or preserved within the Codex plugin."
+      "reason": "Adapté ou conservé dans le plugin Codex."
     },
     {
       "source": "pstack/skills/poteto-mode/playbooks/investigation.md",
       "target": "plugins/cstack/skills/cstack/playbooks/investigation.md",
       "status": "ported",
-      "reason": "Adapted or preserved within the Codex plugin."
+      "reason": "Adapté ou conservé dans le plugin Codex."
     },
     {
       "source": "pstack/skills/poteto-mode/playbooks/multi-phase-plan.md",
       "target": "plugins/cstack/skills/cstack/playbooks/multi-phase-plan.md",
       "status": "ported",
-      "reason": "Adapted or preserved within the Codex plugin."
+      "reason": "Adapté ou conservé dans le plugin Codex."
     },
     {
       "source": "pstack/skills/poteto-mode/playbooks/opening-a-pr.md",
       "target": "plugins/cstack/skills/cstack/playbooks/opening-a-pr.md",
       "status": "ported",
-      "reason": "Adapted or preserved within the Codex plugin."
+      "reason": "Adapté ou conservé dans le plugin Codex."
     },
     {
       "source": "pstack/skills/poteto-mode/playbooks/orchestrate.md",
       "target": "plugins/cstack/skills/cstack/playbooks/orchestrate.md",
       "status": "ported",
-      "reason": "Adapted or preserved within the Codex plugin."
+      "reason": "Adapté ou conservé dans le plugin Codex."
     },
     {
       "source": "pstack/skills/poteto-mode/playbooks/pause-safely.md",
       "target": "plugins/cstack/skills/cstack/playbooks/pause-safely.md",
       "status": "ported",
-      "reason": "Adapted or preserved within the Codex plugin."
+      "reason": "Adapté ou conservé dans le plugin Codex."
     },
     {
       "source": "pstack/skills/poteto-mode/playbooks/perf-issue.md",
       "target": "plugins/cstack/skills/cstack/playbooks/perf-issue.md",
       "status": "ported",
-      "reason": "Adapted or preserved within the Codex plugin."
+      "reason": "Adapté ou conservé dans le plugin Codex."
     },
     {
       "source": "pstack/skills/poteto-mode/playbooks/prototype.md",
       "target": "plugins/cstack/skills/cstack/playbooks/prototype.md",
       "status": "ported",
-      "reason": "Adapted or preserved within the Codex plugin."
+      "reason": "Adapté ou conservé dans le plugin Codex."
     },
     {
       "source": "pstack/skills/poteto-mode/playbooks/refactoring.md",
       "target": "plugins/cstack/skills/cstack/playbooks/refactoring.md",
       "status": "ported",
-      "reason": "Adapted or preserved within the Codex plugin."
+      "reason": "Adapté ou conservé dans le plugin Codex."
     },
     {
       "source": "pstack/skills/poteto-mode/playbooks/runtime-forensics.md",
       "target": "plugins/cstack/skills/cstack/playbooks/runtime-forensics.md",
       "status": "ported",
-      "reason": "Adapted or preserved within the Codex plugin."
+      "reason": "Adapté ou conservé dans le plugin Codex."
     },
     {
       "source": "pstack/skills/poteto-mode/playbooks/session-pickup.md",
       "target": "plugins/cstack/skills/cstack/playbooks/session-pickup.md",
       "status": "ported",
-      "reason": "Adapted or preserved within the Codex plugin."
+      "reason": "Adapté ou conservé dans le plugin Codex."
     },
     {
       "source": "pstack/skills/poteto-mode/playbooks/shipping.md",
       "target": "plugins/cstack/skills/cstack/playbooks/shipping.md",
       "status": "ported",
-      "reason": "Adapted or preserved within the Codex plugin."
+      "reason": "Adapté ou conservé dans le plugin Codex."
     },
     {
       "source": "pstack/skills/poteto-mode/playbooks/trace-forensics.md",
       "target": "plugins/cstack/skills/cstack/playbooks/trace-forensics.md",
       "status": "ported",
-      "reason": "Adapted or preserved within the Codex plugin."
+      "reason": "Adapté ou conservé dans le plugin Codex."
     },
     {
       "source": "pstack/skills/poteto-mode/playbooks/visual-parity.md",
       "target": "plugins/cstack/skills/cstack/playbooks/visual-parity.md",
       "status": "ported",
-      "reason": "Adapted or preserved within the Codex plugin."
+      "reason": "Adapté ou conservé dans le plugin Codex."
     },
     {
       "source": "pstack/skills/poteto-mode/playbooks/worktree-cleanup.md",
       "target": "plugins/cstack/skills/cstack/playbooks/worktree-cleanup.md",
       "status": "ported",
-      "reason": "Adapted or preserved within the Codex plugin."
+      "reason": "Adapté ou conservé dans le plugin Codex."
     },
     {
       "source": "pstack/skills/poteto-mode/references/bugbot-triage.md",
       "target": "plugins/cstack/skills/cstack/references/bugbot-triage.md",
       "status": "ported",
-      "reason": "Adapted or preserved within the Codex plugin."
+      "reason": "Adapté ou conservé dans le plugin Codex."
     },
     {
       "source": "pstack/skills/poteto-mode/scripts/bootstrap.ts",
       "target": "plugins/cstack/skills/cstack/scripts/bootstrap.ts",
       "status": "ported",
-      "reason": "Adapted or preserved within the Codex plugin."
+      "reason": "Adapté ou conservé dans le plugin Codex."
     },
     {
       "source": "pstack/skills/poteto-mode/scripts/bun.lock",
       "target": "plugins/cstack/skills/cstack/scripts/bun.lock",
       "status": "ported",
-      "reason": "Adapted or preserved within the Codex plugin."
+      "reason": "Adapté ou conservé dans le plugin Codex."
     },
     {
       "source": "pstack/skills/poteto-mode/scripts/check-plan.mjs",
       "target": "plugins/cstack/skills/cstack/scripts/check-plan.mjs",
       "status": "ported",
-      "reason": "Adapted or preserved within the Codex plugin."
+      "reason": "Adapté ou conservé dans le plugin Codex."
     },
     {
       "source": "pstack/skills/poteto-mode/scripts/orch/orch.test.ts",
       "target": "plugins/cstack/skills/cstack/scripts/orch/orch.test.ts",
       "status": "ported",
-      "reason": "Adapted or preserved within the Codex plugin."
+      "reason": "Adapté ou conservé dans le plugin Codex."
     },
     {
       "source": "pstack/skills/poteto-mode/scripts/orch/orch.ts",
       "target": "plugins/cstack/skills/cstack/scripts/orch/orch.ts",
       "status": "ported",
-      "reason": "Adapted or preserved within the Codex plugin."
+      "reason": "Adapté ou conservé dans le plugin Codex."
     },
     {
       "source": "pstack/skills/poteto-mode/scripts/orch/store.ts",
       "target": "plugins/cstack/skills/cstack/scripts/orch/store.ts",
       "status": "ported",
-      "reason": "Adapted or preserved within the Codex plugin."
+      "reason": "Adapté ou conservé dans le plugin Codex."
     },
     {
       "source": "pstack/skills/poteto-mode/scripts/package.json",
       "target": "plugins/cstack/skills/cstack/scripts/package.json",
       "status": "ported",
-      "reason": "Adapted or preserved within the Codex plugin."
+      "reason": "Adapté ou conservé dans le plugin Codex."
     },
     {
       "source": "pstack/skills/poteto-mode/scripts/watch-pr/cli.test.ts",
       "target": "plugins/cstack/skills/cstack/scripts/watch-pr/cli.test.ts",
       "status": "ported",
-      "reason": "Fail-closed coverage for a missing gh binary."
+      "reason": "Tests du refus de poursuivre lorsque le binaire gh manque."
     },
     {
       "source": "pstack/skills/poteto-mode/scripts/watch-pr/cli.ts",
       "target": "plugins/cstack/skills/cstack/scripts/watch-pr/cli.ts",
-      "status": "retained",
-      "reason": "Portable upstream content retained under its original MIT license."
+      "status": "ported",
+      "reason": "Textes et commentaires traduits en français ; contrats techniques et provenance conservés."
     },
     {
       "source": "pstack/skills/poteto-mode/scripts/watch-pr/fakes.test-helper.ts",
       "target": "plugins/cstack/skills/cstack/scripts/watch-pr/fakes.test-helper.ts",
       "status": "retained",
-      "reason": "Portable upstream content retained under its original MIT license."
+      "reason": "Contenu portable de la source amont conservé sous sa licence MIT originale."
     },
     {
       "source": "pstack/skills/poteto-mode/scripts/watch-pr/github.test.ts",
       "target": "plugins/cstack/skills/cstack/scripts/watch-pr/github.test.ts",
       "status": "ported",
-      "reason": "Fail-closed coverage for pagination, discovery cap, and base-ref cycles."
+      "reason": "Tests du refus de poursuivre en cas de pagination incomplète, de plafond de découverte ou de cycle des références de base."
     },
     {
       "source": "pstack/skills/poteto-mode/scripts/watch-pr/github.ts",
       "target": "plugins/cstack/skills/cstack/scripts/watch-pr/github.ts",
       "status": "ported",
-      "reason": "Fail-closed GitHub pagination, discovery cap, and auth handling."
+      "reason": "Refus de poursuivre en cas de pagination GitHub incomplète, de plafond de découverte ou d’échec d’authentification."
     },
     {
       "source": "pstack/skills/poteto-mode/scripts/watch-pr/policy.test.ts",
       "target": "plugins/cstack/skills/cstack/scripts/watch-pr/policy.test.ts",
-      "status": "retained",
-      "reason": "Portable upstream content retained under its original MIT license."
+      "status": "ported",
+      "reason": "Textes et commentaires traduits en français ; contrats techniques et provenance conservés."
     },
     {
       "source": "pstack/skills/poteto-mode/scripts/watch-pr/policy.ts",
       "target": "plugins/cstack/skills/cstack/scripts/watch-pr/policy.ts",
-      "status": "retained",
-      "reason": "Portable upstream content retained under its original MIT license."
+      "status": "ported",
+      "reason": "Textes et commentaires traduits en français ; contrats techniques et provenance conservés."
     },
     {
       "source": "pstack/skills/poteto-mode/scripts/watch-pr/render.ts",
       "target": "plugins/cstack/skills/cstack/scripts/watch-pr/render.ts",
-      "status": "retained",
-      "reason": "Portable upstream content retained under its original MIT license."
+      "status": "ported",
+      "reason": "Textes et commentaires traduits en français ; contrats techniques et provenance conservés."
     },
     {
       "source": "pstack/skills/poteto-mode/scripts/watch-pr/tsconfig.json",
       "target": "plugins/cstack/skills/cstack/scripts/watch-pr/tsconfig.json",
       "status": "ported",
-      "reason": "Adapted or preserved within the Codex plugin."
+      "reason": "Adapté ou conservé dans le plugin Codex."
     },
     {
       "source": "pstack/skills/poteto-mode/scripts/watch-pr/types.compile.ts",
       "target": "plugins/cstack/skills/cstack/scripts/watch-pr/types.compile.ts",
-      "status": "retained",
-      "reason": "Portable upstream content retained under its original MIT license."
+      "status": "ported",
+      "reason": "Textes et commentaires traduits en français ; contrats techniques et provenance conservés."
     },
     {
       "source": "pstack/skills/poteto-mode/scripts/watch-pr/types.ts",
       "target": "plugins/cstack/skills/cstack/scripts/watch-pr/types.ts",
       "status": "ported",
-      "reason": "Fail-closed error kinds for a missing gh, auth failures, truncation, and base-ref cycles."
+      "reason": "Types d’erreurs bloquantes pour gh absent, les échecs d’authentification, les résultats tronqués et les cycles de références de base."
     },
     {
       "source": "pstack/skills/poteto-mode/scripts/watch-pr/watch-pr",
       "target": "plugins/cstack/skills/cstack/scripts/watch-pr/watch-pr",
       "status": "retained",
-      "reason": "Portable upstream content retained under its original MIT license."
+      "reason": "Contenu portable de la source amont conservé sous sa licence MIT originale."
     },
     {
       "source": "pstack/skills/poteto-mode/scripts/worktree-audit.sh",
       "target": "plugins/cstack/skills/cstack/scripts/worktree-audit.sh",
       "status": "ported",
-      "reason": "Adapted or preserved within the Codex plugin."
+      "reason": "Adapté ou conservé dans le plugin Codex."
     },
     {
       "source": "pstack/skills/principle-attack-the-premise/SKILL.md",
       "target": "plugins/cstack/skills/cstack/references/principles/attack-the-premise.md",
       "status": "ported",
-      "reason": "Principle guidance retained as an internal reference, with conditional callers and no separate skill entrypoint."
+      "reason": "Principe conservé comme référence interne, consulté selon le contexte, sans point d’entrée de skill distinct."
     },
     {
       "source": "pstack/skills/principle-boundary-discipline/SKILL.md",
       "target": "plugins/cstack/skills/cstack/references/principles/boundary-discipline.md",
       "status": "ported",
-      "reason": "Principle guidance retained as an internal reference, with conditional callers and no separate skill entrypoint."
+      "reason": "Principe conservé comme référence interne, consulté selon le contexte, sans point d’entrée de skill distinct."
     },
     {
       "source": "pstack/skills/principle-build-the-lever/SKILL.md",
       "target": "plugins/cstack/skills/cstack/references/principles/build-the-lever.md",
       "status": "ported",
-      "reason": "Principle guidance retained as an internal reference, with conditional callers and no separate skill entrypoint."
+      "reason": "Principe conservé comme référence interne, consulté selon le contexte, sans point d’entrée de skill distinct."
     },
     {
       "source": "pstack/skills/principle-encode-lessons-in-structure/SKILL.md",
       "target": "plugins/cstack/skills/cstack/references/principles/encode-lessons-in-structure.md",
       "status": "ported",
-      "reason": "Principle guidance retained as an internal reference, with conditional callers and no separate skill entrypoint."
+      "reason": "Principe conservé comme référence interne, consulté selon le contexte, sans point d’entrée de skill distinct."
     },
     {
       "source": "pstack/skills/principle-exhaust-the-design-space/SKILL.md",
       "target": "plugins/cstack/skills/cstack/references/principles/exhaust-the-design-space.md",
       "status": "ported",
-      "reason": "Principle guidance retained as an internal reference, with conditional callers and no separate skill entrypoint."
+      "reason": "Principe conservé comme référence interne, consulté selon le contexte, sans point d’entrée de skill distinct."
     },
     {
       "source": "pstack/skills/principle-experience-first/SKILL.md",
       "target": "plugins/cstack/skills/cstack/references/principles/experience-first.md",
       "status": "ported",
-      "reason": "Principle guidance retained as an internal reference, with conditional callers and no separate skill entrypoint."
+      "reason": "Principe conservé comme référence interne, consulté selon le contexte, sans point d’entrée de skill distinct."
     },
     {
       "source": "pstack/skills/principle-fix-root-causes/SKILL.md",
       "target": "plugins/cstack/skills/cstack/references/principles/fix-root-causes.md",
       "status": "ported",
-      "reason": "Principle guidance retained as an internal reference, with conditional callers and no separate skill entrypoint."
+      "reason": "Principe conservé comme référence interne, consulté selon le contexte, sans point d’entrée de skill distinct."
     },
     {
       "source": "pstack/skills/principle-foundational-thinking/SKILL.md",
       "target": "plugins/cstack/skills/cstack/references/principles/foundational-thinking.md",
       "status": "ported",
-      "reason": "Principle guidance retained as an internal reference, with conditional callers and no separate skill entrypoint."
+      "reason": "Principe conservé comme référence interne, consulté selon le contexte, sans point d’entrée de skill distinct."
     },
     {
       "source": "pstack/skills/principle-guard-the-context-window/SKILL.md",
       "target": "plugins/cstack/skills/cstack/references/principles/guard-the-context-window.md",
       "status": "ported",
-      "reason": "Principle guidance retained as an internal reference, with conditional callers and no separate skill entrypoint."
+      "reason": "Principe conservé comme référence interne, consulté selon le contexte, sans point d’entrée de skill distinct."
     },
     {
       "source": "pstack/skills/principle-laziness-protocol/SKILL.md",
       "target": "plugins/cstack/skills/cstack/references/principles/laziness-protocol.md",
       "status": "ported",
-      "reason": "Principle guidance retained as an internal reference, with conditional callers and no separate skill entrypoint."
+      "reason": "Principe conservé comme référence interne, consulté selon le contexte, sans point d’entrée de skill distinct."
     },
     {
       "source": "pstack/skills/principle-make-operations-idempotent/SKILL.md",
       "target": "plugins/cstack/skills/cstack/references/principles/make-operations-idempotent.md",
       "status": "ported",
-      "reason": "Principle guidance retained as an internal reference, with conditional callers and no separate skill entrypoint."
+      "reason": "Principe conservé comme référence interne, consulté selon le contexte, sans point d’entrée de skill distinct."
     },
     {
       "source": "pstack/skills/principle-migrate-callers-then-delete-legacy-apis/SKILL.md",
       "target": "plugins/cstack/skills/cstack/references/principles/migrate-callers-then-delete-legacy-apis.md",
       "status": "ported",
-      "reason": "Principle guidance retained as an internal reference, with conditional callers and no separate skill entrypoint."
+      "reason": "Principe conservé comme référence interne, consulté selon le contexte, sans point d’entrée de skill distinct."
     },
     {
       "source": "pstack/skills/principle-minimize-reader-load/SKILL.md",
       "target": "plugins/cstack/skills/cstack/references/principles/minimize-reader-load.md",
       "status": "ported",
-      "reason": "Principle guidance retained as an internal reference, with conditional callers and no separate skill entrypoint."
+      "reason": "Principe conservé comme référence interne, consulté selon le contexte, sans point d’entrée de skill distinct."
     },
     {
       "source": "pstack/skills/principle-model-the-domain/SKILL.md",
       "target": "plugins/cstack/skills/cstack/references/principles/model-the-domain.md",
       "status": "ported",
-      "reason": "Principle guidance retained as an internal reference, with conditional callers and no separate skill entrypoint."
+      "reason": "Principe conservé comme référence interne, consulté selon le contexte, sans point d’entrée de skill distinct."
     },
     {
       "source": "pstack/skills/principle-never-block-on-the-human/SKILL.md",
       "target": "plugins/cstack/skills/cstack/references/principles/never-block-on-the-human.md",
       "status": "ported",
-      "reason": "Principle guidance retained as an internal reference, with conditional callers and no separate skill entrypoint."
+      "reason": "Principe conservé comme référence interne, consulté selon le contexte, sans point d’entrée de skill distinct."
     },
     {
       "source": "pstack/skills/principle-outcome-oriented-execution/SKILL.md",
       "target": "plugins/cstack/skills/cstack/references/principles/outcome-oriented-execution.md",
       "status": "ported",
-      "reason": "Principle guidance retained as an internal reference, with conditional callers and no separate skill entrypoint."
+      "reason": "Principe conservé comme référence interne, consulté selon le contexte, sans point d’entrée de skill distinct."
     },
     {
       "source": "pstack/skills/principle-prove-it-works/SKILL.md",
       "target": "plugins/cstack/skills/cstack/references/principles/prove-it-works.md",
       "status": "ported",
-      "reason": "Principle guidance retained as an internal reference, with conditional callers and no separate skill entrypoint."
+      "reason": "Principe conservé comme référence interne, consulté selon le contexte, sans point d’entrée de skill distinct."
     },
     {
       "source": "pstack/skills/principle-redesign-from-first-principles/SKILL.md",
       "target": "plugins/cstack/skills/cstack/references/principles/redesign-from-first-principles.md",
       "status": "ported",
-      "reason": "Principle guidance retained as an internal reference, with conditional callers and no separate skill entrypoint."
+      "reason": "Principe conservé comme référence interne, consulté selon le contexte, sans point d’entrée de skill distinct."
     },
     {
       "source": "pstack/skills/principle-separate-before-serializing-shared-state/SKILL.md",
       "target": "plugins/cstack/skills/cstack/references/principles/separate-before-serializing-shared-state.md",
       "status": "ported",
-      "reason": "Principle guidance retained as an internal reference, with conditional callers and no separate skill entrypoint."
+      "reason": "Principe conservé comme référence interne, consulté selon le contexte, sans point d’entrée de skill distinct."
     },
     {
       "source": "pstack/skills/principle-sequence-verifiable-units/SKILL.md",
       "target": "plugins/cstack/skills/cstack/references/principles/sequence-verifiable-units.md",
       "status": "ported",
-      "reason": "Principle guidance retained as an internal reference, with conditional callers and no separate skill entrypoint."
+      "reason": "Principe conservé comme référence interne, consulté selon le contexte, sans point d’entrée de skill distinct."
     },
     {
       "source": "pstack/skills/principle-subtract-before-you-add/SKILL.md",
       "target": "plugins/cstack/skills/cstack/references/principles/subtract-before-you-add.md",
       "status": "ported",
-      "reason": "Principle guidance retained as an internal reference, with conditional callers and no separate skill entrypoint."
+      "reason": "Principe conservé comme référence interne, consulté selon le contexte, sans point d’entrée de skill distinct."
     },
     {
       "source": "pstack/skills/principle-test-behavior-not-implementation/SKILL.md",
       "target": "plugins/cstack/skills/cstack/references/principles/test-behavior-not-implementation.md",
       "status": "ported",
-      "reason": "Principle guidance retained as an internal reference, with conditional callers and no separate skill entrypoint."
+      "reason": "Principe conservé comme référence interne, consulté selon le contexte, sans point d’entrée de skill distinct."
     },
     {
       "source": "pstack/skills/principle-type-system-discipline/SKILL.md",
       "target": "plugins/cstack/skills/cstack/references/principles/type-system-discipline.md",
       "status": "ported",
-      "reason": "Principle guidance retained as an internal reference, with conditional callers and no separate skill entrypoint."
+      "reason": "Principe conservé comme référence interne, consulté selon le contexte, sans point d’entrée de skill distinct."
     },
     {
       "source": "pstack/skills/recall/SKILL.md",
       "target": "plugins/cstack/skills/recall/SKILL.md",
       "status": "ported",
-      "reason": "Adapted or preserved within the Codex plugin."
+      "reason": "Adapté ou conservé dans le plugin Codex."
     },
     {
       "source": "pstack/skills/reflect/SKILL.md",
       "target": "plugins/cstack/skills/reflect/SKILL.md",
       "status": "ported",
-      "reason": "Adapted or preserved within the Codex plugin."
+      "reason": "Adapté ou conservé dans le plugin Codex."
     },
     {
       "source": "pstack/skills/reflect/references/divergent-reviewer.md",
       "target": "plugins/cstack/skills/reflect/references/divergent-reviewer.md",
       "status": "ported",
-      "reason": "Adapted or preserved within the Codex plugin."
+      "reason": "Adapté ou conservé dans le plugin Codex."
     },
     {
       "source": "pstack/skills/reflect/references/judgment-reviewer.md",
       "target": "plugins/cstack/skills/reflect/references/judgment-reviewer.md",
       "status": "ported",
-      "reason": "Adapted or preserved within the Codex plugin."
+      "reason": "Adapté ou conservé dans le plugin Codex."
     },
     {
       "source": "pstack/skills/reflect/references/synthesizer.md",
       "target": "plugins/cstack/skills/reflect/references/synthesizer.md",
       "status": "ported",
-      "reason": "Adapted or preserved within the Codex plugin."
+      "reason": "Adapté ou conservé dans le plugin Codex."
     },
     {
       "source": "pstack/skills/reflect/references/tooling-reviewer.md",
       "target": "plugins/cstack/skills/reflect/references/tooling-reviewer.md",
       "status": "ported",
-      "reason": "Adapted or preserved within the Codex plugin."
+      "reason": "Adapté ou conservé dans le plugin Codex."
     },
     {
       "source": "pstack/skills/setup-pstack/SKILL.md",
       "target": "plugins/cstack/skills/setup-cstack/SKILL.md",
       "status": "ported",
-      "reason": "Adapted or preserved within the Codex plugin."
+      "reason": "Adapté ou conservé dans le plugin Codex."
     },
     {
       "source": "pstack/skills/show-me-your-work/SKILL.md",
       "target": "plugins/cstack/skills/show-me-your-work/SKILL.md",
       "status": "ported",
-      "reason": "Adapted or preserved within the Codex plugin."
+      "reason": "Adapté ou conservé dans le plugin Codex."
     },
     {
       "source": "pstack/skills/show-me-your-work/references/decision-log-template.tsv",
       "target": "plugins/cstack/skills/show-me-your-work/references/decision-log-template.tsv",
       "status": "retained",
-      "reason": "Portable upstream content retained under its original MIT license."
+      "reason": "Contenu portable de la source amont conservé sous sa licence MIT originale."
     },
     {
       "source": "pstack/skills/show-me-your-work/scripts/log.sh",
       "target": "plugins/cstack/skills/show-me-your-work/scripts/log.sh",
       "status": "ported",
-      "reason": "Writes a .cstack/.gitignore so local logs stay untracked."
+      "reason": "Écrit .cstack/.gitignore pour garder les journaux locaux hors du suivi Git."
     },
     {
       "source": "pstack/skills/swarm/SKILL.md",
       "target": "plugins/cstack/skills/swarm/SKILL.md",
       "status": "ported",
-      "reason": "Adapted or preserved within the Codex plugin."
+      "reason": "Adapté ou conservé dans le plugin Codex."
     },
     {
       "source": "pstack/skills/tdd/SKILL.md",
       "target": "plugins/cstack/skills/tdd/SKILL.md",
       "status": "ported",
-      "reason": "Adapted or preserved within the Codex plugin."
+      "reason": "Adapté ou conservé dans le plugin Codex."
     },
     {
       "source": "pstack/skills/teach/SKILL.md",
       "target": "plugins/cstack/skills/teach/SKILL.md",
       "status": "ported",
-      "reason": "Adapted or preserved within the Codex plugin."
+      "reason": "Adapté ou conservé dans le plugin Codex."
     },
     {
       "source": "pstack/skills/technical-writing/SKILL.md",
       "target": "plugins/cstack/skills/technical-writing/SKILL.md",
       "status": "ported",
-      "reason": "Adapted or preserved within the Codex plugin."
+      "reason": "Adapté ou conservé dans le plugin Codex."
     },
     {
       "source": "pstack/skills/typescript-best-practices/SKILL.md",
       "target": "plugins/cstack/skills/typescript-best-practices/SKILL.md",
       "status": "ported",
-      "reason": "Adapted or preserved within the Codex plugin."
+      "reason": "Adapté ou conservé dans le plugin Codex."
     },
     {
       "source": "pstack/skills/typescript-best-practices/references/patterns.md",
       "target": "plugins/cstack/skills/typescript-best-practices/references/patterns.md",
       "status": "ported",
-      "reason": "Principle skill mentions rewritten as principle reference links."
+      "reason": "Les mentions des skills de principes deviennent des liens vers leurs références."
     },
     {
       "source": "pstack/skills/unslop/SKILL.md",
       "target": "plugins/cstack/skills/unslop/SKILL.md",
       "status": "ported",
-      "reason": "Adapted or preserved within the Codex plugin."
+      "reason": "Adapté ou conservé dans le plugin Codex."
     },
     {
       "source": "pstack/skills/why/SKILL.md",
       "target": "plugins/cstack/skills/why/SKILL.md",
       "status": "ported",
-      "reason": "Adapted or preserved within the Codex plugin."
+      "reason": "Adapté ou conservé dans le plugin Codex."
     },
     {
       "source": "pstack/skills/why/references/epistemics.md",
       "target": "plugins/cstack/skills/why/references/epistemics.md",
-      "status": "retained",
-      "reason": "Portable upstream content retained under its original MIT license."
+      "status": "ported",
+      "reason": "Textes et commentaires traduits en français ; contrats techniques et provenance conservés."
     },
     {
       "source": "pstack/skills/why/references/investigator-prompt.md",
       "target": "plugins/cstack/skills/why/references/investigator-prompt.md",
-      "status": "retained",
-      "reason": "Portable upstream content retained under its original MIT license."
+      "status": "ported",
+      "reason": "Textes et commentaires traduits en français ; contrats techniques et provenance conservés."
     },
     {
       "source": "pstack/skills/why/references/source-playbook.md",
       "target": "plugins/cstack/skills/why/references/source-playbook.md",
       "status": "ported",
-      "reason": "Adapted or preserved within the Codex plugin."
+      "reason": "Adapté ou conservé dans le plugin Codex."
     },
     {
       "source": "pstack/skills/why/references/sources/code-archaeology.md",
       "target": "plugins/cstack/skills/why/references/sources/code-archaeology.md",
-      "status": "retained",
-      "reason": "Portable upstream content retained under its original MIT license."
+      "status": "ported",
+      "reason": "Textes et commentaires traduits en français ; contrats techniques et provenance conservés."
     },
     {
       "source": "pstack/skills/why/references/sources/databricks.md",
       "target": "plugins/cstack/skills/why/references/sources/databricks.md",
-      "status": "retained",
-      "reason": "Portable upstream content retained under its original MIT license."
+      "status": "ported",
+      "reason": "Textes et commentaires traduits en français ; contrats techniques et provenance conservés."
     },
     {
       "source": "pstack/skills/why/references/sources/datadog.md",
       "target": "plugins/cstack/skills/why/references/sources/datadog.md",
-      "status": "retained",
-      "reason": "Portable upstream content retained under its original MIT license."
+      "status": "ported",
+      "reason": "Textes et commentaires traduits en français ; contrats techniques et provenance conservés."
     },
     {
       "source": "pstack/skills/why/references/sources/incident-postmortem.md",
       "target": "plugins/cstack/skills/why/references/sources/incident-postmortem.md",
-      "status": "retained",
-      "reason": "Portable upstream content retained under its original MIT license."
+      "status": "ported",
+      "reason": "Textes et commentaires traduits en français ; contrats techniques et provenance conservés."
     },
     {
       "source": "pstack/skills/why/references/sources/linear.md",
       "target": "plugins/cstack/skills/why/references/sources/linear.md",
-      "status": "retained",
-      "reason": "Portable upstream content retained under its original MIT license."
+      "status": "ported",
+      "reason": "Textes et commentaires traduits en français ; contrats techniques et provenance conservés."
     },
     {
       "source": "pstack/skills/why/references/sources/notion.md",
       "target": "plugins/cstack/skills/why/references/sources/notion.md",
-      "status": "retained",
-      "reason": "Portable upstream content retained under its original MIT license."
+      "status": "ported",
+      "reason": "Textes et commentaires traduits en français ; contrats techniques et provenance conservés."
     },
     {
       "source": "pstack/skills/why/references/sources/sentry.md",
       "target": "plugins/cstack/skills/why/references/sources/sentry.md",
-      "status": "retained",
-      "reason": "Portable upstream content retained under its original MIT license."
+      "status": "ported",
+      "reason": "Textes et commentaires traduits en français ; contrats techniques et provenance conservés."
     },
     {
       "source": "pstack/skills/why/references/sources/slack.md",
       "target": "plugins/cstack/skills/why/references/sources/slack.md",
       "status": "ported",
-      "reason": "Adapted or preserved within the Codex plugin."
+      "reason": "Adapté ou conservé dans le plugin Codex."
     },
     {
       "source": "pstack/skills/why/references/synthesizer-prompt.md",
       "target": "plugins/cstack/skills/why/references/synthesizer-prompt.md",
       "status": "ported",
-      "reason": "Adapted or preserved within the Codex plugin."
+      "reason": "Adapté ou conservé dans le plugin Codex."
     }
   ],
   "original": [
     {
       "path": "plugins/cstack/LICENSE-MATT-POCOCK",
-      "reason": "Matt Pocock skill license, not present in pstack."
+      "reason": "Licence des skills de Matt Pocock, absente de pstack."
     },
     {
       "path": "plugins/cstack/NOTICE.md",
-      "reason": "Independent notice for the Codex port and third-party licenses."
+      "reason": "Notice propre au portage Codex et aux licences tierces."
     },
     {
       "path": "plugins/cstack/scripts/run-tool.sh",
-      "reason": "Native Codex tool launcher, not present in pstack."
+      "reason": "Lanceur natif d’outils Codex, absent de pstack."
     },
     {
       "path": "plugins/cstack/scripts/run_tool.py",
-      "reason": "Native Codex tool launcher, not present in pstack."
+      "reason": "Lanceur natif d’outils Codex, absent de pstack."
     },
     {
       "path": "plugins/cstack/skills/architect/agents/openai.yaml",
-      "reason": "Codex skill UI and invocation policy, not present in pstack."
+      "reason": "Interface et politique d’invocation du skill Codex, absentes de pstack."
     },
     {
       "path": "plugins/cstack/skills/arena/agents/openai.yaml",
-      "reason": "Codex skill UI and invocation policy, not present in pstack."
+      "reason": "Interface et politique d’invocation du skill Codex, absentes de pstack."
     },
     {
       "path": "plugins/cstack/skills/audit-architecture/SKILL.md",
-      "reason": "Matt Pocock adaptation unique to cstack, with no pstack source."
+      "reason": "Adaptation de Matt Pocock propre à cstack, sans source pstack."
     },
     {
       "path": "plugins/cstack/skills/audit-architecture/agents/openai.yaml",
-      "reason": "Codex skill UI and invocation policy, not present in pstack."
+      "reason": "Interface et politique d’invocation du skill Codex, absentes de pstack."
     },
     {
       "path": "plugins/cstack/skills/automate-me/agents/openai.yaml",
-      "reason": "Codex skill UI and invocation policy, not present in pstack."
+      "reason": "Interface et politique d’invocation du skill Codex, absentes de pstack."
     },
     {
       "path": "plugins/cstack/skills/blast-radius/agents/openai.yaml",
-      "reason": "Codex skill UI and invocation policy, not present in pstack."
+      "reason": "Interface et politique d’invocation du skill Codex, absentes de pstack."
     },
     {
       "path": "plugins/cstack/skills/bro/agents/openai.yaml",
-      "reason": "Codex skill UI and invocation policy, not present in pstack."
+      "reason": "Interface et politique d’invocation du skill Codex, absentes de pstack."
     },
     {
       "path": "plugins/cstack/skills/clarify/SKILL.md",
-      "reason": "Matt Pocock adaptation unique to cstack, with no pstack source."
+      "reason": "Adaptation de Matt Pocock propre à cstack, sans source pstack."
     },
     {
       "path": "plugins/cstack/skills/clarify/agents/openai.yaml",
-      "reason": "Codex skill UI and invocation policy, not present in pstack."
+      "reason": "Interface et politique d’invocation du skill Codex, absentes de pstack."
     },
     {
       "path": "plugins/cstack/skills/create-verification-skill/agents/openai.yaml",
-      "reason": "Codex skill UI and invocation policy, not present in pstack."
+      "reason": "Interface et politique d’invocation du skill Codex, absentes de pstack."
     },
     {
       "path": "plugins/cstack/skills/cstack/agents/openai.yaml",
-      "reason": "Codex skill UI and invocation policy, not present in pstack."
+      "reason": "Interface et politique d’invocation du skill Codex, absentes de pstack."
     },
     {
       "path": "plugins/cstack/skills/cstack/references/codex-runtime.md",
-      "reason": "Codex runtime contract, not present in pstack."
+      "reason": "Contrat d’exécution Codex, absent de pstack."
     },
     {
       "path": "plugins/cstack/skills/cstack/scripts/bootstrap.test.ts",
-      "reason": "Native test for the Codex bootstrap helper."
+      "reason": "Test natif de l’utilitaire d’initialisation Codex."
     },
     {
       "path": "plugins/cstack/skills/deslop/SKILL.md",
-      "reason": "Codex-native deslop skill, with no pstack source."
+      "reason": "Skill deslop natif Codex, sans source pstack."
     },
     {
       "path": "plugins/cstack/skills/deslop/agents/openai.yaml",
-      "reason": "Codex-native deslop skill, with no pstack source."
+      "reason": "Skill deslop natif Codex, sans source pstack."
     },
     {
       "path": "plugins/cstack/skills/domain/SKILL.md",
-      "reason": "Matt Pocock adaptation unique to cstack, with no pstack source."
+      "reason": "Adaptation de Matt Pocock propre à cstack, sans source pstack."
     },
     {
       "path": "plugins/cstack/skills/domain/agents/openai.yaml",
-      "reason": "Codex skill UI and invocation policy, not present in pstack."
+      "reason": "Interface et politique d’invocation du skill Codex, absentes de pstack."
     },
     {
       "path": "plugins/cstack/skills/figure-it-out/agents/openai.yaml",
-      "reason": "Codex skill UI and invocation policy, not present in pstack."
+      "reason": "Interface et politique d’invocation du skill Codex, absentes de pstack."
     },
     {
       "path": "plugins/cstack/skills/horizon/SKILL.md",
-      "reason": "Matt Pocock adaptation unique to cstack, with no pstack source."
+      "reason": "Adaptation de Matt Pocock propre à cstack, sans source pstack."
     },
     {
       "path": "plugins/cstack/skills/horizon/agents/openai.yaml",
-      "reason": "Codex skill UI and invocation policy, not present in pstack."
+      "reason": "Interface et politique d’invocation du skill Codex, absentes de pstack."
     },
     {
       "path": "plugins/cstack/skills/horizon/references/templates.md",
-      "reason": "Matt Pocock adaptation unique to cstack, with no pstack source."
+      "reason": "Adaptation de Matt Pocock propre à cstack, sans source pstack."
     },
     {
       "path": "plugins/cstack/skills/how/agents/openai.yaml",
-      "reason": "Codex skill UI and invocation policy, not present in pstack."
+      "reason": "Interface et politique d’invocation du skill Codex, absentes de pstack."
     },
     {
       "path": "plugins/cstack/skills/interrogate/agents/openai.yaml",
-      "reason": "Codex skill UI and invocation policy, not present in pstack."
+      "reason": "Interface et politique d’invocation du skill Codex, absentes de pstack."
     },
     {
       "path": "plugins/cstack/skills/maintain-verification-skill/agents/openai.yaml",
-      "reason": "Codex skill UI and invocation policy, not present in pstack."
+      "reason": "Interface et politique d’invocation du skill Codex, absentes de pstack."
     },
     {
       "path": "plugins/cstack/skills/make-bot-ui/agents/openai.yaml",
-      "reason": "Codex skill UI and invocation policy, not present in pstack."
+      "reason": "Interface et politique d’invocation du skill Codex, absentes de pstack."
     },
     {
       "path": "plugins/cstack/skills/no-comments/agents/openai.yaml",
-      "reason": "Codex skill UI and invocation policy, not present in pstack."
+      "reason": "Interface et politique d’invocation du skill Codex, absentes de pstack."
     },
     {
       "path": "plugins/cstack/skills/recall/agents/openai.yaml",
-      "reason": "Codex skill UI and invocation policy, not present in pstack."
+      "reason": "Interface et politique d’invocation du skill Codex, absentes de pstack."
     },
     {
       "path": "plugins/cstack/skills/reflect/agents/openai.yaml",
-      "reason": "Codex skill UI and invocation policy, not present in pstack."
+      "reason": "Interface et politique d’invocation du skill Codex, absentes de pstack."
     },
     {
       "path": "plugins/cstack/skills/setup-cstack/agents/openai.yaml",
-      "reason": "Codex skill UI and invocation policy, not present in pstack."
+      "reason": "Interface et politique d’invocation du skill Codex, absentes de pstack."
     },
     {
       "path": "plugins/cstack/skills/setup-cstack/scripts/models.py",
-      "reason": "Codex setup helper, with no pstack counterpart."
+      "reason": "Utilitaire de configuration Codex, sans équivalent pstack."
     },
     {
       "path": "plugins/cstack/skills/setup-cstack/scripts/project.py",
-      "reason": "Codex setup helper, with no pstack counterpart."
+      "reason": "Utilitaire de configuration Codex, sans équivalent pstack."
     },
     {
       "path": "plugins/cstack/skills/show-me-your-work/agents/openai.yaml",
-      "reason": "Codex skill UI and invocation policy, not present in pstack."
+      "reason": "Interface et politique d’invocation du skill Codex, absentes de pstack."
     },
     {
       "path": "plugins/cstack/skills/swarm/agents/openai.yaml",
-      "reason": "Codex skill UI and invocation policy, not present in pstack."
+      "reason": "Interface et politique d’invocation du skill Codex, absentes de pstack."
     },
     {
       "path": "plugins/cstack/skills/tdd/agents/openai.yaml",
-      "reason": "Codex skill UI and invocation policy, not present in pstack."
+      "reason": "Interface et politique d’invocation du skill Codex, absentes de pstack."
     },
     {
       "path": "plugins/cstack/skills/teach/agents/openai.yaml",
-      "reason": "Codex skill UI and invocation policy, not present in pstack."
+      "reason": "Interface et politique d’invocation du skill Codex, absentes de pstack."
     },
     {
       "path": "plugins/cstack/skills/technical-writing/agents/openai.yaml",
-      "reason": "Codex skill UI and invocation policy, not present in pstack."
+      "reason": "Interface et politique d’invocation du skill Codex, absentes de pstack."
     },
     {
       "path": "plugins/cstack/skills/typescript-best-practices/agents/openai.yaml",
-      "reason": "Codex skill UI and invocation policy, not present in pstack."
+      "reason": "Interface et politique d’invocation du skill Codex, absentes de pstack."
     },
     {
       "path": "plugins/cstack/skills/unslop/agents/openai.yaml",
-      "reason": "Codex skill UI and invocation policy, not present in pstack."
+      "reason": "Interface et politique d’invocation du skill Codex, absentes de pstack."
     },
     {
       "path": "plugins/cstack/skills/why/agents/openai.yaml",
-      "reason": "Codex skill UI and invocation policy, not present in pstack."
+      "reason": "Interface et politique d’invocation du skill Codex, absentes de pstack."
     },
     {
       "path": "plugins/cstack/sources/matt-pocock.json",
-      "reason": "Provenance record for Matt Pocock adaptations."
+      "reason": "Registre de provenance des adaptations de Matt Pocock."
     }
   ]
 }

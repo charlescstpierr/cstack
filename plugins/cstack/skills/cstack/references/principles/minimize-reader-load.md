@@ -1,19 +1,19 @@
-# Minimize Reader Load
+# Minimiser la charge du lecteur
 
-Read this reference when an active cstack workflow routes here or the user names this principle. Follow the [Codex runtime contract](../codex-runtime.md) for scope and permissions.
+Lisez cette référence lorsqu'un processus cstack actif vous route ici ou lorsque l'utilisateur nomme ce principe. Suivez le [contrat d'exécution Codex](../codex-runtime.md) pour le périmètre et les permissions.
 
-Maintainability is the work a reader must do to understand code. Track two axes:
-1. **Layers to trace.** How many indirections sit between the question and the answer.
-2. **State to hold.** How much hidden or mutable context the reader must keep in their head.
+La maintenabilité est le travail qu'un lecteur doit faire pour comprendre le code. Suivez deux axes :
+1. **Couches à suivre.** Combien d'indirections se trouvent entre la question et la réponse.
+2. **État à retenir.** Combien de contexte caché ou mutable le lecteur doit garder en tête.
 
-**Why:** Code is read far more than it is written. LOC, cyclomatic complexity, and "clean architecture" are proxies. Reader load is the thing that matters. The two axes are independent. A flat file with 50 globals can be as hard to reason about as a 6-layer adapter stack. Guard both. This is the human analog of [Guard the Context Window](guard-the-context-window.md). Working memory is finite for readers too.
+**Pourquoi :** le code est lu bien plus qu'il n'est écrit. LOC, complexité cyclomatique et « clean architecture » sont des proxys. La charge du lecteur est ce qui compte. Les deux axes sont indépendants. Un fichier plat avec 50 globales peut être aussi difficile à raisonner qu'une pile d'adaptateurs à 6 couches. Gardez les deux. C'est l'analogue humain de [Garder la fenêtre de contexte](guard-the-context-window.md). La mémoire de travail est finie pour les lecteurs aussi.
 
-**The pattern:**
-- **Collapse layers** that cost more than they save: wrappers with one caller, adapters with no second implementation, speculative indirection that was never needed. Inline them.
-- **Make adjacent layers change the abstraction.** A layer that repeats the same methods and arguments adds reader load without compression. Collapse pass-through layers.
-- **Demand interface compression.** A broad interface that hides little complexity makes readers learn both the surface and the implementation. Prefer boundaries that hide meaningful decisions.
-- **Shrink state scope:** prefer pure functions (returns over mutations), locals over fields, fields over module state, and module state over globals. Derive instead of sync.
-- **Name the invariant at the boundary,** not in every consumer, so the reader learns it once.
-- Before adding a layer or a piece of state, ask: does this reduce reader load somewhere else by at least as much?
+**Le motif :**
+- **Réduisez les couches** qui coûtent plus qu'elles ne rapportent : wrappers avec un seul appelant, adaptateurs sans deuxième implémentation, indirection spéculative qui n'a jamais été nécessaire. Inlinez-les.
+- **Faites changer l'abstraction par les couches adjacentes.** Une couche qui répète les mêmes méthodes et arguments ajoute de la charge lecteur sans compression. Réduisez les couches pass-through.
+- **Exigez une compression d'interface.** Une interface large qui cache peu de complexité force les lecteurs à apprendre à la fois la surface et l'implémentation. Préférez les frontières qui cachent des décisions significatives.
+- **Réduisez le périmètre d'état :** préférez les fonctions pures (retours plutôt que mutations), les locales aux champs, les champs à l'état de module, et l'état de module aux globales. Dérivez au lieu de synchroniser.
+- **Nommez l'invariant à la frontière,** pas dans chaque consommateur, afin que le lecteur l'apprenne une seule fois.
+- Avant d'ajouter une couche ou un morceau d'état, demandez : cela réduit-il la charge lecteur ailleurs au moins autant ?
 
-**The test:** Can a new reader answer "where does X come from?" and "what can change X?" in under 30 seconds? If not, cut layers or cut state.
+**Le test :** un nouveau lecteur peut-il répondre à « d'où vient X ? » et « qu'est-ce qui peut changer X ? » en moins de 30 secondes ? Sinon, coupez des couches ou coupez de l'état.

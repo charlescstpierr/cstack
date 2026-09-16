@@ -1,26 +1,26 @@
-### Perf issue
+### Problème de performance
 
-Follow [the Codex runtime contract](../references/codex-runtime.md).
+Suivez [le contrat d’exécution Codex](../references/codex-runtime.md).
 
-**You own the measurement story. Plan, review, verify the numbers.** Tie every fix to a measurement, don't read source instead of measuring.
+**Tu possèdes l’histoire de mesure. Planifie, relis, vérifie les chiffres.** Relie chaque correctif à une mesure, ne lis pas la source à la place de mesurer.
 
-1. Capture a baseline trace with the native browser, simulator, profiler, or terminal tool available for the target.
-2. `how` to ground hypotheses. Don't claim a perf ceiling without running it first.
-   Most fixes come from eight strategy families. Use them as hypothesis generators, not a checklist. A family earns an attempt only when the trace shows the signal it names.
-   - **Elimination.** Before optimizing the hot path, ask whether it needs to exist: a computation nobody consumes, a feature gate that's always off for this user, a sync that redundantly mirrors state, a legacy path kept "just in case". The trace shows what's slow, never that it's deletable, so this family needs the `how` pass, not the profiler.
-   - **Divide and conquer.** The dominant cost scales with input size. Split the work so each piece touches less (chunk, shard, prune the search space) or so independent pieces run in parallel.
-   - **Caching.** The same computation or fetch repeats on identical inputs. Store and reuse the result. Name what invalidates it before claiming the win.
-   - **Indirection.** The hot path does expensive work a cheaper intermediate could absorb: an index instead of a scan, a queue that shifts work off the interactive thread, a handle that lets a cheaper implementation swap in. Add the hop only when it removes more from the critical path than it adds.
-   - **Batching.** Many small operations each pay a fixed overhead (RPC, query, syscall, draw call). Coalesce them to pay the overhead once per batch.
-   - **Redundancy.** The wait hangs on one slow instance or attempt. Duplicate the work (replicas, hedged requests, speculative execution) and take the fastest result. The trace has to show the wait dominates and the system has headroom.
-   - **Lazy evaluation.** Cost lands on results that are never used or not needed yet (eager init on the boot path, rendering offscreen items). Defer the work until first use.
-   - **Scheduling.** The work must happen, but not during the interactive moment. Move it to where nobody is waiting: idle callbacks, a background warmup after boot, precompute before the user arrives, cleanup after the frame commits. The win is perceived latency, so measure the interactive path, not total work done.
-3. Plan the fix from the trace. If it crosses a function boundary, read and apply `../../architect/SKILL.md` first. Delegate a bounded implementation. Preserve the caller-selected role, including `simple edits` for small bounded changes. Use `feature, refactoring` when no role was selected. Follow the runtime contract for inheritance or configured model and effort. Review the diff. When no subagent slot is available, write the fix in this session as a separate re-scoped pass, then run a separate review pass over a clean re-read of the diff, label it `single-agent review`, and report the missing independence. Capture a post-fix trace. Run `../../deslop/SKILL.md` over the diff before each commit. Keep `deslop skipped: <reason>` when a step genuinely cannot run it.
-   Apply the [Sequence work into verifiable units](../references/principles/sequence-verifiable-units.md) principle reference, verifying each attempt before trying the next.
-4. Parse and compare the artifacts (JSON to sqlite, diff). "Inconclusive" or wrong-surface is not a pass. Flag it.
-5. Cite the measurement in the PR.
-6. Run **Opening a PR** only when the user authorized PR creation.
+1. Capture une trace de référence avec le navigateur, simulateur, profileur ou outil terminal natif disponible pour la cible.
+2. Lance `how` pour ancrer les hypothèses. Ne prétends pas connaître un plafond de perf sans l’avoir d’abord exécuté.
+   La plupart des correctifs viennent de huit familles de stratégies. Utilise-les comme générateurs d’hypothèses, pas comme checklist. Une famille mérite une tentative seulement quand la trace montre le signal qu’elle nomme.
+   - **Élimination.** Avant d’optimiser le chemin chaud, demande s’il doit exister : calcul que personne ne consomme, feature barrière toujours off pour cet utilisateur, sync qui miroir redondamment l’état, chemin legacy gardé « au cas où ». La trace montre ce qui est lent, jamais ce qui est supprimable ; cette famille a donc besoin de la passe `how`, pas du profiler.
+   - **Diviser pour régner.** Le coût dominant varie avec la taille d’entrée. Divise le travail pour que chaque morceau touche moins (chunk, shard, réduire l’espace de recherche) ou pour que des morceaux indépendants s’exécutent en parallèle.
+   - **Cache.** Le même calcul ou fetch se répète sur des entrées identiques. Stocke et réutilise le résultat. Nomme ce qui l’invalide avant de revendiquer la victoire.
+   - **Indirection.** Le chemin chaud fait un travail coûteux qu’un intermédiaire moins cher pourrait absorber : index au lieu d’un scan, file qui déplace du travail hors du thread interactif, handle qui permet de remplacer par une implémentation moins chère. Ajoute le saut seulement quand il retire plus du chemin critique qu’il n’ajoute.
+   - **Batching.** Beaucoup de petites opérations paient chacune un overhead fixe (RPC, requête, syscall, draw call). Regroupe-les pour payer l’overhead une fois par lot.
+   - **Redondance.** L’attente dépend d’une instance ou tentative lente. Duplique le travail (réplicas, requêtes hedged, exécution spéculative) et prends le résultat le plus rapide. La trace doit montrer que l’attente domine et que le système a de la marge.
+   - **Évaluation paresseuse.** Le coût tombe sur des résultats jamais utilisés ou pas encore nécessaires (init eager sur le boot path, rendu d’items hors écran). Diffère le travail jusqu’à la première utilisation.
+   - **Planification.** Le travail doit avoir lieu, mais pas pendant le moment interactif. Déplace-le là où personne n’attend : idle callbacks, préchauffage en arrière-plan après boot, pré-calcul avant l’arrivée utilisateur, nettoyage après le commit de frame. La victoire est la latence perçue, donc mesure le chemin interactif, pas le travail total effectué.
+3. Planifie le correctif depuis la trace. S’il traverse une frontière de fonction, lis et applique d’abord `../../architect/SKILL.md`. Délègue une implémentation bornée. Préserve le rôle choisi par l’appelant, y compris `simple edits` pour les petits changements bornés. Utilise `feature, refactoring` quand aucun rôle n’a été sélectionné. Suis le contrat d’exécution pour l’héritage ou le modèle et l’effort configurés. Relis le diff. Quand aucun emplacement de sous-agent n’est disponible, écris le correctif dans cette session comme passe séparée au périmètre redéfini, puis lance une passe de revue séparée après relecture propre du diff, étiquette-la `single-agent review` et rapporte l’indépendance manquante. Capture une trace post-correctif. Lance `../../deslop/SKILL.md` sur le diff avant chaque commit. Garde `deslop skipped: <reason>` quand une étape ne peut vraiment pas s’exécuter.
+   Applique la référence du principe [Séquencer le travail en unités vérifiables](../references/principles/sequence-verifiable-units.md), en vérifiant chaque tentative avant d’essayer la suivante.
+4. Parse et compare les artéfacts (JSON vers sqlite, diff). « Inconclusive » ou une mauvaise surface n’est pas une réussite. Signale-le.
+5. Cite la mesure dans la PR.
+6. Lance **Ouvrir une PR** seulement quand l’utilisateur a autorisé la création de PR.
 
-For sustained improvement against a metric rather than a one-off fix, use the Hillclimb playbook (`hillclimb.md`).
+Pour une amélioration soutenue contre une métrique plutôt qu’un correctif ponctuel, utilise le playbook Hillclimb (`hillclimb.md`).
 
-**Reply:** baseline number, post-fix number, delta, artifact path. Every claim carries its evidence or its label in the same sentence. Measured, inferred, or guess. A prediction or an unseen cause is a guess. Never hand the human a check you could run.
+**Réponse :** chiffre de référence, chiffre post-correctif, delta, chemin d’artéfact. Chaque affirmation porte sa preuve ou son étiquette dans la même phrase. Mesuré, inféré ou supposition. Une prédiction ou une cause non observée est une supposition. Ne remets jamais à l’humain un contrôle que tu pourrais lancer.

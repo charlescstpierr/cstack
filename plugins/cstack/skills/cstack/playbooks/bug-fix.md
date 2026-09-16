@@ -1,19 +1,19 @@
-### Bug fix
+### Correction de bug
 
-Follow [the Codex runtime contract](../references/codex-runtime.md).
+Suivez [le contrat d’exécution Codex](../references/codex-runtime.md).
 
-**You own this task. Plan, review, verify.** Delegate investigation and the fix to subagents, stay in the lead.
+**Tu possèdes cette tâche. Planifie, relis, vérifie.** Délègue l’investigation et le correctif à des sous-agents, mais reste en tête.
 
-Be scientific. Every shipped line traces to runtime evidence. Belt-and-suspenders that "might help" is a hypothesis, not a fix. It does not ship. When evidence refutes a hypothesis, revert what it motivated. The smallest change the evidence justifies ships, nothing more.
+Sois scientifique. Chaque ligne livrée remonte à une preuve exécution. Un double garde-fou qui « pourrait aider » est une hypothèse, pas un correctif. Il ne part pas en livraison. Quand les preuves réfutent une hypothèse, rétablis ce qu’elle a motivé. Le plus petit changement justifié par les preuves part en livraison, rien de plus.
 
-1. Reproduce it on the real interface with available native tools. For a browser or running app, use a browser or simulator tool when the session exposes one. For a CLI, run the command in a terminal. If no native tool reaches the target, drive the reproduction as far as possible and state the specific gap. Synthesize the trigger or add instrumentation before asking the user to reproduce it.
-2. Binary-search the cause. Read and apply `../../how/SKILL.md` over the affected subsystem and `../../why/SKILL.md` for regression history. Rule out hypotheses with runtime evidence. Add instrumentation when state is unclear. Continue a stubborn hunt in the foreground. Confirm the surviving mechanism before design review.
-3. Plan the fix. If it crosses a function boundary, read and apply `../../architect/SKILL.md` first. Delegate a bounded implementation. Preserve the caller-selected role, including `simple edits` for small bounded changes. Use `feature, refactoring` when no role was selected. Follow the runtime contract for inheritance or configured model and effort. Review the diff. When no subagent slot is available, write the fix in this session as a separate re-scoped pass, then run a separate review pass over a clean re-read of the diff, label it `single-agent review`, and report the missing independence.
-4. Verify on the same surface. The original repro now passes. "Inconclusive" or wrong-surface is not a pass. Flag it. Unit tests show branch behavior, not bug absence.
-5. Stage the commits so the failing repro lands before the fix in git history. Read and apply `../../tdd/SKILL.md` for the failing-test-first cadence when the bug has a cheap local test path. Skip it when the test would be expensive, integration-heavy, or unclear.
-   This is the canonical [Sequence work into verifiable units](../references/principles/sequence-verifiable-units.md) principle reference, the failing test first and the fix on top. Run `../../deslop/SKILL.md` over the diff before each commit. Keep `deslop skipped: <reason>` when a step genuinely cannot run it.
-6. Run **Opening a PR** only when the user authorized PR creation.
+1. Reproduis-le sur la vraie interface avec les outils natifs disponibles. Pour un navigateur ou une app en cours d’exécution, utilise un outil navigateur ou simulateur quand la session en expose un. Pour une CLI, lance la commande dans un terminal. Si aucun outil natif n’atteint la cible, pousse la reproduction aussi loin que possible et indique l’écart précis. Synthétise le déclencheur ou ajoute de l’instrumentation avant de demander à l’utilisateur de le reproduire.
+2. Recherche la cause par dichotomie. Lis et applique `../../how/SKILL.md` sur le sous-système touché et `../../why/SKILL.md` pour l’historique de régression. Écarte les hypothèses avec des preuves exécution. Ajoute de l’instrumentation quand l’état est flou. Continue une chasse difficile au premier plan. Confirme le mécanisme survivant avant la revue de conception.
+3. Planifie le correctif. S’il traverse une frontière de fonction, lis et applique d’abord `../../architect/SKILL.md`. Délègue une implémentation bornée. Préserve le rôle choisi par l’appelant, y compris `simple edits` pour les petits changements bornés. Utilise `feature, refactoring` quand aucun rôle n’a été sélectionné. Suis le contrat d’exécution pour l’héritage ou le modèle et l’effort configurés. Relis le diff. Quand aucun emplacement de sous-agent n’est disponible, écris le correctif dans cette session comme passe séparée au périmètre redéfini, puis lance une passe de revue séparée après relecture propre du diff, étiquette-la `single-agent review` et rapporte l’indépendance manquante.
+4. Vérifie sur la même surface. La repro originale passe maintenant. « Inconclusive » ou une mauvaise surface n’est pas une réussite. Signale-le. Les tests unitaires montrent le comportement de branche, pas l’absence de bug.
+5. Stage les commits pour que la repro échouante atterrisse dans l’historique git avant le correctif. Lis et applique `../../tdd/SKILL.md` pour la cadence failing-test-first quand le bug possède un chemin de test local bon marché. Saute-la quand le test serait coûteux, très intégration ou flou.
+   C’est la référence canonique du principe [Séquencer le travail en unités vérifiables](../references/principles/sequence-verifiable-units.md), le test échouant d’abord et le correctif au-dessus. Lance `../../deslop/SKILL.md` sur le diff avant chaque commit. Garde `deslop skipped: <reason>` quand une étape ne peut vraiment pas s’exécuter.
+6. Lance **Ouvrir une PR** seulement quand l’utilisateur a autorisé la création de PR.
 
-Investigation fans out `how` + `why` as parallel subagents.
+L’investigation ventile `how` + `why` comme sous-agents parallèles.
 
-**Reply:** what was broken, root cause, fix, how you verified. Paste failing-then-passing repro output verbatim. Every claim carries its evidence or its label in the same sentence. Measured, inferred, or guess. A prediction or an unseen cause is a guess. Never hand the human a check you could run.
+**Réponse :** ce qui était cassé, la cause racine, le correctif, comment tu as vérifié. Colle mot pour mot la sortie de repro échouante puis passante. Chaque affirmation porte sa preuve ou son étiquette dans la même phrase. Mesuré, inféré ou supposition. Une prédiction ou une cause non observée est une supposition. Ne remets jamais à l’humain un contrôle que tu pourrais lancer.

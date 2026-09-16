@@ -7,8 +7,8 @@ import { HELPER_INSTALL_ARGS } from "./bootstrap.ts";
 
 const scriptsDirectory = import.meta.dir;
 
-describe("bootstrap helper install", () => {
-  it("installs production dependencies only", async () => {
+describe("installation du helper bootstrap", () => {
+  it("installe seulement les dépendances de production", async () => {
     expect(HELPER_INSTALL_ARGS).toEqual([
       "install",
       "--frozen-lockfile",

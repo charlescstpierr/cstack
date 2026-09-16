@@ -1,135 +1,135 @@
-# TypeScript patterns
+# Patterns TypeScript
 
-Code examples for each rule in `SKILL.md`. The underlying principles are language-agnostic. See the [Type System Discipline](../../cstack/references/principles/type-system-discipline.md) and [Boundary Discipline](../../cstack/references/principles/boundary-discipline.md) principle references.
+Exemples de code pour chaque règle dans `SKILL.md`. Les principes sous-jacents sont agnostiques au langage. Voir les références de principes [discipline du système de types](../../cstack/references/principles/type-system-discipline.md) et [discipline des frontières](../../cstack/references/principles/boundary-discipline.md).
 
-## Branded types
+## Types marqués
 
-Brand primitives so they can't be mixed up. Validate once at the boundary. Downstream code trusts the type.
+Marque les primitives pour éviter les confusions. Valide une fois à la frontière. Le code aval fait confiance au type.
 
 ```ts
 type AgentId = string & { readonly __brand: "AgentId" };
 
 function parseAgentId(input: string): AgentId {
-  if (!isUUID(input)) throw new Error(`Invalid agent id: ${input}`);
+  if (!isUUID(input)) throw new Error(`ID d'agent invalide: ${input}`);
   return input as AgentId;
 }
 
 function focusAgent(id: AgentId): void {
-  /* input is trusted */
+  /* l'entrée est fiable */
 }
 ```
 
-Match the `readonly __brand: 'X'` shape. Don't invent a new convention.
+Respecte la forme `readonly __brand: 'X'`. N'invente pas de nouvelle convention.
 
-## Discriminated unions
+## Unions discriminées
 
-Model variants with a literal discriminant. Every variant shares the field name and each variant's value is unique, so impossible combos can't be represented.
+Modélise les variantes avec un discriminant littéral. Chaque variante partage le nom de champ et chaque valeur de variante est unique, donc les combinaisons impossibles ne peuvent pas être representees.
 
 ```ts
-// Don't. Boolean + optionals lets contradictory states exist.
+// A éviter. Booléen + optionnels laisse exister des états contradictoires.
 type DiffState = { loading: boolean; diff?: GitDiff; error?: string };
 
-// Do. Only valid states exist.
+// A faire. Seuls les états valides existent.
 type DiffState =
   | { kind: "loading" }
   | { kind: "ready"; diff: GitDiff }
   | { kind: "error"; error: string };
 ```
 
-Pick one discriminant name (`kind`, `type`, `tag`) and stick to it.
+Choisis un nom de discriminant (`kind`, `type`, `tag`) et garde-le.
 
-## Constructive modeling
+## Modélisation constructive
 
-Build the type from parts that are all legal instead of restricting a loose type with runtime checks.
+Construis le type depuis des parties toutes légales au lieu de restreindre un type souple avec des checks runtime.
 
-Non-empty, via a variadic tuple:
+Non vide, via un tuple variadique :
 
 ```ts
 type NonEmpty<T> = [T, ...T[]];
 
-// Don't: T[] plus a length check every caller must repeat
+// A éviter : T[] plus un check de longueur que chaque appelant doit répéter
 function pickWinner(entries: string[]): string {
-  if (entries.length === 0) throw new Error("no entries");
+  if (entries.length === 0) throw new Error("aucune entrée");
   return entries[Math.floor(Math.random() * entries.length)];
 }
 
-// Do: an empty value of the type can't exist
+// A faire : une valeur vide de ce type ne peut pas exister
 function pickWinner(entries: NonEmpty<string>): string {
   return entries[Math.floor(Math.random() * entries.length)];
 }
 ```
 
-Where a plain `T[]` arrives, narrow once with a guard. The fact then travels in the type:
+Quand un `T[]` simple arrive, narrow une fois avec une garde. Le fait voyage ensuite dans le type :
 
 ```ts
 const isNonEmpty = <T>(arr: T[]): arr is NonEmpty<T> => arr.length > 0;
 ```
 
-Even length, as pairs:
+Longueur paire, sous forme de paires :
 
 ```ts
 type Pairs<T> = [T, T][];
 ```
 
-A time range, as start plus duration:
+Une plage de temps, comme début plus durée :
 
 ```ts
-// Don't: a comment holds the invariant
+// A éviter : un commentaire porte l'invariant
 type TimeRange = { start: Date; end: Date }; // start <= end
 
-// Do: a negative range can't be written; derive end when needed
+// A faire : une plage negative ne peut pas être écrite; dérive end au besoin
 type TimeRange = { start: Date; durationMs: number };
 ```
 
-Keep `durationMs` a plain number. Brand it (per Branded types) only if a raw number could be passed where a duration is expected, not by reflex. Pick the representation that makes the bad state unconstructable, then expose the reading you need on top (`pairs.flat()`, a `rangeEnd()` helper).
+Garde `durationMs` comme nombre simple. Marque-le (selon Types marqués) seulement si un nombre brut pourrait être passe là où une durée est attendue, pas par réflexe. Choisis la representation qui rend le mauvais état inconstructible, puis expose par-dessus la lecture dont tu as besoin (`pairs.flat()`, un helper `rangeEnd()`).
 
-## Simplest total type
+## Type total le plus simple
 
-Don't strengthen everything. Keep `T[]` when every operation on it is total:
+Ne renforce pas tout. Garde `T[]` quand chaque opération dessus est totale :
 
 ```ts
-const sum = (xs: number[]) => xs.reduce((a, b) => a + b, 0); // [] is 0, fine
+const sum = (xs: number[]) => xs.reduce((a, b) => a + b, 0); // [] vaut 0, c'est correct
 ```
 
-Strengthen when the loose type forces a lie at a use site. The tells are `!`, `arr[0] as T`, and a "should never happen" throw:
+Renforce quand le type souple force un mensonge au site d'usage. Les signaux sont `!`, `arr[0] as T` et un throw "cela ne devrait jamais arriver" :
 
 ```ts
-// Don't: partiality smuggled past the compiler
+// A éviter : partialite passée en douce devant le compilateur
 function newestSession(sessions: Session[]): Session {
   return sessions.at(0)!;
 }
 
-// Do: strengthen the input; the assertion disappears
+// A faire : renforcer l'entrée; l'assertion disparaît
 function newestSession(sessions: NonEmpty<Session>): Session {
   return sessions[0];
 }
 ```
 
-Weakening the result to `Session | undefined` is the other total signature.
+Affaiblir le résultat en `Session | undefined` est l'autre signature totale.
 
-## `unknown` over `any`
+## `unknown` plutôt que `any`
 
-External data is always `unknown`. Narrow before use.
+Les données externes sont toujours `unknown`. Narrow avant usage.
 
 ```ts
-// Don't
+// A éviter
 function handle(input: any) {
   return input.foo.bar;
 }
 
-// Do
+// A faire
 function handle(input: unknown) {
   if (typeof input === "object" && input !== null && "foo" in input) {
-    // narrowed; compiler verifies access
+    // narrowed; le compilateur vérifie l'accès
   }
 }
 ```
 
-External sources include RPC payloads, `JSON.parse`, `postMessage`, IPC, file contents, environment variables, database results.
+Les sources externes incluent payloads RPC, `JSON.parse`, `postMessage`, IPC, contenu de fichiers, variables d'environnement, résultats de base de données.
 
-## Schemas before hand-rolled guards
+## Schémas avant gardes maison
 
-Before writing a property-by-property type guard for external data, look for the repository's runtime schema library and existing schemas. Let one schema own validation and derive the TypeScript type from it. Do not maintain a schema, a duplicate interface, and a guard that can drift apart.
+Avant d'écrire une garde de type propriété par propriété pour des données externes, cherche la bibliothèque de schémas runtime du dépôt et les schémas existants. Laisse un schéma posséder la validation et dérive le type TypeScript depuis lui. Ne maintiens pas un schéma, une interface dupliquée et une garde qui peuvent diverger.
 
 ```ts
 import { z } from "zod";
@@ -146,74 +146,74 @@ function parseUser(input: unknown): User {
 }
 ```
 
-Use `safeParse` when failure is an expected branch. Use the equivalent inference helper when the repository uses another schema library. Do not add a new schema dependency for one guard. This rule prefers the schema system the codebase already trusts.
+Utilise `safeParse` quand l'échec est une branche attendue. Utilise le helper d'inférence équivalent quand le dépôt utilise une autre bibliothèque de schémas. N'ajoute pas une nouvelle dépendance de schéma pour une seule garde. Cette règle préfère le système de schémas auquel le codebase fait déjà confiance.
 
-## No `as` casts
+## Aucun cast `as`
 
-Every `as` is a potential runtime crash. Cast only after the type system has verified the claim.
+Chaque `as` est un crash d’exécution potentiel. Caste seulement après que le système de types a vérifié l'affirmation.
 
 ```ts
-// Don't
+// A éviter
 const user = data as User;
 
-// Do. Earn the cast at the boundary.
+// A faire. Gagner le cast à la frontière.
 function parseUser(data: unknown): User {
   if (typeof data !== "object" || data === null) {
-    throw new Error("expected object");
+    throw new Error("objet attendu");
   }
   if (!("id" in data) || typeof (data as Record<string, unknown>).id !== "string") {
-    throw new Error("expected id");
+    throw new Error("id attendu");
   }
-  // ... validate all fields
-  return data as User; // OK, earned cast after full validation
+  // ... valider tous les champs
+  return data as User; // OK, cast gagne après validation complète
 }
 ```
 
-When refactoring an `as` out of existing code, identify why TypeScript can't infer:
+Quand tu retires un `as` du code existant, identifie pourquoi TypeScript ne peut pas infèrer :
 
-- Missing discriminant: add one, switch to a discriminated union.
-- Overly wide source type (e.g. `Record<string, unknown>`): narrow it.
-- Untyped boundary: add a parse function or schema.
-- Genuinely inexpressible: use a branded type or `satisfies`.
+- Discriminant manquant : ajoute-en un, passe à une union discriminee.
+- Type source trop large (par exemple `Record<string, unknown>`) : narrow-le.
+- Frontiere non typée : ajoute une fonction parse ou un schéma.
+- Vraiment inexprimable : utilise un type marqué ou `satisfies`.
 
-## Narrowing hierarchy
+## Hiérarchie de narrowing
 
-From best to last-resort:
+Du meilleur au dernier recours :
 
-1. **Discriminated union switch / if.** Compiler narrows automatically.
-2. **`in` operator.** `"key" in obj` narrows to variants containing that key.
-3. **`typeof` / `instanceof`.** For primitives and class instances.
-4. **User-defined type guard.** When the above aren't enough.
-5. **`as` cast.** Only after validation.
+1. **Switch / if sur union discriminee.** Le compilateur narrow automatiquement.
+2. **Operateur `in`.** `"key" in obj` narrow vers les variantes contenant cette clé.
+3. **`typeof` / `instanceof`.** Pour les primitives et instances de classes.
+4. **Garde de type définie par l'utilisateur.** Quand ce qui précède ne suffit pas.
+5. **Cast `as`.** Seulement après validation.
 
 ```ts
 function area(s: Shape): number {
-  if ("radius" in s) return Math.PI * s.radius ** 2; // narrowed to circle
-  return s.width * s.height; // narrowed to rect
+  if ("radius" in s) return Math.PI * s.radius ** 2; // narrowed en circlé
+  return s.width * s.height; // narrowed en rect
 }
 ```
 
-## Type guards
+## Gardes de type
 
-A guard must actually verify the claim. A lying guard is worse than `as`.
+Une garde doit vraiment vérifier l'affirmation. Une garde menteuse est pire que `as`.
 
 ```ts
-function isCircle(s: Shape): s is Shape & { kind: "circle" } {
-  return s.kind === "circle";
+function isCirclé(s: Shape): s is Shape & { kind: "circlé" } {
+  return s.kind === "circlé";
 }
 ```
 
-Prefer discriminant narrowing when possible.
+Préfère le narrowing par discriminant quand c'est possible.
 
-## Exhaustiveness
+## Exhaustivité
 
-In default arms, assign the discriminant to a `never`-typed local.
+Dans les bras default, assigne le discriminant à une locale typée `never`.
 
 ```ts
-// Value-returning switch
+// Switch qui retourne une valeur
 function area(s: Shape): number {
   switch (s.kind) {
-    case "circle":
+    case "circlé":
       return Math.PI * s.radius ** 2;
     case "rect":
       return s.width * s.height;
@@ -224,11 +224,11 @@ function area(s: Shape): number {
   }
 }
 
-// Void switch
+// Switch void
 function handle(s: Shape): void {
   switch (s.kind) {
-    case "circle":
-      drawCircle(s);
+    case "circlé":
+      drawCirclé(s);
       break;
     case "rect":
       drawRect(s);
@@ -241,35 +241,35 @@ function handle(s: Shape): void {
 }
 ```
 
-Return-style in value-returning switches, void-style in statement switches.
+Style return dans les switchs qui retournent une valeur, style void dans les switchs de statements.
 
-## `satisfies` over `as`
+## `satisfies` plutôt que `as`
 
-`satisfies` validates without widening literal types.
+`satisfies` valide sans élargir les types littéraux.
 
 ```ts
-// Don't. Widens, loses literal types.
+// A éviter. Élargit et perd les types littéraux.
 const config = { theme: "dark", cols: 3 } as Config;
 
-// Do. Validates AND preserves literal types.
+// A faire. Valide ET préserve les types littéraux.
 const config = { theme: "dark", cols: 3 } satisfies Config;
-// config.theme is "dark" (literal), not string
+// config.theme est "dark" (litteral), pas string
 ```
 
-## Boundary validation
+## Validation de frontière
 
-Validate once where data crosses in. Trust types inside. See the [Boundary Discipline](../../cstack/references/principles/boundary-discipline.md) principle reference.
+Valide une fois là où les données entrent. Fais confiance aux types à l'intérieur. Voir la référence de principe [discipline des frontières](../../cstack/references/principles/boundary-discipline.md).
 
-- **Wire formats** (proto, JSON-RPC): parse with `ignoreUnknownFields` so forward-compatible changes don't break old clients.
-- **Persisted JSON:** versioned blob with a try/catch around the parse.
-- **Don't re-validate** deep in call chains.
+- **Formats wire** (proto, JSON-RPC) : parse avec `ignoreUnknownFields` pour que les changements forward-compatible ne cassent pas les anciens clients.
+- **JSON persiste :** blob versionne avec un try/catch autour du parse.
+- **Ne revalide pas** profondément dans les chaînes d'appel.
 
-## Schema-derived types
+## Types dérivés de schémas
 
-When a `.proto`, OpenAPI spec, GraphQL schema, or database migration already defines a shape, derive from the generated types instead of duplicating them.
+Quand un `.proto`, une spec OpenAPI, un schéma GraphQL ou une migration de base de données définit déjà une forme, dérive depuis les types générés au lieu de les dupliquer.
 
 ```ts
-// Don't. Duplicate shape, drifts when the schema changes.
+// A éviter. Forme dupliquée, dérive quand le schéma change.
 type CheckSummary = {
   totalCount: number;
   checks: { name: string; status: string }[];
@@ -278,19 +278,19 @@ function renderChecks(s: CheckSummary) {
   /* ... */
 }
 
-// Do. Derive from the generated schema type.
+// A faire. Deriver depuis le type de schéma généré.
 import type { ChecksMessage } from "<generated module>";
 function renderChecks(s: Pick<ChecksMessage, "totalCount" | "checks">) {
   /* ... */
 }
 ```
 
-Reach for `Pick`, `Omit`, `Parameters`, `ReturnType`, `Awaited`, `typeof` before writing a new interface.
+Prends `Pick`, `Omit`, `Parameters`, `ReturnType`, `Awaited`, `typeof` avant d'écrire une nouvelle interface.
 
-## Object args
+## Arguments objets
 
 ```ts
-// Don't. Swap two args, still compiles.
+// A éviter. Inverse deux arguments, ça compile encore.
 openFile(uri, {
   startLineNumber: 10,
   startColumn: 1,
@@ -298,7 +298,7 @@ openFile(uri, {
   endColumn: 1,
 });
 
-// Do. Order-independent, self-documenting.
+// A faire. Indépendant de l'ordre, auto-documente.
 openFile({
   uri,
   selection: {
@@ -310,4 +310,4 @@ openFile({
 });
 ```
 
-Skip on hot paths: per-frame render, tokenizers, parsers, anything in a tight loop where the allocation cost matters.
+Saute sur les chemins chauds : rendu par frame, tokenizers, parsers, tout ce qui est dans une boucle serrée où le coût d'allocation compte.

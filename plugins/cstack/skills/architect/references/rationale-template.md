@@ -1,35 +1,35 @@
-# Rationale template
+# Modèle de justification
 
-The prose that ships alongside the type sketch. One page. Sentence-case headings, no boilerplate. Replace the italic notes with actual content.
+La prose qui accompagne l'ébauche de types. Une page. Titres en casse phrase, pas de boilerplate. Remplace les notes en italique par du contenu réel.
 
-## Problem
+## Problème
 
-*One paragraph. What we're trying to do, and what about the existing system or constraints makes the shape non-obvious. If [Phase A](../SKILL.md#phase-a-ground-the-problem) surfaced constraints the design must honor (existing types to interop with, callers we can't break, invariants that crossed our boundary), name them here so the reader sees the same constraints you saw.*
+*Un paragraphe. Ce que nous essayons de faire, et ce qui dans le système existant ou les contraintes rend la forme non évidente. Si la [Phase A](../SKILL.md#phase-a-ancrer-le-problème) a fait émerger des contraintes que la conception doit respecter (types existants avec lesquels interopérer, appelants à ne pas casser, invariants qui traversaient notre frontière), nomme-les ici pour que le lecteur voie les mêmes contraintes que toi.*
 
-## Usage (caller's view)
+## Usage (vue de l'appelant)
 
-*Write this first, before the type sketch. Show the README or quickstart the consumer reads, plus two or three realistic call sites in their own code. What they import, what they call, what comes back. The type sketch in [Shape](#shape) is derived from this. The two must agree. When they diverge, reconcile the sketch to the usage, not the reverse. The caller's experience is the spec. The types serve it.*
+*Écris ceci d'abord, avant l'ébauche de types. Montre le README ou démarrage rapide lu par le consommateur, plus deux ou trois sites d'appel réalistes dans son propre code. Ce qu'il importe, ce qu'il appelle, ce qui revient. L'ébauche de types dans [Forme](#forme) en dérive. Les deux doivent correspondre. Quand ils divergent, réconcilie l'ébauche avec l'usage, pas l'inverse. L'expérience de l'appelant est la spec. Les types la servent.*
 
-## Shape
+## Forme
 
-*The recommended architecture. Data structures first. Then how data flows through the signatures. Name the load-bearing decisions. State which invariants are encoded in types, where validation lives, and what the system deliberately does not do. Judge interface depth explicitly. State what complexity the public surface hides, what remains exposed to callers, and why the interface is no larger than needed. Cite the principle behind each decision (e.g., `per boundary-discipline`). Don't restate it.*
+*L'architecture recommandée. Structures de données d'abord. Puis comment les données circulent à travers les signatures. Nomme les décisions porteuses. Indique quels invariants sont encodés dans les types, où vit la validation et ce que le système choisit délibérément de ne pas faire. Juge explicitement la profondeur d'interface. Indique quelle complexité la surface publique cache, ce qui reste exposé aux appelants et pourquoi l'interface n'est pas plus grande que nécessaire. Cite le principe derrière chaque décision (p. ex. `selon boundary-discipline`). Ne le répète pas.*
 
-## Synthesis decision
+## Décision de synthèse
 
-*Filled in by [arena](../../arena/SKILL.md). Records which candidate became the base and why, what was adapted from each of the others, and what was rejected and why.*
+*Remplie par [arena](../../arena/SKILL.md). Note quel candidat est devenu la base et pourquoi, ce qui a été adapté depuis chacun des autres, et ce qui a été rejeté et pourquoi.*
 
-## Tradeoffs accepted
+## Compromis acceptés
 
-*One bullet per tradeoff the chosen shape makes. Form: "we accept X in exchange for Y." Name anything a future reader might mistake for an oversight, including things that look like premature optimization or premature simplification.*
+*Une puce par compromis fait par la forme choisie. Forme : "nous acceptons X en échange de Y." Nomme tout ce qu'un futur lecteur pourrait prendre pour un oubli, y compris les choses qui ressemblent à de l'optimisation prématurée ou de la simplification prématurée.*
 
-## Alternatives considered
+## Alternatives considérées
 
-*Required. Name at least one concrete alternative shape, with one line on why it lost. Judge each alternative on interface depth, not implementation simplicity alone. Name the complexity it exposes to callers and the complexity it hides. Two or three alternatives belong here when the design space had real contenders. One is fine when the constraints forced the answer, with the conclusion phrased as "this was the only viable shape because..." Avoid listing flavors of the same shape. This section covers design alternatives the chosen shape considered and rejected, not other runner candidates.*
+*Obligatoire. Nomme au moins une forme alternative concrète, avec une ligne expliquant pourquoi elle a perdu. Juge chaque alternative selon la profondeur d'interface, pas seulement la simplicité d'implémentation. Nomme la complexité qu'elle expose aux appelants et celle qu'elle cache. Deux ou trois alternatives vont ici quand l'espace de conception avait de vrais concurrents. Une seule suffit quand les contraintes forçaient la réponse, avec la conclusion formulée comme "c'était la seule forme viable parce que...". Évite de lister des variantes de la même forme. Cette section couvre les alternatives de conception examinées puis rejetées par la forme choisie, pas les autres candidats de exécuteurs.*
 
-## Open questions and risks
+## Questions ouvertes et risques
 
-*Things you noticed during the sketch that the human needs to weigh in on, and risks worth flagging before implementation starts. Phrase as questions, not assertions, so the human's answer is the resolution rather than a comment.*
+*Ce que tu as remarqué pendant l'ébauche et qui nécessite l'avis de l'humain, ainsi que les risques à signaler avant l'implémentation. Formule en questions, pas en assertions, pour que la réponse humaine soit la résolution plutôt qu'un commentaire.*
 
-## Next implementation step
+## Prochaine étape d'implémentation
 
-*The first thing to build against the sketch. One sentence. What you'd start writing immediately after synthesis (or after Phase D sign-off, if a checkpoint was opted into).*
+*La première chose à construire contre l'ébauche. Une phrase. Ce que tu commencerais à écrire immédiatement après la synthèse (ou après validation de Phase D si un checkpoint a été activé).*

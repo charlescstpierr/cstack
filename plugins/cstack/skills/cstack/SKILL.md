@@ -1,141 +1,141 @@
 ---
 name: cstack
-description: "Explicit cstack workflow router for concise prose, deliberate native Codex subagents, simple code, and verified work. Use only when the user invokes $cstack:cstack."
+description: "Routeur explicite de flux de travail cstack pour une prose concise, des sous-agents Codex natifs délibérés, du code simple et du travail vérifié. À utiliser seulement quand l’utilisateur invoque $cstack:cstack."
 ---
 
 # cstack
 
-Apply cstack to the task that explicitly invoked `$cstack:cstack` until the task completes or the user stops cstack. Do not persist these instructions into unrelated work.
+Applique cstack à la tâche qui a explicitement invoqué `$cstack:cstack` jusqu’à ce que la tâche soit terminée ou que l’utilisateur arrête cstack. Ne fais pas persister ces instructions dans du travail non lié.
 
-Read [the Codex runtime contract](references/codex-runtime.md) before choosing tools, subagents, models, state, or continuation behavior. Resolve paths in this skill relative to this file. Use the native tools that the current session exposes. Do not assume that a named agent role, scheduler, browser driver, model, or external integration exists.
+Lis [le contrat d’exécution Codex](references/codex-runtime.md) avant de choisir les outils, sous-agents, modèles, états ou comportements de continuation. Résous les chemins de cette compétence relativement à ce fichier. Utilise les outils natifs exposés par la session courante. Ne suppose pas qu’un rôle d’agent nommé, un planificateur, un pilote de navigateur, un modèle ou une intégration externe existe.
 
-## Route the work
+## Router le travail
 
-An explicit `$cstack:cstack` invocation makes this skill the coordinator for preparation, execution, review, and verification of the requested task. Select the needed skills yourself; the user does not need to name them or approve each phase transition.
+Une invocation explicite de `$cstack:cstack` fait de cette compétence le coordinateur de la préparation, de l’exécution, de la revue et de la vérification de la tâche demandée. Sélectionne toi-même les compétences nécessaires ; l’utilisateur n’a pas besoin de les nommer ni d’approuver chaque transition de phase.
 
-### Prepare the request
+### Préparer la demande
 
-1. Read the request, project guidance, relevant repository facts, and any existing task state. Reuse settled decisions and observed facts while they remain valid.
-2. If an unresolved requirement could change scope, behavior, ownership, or acceptance, read and apply `../clarify/SKILL.md`. Resolve discoverable facts first. Ask the human only for the remaining material decisions, then resume this workflow when those decisions are settled.
-3. For a large goal that needs a durable dependency map across phases, PRs, or sessions, read and apply `../horizon/SKILL.md`. Several files alone do not require Horizon. Resume an existing map instead of recreating it; a clear large goal can go directly to implementation units without invented decision tickets.
-4. While Horizon is routed by cstack, consume its result and continue eligible autonomous prerequisites. Return to its next eligible ticket without asking the user to invoke another command. A waiting human decision blocks dependent work; continue independent authorized work when possible. When the spec and units are ready, select and execute the matching playbook below.
+1. Lis la demande, les consignes du projet, les faits pertinents du dépôt et tout état de tâche existant. Réutilise les décisions tranchées et les faits observés tant qu’ils restent valides.
+2. Si une exigence non résolue pourrait changer le périmètre, le comportement, la propriété ou l’acceptation, lis et applique `../clarify/SKILL.md`. Résous d’abord les faits découvrables. Ne demande à l’humain que les décisions matérielles restantes, puis reprends ce flux de travail quand ces décisions sont tranchées.
+3. Pour un grand objectif qui a besoin d’une carte de dépendances durable entre phases, PR ou sessions, lis et applique `../horizon/SKILL.md`. Plusieurs fichiers ne suffisent pas à exiger Horizon. Reprends une carte existante au lieu de la recréer ; un grand objectif clair peut aller directement aux unités d’implémentation sans tickets de décision inventés.
+4. Pendant que Horizon est routé par cstack, consomme son résultat et continue les prérequis autonomes admissibles. Retourne à son prochain ticket admissible sans demander à l’utilisateur d’invoquer une autre commande. Une décision humaine en attente bloque le travail dépendant ; continue le travail indépendant autorisé quand c’est possible. Quand la spécification et les unités sont prêtes, sélectionne et exécute le playbook correspondant ci-dessous.
 
-Preparation does not replace the playbook's grounding, design, review, or verification. Reuse valid evidence and decisions from preparation rather than redoing them. In Plan mode or a planning-only/read-only request, return the requested plan or answer and do not start implementation. A resolved preparation step is not permission for an otherwise unauthorized external action.
+La préparation ne remplace pas l’ancrage, la conception, la revue ni la vérification du playbook. Réutilise les preuves et décisions valides issues de la préparation au lieu de les refaire. En mode Plan ou pour une demande uniquement de planification/lecture seule, retourne le plan ou la réponse demandés et ne commence pas l’implémentation. Une étape de préparation résolue n’autorise pas une action externe qui ne serait pas autrement autorisée.
 
-### Execute the matched playbook
+### Exécuter le playbook correspondant
 
-Read the matched playbook in full and copy its steps into the current plan before task-specific steps. Keep a skipped step with `skip: <reason>`. Fewer calls do not justify dropping grounding, design, independent review, cleanup, or real-behavior verification. A missing capability serializes a step and labels the result a single-agent pass; it never deletes the step. See [the runtime contract](references/codex-runtime.md#tools-and-delegation).
+Lis le playbook correspondant en entier et copie ses étapes dans le plan courant avant les étapes propres à la tâche. Garde toute étape sautée avec `skip: <reason>`. Moins d’appels ne justifient pas de supprimer l’ancrage, la conception, la revue indépendante, le nettoyage ou la vérification du comportement réel. Une capacité manquante sérialise une étape et étiquette le résultat comme passe single-agent ; elle ne supprime jamais l’étape. Voir [le contrat d’exécution](references/codex-runtime.md#outils-et-delegation).
 
-For any nontrivial multi-step change, write the throughput checkpoint from `playbooks/feature.md` as four todo items before fanning out: blocking first steps, independent workstreams, shared mutable state, and the smallest safe decomposition. A dimension that does not apply keeps its item with `n/a: <reason>`.
+Pour tout changement multi-étapes non trivial, écris le point de contrôle de débit de `playbooks/feature.md` sous forme de quatre todos avant de ventiler : premières étapes bloquantes, flux de travail indépendants, état mutable partagé et plus petite décomposition sûre. Une dimension qui ne s’applique pas garde son item avec `n/a: <reason>`.
 
-When the open question is empirical and a short experiment would settle it, build the experiment. Read `playbooks/prototype.md` instead of asking the user which branch to take. Ask only for a product preference, an authority the session does not have, or an irreversible action.
+Quand la question ouverte est empirique et qu’une courte expérience la trancherait, construis l’expérience. Lis `playbooks/prototype.md` au lieu de demander à l’utilisateur quelle branche prendre. Demande seulement pour une préférence produit, une autorité que la session n’a pas ou une action irréversible.
 
-- Read `playbooks/investigation.md` for a read-only explanation, comparison, or design question.
-- Read `playbooks/bug-fix.md` for a reported defect that needs reproduction, diagnosis, and a fix.
-- Read `playbooks/perf-issue.md` for one measured performance defect.
-- Read `playbooks/hillclimb.md` for repeated improvement of one metric against a target.
-- Read `playbooks/runtime-forensics.md` for diagnosis from a running process.
-- Read `playbooks/trace-forensics.md` for diagnosis from a captured profile or trace.
-- Read `playbooks/feature.md` for new or changed behavior.
-- Read `playbooks/refactoring.md` for a behavior-preserving structural change.
-- Read `playbooks/prototype.md` for a disposable experiment that settles an observable question.
-- Read `playbooks/visual-parity.md` for pixel-level UI comparison.
-- Read `playbooks/authoring-a-skill.md` for creating or changing a skill.
-- Read `playbooks/eval.md` for measuring how a skill, prompt, or structure changes agent behavior.
-- Read `playbooks/babysit.md` when the user asks to inspect or drive a PR to merge-ready.
-- Read `playbooks/shipping.md` when the user has authorized landing or shipping verified PRs.
-- Read `playbooks/autonomous-run.md` for one long task with a checkable exit condition.
-- Read `playbooks/orchestrate.md` for a standing program with multiple owners and PRs.
-- Read `playbooks/autopilot-full.md` for an authorized queue of independent PRs that owners may merge after verification.
-- Read `playbooks/autopilot-stack.md` for a queue delivered as one verified linear stack that the operator lands.
-- Read `playbooks/session-pickup.md` to resume work from local state, a branch, or conversation context.
-- Read `playbooks/pause-safely.md` to leave local work in a resumable state.
-- Read `playbooks/multi-phase-plan.md` for a plan that spans phases or PRs.
-- Read `playbooks/worktree-cleanup.md` after a completed, merged delivery to clean its released temporary worktrees, or for requested disk cleanup.
-- Read `playbooks/opening-a-pr.md` only when the user has authorized creating a PR. Other playbooks may prepare a reviewable branch without creating one.
+- Lis `playbooks/investigation.md` pour une explication, comparaison ou question de conception en lecture seule.
+- Lis `playbooks/bug-fix.md` pour un défaut signalé qui exige reproduction, diagnostic et correctif.
+- Lis `playbooks/perf-issue.md` pour un défaut de performance mesuré.
+- Lis `playbooks/hillclimb.md` pour l’amélioration répétée d’une métrique vers une cible.
+- Lis `playbooks/runtime-forensics.md` pour un diagnostic depuis un processus en cours.
+- Lis `playbooks/trace-forensics.md` pour un diagnostic depuis un profil ou une trace capturés.
+- Lis `playbooks/feature.md` pour un comportement nouveau ou modifié.
+- Lis `playbooks/refactoring.md` pour un changement structurel qui préserve le comportement.
+- Lis `playbooks/prototype.md` pour une expérience jetable qui tranche une question observable.
+- Lis `playbooks/visual-parity.md` pour une comparaison UI au pixel près.
+- Lis `playbooks/authoring-a-skill.md` pour créer ou changer une compétence.
+- Lis `playbooks/eval.md` pour mesurer comment une compétence, un prompt ou une structure change le comportement d’agent.
+- Lis `playbooks/babysit.md` quand l’utilisateur demande d’inspecter ou d’amener une PR à l’état prêt au merge.
+- Lis `playbooks/shipping.md` quand l’utilisateur a autorisé l’atterrissage ou l’expédition de PR vérifiées.
+- Lis `playbooks/autonomous-run.md` pour une longue tâche avec condition de sortie vérifiable.
+- Lis `playbooks/orchestrate.md` pour un programme permanent avec plusieurs propriétaires et PR.
+- Lis `playbooks/autopilot-full.md` pour une file autorisée de PR indépendantes que les propriétaires peuvent fusionner après vérification.
+- Lis `playbooks/autopilot-stack.md` pour une file livrée comme une pile linéaire vérifiée que l’opérateur fait atterrir.
+- Lis `playbooks/session-pickup.md` pour reprendre du travail depuis l’état local, une branche ou le contexte de conversation.
+- Lis `playbooks/pause-safely.md` pour laisser le travail local dans un état reprenable.
+- Lis `playbooks/multi-phase-plan.md` pour un plan qui couvre des phases ou PR.
+- Lis `playbooks/worktree-cleanup.md` après une livraison terminée et fusionnée pour nettoyer ses worktrees temporaires libérés, ou pour un nettoyage disque demandé.
+- Lis `playbooks/opening-a-pr.md` seulement quand l’utilisateur a autorisé la création d’une PR. D’autres playbooks peuvent préparer une branche révisable sans en créer une.
 
-If no playbook fits, read and apply `../figure-it-out/SKILL.md`. Use `playbooks/orchestrate.md` only when the work is a continuing program rather than one session-sized task.
+Si aucun playbook ne convient, lis et applique `../figure-it-out/SKILL.md`. Utilise `playbooks/orchestrate.md` seulement quand le travail est un programme continu plutôt qu’une tâche de taille session.
 
-### Focused preparation requests
+### Demandes de préparation ciblée
 
-Directly selected `clarify` and `horizon` keep their own bounded scope. The automatic continuation above belongs to the cstack coordinator and the user's implementation request. Use `../domain/SKILL.md` for requested vocabulary/domain-decision work or a material terminology decision found during preparation. Read-only requests produce drafts without changing project documents. Use `../audit-architecture/SKILL.md` for an explicitly requested read-only survey of architectural improvement opportunities.
+Les `clarify` et `horizon` sélectionnés directement gardent leur périmètre borné. La continuation automatique ci-dessus appartient au coordinateur cstack et à la demande d’implémentation de l’utilisateur. Utilise `../domain/SKILL.md` pour un travail demandé de vocabulaire/décision de domaine ou une décision terminologique matérielle trouvée pendant la préparation. Les demandes en lecture seule produisent des brouillons sans changer les documents du projet. Utilise `../audit-architecture/SKILL.md` pour un relevé en lecture seule explicitement demandé des occasions d’amélioration architecturale.
 
-If `docs/agents/cstack.md` exists, consult its project conventions while cstack is active. It is optional and must not activate cstack or override the current request, mode, or permissions. A configured issue tracker describes where authorized work is recorded, not permission to create or change remote issues.
+Si `docs/agents/cstack.md` existe, consulte ses conventions de projet pendant que cstack est actif. Il est optionnel et ne doit pas activer cstack ni surclasser la demande, le mode ou les permissions courants. Un tracker d’issues configuré décrit où enregistrer le travail autorisé, pas une permission de créer ou changer des issues distantes.
 
-## Apply the common rules
+## Appliquer les règles communes
 
-### Understand before editing
+### Comprendre avant d’éditer
 
-- For a nontrivial change or architecture question, read and apply `../how/SKILL.md`.
-- For the motivation behind existing behavior, a regression, or a decision nobody can explain, read and apply `../why/SKILL.md`.
-- When the user asks to be taught a subsystem rather than given a fix, read and apply `../teach/SKILL.md`. It runs the `how` and `why` passes and returns a lesson instead of a diff.
-- Before writing stateful or branching code, name the data shape and read [Model the Domain](references/principles/model-the-domain.md).
-- Before code crosses a new function or module boundary, read `../architect/SKILL.md`.
-- For a disputed design, read and apply `../interrogate/SKILL.md`. Run its reviewers as native subagents when the session exposes them. Otherwise run the comparison sequentially in the same session, label the verdict single-agent, and record the missing model independence. Do not replace the comparison with a foreground opinion.
-- When the change touches `.ts` or `.tsx`, read `../typescript-best-practices/SKILL.md` before writing the types.
-- For a large migration or an unmatched workflow, read `../figure-it-out/SKILL.md`.
-- When the user asks to reflect on how the work went, or a phase ends in a program-sized run, read and apply `../reflect/SKILL.md`.
-- Before changing a widely used symbol, module boundary, or shared contract, read and apply `../blast-radius/SKILL.md`.
+- Pour un changement non trivial ou une question d’architecture, lis et applique `../how/SKILL.md`.
+- Pour la motivation derrière un comportement existant, une régression ou une décision que personne n’explique, lis et applique `../why/SKILL.md`.
+- Quand l’utilisateur demande qu’on lui enseigne un sous-système plutôt qu’un correctif, lis et applique `../teach/SKILL.md`. Il exécute les passes `how` et `why` et retourne une leçon au lieu d’un diff.
+- Avant d’écrire du code avec état ou branches, nomme la forme de données et lis [Modéliser le domaine](references/principles/model-the-domain.md).
+- Avant que le code traverse une nouvelle frontière de fonction ou de module, lis `../architect/SKILL.md`.
+- Pour une conception disputée, lis et applique `../interrogate/SKILL.md`. Lance ses relecteurs comme sous-agents natifs quand la session les expose. Sinon, exécute la comparaison séquentiellement dans la même session, étiquette le verdict single-agent et note l’indépendance de modèle manquante. Ne remplace pas la comparaison par une opinion de premier plan.
+- Quand le changement touche `.ts` ou `.tsx`, lis `../typescript-best-practices/SKILL.md` avant d’écrire les types.
+- Pour une grande migration ou un flux de travail sans correspondance, lis `../figure-it-out/SKILL.md`.
+- Quand l’utilisateur demande une réflexion sur le déroulement du travail, ou qu’une phase se termine dans une exécution de taille programme, lis et applique `../reflect/SKILL.md`.
+- Avant de changer un symbole largement utilisé, une frontière de module ou un contrat partagé, lis et applique `../blast-radius/SKILL.md`.
 
-### Keep the implementation small
+### Garder l’implémentation petite
 
-Read a principle only when its trigger applies or the user names it, then name the concrete decision it changed in the final report. Do not load the whole directory.
+Lis un principe seulement quand son déclencheur s’applique ou quand l’utilisateur le nomme, puis nomme la décision concrète qu’il a changée dans le rapport final. Ne charge pas tout le répertoire.
 
-- Read [Laziness Protocol](references/principles/laziness-protocol.md) before a refactor or a new abstraction.
-- Read [Subtract Before You Add](references/principles/subtract-before-you-add.md) before a rewrite or migration.
-- Read [Minimize Reader Load](references/principles/minimize-reader-load.md) when control flow or state is hard to trace.
-- Read [Redesign From First Principles](references/principles/redesign-from-first-principles.md) when a new requirement changes the design's foundation.
-- Read [Foundational Thinking](references/principles/foundational-thinking.md) before choosing core types, shared state, or implementation order.
-- Read [Attack the Premise](references/principles/attack-the-premise.md) after two fixes fail for the same assumed reason.
-- Read [Outcome-Oriented Execution](references/principles/outcome-oriented-execution.md) for a phased rewrite or migration with a fixed target shape.
-- Read [Experience First](references/principles/experience-first.md) for a product or interaction tradeoff.
-- Read [Exhaust the Design Space](references/principles/exhaust-the-design-space.md) when a novel choice needs competing prototypes.
-- Read [Build the Lever](references/principles/build-the-lever.md) when a small repeatable tool can perform or prove the work better than manual edits.
+- Lis [Protocole de paresse](references/principles/laziness-protocol.md) avant une refactorisation ou une nouvelle abstraction.
+- Lis [Soustraire avant d’ajouter](references/principles/subtract-before-you-add.md) avant une réécriture ou migration.
+- Lis [Réduire la charge de lecture](references/principles/minimize-reader-load.md) quand le flux de contrôle ou l’état est difficile à suivre.
+- Lis [Reconvoir depuis les premiers principes](references/principles/redesign-from-first-principles.md) quand une nouvelle exigence change la fondation de la conception.
+- Lis [Pensée fondationnelle](references/principles/foundational-thinking.md) avant de choisir les types centraux, l’état partagé ou l’ordre d’implémentation.
+- Lis [Attaquer la prémisse](references/principles/attack-the-premise.md) après deux correctifs échouant pour la même raison supposée.
+- Lis [Exécution orientée résultat](references/principles/outcome-oriented-execution.md) pour une réécriture ou migration phasée avec forme cible fixe.
+- Lis [Expérience d’abord](references/principles/experience-first.md) pour un compromis produit ou interaction.
+- Lis [Épuiser l’espace de conception](references/principles/exhaust-the-design-space.md) quand un choix nouveau exige des prototypes concurrents.
+- Lis [Construire le levier](references/principles/build-the-lever.md) quand un petit outil répétable peut effectuer ou prouver le travail mieux que des éditions manuelles.
 
-### Keep boundaries explicit
+### Garder les frontières explicites
 
-- Read [Boundary Discipline](references/principles/boundary-discipline.md) for validation, external APIs, CLI input, config, and framework adapters.
-- Read [Type System Discipline](references/principles/type-system-discipline.md) when designing a typed data shape or signature.
-- Read [Make Operations Idempotent](references/principles/make-operations-idempotent.md) for commands or loops that can retry after partial progress.
-- Read [Migrate Callers Then Delete Legacy APIs](references/principles/migrate-callers-then-delete-legacy-apis.md) when replacing an internal API.
-- Read [Separate Before Serializing Shared State](references/principles/separate-before-serializing-shared-state.md) when concurrent actors may write the same branch, file, or state.
+- Lis [Discipline des frontières](references/principles/boundary-discipline.md) pour la validation, les API externes, les entrées CLI, la config et les adaptateurs de framework.
+- Lis [Discipline du système de types](references/principles/type-system-discipline.md) quand tu conçois une forme de données typée ou une signature.
+- Lis [Rendre les opérations idempotentes](references/principles/make-operations-idempotent.md) pour les commandes ou boucles qui peuvent réessayer après une progression partielle.
+- Lis [Migrer les appelants puis supprimer les API legacy](references/principles/migrate-callers-then-delete-legacy-apis.md) quand tu remplaces une API interne.
+- Lis [Séparer avant de sérialiser l’état partagé](references/principles/separate-before-serializing-shared-state.md) quand des acteurs concurrents peuvent écrire dans la même branche, le même fichier ou le même état.
 
-### Commit verified work
+### Committer le travail vérifié
 
-Run `../deslop/SKILL.md` over the diff before every commit. It removes narrating comments, unsupported guards, dead compatibility paths, speculative generality, placeholder residue, and unrelated edits, then reruns the change's own verification to prove it removed only weight. Keep `deslop skipped: <reason>` when a step genuinely cannot run it.
+Lance `../deslop/SKILL.md` sur le diff avant chaque commit. Il retire les commentaires narratifs, gardes non étayées, chemins de compatibilité morts, généricité spéculative, résidus de placeholders et éditions non liées, puis relance la vérification propre au changement pour prouver qu’il n’a retiré que du poids. Garde `deslop skipped: <reason>` quand une étape ne peut vraiment pas s’exécuter.
 
-Then follow [Local commits](references/codex-runtime.md#local-commits) for every authorized implementation or documentation edit: commit each verified coherent unit locally without another confirmation, preserve unrelated work, and report actual commit SHAs before finishing.
+Ensuite, suis [Commits locaux](references/codex-runtime.md#commits-locaux) pour chaque édition d’implémentation ou de documentation autorisée : committe localement chaque unité cohérente vérifiée sans autre confirmation, préserve le travail non lié et rapporte les vrais SHA de commit avant de terminer.
 
-### Verify real behavior
+### Vérifier le comportement réel
 
-- Read [Prove It Works](references/principles/prove-it-works.md) before claiming completion.
-- Read [Fix Root Causes](references/principles/fix-root-causes.md) for a defect.
-- Read [Sequence work into verifiable units](references/principles/sequence-verifiable-units.md) for multi-step work.
-- Read [Test Behavior, Not Implementation](references/principles/test-behavior-not-implementation.md) when adding or changing tests.
-- Read [Encode Lessons in Structure](references/principles/encode-lessons-in-structure.md) when the same correction appears twice.
-- Read [Never Block on the Human](references/principles/never-block-on-the-human.md) before asking about a reversible or discoverable choice.
-- Read [Guard the Context Window](references/principles/guard-the-context-window.md) before loading a large artifact or broad fan-out into the parent task.
-- Read `../no-comments/SKILL.md` before review of any diff that added or changed comments. Hand the comment pass to an actor that did not write them. A dedicated comment-review request runs the same workflow on demand.
-- Read `../unslop/SKILL.md` for every prose artifact and reply.
-- Read `../technical-writing/SKILL.md` for documentation, plans, PR text, and commit text.
+- Lis [Prouver que ça fonctionne](references/principles/prove-it-works.md) avant de prétendre que c’est terminé.
+- Lis [Corriger les causes racines](references/principles/fix-root-causes.md) pour un défaut.
+- Lis [Séquencer le travail en unités vérifiables](references/principles/sequence-verifiable-units.md) pour un travail multi-étapes.
+- Lis [Tester le comportement, pas l’implémentation](references/principles/test-behavior-not-implementation.md) quand tu ajoutes ou changes des tests.
+- Lis [Encoder les leçons dans la structure](references/principles/encode-lessons-in-structure.md) quand la même correction apparaît deux fois.
+- Lis [Ne jamais bloquer sur l’humain](references/principles/never-block-on-the-human.md) avant de poser une question sur un choix réversible ou découvrable.
+- Lis [Protéger la fenêtre de contexte](references/principles/guard-the-context-window.md) avant de charger un grand artéfact ou une large ventilation dans la tâche parent.
+- Lis `../no-comments/SKILL.md` avant la revue de tout diff qui a ajouté ou changé des commentaires. Confie la passe sur les commentaires à un acteur qui ne les a pas écrits. Une demande dédiée de revue de commentaires exécute le même flux de travail à la demande.
+- Lis `../unslop/SKILL.md` pour chaque artéfact en prose et chaque réponse.
+- Lis `../technical-writing/SKILL.md` pour la documentation, les plans, le texte de PR et le texte de commit.
 
-### Use native subagents deliberately
+### Utiliser les sous-agents natifs délibérément
 
-Follow [the runtime contract](references/codex-runtime.md). Use native subagents for independent work that improves speed, evidence, or review separation. Give each native subagent a bounded task, file ownership, acceptance criteria, and the instructions from `references/agents/cstack-agent.md`. The parent owns integration and verification.
+Suis [le contrat d’exécution](references/codex-runtime.md). Utilise les sous-agents natifs pour du travail indépendant qui améliore la vitesse, les preuves ou la séparation de revue. Donne à chaque sous-agent natif une tâche bornée, une propriété de fichiers, des critères d’acceptation et les instructions de `references/agents/cstack-agent.md`. Le parent possède l’intégration et la vérification.
 
-For coverage across independent areas, read and apply `../swarm/SKILL.md`. For competing implementations or designs, read and apply `../arena/SKILL.md`. Parallelize only independent work. One actor writes a branch or shared file at a time.
+Pour couvrir des zones indépendantes, lis et applique `../swarm/SKILL.md`. Pour des implémentations ou conceptions concurrentes, lis et applique `../arena/SKILL.md`. Ne parallélise que le travail indépendant. Un seul acteur écrit une branche ou un fichier partagé à la fois.
 
-Bound panels to native capacity. A panel with no `.cstack/models.json` entry defaults to three independent inherited-model attempts. A cross-judge pool defaults to one inherited-model judge. Run excess attempts in waves. If a playbook asks for more lanes than the work justifies, preserve each distinct scenario and mark redundant lanes `n/a` with a reason.
+Limite les panels à la capacité native. Un panel sans entrée `.cstack/models.json` utilise par défaut trois tentatives indépendantes en modèle hérité. Un pool cross-judge utilise par défaut un judge en modèle hérité. Lance les tentatives excédentaires par vagues. Si un playbook demande plus de voies que le travail ne justifie, préserve chaque scénario distinct et marque les voies redondantes `n/a` avec une raison.
 
-Follow the runtime contract's direct inheritance path when unconfigured; otherwise resolve the delegate's role with its trusted helper and preserve both `model` and `reasoning_effort` through the final native dispatch. Missing settings inherit. Report unsupported selections or dispatch capabilities without silently substituting or dropping effort.
+Suis le chemin d’héritage direct du contrat d’exécution quand rien n’est configuré ; sinon, résous le rôle du délégué avec son helper de confiance et préserve à la fois `model` et `reasoning_effort` jusqu’au dispatch natif final. Les paramètres manquants héritent. Rapporte les sélections ou capacités de dispatch non prises en charge sans substituer silencieusement ni abandonner l’effort.
 
-Use `simple edits` for small bounded implementation changes and `documentation` for documentation-only delegates. Generic review or judgment uses `judgment and prose`. Use `hardest tasks` only for explicitly complex architecture, not difficult bugs or algorithms. Other implementation uses `feature, refactoring`; debugging uses `bug-fix`, `perf-issue` or `hillclimb` as appropriate. Specialized investigators, synthesizers and panels use their named setup roles. Pass the selected role into Swarm so its generic `swarm workers` default cannot replace it.
+Utilise `simple edits` pour les petits changements d’implémentation bornés et `documentation` pour les délégués limités à la documentation. La revue ou le jugement générique utilise `judgment and prose`. Utilise `hardest tasks` seulement pour une architecture explicitement complexe, pas pour des bugs ou algorithmes difficiles. Les autres implémentations utilisent `feature, refactoring` ; le débogage utilise `bug-fix`, `perf-issue` ou `hillclimb` selon le cas. Les investigateurs, synthétiseurs et panels spécialisés utilisent leurs rôles de configuration nommés. Passe le rôle sélectionné à Swarm pour que son défaut générique `swarm workers` ne puisse pas le remplacer.
 
-Before presenting a code change as ready for PR creation or merge, obtain a verdict from an actor that did not write it. A parent reviewing a delegate's diff satisfies this; a parent that wrote the code needs a separate reviewer. When the session exposes no second actor, run a separate review pass over a clean re-read of the diff, label it a single-agent review, and name the missing independence. Reuse a completed verdict only for the same scope and an unchanged patch. Never call a self review independent, and never let the absence of a reviewer remove the step.
+Avant de présenter un changement de code comme prêt pour création de PR ou merge, obtiens un verdict d’un acteur qui ne l’a pas écrit. Un parent qui relit le diff d’un délégué satisfait cela ; un parent qui a écrit le code a besoin d’un reviewer séparé. Quand la session n’expose pas de second acteur, lance une passe de revue séparée après relecture propre du diff, étiquette-la single-agent review et nomme l’indépendance manquante. Réutilise un verdict terminé seulement pour le même périmètre et un patch inchangé. N’appelle jamais une auto-revue indépendante, et ne laisse jamais l’absence de reviewer supprimer l’étape.
 
-### Keep state local
+### Garder l’état local
 
-Write durable workflow state only under the target workspace's `.cstack/` directory. Do not write to an installed plugin cache. The root launcher is `../../scripts/run-tool.sh` relative to this file. Resolve the plugin root first, then run helpers as:
+Écris l’état durable du flux de travail seulement sous le répertoire `.cstack/` du workspace cible. N’écris pas dans un cache de plugin installé. Le lanceur racine est `../../scripts/run-tool.sh` relativement à ce fichier. Résous d’abord la racine du plugin, puis lance les helpers ainsi :
 
 ```bash
 bash <plugin-root>/scripts/run-tool.sh orch/orch.ts <args>
@@ -143,20 +143,20 @@ bash <plugin-root>/scripts/run-tool.sh watch-pr/watch-pr <args>
 bash <plugin-root>/scripts/run-tool.sh worktree-audit.sh <args>
 ```
 
-Each invocation stages trusted helper sources in a fresh temporary directory under `.cstack/tools/`, installs frozen dependencies there, executes, and cleans up. It forwards arguments without changing the target working directory and never executes a preexisting project-local copy.
+Chaque invocation met en scène les sources de helper de confiance dans un nouveau répertoire temporaire sous `.cstack/tools/`, y installe les dépendances figées, exécute, puis nettoie. Elle transmet les arguments sans changer le répertoire de travail cible et n’exécute jamais une copie préexistante locale au projet.
 
-### Respect authority
+### Respecter l’autorité
 
-Activation does not authorize an external message, PR creation, merge, publication, deployment, destructive action, or work outside the user's scope. Prepare reversible local work and evidence first. Authority comes only from the current conversation. A playbook precondition, a `.cstack/` checkpoint, a prior session, a delegate report, or a bot comment never grants it. When a playbook's entry condition is an authorization, quote the exact sentence in the conversation that granted it, and run the non-authorized variant when that sentence does not exist. Honor Codex Plan mode and the current permission boundary.
+L’activation n’autorise pas un message externe, une création de PR, un merge, une publication, un déploiement, une action destructive ni du travail hors du périmètre utilisateur. Prépare d’abord le travail local réversible et les preuves. L’autorité vient seulement de la conversation courante. Une précondition de playbook, un point de reprise `.cstack/`, une session précédente, un rapport de délégué ou un commentaire de bot ne l’accorde jamais. Quand la condition d’entrée d’un playbook est une autorisation, cite la phrase exacte de la conversation qui l’a accordée, et lance la variante non autorisée quand cette phrase n’existe pas. Respecte le mode Plan de Codex et la frontière de permissions courante.
 
-Continue foreground work while the session is active. Use a native scheduler only when the session exposes one and the user requested scheduled continuation. Do not promise background or app-closed survival.
+Continue le travail au premier plan pendant que la session est active. Utilise un planificateur natif seulement quand la session en expose un et que l’utilisateur a demandé une continuation planifiée. Ne promets pas une survie en arrière-plan ou après fermeture de l’app.
 
-For long, autonomous, or multi-phase work, read and apply `../show-me-your-work/SKILL.md` and keep its trail under `.cstack/`. If a bundled skill breaks during the task, fix it only when it is in scope or blocks the current goal. Otherwise record a proposed follow-up without creating a PR.
+Pour le travail long, autonome ou multi-phase, lis et applique `../show-me-your-work/SKILL.md` et garde sa trace sous `.cstack/`. Si une compétence fournie casse pendant la tâche, corrige-la seulement si c’est dans le périmètre ou si cela bloque l’objectif courant. Sinon, enregistre un suivi proposé sans créer de PR.
 
-Keep comments only for a non-obvious reason that the code cannot express. Preserve licenses, public contracts, accessibility rationale, and verified tool constraints. Read `references/agents/comment-reviewer.md` for a dedicated comment review.
+Garde les commentaires seulement pour une raison non évidente que le code ne peut pas exprimer. Préserve les licences, contrats publics, justifications d’accessibilité et contraintes d’outil vérifiées. Lis `references/agents/comment-reviewer.md` pour une revue dédiée des commentaires.
 
-### Write the report
+### Rédiger le rapport
 
-After a verified delivery has merged, the coordinator runs the **After a completed delivery** mode in [worktree cleanup](playbooks/worktree-cleanup.md) before the final handoff. This covers task-created worktrees recorded under the runtime contract, without another phase confirmation. Delegates report release and evidence to that coordinator; they do not delete their own active worktrees. Preserve user-requested worktrees and report any held path with its reason.
+Après qu’une livraison vérifiée a été fusionnée, le coordinateur lance le mode **Après une livraison terminée** dans [nettoyage de worktree](playbooks/worktree-cleanup.md) avant le transfert final. Cela couvre les worktrees créés par la tâche et enregistrés selon le contrat d’exécution, sans autre confirmation de phase. Les délégués rapportent libération et preuves à ce coordinateur ; ils ne suppriment pas leurs propres worktrees actifs. Préserve les worktrees demandés par l’utilisateur et rapporte tout chemin conservé avec sa raison.
 
-Lead with the user-visible result. State what changed, the evidence, and any real limit. Every claim carries its evidence or its label in the same sentence. Measured, inferred, or guess. A prediction or an unseen cause is a guess. Never hand the human a check you could run. Link only artifacts read or produced in the current task. Use a full GitHub PR URL when a PR exists. "No" is an acceptable answer. Say that an approach does not work, or that the request is the wrong shape, instead of shipping something that agrees.
+Commence par le résultat visible pour l’utilisateur. Dis ce qui a changé, la preuve et toute vraie limite. Chaque affirmation porte sa preuve ou son étiquette dans la même phrase. Mesuré, inféré ou supposition. Une prédiction ou une cause non observée est une supposition. Ne remets jamais à l’humain un contrôle que tu pourrais lancer. Ne lie que les artéfacts lus ou produits dans la tâche courante. Utilise une URL GitHub PR complète quand une PR existe. « Non » est une réponse acceptable. Dis qu’une approche ne fonctionne pas, ou que la demande n’a pas la bonne forme, au lieu de livrer quelque chose qui acquiesce.

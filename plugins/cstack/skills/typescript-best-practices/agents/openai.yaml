@@ -1,6 +1,6 @@
 interface:
   display_name: "typescript-best-practices"
-  short_description: "Apply TypeScript rules for safer types and boundaries"
-  default_prompt: "Use $cstack:typescript-best-practices for this task."
+  short_description: "Appliquer des règles TypeScript plus sûres"
+  default_prompt: "Utilise $cstack:typescript-best-practices pour cette tâche."
 policy:
   allow_implicit_invocation: false

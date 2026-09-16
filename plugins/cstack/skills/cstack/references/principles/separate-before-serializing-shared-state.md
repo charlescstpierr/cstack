@@ -1,12 +1,12 @@
-# Separate Before Serializing Shared State
+# Séparer avant de sérialiser l'état partagé
 
-Read this reference when an active cstack workflow routes here or the user names this principle. Follow the [Codex runtime contract](../codex-runtime.md) for scope and permissions.
+Lisez cette référence lorsqu'un processus cstack actif vous route ici ou lorsque l'utilisateur nomme ce principe. Suivez le [contrat d'exécution Codex](../codex-runtime.md) pour le périmètre et les permissions.
 
-When concurrent actors might share mutable state, first ask whether they need the same mutable object. If not, eliminate the sharing. When sharing is real, enforce serialization structurally: lockfiles, sequential phases, exclusive ownership. Instructions and conventions are not concurrency control.
+Lorsque des acteurs concurrents pourraient partager un état mutable, demandez d'abord s'ils ont besoin du même objet mutable. Sinon, éliminez le partage. Quand le partage est réel, imposez la sérialisation structurellement : fichiers de verrou, phases séquentielles, propriété exclusive. Les instructions et conventions ne sont pas du contrôle de concurrence.
 
-**Why:** Concurrent writes to shared state create race conditions that are intermittent, hard to reproduce, and expensive to debug.
+**Pourquoi :** les écritures concurrentes dans un état partagé créent des conditions de course intermittentes, difficiles à reproduire et coûteuses à déboguer.
 
-**Pattern:**
-1. **Identify shared mutable state** (files both read and write, branches both push to, APIs both define and consume).
-2. **Default: eliminate the shared write target.** Ask: do these actors need one canonical object, or are they publishing independent facts? Give each actor its own owned file, key, branch, or state directory, and merge only at the read/reporting boundary. Two workers writing their own `lastX` field into one `state.json` is still shared mutation. `indexer-state.json` + `metrics-state.json` is not.
-3. **Only when one shared write target is a real invariant, serialize access structurally** (lockfiles, sequential phases, single-writer actor, or atomic compare-and-swap). Treat "we need a lock" as a design smell to check, not as the default answer.
+**Motif :**
+1. **Identifier l'état mutable partagé** (fichiers à la fois lus et écrits, branches où les deux poussent, API à la fois définies et consommées).
+2. **Par défaut : éliminer la cible d'écriture partagée.** Demandez : ces acteurs ont-ils besoin d'un objet canonique unique, ou publient-ils des faits indépendants ? Donnez à chaque acteur son propre fichier, clé, branche ou répertoire d'état, et fusionnez seulement à la frontière de lecture/rapport. Deux workers qui écrivent leur propre champ `lastX` dans un seul `state.json` font encore une mutation partagée. `indexer-state.json` + `metrics-state.json` ne le font pas.
+3. **Seulement lorsqu'une cible d'écriture partagée est un vrai invariant, sérialiser l'accès structurellement** (fichiers de verrou, phases séquentielles, acteur écrivain unique ou compare-and-swap atomique). Traitez « il nous faut un verrou » comme une odeur de conception à vérifier, pas comme la réponse par défaut.

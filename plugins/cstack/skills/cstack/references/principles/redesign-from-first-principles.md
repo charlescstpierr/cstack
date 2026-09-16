@@ -1,12 +1,12 @@
-# Redesign From First Principles
+# Redessiner à partir des premiers principes
 
-Read this reference when an active cstack workflow routes here or the user names this principle. Follow the [Codex runtime contract](../codex-runtime.md) for scope and permissions.
+Lisez cette référence lorsqu'un processus cstack actif vous route ici ou lorsque l'utilisateur nomme ce principe. Suivez le [contrat d'exécution Codex](../codex-runtime.md) pour le périmètre et les permissions.
 
-When integrating a change, don't bolt it onto the existing design. Redesign as if the requirement had been there from the start.
+Lorsque vous intégrez un changement, ne le boulonnez pas sur le conception existant. Redessinez comme si l'exigence avait été là dès le départ.
 
-- Read all affected files and understand the current design
-- Ask: "if we were writing this from scratch with this new requirement, what would we build?"
-- Propagate the change through every reference: types, docs, examples, rationale sections
-- Think about the whole redesign, then deliver it incrementally
+- Lire tous les fichiers affectés et comprendre le conception courant
+- Demander : « si nous écrivions ceci de zéro avec cette nouvelle exigence, que construirions-nous ? »
+- Propager le changement dans chaque référence : types, docs, exemples, sections de justification
+- Penser le reconception complet, puis le livrer incrémentalement
 
-This is the method for preserving option value when integrating changes into an existing design.
+C'est la méthode pour préserver la valeur d'option lors de l'intégration de changements dans un conception existant.

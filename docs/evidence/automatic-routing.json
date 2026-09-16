@@ -4,7 +4,7 @@
   "plugin_version": "0.3.0",
   "catalog_skills": 28,
   "plugin_commit": "19acc39fe1743efeac71cf67c79c0ffa842a7854",
-  "method": "Native Codex App project coordinators and bounded children, followed by independent parent inspection and behavior checks.",
+  "method": "Coordinateurs de projet natifs Codex App et sous-agents au périmètre limité, suivis d’une inspection parent indépendante et de vérifications du comportement.",
   "restored_baseline": "ea39069cf523503453bda0f4ab94e0ca927e297b",
   "normalized_workflow_equivalence": [
     "feature",
@@ -22,34 +22,34 @@
   "cases": [
     {
       "name": "orion",
-      "request": "Implement the fully specified slug behavior.",
+      "request": "Implémenter le comportement entièrement défini du slug.",
       "result": "pass",
-      "observed": "No product question. Only slug.py changed. Existing hyphens and non-space whitespace preserved.",
-      "verification": "Independent assertions for spaces, case, hyphens, empty input and unchanged other whitespace."
+      "observed": "Aucune question produit. Seul slug.py a changé. Traits d’union existants et espaces blancs autres que les espaces simples préservés.",
+      "verification": "Assertions indépendantes pour les espaces, la casse, les traits d’union, l’entrée vide et la conservation des autres espaces blancs."
     },
     {
       "name": "nova",
-      "request": "Implement archive_completed with unspecified archive semantics.",
+      "request": "Implémenter archive_completed avec une sémantique d’archivage non définie.",
       "result": "pass",
       "before_product_answer_unchanged": true,
-      "observed": "Asked retain/remove and mutate/copy questions before any write. Continued after a contract-only answer without another phase approval.",
+      "observed": "Questions sur conserver ou retirer et modifier ou copier posées avant toute écriture. Reprise après une réponse portant uniquement sur le contrat, sans nouvelle approbation de phase.",
       "verification": "pass",
       "final_project_hash": "9d8998212febbef717561398e2ebc493fae32da0fe55212a4e1a98fde8bc5a39"
     },
     {
       "name": "lyra",
-      "request": "Organize a settled four-release migration; implement only phase 1.",
+      "request": "Organiser une migration définie en quatre versions ; implémenter uniquement la phase 1.",
       "result": "pass",
-      "observed": "Created a Horizon spec and four dependent units without invented decision tickets. Implemented only normalization; phases 2-4 stayed planned. Native grounding, implementation and independent reviews completed.",
-      "verification": "Independent invalid-input, normalized-output and email-only-boundary checks; plan and trail inspected; no new commits or dependencies."
+      "observed": "Spécification Horizon et quatre unités dépendantes créées sans tickets de décision inventés. Seule la normalisation est implémentée ; les phases 2 à 4 restent planifiées. Analyse factuelle native, implémentation et revues indépendantes terminées.",
+      "verification": "Vérifications indépendantes des entrées invalides, de la sortie normalisée et du périmètre limité aux courriels ; plan et journal examinés ; aucun nouveau commit ni dépendance."
     },
     {
       "name": "lyra_readonly",
-      "request": "Review compatibility retirement ordering without any file writes.",
+      "request": "Examiner l’ordre de retrait de la compatibilité sans aucune écriture de fichier.",
       "result": "pass",
       "before_hash": "8b3bbc569998dd132f0d47dda17ce4445074810cd4665137c74592c6d2656b19",
       "after_hash": "8b3bbc569998dd132f0d47dda17ce4445074810cd4665137c74592c6d2656b19",
-      "observed": "Correct dependency explanation; all files, including planning state and checkpoints, unchanged."
+      "observed": "Explication correcte des dépendances ; tous les fichiers inchangés, y compris l’état de planification et les points de reprise."
     }
   ],
   "artifacts": {
@@ -61,11 +61,11 @@
     ".cstack/tasks/preserve-rigor/forward/final-outcomes.json": "4af45ff1fa9abfb1e8650bef322a6204445e594092bc2894b7fe28ae28a248b3"
   },
   "limits": [
-    "Bounded synthetic workflows, not a general quality or efficiency comparison.",
-    "Roles inherited the session model; no model-diversity or cost claim.",
-    "Checks cover active sessions, not unattended execution after the app exits.",
-    "The earlier concurrent CLI matrix remains inconclusive in draft PR #4.",
-    "Historical snapshot of plugin commit 19acc39fe1743efeac71cf67c79c0ffa842a7854, catalog of 28 skills. final_target_plugin_sha256 describes that tree. Later commits changed plugin bytes. Hash not recomputed."
+    "Processus synthétiques au périmètre limité, sans comparaison générale de qualité ni d’efficacité.",
+    "Les rôles ont hérité du modèle de session ; aucune affirmation de diversité de modèles ni de coût.",
+    "Les contrôles couvrent les sessions actives, pas l’exécution sans surveillance après la fermeture de l’application.",
+    "La matrice CLI concurrente antérieure reste non concluante dans la PR brouillon n° 4.",
+    "Instantané historique du commit de plugin 19acc39fe1743efeac71cf67c79c0ffa842a7854, avec un catalogue de 28 skills. final_target_plugin_sha256 décrit cet arbre. Les commits suivants ont modifié les octets du plugin. Empreinte non recalculée."
   ],
   "final_target_plugin_sha256": "26f79efffe7f6500383864b67c718a27fa0590139b37628976b4553ff26aec2e",
   "project_hash_exclusions": [

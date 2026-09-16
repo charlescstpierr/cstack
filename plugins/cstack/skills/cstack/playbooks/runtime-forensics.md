@@ -1,13 +1,13 @@
-### Runtime forensics
+### Forensique exécution
 
-Follow [the Codex runtime contract](../references/codex-runtime.md).
+Suivez [le contrat d’exécution Codex](../references/codex-runtime.md).
 
-**You own the diagnosis. Instrument the live process, don't theorize from source.** The deliverable is a cited diagnosis, not a fix.
+**Tu possèdes le diagnostic. Instrumente le processus vivant, ne théorise pas depuis la source.** Le livrable est un diagnostic cité, pas un correctif.
 
-1. Capture the live signal with an available native browser, simulator, profiler, or terminal tool. Use a CPU profile for a spinning process, a heap snapshot for a leak, or a browser trace for a visual glitch. Capture a real artifact.
-2. Reduce the artifact to the smoking gun: the function on the hot path, the retainer chain from the leaked object to a GC root, the loop firing without input. Parse large artifacts in a subagent (the [Guard the Context Window](../references/principles/guard-the-context-window.md) principle reference), keep the reduced finding in the main thread.
-3. Prove the mechanism. Use available runtime evaluation or temporary instrumentation to confirm the hypothesis with the smallest reversible change.
-4. Map the finding back to source: file, symbol, the line that allocates or schedules.
-5. Throughput checkpoint stays one line: `throughput checkpoint: n/a, read-only forensics`.
+1. Capture le signal vivant avec un navigateur, simulateur, profileur ou outil terminal natif disponible. Utilise un profil CPU pour un processus qui boucle, un heap snapshot pour une fuite, ou une trace navigateur pour une anomalie visuelle. Capture un vrai artéfact.
+2. Réduis l’artéfact à la pièce décisive : la fonction sur le chemin chaud, la chaîne de rétention de l’objet fuité vers une racine GC, la boucle qui se déclenche sans entrée. Parse les grands artéfacts dans un sous-agent (référence du principe [Protéger la fenêtre de contexte](../references/principles/guard-the-context-window.md)), garde le constat réduit dans le fil principal.
+3. Prouve le mécanisme. Utilise l’évaluation exécution disponible ou une instrumentation temporaire pour confirmer l’hypothèse avec le plus petit changement réversible.
+4. Rattache le constat à la source : fichier, symbole, ligne qui alloue ou planifie.
+5. Le point de contrôle de débit reste sur une ligne : `throughput checkpoint: n/a, read-only forensics`.
 
-**Reply:** the signal captured, the reduced finding, how you proved the mechanism, the source location, artifact paths. No fix unless asked. Hand back to Bug fix or Perf once the cause is known. Every claim carries its evidence or its label in the same sentence. Measured, inferred, or guess. A prediction or an unseen cause is a guess. Never hand the human a check you could run.
+**Réponse :** le signal capturé, le constat réduit, comment tu as prouvé le mécanisme, l’emplacement source, les chemins d’artéfact. Pas de correctif sauf demande. Repasse à Bug fix ou Perf une fois la cause connue. Chaque affirmation porte sa preuve ou son étiquette dans la même phrase. Mesuré, inféré ou supposition. Une prédiction ou une cause non observée est une supposition. Ne remets jamais à l’humain un contrôle que tu pourrais lancer.

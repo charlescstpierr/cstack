@@ -91,7 +91,7 @@ function message(error: unknown): string {
 function positiveInteger(value: string): number {
   const parsed = Number(value);
   if (!/^[1-9]\d*$/.test(value) || !Number.isSafeInteger(parsed)) {
-    throw new InvalidArgumentError("must be a positive integer");
+    throw new InvalidArgumentError("doit être un entier positif");
   }
   return parsed;
 }
@@ -99,7 +99,7 @@ function positiveInteger(value: string): number {
 function prList(value: string): readonly number[] {
   const parts = value.split(",");
   if (parts.some((part) => part.length === 0)) {
-    throw new InvalidArgumentError("requires a comma-separated PR list");
+    throw new InvalidArgumentError("exige une liste de PR separees par des virgules");
   }
   return parts.map(positiveInteger);
 }
@@ -107,7 +107,7 @@ function prList(value: string): readonly number[] {
 function countLine(value: Counts): string {
   const entries = Object.entries(value);
   return entries.length === 0
-    ? "none"
+    ? "aucun"
     : entries.map(([name, count]) => `${name}=${count}`).join(", ");
 }
 
@@ -154,7 +154,7 @@ function compactRows<T>(
   const visible = limit === null ? rows : rows.slice(0, limit);
   const lines = visible.map(format);
   if (limit !== null && rows.length > limit) {
-    lines.push(`... ${rows.length - limit} more; use --json`);
+    lines.push(`... ${rows.length - limit} de plus; utiliser --json`);
   }
   return lines.join("\n");
 }
@@ -162,26 +162,26 @@ function compactRows<T>(
 function frontierLine(value: Frontier): string {
   const prs =
     value.prs.length === 0
-      ? "none"
+      ? "aucun"
       : value.prs
           .map(
             (row) =>
               `${row.branches}#${row.pr}@${row.sha}:${row.state}`
           )
           .join(",");
-  return `generation=${value.generation} prs=${prs} lowest-unmerged=${value.lowestUnmerged ?? "none"}`;
+  return `generation=${value.generation} prs=${prs} plus-basse-non-fusionnee=${value.lowestUnmerged ?? "aucune"}`;
 }
 
 function statusLines(report: StatusReport): string {
   const visible = report.summary.openGateIds.slice(0, DISPLAY_LIMIT);
   const more =
     report.summary.openGateIds.length > DISPLAY_LIMIT
-      ? `,+${report.summary.openGateIds.length - DISPLAY_LIMIT} more`
+      ? `,+${report.summary.openGateIds.length - DISPLAY_LIMIT} de plus`
       : "";
   return [
-    `counts: units=${report.units.length}; states=${countLine(report.summary.unitStates)}; ledger=${countLine(report.summary.ledgerVerdicts)}`,
-    `changed: ${report.changed}`,
-    `gates open: ${report.summary.openGateIds.length}${
+    `comptes: unités=${report.units.length}; états=${countLine(report.summary.unitStates)}; registre=${countLine(report.summary.ledgerVerdicts)}`,
+    `modifie: ${report.changed}`,
+    `barrières ouvertes: ${report.summary.openGateIds.length}${
       visible.length > 0 ? `; ids=${visible.join(",")}${more}` : ""
     }`,
   ].join("\n");
@@ -203,7 +203,7 @@ function emit<T>(
 function storeDirectory(program: Command): string {
   const value = program.opts<GlobalOptions>().store;
   if (value === undefined || value.trim().length === 0) {
-    throw new UsageError("set --store <dir> or ORCH_STORE");
+    throw new UsageError("définir --store <dir> ou ORCH_STORE");
   }
   return value;
 }
@@ -211,7 +211,7 @@ function storeDirectory(program: Command): string {
 function frontierRepo(options: FrontierSetOptions): string {
   const value = options.repo;
   if (value === undefined || value.trim().length === 0) {
-    throw new UsageError("set --repo <dir> or ORCH_REPO");
+    throw new UsageError("définir --repo <dir> ou ORCH_REPO");
   }
   return value;
 }
@@ -227,9 +227,9 @@ async function runStore<T>(
   const store = openStore(storeDirectory(program), {
     force: options.force,
     onLockStolen: (holder) =>
-      io.stderr(`stealing store lock held by pid ${holder}\n`),
+      io.stderr(`vol du verrou de magasin detenu par le pid ${holder}\n`),
     onStaleLock: (holder) =>
-      io.stderr(`replacing stale store lock (pid ${holder} is dead)\n`),
+      io.stderr(`remplacement du verrou de magasin perime (pid ${holder} mort)\n`),
   });
   try {
     const result = await operation(store);
@@ -248,41 +248,42 @@ function leaf(parent: Command, name: string, description: string): Command {
 
 function requireSubcommand(program: Command): never {
   storeDirectory(program);
-  throw new UsageError("a valid command is required");
+  throw new UsageError("une commande valide est requise");
 }
 
 function createProgram(io: Io): Command {
   const program = new CommanderCommand("orch")
-    .description("Plain-file orchestrate bookkeeping")
+    .description("Suivi d’orchestration en fichiers texte")
     .usage("[--store <dir>] [--json] [--force] <command>")
     .configureOutput({ writeOut: io.stdout, writeErr: io.stderr })
     .exitOverride()
+    .helpOption("-h, --help", "afficher l’aide de la commande")
     .showHelpAfterError()
     .allowExcessArguments(false)
     .addOption(
-      new Option("--store <dir>", "store directory (or ORCH_STORE)").env(
+      new Option("--store <dir>", "dossier du magasin (ou ORCH_STORE)").env(
         "ORCH_STORE"
       )
     )
-    .option("--json", "print complete rows as JSON", false)
-    .option("--force", "steal an existing store lock", false);
+    .option("--json", "afficher les lignes complètes en JSON", false)
+    .option("--force", "voler un verrou de magasin existant", false);
 
-  leaf(program, "init", "initialize the store").action(() =>
+  leaf(program, "init", "initialiser le magasin").action(() =>
     runStore(
       program,
       io,
       (store) => store.init(),
-      (result) => `initialized ${result.store}`
+      (result) => `initialise ${result.store}`
     )
   );
 
   const unit = program
     .command("unit")
-    .description("manage work units")
+    .description("gérer les unités de travail")
     .action(() => requireSubcommand(program));
-  leaf(unit, "add <id>", "add a unit")
-    .requiredOption("--track <track>", "unit track")
-    .option("--brief <path>", "brief path")
+  leaf(unit, "add <id>", "ajouter une unité")
+    .requiredOption("--track <track>", "piste de l’unité")
+    .option("--brief <path>", "chemin du brief")
     .action((id: string, options: UnitAddOptions) =>
       runStore(
         program,
@@ -296,10 +297,10 @@ function createProgram(io: Io): Command {
         unitLine
       )
     );
-  leaf(unit, "set <id>", "update a unit")
-    .requiredOption("--state <state>", "unit state")
-    .option("--branch <branch>", "branch name")
-    .option("--pr <number>", "pull request number", positiveInteger)
+  leaf(unit, "set <id>", "mettre à jour une unité")
+    .requiredOption("--state <state>", "état de l’unité")
+    .option("--branch <branch>", "nom de branche")
+    .option("--pr <number>", "numéro de pull request", positiveInteger)
     .option("--sha <sha>", "commit SHA")
     .action((id: string, options: UnitSetOptions) =>
       runStore(
@@ -316,34 +317,34 @@ function createProgram(io: Io): Command {
         unitLine
       )
     );
-  leaf(unit, "get <id>", "get a unit").action((id: string) =>
+  leaf(unit, "get <id>", "lire une unité").action((id: string) =>
     runStore(program, io, (store) => store.units.get(id), unitLine)
   );
-  leaf(unit, "list", "list units")
-    .option("--state <state>", "filter by state")
-    .option("--track <track>", "filter by track")
+  leaf(unit, "list", "lister les unités")
+    .option("--state <state>", "filtrer par état")
+    .option("--track <track>", "filtrer par piste")
     .action((options: UnitListOptions) =>
       runStore(
         program,
         io,
         (store) => store.units.list(options),
-        (rows) => compactRows(rows, unitLine, "(no units)")
+        (rows) => compactRows(rows, unitLine, "(aucune unité)")
       )
     );
-  leaf(unit, "counts", "count units by state").action(() =>
+  leaf(unit, "counts", "compter les unités par état").action(() =>
     runStore(program, io, (store) => store.units.counts(), countLine)
   );
 
   const ledger = program
     .command("ledger")
-    .description("manage verification records")
+    .description("gérer les enregistrements de vérification")
     .action(() => requireSubcommand(program));
-  leaf(ledger, "record", "record a verification verdict")
-    .argument("<pr>", "pull request number", positiveInteger)
+  leaf(ledger, "record", "enregistrer un verdict de verification")
+    .argument("<pr>", "numéro de pull request", positiveInteger)
     .argument("<sha>", "commit SHA")
-    .argument("<verdict>", "verification verdict", parseVerdict)
-    .requiredOption("--evidence <path>", "evidence path")
-    .option("--verifier <name>", "verifier name")
+    .argument("<verdict>", "verdict de verification", parseVerdict)
+    .requiredOption("--evidence <path>", "chemin de preuve")
+    .option("--verifier <name>", "nom du vérificateur")
     .action(
       (
         pr: number,
@@ -365,8 +366,8 @@ function createProgram(io: Io): Command {
           (row) => `${row.pr}\t${row.sha}\t${row.verdict}`
         )
     );
-  leaf(ledger, "check", "check a verification verdict")
-    .argument("<pr>", "pull request number", positiveInteger)
+  leaf(ledger, "check", "vérifier un verdict de vérification")
+    .argument("<pr>", "numéro de pull request", positiveInteger)
     .argument("<sha>", "commit SHA")
     .action((pr: number, sha: string) =>
       runStore(
@@ -376,16 +377,16 @@ function createProgram(io: Io): Command {
         (row) => row.verdict
       )
     );
-  leaf(ledger, "summary", "count verification verdicts").action(() =>
+  leaf(ledger, "summary", "compter les verdicts de verification").action(() =>
     runStore(program, io, (store) => store.ledger.summary(), countLine)
   );
 
   const inbox = program
     .command("inbox")
-    .description("manage agent pointers")
+    .description("gérer les pointeurs d’agents")
     .action(() => requireSubcommand(program));
-  leaf(inbox, "push <agent> <unit> <status>", "push an inbox pointer")
-    .option("--report <path>", "report path")
+  leaf(inbox, "push <agent> <unit> <status>", "ajouter un pointeur a la boite de reception")
+    .option("--report <path>", "chemin du rapport")
     .action(
       (
         agent: string,
@@ -408,18 +409,18 @@ function createProgram(io: Io): Command {
           (result) => result.pointer
         )
     );
-  leaf(inbox, "drain", "drain inbox pointers")
-    .option("--peek", "read without draining", false)
+  leaf(inbox, "drain", "vider les pointeurs de boite de reception")
+    .option("--peek", "lire sans vider", false)
     .action((options: InboxDrainOptions) =>
       runStore(
         program,
         io,
         (store) =>
           options.peek ? store.inbox.peek() : store.inbox.drain(),
-        (rows) => compactRows(rows, pointerLine, "(empty)", null)
+        (rows) => compactRows(rows, pointerLine, "(vide)", null)
       )
     );
-  leaf(inbox, "count", "count inbox pointers").action(() =>
+  leaf(inbox, "count", "compter les pointeurs de boite de reception").action(() =>
     runStore(
       program,
       io,
@@ -431,12 +432,12 @@ function createProgram(io: Io): Command {
 
   const gate = program
     .command("gate")
-    .description("manage decision gates")
+    .description("gérer les barrières de décision")
     .action(() => requireSubcommand(program));
-  leaf(gate, "park <id>", "park a decision gate")
-    .requiredOption("--question <question>", "gate question")
-    .requiredOption("--options <options>", "gate options")
-    .requiredOption("--default <answer>", "default answer")
+  leaf(gate, "park <id>", "mettre une barrière de décision en attente")
+    .requiredOption("--question <question>", "question de barrière")
+    .requiredOption("--options <options>", "options de barrière")
+    .requiredOption("--default <answer>", "réponse par défaut")
     .action((id: string, options: GateParkOptions) =>
       runStore(
         program,
@@ -451,16 +452,16 @@ function createProgram(io: Io): Command {
         (result) => `${result.id}\topen`
       )
     );
-  leaf(gate, "list", "list open decision gates").action(() =>
+  leaf(gate, "list", "lister les barrières de décision ouvertes").action(() =>
     runStore(
       program,
       io,
       (store) => store.gates.list(),
-      (rows) => compactRows(rows, gateLine, "(no open gates)")
+      (rows) => compactRows(rows, gateLine, "(aucune barrière ouverte)")
     )
   );
-  leaf(gate, "resolve <id>", "resolve a decision gate")
-    .requiredOption("--answer <answer>", "chosen answer")
+  leaf(gate, "resolve <id>", "résoudre une barrière de décision")
+    .requiredOption("--answer <answer>", "réponse choisie")
     .action((id: string, options: GateResolveOptions) =>
       runStore(
         program,
@@ -472,18 +473,18 @@ function createProgram(io: Io): Command {
 
   const frontier = program
     .command("frontier")
-    .description("manage the GitHub stack frontier")
+    .description("gérer la frontière de pile GitHub")
     .action(() => requireSubcommand(program));
-  leaf(frontier, "set", "discover the GitHub stack and set the frontier")
+  leaf(frontier, "set", "découvrir la pile GitHub et définir la frontière")
     .addOption(
       new Option(
         "--repo <dir>",
-        "repository directory (or ORCH_REPO)"
+        "dossier du dépôt (ou ORCH_REPO)"
       ).env("ORCH_REPO")
     )
     .option(
       "--prs <n,...>",
-      "optional expected pull request order pin",
+      "ordre attendu optionnel des pull requests",
       prList
     )
     .action((options: FrontierSetOptions) =>
@@ -498,19 +499,19 @@ function createProgram(io: Io): Command {
         frontierLine
       )
     );
-  leaf(frontier, "show", "show the frontier").action(() =>
+  leaf(frontier, "show", "afficher la frontière").action(() =>
     runStore(program, io, (store) => store.frontier.show(), frontierLine)
   );
 
-  leaf(program, "status", "render status.md and print a summary").action(() =>
+  leaf(program, "status", "générer status.md et afficher un résumé").action(() =>
     runStore(program, io, (store) => store.status.render(), statusLines)
   );
 
   const standing = program
     .command("standing")
-    .description("manage standing orders")
+    .description("gérer les consignes permanentes")
     .action(() => requireSubcommand(program));
-  leaf(standing, "show", "show standing orders").action(() =>
+  leaf(standing, "show", "afficher les consignes permanentes").action(() =>
     runStore(
       program,
       io,
@@ -519,11 +520,11 @@ function createProgram(io: Io): Command {
         compactRows(
           rows,
           (item: StandingLine) => `${item.number}. ${item.line}`,
-          "(no standing orders)"
+          "(aucune consigne permanente)"
         )
     )
   );
-  leaf(standing, "add <line>", "add a standing order").action((line: string) =>
+  leaf(standing, "add <line>", "ajouter une consigne permanente").action((line: string) =>
     runStore(
       program,
       io,
@@ -544,13 +545,13 @@ function handleError(error: unknown, program: Command, io: Io): number {
   if (error instanceof NotFoundError) {
     const output = error.output;
     if (output === undefined) {
-      io.stderr(`error: ${error.message}\n`);
+      io.stderr(`erreur: ${error.message}\n`);
     } else {
       emit(io, json, output.json, () => output.compact);
     }
     return 2;
   }
-  io.stderr(`error: ${message(error)}\n`);
+  io.stderr(`erreur: ${message(error)}\n`);
   if (error instanceof UsageError) {
     io.stderr(program.helpInformation());
   }

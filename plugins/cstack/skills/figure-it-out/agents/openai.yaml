@@ -1,6 +1,6 @@
 interface:
   display_name: "figure-it-out"
-  short_description: "Design a verifiable workflow for complex work"
-  default_prompt: "Use $cstack:figure-it-out for this task."
+  short_description: "Concevoir un flux de travail verifiable complexe"
+  default_prompt: "Utilise $cstack:figure-it-out pour cette tâche."
 policy:
   allow_implicit_invocation: false

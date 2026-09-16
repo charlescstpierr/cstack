@@ -1,20 +1,20 @@
-# Build the Lever
+# Construire le levier
 
-Read this reference when an active cstack workflow routes here or the user names this principle. Follow the [Codex runtime contract](../codex-runtime.md) for scope and permissions.
+Lisez cette référence lorsqu'un processus cstack actif vous route ici ou lorsque l'utilisateur nomme ce principe. Suivez le [contrat d'exécution Codex](../codex-runtime.md) pour le périmètre et les permissions.
 
-When the work isn't trivial, build the tool that does it instead of doing it by hand.
+Lorsque le travail n'est pas trivial, construisez l'outil qui le fait au lieu de le faire à la main.
 
-**Why:** Two payoffs. Throughput: a codemod, generator, or script does the work the same way every time and reruns for free. Confidence: the tool is one artifact a reviewer can read and rerun to check the work. Hand-done changes can only be re-verified by redoing them. A deterministic script turns "trust me" into "run this".
+**Pourquoi :** deux gains. Débit : un codemod, un générateur ou un script fait le travail de la même façon à chaque fois et se relance gratuitement. Confiance : l'outil est un artefact qu'un relecteur peut lire et relancer pour vérifier le travail. Les changements faits à la main ne peuvent être revérifiés qu'en les refaisant. Un script déterministe transforme « fais-moi confiance » en « lance ceci ».
 
-**Pattern:** Default to building the lever. Skip it only when the task is trivial, a couple of obvious edits you can see at a glance.
+**Motif :** par défaut, construisez le levier. Sautez-le seulement quand la tâche est triviale, quelques éditions évidentes visibles d'un coup d'œil.
 
-- Do the first unit by hand to learn the recipe, then build the tool. Prove it by rerunning it on that unit and diffing against your hand-done version. Make the lever safe to rerun.
-- Codemod or script for edits, generator for repetitive files, a dump-to-sqlite query for analysis, a rerunnable check for verification.
-- A deterministic lever beats fan-out. If the tool can process every unit in one pass, run it yourself. Don't fan out delegates to hand-apply what a script can do.
-- When you fan work out to subagents, write the lever as a skill they all read: the recipe, the verification contract, and the do-not-touch fences in one artifact. Keep it outside the delegates' write scope so they can't quietly edit the contract.
-- Applying this principle produces a file. If you cited it and there is no codemod, script, generator, or delegate skill in the diff, you didn't apply it.
-- Commit the lever when the work outlives the session.
+- Faites la première unité à la main pour apprendre la recette, puis construisez l'outil. Prouvez-le en le relançant sur cette unité et en comparant le diff avec votre version faite à la main. Rendez le levier sûr à relancer.
+- Codemod ou script pour les éditions, générateur pour les fichiers répétitifs, requête dump-vers-sqlite pour l'analyse, contrôle réexécutable pour la vérification.
+- Un levier déterministe bat la dispersion. Si l'outil peut traiter chaque unité en une passe, lancez-le vous-même. Ne dispersez pas des délégués pour appliquer à la main ce qu'un script peut faire.
+- Lorsque vous dispersez le travail vers des sous-agents, écrivez le levier comme une compétence qu'ils lisent tous : la recette, le contrat de vérification et les barrières à ne pas toucher dans un seul artefact. Gardez-le hors du périmètre d'écriture des délégués afin qu'ils ne puissent pas modifier discrètement le contrat.
+- Appliquer ce principe produit un fichier. Si vous l'avez cité et qu'il n'y a ni codemod, ni script, ni générateur, ni compétence de délégation dans le diff, vous ne l'avez pas appliqué.
+- Commitez le levier quand le travail dépasse la session.
 
-**Balance:** The bar is triviality, not repetition. A one-off still earns a lever when the lever is what makes the work checkable. Per the [Laziness Protocol](laziness-protocol.md), build the smallest script that does or proves the job, never a framework.
+**Équilibre :** la barre est la trivialité, pas la répétition. Un cas unique mérite quand même un levier lorsque le levier rend le travail vérifiable. Conformément au [Protocole de paresse](laziness-protocol.md), construisez le plus petit script qui fait ou prouve le travail, jamais un framework.
 
-Distinct from [Encode Lessons in Structure](encode-lessons-in-structure.md), which makes a recurring instruction a durable guardrail. This is throughput and reviewability on the work in front of you. For scripting the verification itself, see [Prove It Works](prove-it-works.md).
+Distinct de [Encoder les leçons dans la structure](encode-lessons-in-structure.md), qui transforme une instruction récurrente en garde-fou durable. Ici, il s'agit du débit et de la relisibilité du travail devant vous. Pour scripter la vérification elle-même, voir [Prouver que ça marche](prove-it-works.md).

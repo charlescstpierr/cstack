@@ -1,88 +1,88 @@
-# Code Archaeology (git + in-repo)
+# Archéologie du code (git + dépôt)
 
-## What this source contains
+## Ce que cette source contient
 
-- Commit history (messages, dates, authors, diffs)
-- PR descriptions, review comments, and discussion threads (via `gh`)
-- Inline code comments, TODOs, FIXMEs, deprecation notes
-- ADRs (architectural decision records) if the repo keeps them
-- Tests. Names and assertions often encode the edge cases that motivated a change
-- Related files modified in the same commits (co-change signal)
-- CHANGELOG entries, release notes in the repo
-- Issue/ticket IDs mentioned in commit messages and PR bodies
+- Historique de commits (messages, dates, auteurs, diffs)
+- Descriptions de PR, commentaires de revue et threads de discussion (via `gh`)
+- Commentaires inline, TODOs, FIXMEs, notes de dépréciation
+- ADRs (architectural decision records) si le dépôt en conserve
+- Tests. Les noms et assertions encodent souvent les cas limites qui ont motivé un changement
+- Fichiers liés modifiés dans les mêmes commits (signal de co-changement)
+- Entrées CHANGELOG, notes de release dans le dépôt
+- IDs d'issues/tickets mentionnés dans les messages de commit et corps de PR
 
-The most trustworthy source, tied directly to the code, and the most complete. Everything that went through the repo should be here.
+La source la plus fiable, directement liée au code, et la plus complète. Tout ce qui est passé par le dépôt devrait être ici.
 
-## How to search it
+## Comment la chercher
 
-Expand the seed commit list:
+Étends la liste de commits graine :
 
 ```bash
-# Full history of the file through renames
+# Historique complet du fichier à travers les renommages
 git log --follow --oneline -- <file>
 
-# Pickaxe: commits that added or removed this exact text
+# Pickaxe : commits qui ont ajouté ou retiré ce texte exact
 git log -S '<exact_string_from_code>' -- <file>
 
-# Or for patterns:
+# Ou pour les motifs :
 git log -G '<regex>' -- <file>
 
-# Who wrote each line and when
+# Qui a écrit chaque ligne et quand
 git blame -L <start>,<end> <file>
 
-# The full diff of a specific commit
+# Le diff complet d'un commit précis
 git show <hash>
 
-# Commits between two points affecting this file
+# Commits entre deux points qui touchent ce fichier
 git log <old>..<new> -p -- <file>
 ```
 
-For each substantive commit, pull the PR context:
+Pour chaque commit substantiel, récupère le contexte PR :
 
 ```bash
-# Find the PR number from the merge commit or branch
+# Trouver le numéro de PR depuis le commit de merge ou la branche
 git log -1 --format=%B <hash>
 
-# Full PR context: body, review comments, linked issues
+# Contexte PR complet : corps, commentaires de revue, issues liées
 gh pr view <number> --json title,body,author,createdAt,mergedAt,labels,closingIssuesReferences,comments,reviews,files
 
-# The --json reviews and comments fields are where the real signal is
+# Les champs --json reviews et comments contiennent le vrai signal
 ```
 
-Look for out-of-band docs:
+Cherche les docs hors bande :
 
 ```bash
-# ADRs often live in docs/adr/ or similar
+# Les ADR vivent souvent dans docs/adr/ ou équivalent
 rg -l -i 'architecture.decision' --glob '*.md'
 
-# TODOs and FIXMEs near the target
+# TODOs et FIXMEs près de la cible
 rg -n -C2 '(TODO|FIXME|HACK|XXX|NOTE)' <target_file>
 
-# Related tests. Names often encode the "why"
+# Tests liés. Les noms encodent souvent le "pourquoi"
 rg -l '<symbol>' --glob '*test*'
 ```
 
-## What good evidence looks like here
+## À quoi ressemble une bonne preuve ici
 
-- A PR description that explains the problem being solved, not just the change ("This fixes the pagination bug that caused X")
-- A long review thread where alternatives were debated
-- An inline comment near the target line that explains a non-obvious constraint
-- A test named `test_handles_edge_case_when_X` that reveals an edge case motivating the code
-- A commit message that references a ticket or incident ID
-- A CHANGELOG entry that summarizes the user-visible rationale
+- Une description de PR qui explique le problème résolu, pas seulement le changement ("ceci corrige le bug de pagination qui provoquait X")
+- Un long thread de revue où des alternatives ont été débattues
+- Un commentaire inline près de la ligne cible qui explique une contrainte non évidente
+- Un test nommé `test_handles_edge_case_when_X` qui révèle un cas limite motivant le code
+- Un message de commit qui référence un ID de ticket ou incident
+- Une entrée CHANGELOG qui résume la justification visible par l'utilisateur
 
-## Common pitfalls
+## Pièges courants
 
-- **Squash-merge flatlands.** If the repo squashes PRs, individual commits in the branch history are lost. Fall back to PR body and comments.
-- **Misleading commit messages.** "Small refactor" sometimes hides an intentional behavior change. Look at the diff, not the message.
-- **Cargo-culted patterns.** The author may have copied a pattern without understanding why. Check if the pattern originated earlier in the codebase and investigate *that* commit.
-- **Bot commits and auto-merges.** Dependabot, Renovate, and automated backports usually don't carry motivation. Skip them when trying to find intent.
-- **Treating code as evidence of intent.** The code itself isn't evidence for why it exists. Evidence comes from commit messages, PRs, comments, tests, docs. Don't cite "the function is named X" as evidence of intent.
+- **Plaines de squash-merge.** Si le dépôt squash les PR, les commits individuels de la branche sont perdus. Replie-toi sur le corps de PR et les commentaires.
+- **Messages de commit trompeurs.** "Petit refactor" cache parfois un changement de comportement intentionnel. Regarde le diff, pas le message.
+- **Motifs cargo-cultés.** L'auteur peut avoir copié un motif sans comprendre pourquoi. Vérifie si le motif vient d'ailleurs dans le codebase et enquête sur *ce* commit.
+- **Commits de bots et auto-merges.** Dependabot, Renovate et les backports automatisés portent rarement la motivation. Saute-les quand tu cherches l'intention.
+- **Traiter le code comme preuve d'intention.** Le code lui-même n'est pas une preuve de pourquoi il existe. Les preuves viennent des messages de commit, PR, commentaires, tests, docs. Ne cite pas "la fonction s'appelle X" comme preuve d'intention.
 
-## What to return
+## Quoi retourner
 
-Every commit/PR/comment that bears on the question, with:
-- The exact text (quoted)
-- The hash / PR number / file:line
-- Author and date
-- Whether it's direct (explicitly addresses the question) or circumstantial
+Chaque commit/PR/commentaire qui pèse sur la question, avec :
+- Le texte exact (cité)
+- Le hash / numéro de PR / file:line
+- Auteur et date
+- S'il est direct (répond explicitement à la question) ou circonstanciel

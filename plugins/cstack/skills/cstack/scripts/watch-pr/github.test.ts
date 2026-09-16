@@ -29,8 +29,8 @@ const context = {
   number: parsePrNumber(42),
 };
 
-describe("checks fallback chain", () => {
-  it("uses a non-empty fast-path result without a rollup query", async () => {
+describe("chaîne de repli des vérifications", () => {
+  it("utilise un résultat du chemin rapide non vide sans requête rollup", async () => {
     const reader = fakeReader({
       fastPath: { kind: "checks", checks: [passingCheck("fast")] },
     });
@@ -40,7 +40,7 @@ describe("checks fallback chain", () => {
     expect(reader.calls).toEqual(["checksFastPath"]);
   });
 
-  it("paginates GraphQL when the fast path is unusable", async () => {
+  it("pagine GraphQL quand le chemin rapide est inutilisable", async () => {
     const reader = fakeReader({
       fastPath: { kind: "unusable", exitCode: 8, stderr: "" },
       rollupPages: [
@@ -58,18 +58,18 @@ describe("checks fallback chain", () => {
     ]);
   });
 
-  it("falls back when valid fast-path JSON represented an empty list", async () => {
+  it("bascule en repli quand le JSON du chemin rapide valide représente une liste vide", async () => {
     const reader = fakeReader({
       fastPath: { kind: "checks", checks: [] },
-      rollupPages: [{ checks: [pendingCheck("fallback")], endCursor: null }],
+      rollupPages: [{ checks: [pendingCheck("repli")], endCursor: null }],
     });
     expect((await resolveChecks(reader, context)).checks[0].name).toBe(
-      "fallback"
+      "repli"
     );
     expect(reader.calls).toEqual(["checksFastPath", "checkRollupPage:null"]);
   });
 
-  it("fails closed when both paths are empty", async () => {
+  it("échoue ferme quand les deux chemins sont vides", async () => {
     const reader = fakeReader({
       fastPath: {
         kind: "unusable",
@@ -84,8 +84,8 @@ describe("checks fallback chain", () => {
   });
 });
 
-describe("rollup node mapping", () => {
-  it("maps terminal and non-terminal CheckRun states fail closed", () => {
+describe("correspondance des nœuds rollup", () => {
+  it("associe les états CheckRun terminaux et non terminaux en échec ferme", () => {
     const cases = [
       ["IN_PROGRESS", null, "pending", "PENDING"],
       ["COMPLETED", "SUCCESS", "passed", "SUCCESS"],
@@ -107,7 +107,7 @@ describe("rollup node mapping", () => {
     }
   });
 
-  it("classifies an in-progress Code Review Gate from the rollup as the gate", () => {
+  it("classe un Code Review Gate en cours depuis le rollup comme barrière", () => {
     expect(
       mapRollupNode({
         __typename: "CheckRun",
@@ -125,7 +125,7 @@ describe("rollup node mapping", () => {
     ).toMatchObject({ kind: "code-review-gate" });
   });
 
-  it("maps StatusContext states and drops unknown typenames", () => {
+  it("associe les états StatusContext et ignore les typenames inconnus", () => {
     expect(
       mapRollupNode({
         __typename: "StatusContext",
@@ -144,7 +144,7 @@ describe("rollup node mapping", () => {
   });
 });
 
-describe("closed enum parsing", () => {
+describe("analyse ferme des énumérations", () => {
   const rawPullRequest = {
     mergeable: "MERGEABLE",
     mergeStateStatus: "CLEAN",
@@ -157,7 +157,7 @@ describe("closed enum parsing", () => {
     isDraft: false,
   };
 
-  it("accepts mergeStateStatus CONFLICTING", () => {
+  it("accepte mergeStateStatus CONFLICTING", () => {
     expect(
       parsePullRequest(
         { ...rawPullRequest, mergeStateStatus: "CONFLICTING" },
@@ -166,26 +166,26 @@ describe("closed enum parsing", () => {
     ).toBe("CONFLICTING");
   });
 
-  it("reads gh's empty reviewDecision as no decision rather than a parse failure", () => {
+  it("lit reviewDecision vide de gh comme absence de décision plutôt qu’échec d’analyse", () => {
     expect(
       parsePullRequest({ ...rawPullRequest, reviewDecision: "" }, context)
         .reviewDecision
     ).toBeNull();
   });
 
-  it("still rejects an unknown reviewDecision", () => {
+  it("rejette encore un reviewDecision inconnu", () => {
     expect(() =>
       parsePullRequest({ ...rawPullRequest, reviewDecision: "MAYBE" }, context)
     ).toThrow(WatcherQueryError);
   });
 
-  it("rejects unknown enum values as retryable errors carrying the raw value", () => {
+  it("rejette les valeurs enum inconnues comme erreurs réessayables portant la valeur brute", () => {
     try {
       parsePullRequest(
         { ...rawPullRequest, mergeStateStatus: "FUTURE_STATE" },
         context
       );
-      throw new Error("expected parser to throw");
+      throw new Error("parseur attendu en echec");
     } catch (error) {
       expect(error).toBeInstanceOf(WatcherQueryError);
       if (!(error instanceof WatcherQueryError)) throw error;
@@ -198,7 +198,7 @@ describe("closed enum parsing", () => {
   });
 });
 
-it("annotates Bugbot threads with distinct review-pass counts", () => {
+it("annote les fils Bugbot avec des comptes distincts de passes de revue", () => {
   const response = {
     data: {
       repository: {
@@ -263,8 +263,8 @@ it("annotates Bugbot threads with distinct review-pass counts", () => {
   expect(threads.map((thread) => thread.bugbotReviewPasses)).toEqual([3, 3]);
 });
 
-describe("context and stack discovery", () => {
-  it("returns a fully explicit context without any reader call", async () => {
+describe("découverte du contexte et de la pile", () => {
+  it("renvoie un contexte entièrement explicite sans appel au lecteur", async () => {
     const reader = fakeReader();
     expect(
       await resolveContext({
@@ -277,7 +277,7 @@ describe("context and stack discovery", () => {
     expect(reader.calls).toEqual([]);
   });
 
-  it("uses the local origin before currentPr for an explicit number", async () => {
+  it("utilise l’origine locale avant currentPr pour un numéro explicite", async () => {
     const reader = fakeReader({ origin: { owner: "local", repo: "checkout" } });
     expect(
       await resolveContext({
@@ -290,7 +290,7 @@ describe("context and stack discovery", () => {
     expect(reader.calls).toEqual(["originRepo"]);
   });
 
-  it("orders the connected stack bottom-to-top", () => {
+  it("ordonne la pile connectée de bas en haut", () => {
     const ordered = orderStack(context, [
       {
         number: parsePrNumber(41),
@@ -311,7 +311,7 @@ describe("context and stack discovery", () => {
     expect(ordered.map((item) => Number(item.number))).toEqual([41, 42, 43]);
   });
 
-  it("fails closed on a base-ref cycle", () => {
+  it("échoue ferme sur un cycle de base-ref", () => {
     const cyclic = [
       {
         number: context.number,
@@ -327,7 +327,7 @@ describe("context and stack discovery", () => {
     expect(() => orderStack(context, cyclic)).toThrow(WatcherQueryError);
     try {
       orderStack(context, cyclic);
-      throw new Error("expected cycle to throw");
+      throw new Error("cycle attendu en echec");
     } catch (error) {
       expect(error).toBeInstanceOf(WatcherQueryError);
       if (!(error instanceof WatcherQueryError)) throw error;
@@ -369,14 +369,14 @@ function threadResponse(hasNextPage: boolean, nodeCount = 1) {
   };
 }
 
-describe("review thread pagination", () => {
-  it("fails closed when the reviewThreads page has more results", () => {
+describe("pagination des fils de revue", () => {
+  it("échoue ferme quand la page reviewThreads a plus de résultats", () => {
     expect(() => parseReviewThreads(threadResponse(true, 100))).toThrow(
       WatcherQueryError
     );
     try {
       parseReviewThreads(threadResponse(true, 100));
-      throw new Error("expected truncated threads to throw");
+      throw new Error("fils tronques attendus en echec");
     } catch (error) {
       expect(error).toBeInstanceOf(WatcherQueryError);
       if (!(error instanceof WatcherQueryError)) throw error;
@@ -387,13 +387,13 @@ describe("review thread pagination", () => {
     }
   });
 
-  it("accepts a full page when GraphQL reports no further pages", () => {
+  it("accepte une page pleine quand GraphQL signale aucune page suivante", () => {
     expect(parseReviewThreads(threadResponse(false, 100))).toHaveLength(100);
   });
 });
 
-describe("open PR list truncation", () => {
-  it("fails closed when gh pr list hits the discovery cap", () => {
+describe("troncature de la liste des PR ouvertes", () => {
+  it("échoue ferme quand gh pr list atteint la limite de découverte", () => {
     const rows = Array.from({ length: OPEN_PR_LIST_LIMIT }, (_, index) => ({
       number: index + 1,
       headRefName: `branch-${index}`,
@@ -402,19 +402,19 @@ describe("open PR list truncation", () => {
     expect(() => parseOpenPullRequests(rows)).toThrow(WatcherQueryError);
     try {
       parseOpenPullRequests(rows);
-      throw new Error("expected truncated stack discovery to throw");
+      throw new Error("decouverte de pile tronquee attendue en echec");
     } catch (error) {
       expect(error).toBeInstanceOf(WatcherQueryError);
       if (!(error instanceof WatcherQueryError)) throw error;
       expect(error.failure).toMatchObject({
         kind: "truncated",
         retryable: false,
-        detail: `gh pr list returned ${OPEN_PR_LIST_LIMIT} PRs; stack discovery may be incomplete`,
+        detail: `gh pr list a renvoyé ${OPEN_PR_LIST_LIMIT} PR; la découverte de pile peut être incomplète`,
       });
     }
   });
 
-  it("parses a listing just under the discovery cap", () => {
+  it("analyse une liste juste sous la limite de découverte", () => {
     const rows = Array.from(
       { length: OPEN_PR_LIST_LIMIT - 1 },
       (_, index) => ({
@@ -427,7 +427,7 @@ describe("open PR list truncation", () => {
   });
 });
 
-describe("gh spawn failures", () => {
+describe("échecs de lancement de gh", () => {
   async function withPath(
     directory: string,
     operation: () => Promise<void>,
@@ -445,13 +445,13 @@ describe("gh spawn failures", () => {
     }
   }
 
-  it("wraps a missing gh binary as a non-retryable query error", async () => {
+  it("enveloppe un binaire gh manquant comme erreur de requête non réessayable", async () => {
     const directory = await mkdtemp(join(tmpdir(), "watch-missing-gh-"));
     try {
       await withPath(directory, async () => {
         try {
           await new GhGitHubReader().currentPr(null);
-          throw new Error("expected missing gh to throw");
+          throw new Error("gh manquant attendu en echec");
         } catch (error) {
           expect(error).toBeInstanceOf(WatcherQueryError);
           if (!(error instanceof WatcherQueryError)) throw error;
@@ -467,7 +467,7 @@ describe("gh spawn failures", () => {
     }
   });
 
-  it("classifies gh authentication failures as non-retryable", async () => {
+  it("classe les échecs d’authentification gh comme non réessayables", async () => {
     const directory = await mkdtemp(join(tmpdir(), "watch-auth-gh-"));
     const gh = join(directory, "gh");
     await writeFile(
@@ -484,7 +484,7 @@ exit 1
         async () => {
         try {
           await new GhGitHubReader().currentPr(null);
-          throw new Error("expected auth failure to throw");
+          throw new Error("echec auth attendu");
         } catch (error) {
           expect(error).toBeInstanceOf(WatcherQueryError);
           if (!(error instanceof WatcherQueryError)) throw error;

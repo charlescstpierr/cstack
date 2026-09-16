@@ -37,7 +37,7 @@ function testRuntime(reader: GitHubReader): {
 }
 
 describe("parseArgs", () => {
-  it("uses the specified defaults", () => {
+  it("utilise les défauts spécifiés", () => {
     expect(parseArgs([], silentIo)).toMatchObject({
       owner: null,
       repo: null,
@@ -56,7 +56,7 @@ describe("parseArgs", () => {
     });
   });
 
-  it("parses a frozen queued stack bottom-to-top", () => {
+  it("analyse une pile en file gelée de bas en haut", () => {
     const parsed = parseArgs(
       [
         "--queued-stack",
@@ -87,7 +87,7 @@ describe("parseArgs", () => {
     expect(parsed.pretty).toBe(true);
   });
 
-  it("rejects every invalid mode and numeric shape as usage", async () => {
+  it("rejette chaque mode et forme numérique invalide comme usage", async () => {
     const invalid = [
       ["--unknown"],
       ["--interval", "0"],
@@ -102,12 +102,12 @@ describe("parseArgs", () => {
       const harness = testRuntime(fakeReader());
       expect(await main(argv, harness.runtime)).toBe(64);
       expect(harness.stdout).toEqual([]);
-      expect(harness.stderr.join("")).toContain("error:");
+      expect(harness.stderr.join("")).toMatch(/(?:error|erreur):/);
     }
   });
 });
 
-describe("rendering", () => {
+describe("rendu", () => {
   const context = {
     owner: "owner",
     repo: "repo",
@@ -142,23 +142,23 @@ describe("rendering", () => {
     ],
   } satisfies WatcherVerdict;
 
-  it("emits compact valid JSON by default", () => {
+  it("émet par défaut du JSON compact valide", () => {
     const rendered = renderJson(status);
     expect(rendered.endsWith("\n")).toBe(true);
     expect(JSON.parse(rendered)).toEqual(status);
   });
 
-  it("renders the Markdown table from the same verdict only", () => {
+  it("rend le tableau Markdown seulement depuis le même verdict", () => {
     const rendered = renderPretty(status);
-    expect(rendered).toContain("| PR | CI | Review | Merge |");
+    expect(rendered).toContain("| PR | CI | Revue | Fusion |");
     expect(rendered).toContain(
-      "| [#1](https://github.com/owner/repo/pull/1) | \u2014 | \u2014 | ✅ merged |"
+      "| [#1](https://github.com/owner/repo/pull/1) | \u2014 | \u2014 | ✅ fusionnee |"
     );
   });
 });
 
 describe("main", () => {
-  it("returns EX_USAGE 64 and writes usage errors only to stderr", async () => {
+  it("renvoie EX_USAGE 64 et écrit les erreurs d’usage seulement sur stderr", async () => {
     const harness = testRuntime(fakeReader());
     expect(await main(["--interval", "0"], harness.runtime)).toBe(64);
     expect(harness.stdout).toEqual([]);
@@ -167,9 +167,9 @@ describe("main", () => {
     );
   });
 
-  it("bypasses the queue machine for queued-stack status-only", async () => {
-    const reader = fakeReader();
-    const harness = testRuntime(reader);
+  it("contourne la machine de file pour queued-stack status-only", async () => {
+    const lecteur = fakeReader();
+    const harness = testRuntime(lecteur);
     const code = await main(
       [
         "--owner",
@@ -195,13 +195,13 @@ describe("main", () => {
     expect(harness.stdout[0]).not.toContain('"kind":"QUEUE"');
   });
 
-  it("returns exit 4 for a hidden GitHub-side CI refusal", async () => {
-    const reader = fakeReader({
+  it("renvoie la sortie 4 pour un refus CI caché côté GitHub", async () => {
+    const lecteur = fakeReader({
       facts: { mergeStateStatus: "BLOCKED" },
       fastPath: { kind: "checks", checks: [passingCheck()] },
       commitRollups: [{ oid: "head", state: "FAILURE" }],
     });
-    const harness = testRuntime(reader);
+    const harness = testRuntime(lecteur);
     const code = await main(
       ["--owner", "owner", "--repo", "repo", "--pr", "1"],
       harness.runtime
@@ -218,15 +218,15 @@ describe("main", () => {
     });
   });
 
-  it("shows help without touching the reader", async () => {
-    const reader = fakeReader();
-    const harness = testRuntime(reader);
+  it("affiche l’aide sans toucher au lecteur", async () => {
+    const lecteur = fakeReader();
+    const harness = testRuntime(lecteur);
     expect(await main(["--help"], harness.runtime)).toBe(0);
-    expect(harness.stdout.join("")).toContain("JSON (NDJSON while polling)");
-    expect(reader.calls).toEqual([]);
+    expect(harness.stdout.join("")).toContain("JSON (NDJSON pendant le polling)");
+    expect(lecteur.calls).toEqual([]);
   });
 
-  it("returns BLOCKER exit 7 when gh is missing", async () => {
+  it("renvoie BLOCKER avec sortie 7 quand gh manque", async () => {
     const directory = await mkdtemp(join(tmpdir(), "watch-cli-missing-gh-"));
     const original = process.env.PATH;
     process.env.PATH = directory;
@@ -252,8 +252,8 @@ describe("main", () => {
     }
   });
 
-  it("returns exit 7 immediately for a non-retryable auth failure", async () => {
-    const reader = {
+  it("renvoie immédiatement la sortie 7 pour un échec auth non réessayable", async () => {
+    const lecteur = {
       ...fakeReader(),
       async pullRequest() {
         throw new WatcherQueryError({
@@ -264,7 +264,7 @@ describe("main", () => {
         });
       },
     };
-    const harness = testRuntime(reader);
+    const harness = testRuntime(lecteur);
     expect(
       await main(
         ["--owner", "owner", "--repo", "repo", "--pr", "1"],

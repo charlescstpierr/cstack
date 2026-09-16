@@ -1,17 +1,17 @@
-# Subtract Before You Add
+# Soustraire avant d'ajouter
 
-Read this reference when an active cstack workflow routes here or the user names this principle. Follow the [Codex runtime contract](../codex-runtime.md) for scope and permissions.
+Lisez cette référence lorsqu'un processus cstack actif vous route ici ou lorsque l'utilisateur nomme ce principe. Suivez le [contrat d'exécution Codex](../codex-runtime.md) pour le périmètre et les permissions.
 
-When evolving a system, remove complexity first, then build.
+Lorsque vous faites évoluer un système, retirez d'abord la complexité, puis construisez.
 
-**Why:** Adding to a complex system compounds complexity. Removing first leaves less code, reveals the essential structure, and usually makes the next design obvious. Default to subtraction.
+**Pourquoi :** ajouter à un système complexe compose la complexité. Retirer d'abord laisse moins de code, révèle la structure essentielle et rend généralement le prochain conception évident. Par défaut, soustrayez.
 
-Make simplification a continual investment. Leave the design slightly simpler and more capable behind the same or smaller surface than you found it.
+Faites de la simplification un investissement continu. Laissez le conception légèrement plus simple et plus capable derrière la même surface, ou une surface plus petite, que celle trouvée.
 
-**The pattern:**
-- Sequence removal before construction
-- Cut before you polish (get to the minimum before investing in quality)
-- Design for observed usage, not speculative edge cases
-- No speculative validators, parsers, or guards beyond what the spec demands
-- Simplify prompts (remove redundant instructions, excessive templates)
-- When a reference has no novel content, delete it rather than leaving a stub
+**Le motif :**
+- Séquencer le retrait avant la construction
+- Couper avant de polir (atteindre le minimum avant d'investir dans la qualité)
+- Concevoir pour l'usage observé, pas pour des cas limites spéculatifs
+- Aucun validateur, analyseur ou garde spéculatif au-delà de ce que la spec demande
+- Simplifier les invites (retirer les instructions redondantes, les modèles excessifs)
+- Quand une référence n'a pas de contenu nouveau, la supprimer plutôt que laisser un coquille vide

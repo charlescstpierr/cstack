@@ -1,16 +1,16 @@
 ### Investigation
 
-Follow [the Codex runtime contract](../references/codex-runtime.md).
+Suivez [le contrat d’exécution Codex](../references/codex-runtime.md).
 
-**You own the answer. Plan, route, write.**
+**Tu possèdes la réponse. Planifie, route, rédige.**
 
-Investigation requests are read-only. They produce a cited explanation or a recommendation, not a code change.
+Les demandes d’investigation sont en lecture seule. Elles produisent une explication citée ou une recommandation, pas un changement de code.
 
-1. Read and apply `../../how/SKILL.md`. For motivation questions, also read `../../why/SKILL.md`.
-2. Throughput checkpoint stays one line: `throughput checkpoint: n/a, read-only investigation`.
-3. Produce the `how`-shaped output (Overview / Key Concepts / How It Works / Where Things Live / Gotchas), or a recommendation with a tradeoffs table if the request is a decision between alternatives.
-4. Apply the **unslop** skill to the reply.
+1. Lis et applique `../../how/SKILL.md`. Pour les questions de motivation, lis aussi `../../why/SKILL.md`.
+2. Le point de contrôle de débit reste sur une ligne : `throughput checkpoint: n/a, read-only investigation`.
+3. Produis la sortie en forme `how` (Vue d’ensemble / Concepts clés / Fonctionnement / Emplacements / Pièges), ou une recommandation avec tableau de compromis si la demande est une décision entre alternatives.
+4. Applique la compétence **unslop** à la réponse.
 
-No PR, no babysit, no `architect` unless the investigation precedes a code change. If it does, hand back to the user and re-route to Bug fix or Feature.
+Pas de PR, pas de babysit, pas de `architect` sauf si l’investigation précède un changement de code. Si c’est le cas, repasse à l’utilisateur et reroute vers Bug fix ou Feature.
 
-**Reply:** the investigation output. For "are we sure?" answers, include your real judgment with reasons. Push back if the premise is wrong (see Autonomy). Every claim carries its evidence or its label in the same sentence. Measured, inferred, or guess. A prediction or an unseen cause is a guess. Never hand the human a check you could run.
+**Réponse :** la sortie d’investigation. Pour les réponses à « sommes-nous sûrs ? », inclus ton vrai jugement avec raisons. Repousse la prémisse si elle est fausse (voir Autonomy). Chaque affirmation porte sa preuve ou son étiquette dans la même phrase. Mesuré, inféré ou supposition. Une prédiction ou une cause non observée est une supposition. Ne remets jamais à l’humain un contrôle que tu pourrais lancer.

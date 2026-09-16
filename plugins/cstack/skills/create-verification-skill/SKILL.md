@@ -1,45 +1,45 @@
 ---
 name: create-verification-skill
-description: "Generate a project-local verification skill that drives your app the way a user does — any language, framework, or platform. Use for $cstack:create-verification-skill, \"make a control skill for this repo\", or when a project has no scripted way to prove UI/CLI/service behavior."
+description: "Génère une skill de vérification locale au projet qui pilote l'app comme un utilisateur le ferait, quels que soient le langage, le framework ou la plateforme. Utiliser pour $cstack:create-verification-skill, \"crée une skill de contrôle pour ce dépôt\", ou quand un projet n'a aucun moyen scriptable de prouver le comportement UI/CLI/service."
 ---
 
-# Create a verification skill
+# Créer une skill de vérification
 
-Runtime: [`../cstack/references/codex-runtime.md`](../cstack/references/codex-runtime.md).
+Contrat d’exécution : [`../cstack/references/codex-runtime.md`](../cstack/references/codex-runtime.md).
 
-Every serious project needs a scripted way to drive the real app and prove behavior: launch it, exercise a feature the way a user would, and capture evidence. This skill generates a project-local skill at `.agents/skills/verify-<app>/`, tailored to the repo. Use the native `skill-creator` skill when available; otherwise write the minimal self-contained files directly.
+Tout projet sérieux a besoin d'une façon scriptée de piloter la vraie app et de prouver le comportement : la lancer, exercer une fonctionnalité comme un utilisateur le ferait, puis capturer des preuves. Cette skill génère une skill locale au projet dans `.agents/skills/verify-<app>/`, adaptée au dépôt. Utilise la skill native `skill-creator` quand elle est disponible; sinon, écris directement les fichiers autonomes minimaux.
 
-## 1. Interview the repo, not the user
+## 1. Interroger le dépôt, pas l'utilisateur
 
-Answer these from the codebase and only ask the user what you cannot observe:
+Réponds à ceci depuis le codebase et demande seulement à l'utilisateur ce que tu ne peux pas observer :
 
-- **Surface:** what does a user actually touch? A web UI, a CLI/TUI, a desktop app, an API, a mobile app, a library? A repo can have several; pick the primary one and note the rest.
-- **Run:** how does the app start locally? Prefer the repo's own documented dev command (package scripts, Makefile, README quickstart). Note ports, env vars, seed data, auth.
-- **Drive:** how can an agent interact with it programmatically? Existing harnesses first — Playwright/Cypress specs, expect scripts, PTY helpers, curl-able endpoints, a debug port. Only then pick a generic recipe: browser/CDP for web and Electron, a tmux/PTY harness for CLI/TUI, plain HTTP for services.
-- **Observe:** what evidence can be captured? Screenshots, terminal transcripts, response bodies, logs, exit codes, DB state.
-- **Isolate:** can two instances run side by side (ports, data dirs, profiles)? If not, say so in the generated skill: refusing to double-drive a shared instance beats corrupting the user's session.
+- **Surface :** qu'est-ce qu'un utilisateur touche réellement? Une UI web, une CLI/TUI, une app desktop, une API, une app mobile, une bibliothèque? Un dépôt peut en avoir plusieurs; choisis la principale et note le reste.
+- **Exécution :** comment l'app démarre-t-elle localement? Préfère la commande de dev documentée par le dépôt lui-même (scripts package, Makefile, démarrage rapide du README). Note ports, variables d'environnement, données de seed, auth.
+- **Pilotage :** comment un agent peut-il interagir avec elle par programme? Harnais existants d'abord : specs Playwright/Cypress, scripts expect, helpers PTY, endpoints utilisables avec curl, port de debug. Ensuite seulement, choisis une recette générique : navigateur/CDP pour web et Electron, harnais tmux/PTY pour CLI/TUI, HTTP simple pour les services.
+- **Observation :** quelles preuves peuvent être capturées? Captures d'écran, transcriptions terminal, corps de réponse, logs, codes de sortie, état DB.
+- **Isolation :** deux instances peuvent-elles tourner côté à côté (ports, répertoires de données, profils)? Sinon, dis-le dans la skill générée : refuser de piloter deux fois une instance partagée vaut mieux que corrompre la session de l'utilisateur.
 
-If the checkout doesn't build or start as-is, fix that first (or report it precisely) before generating; a skill written against a broken base teaches wrong steps. When an irrelevant missing asset blocks startup (a static dir the API never serves, a sample config), the generated skill may create it, clearly marked as verification scaffolding, and remove it in cleanup.
+Si le checkout ne build pas ou ne démarre pas tel quel, corrige ça d'abord (ou signale-le précisément) avant de générer; une skill écrite contre une base cassée enseigne les mauvaises étapes. Quand un asset manquant non pertinent bloque le démarrage (un répertoire statique que l'API ne sert jamais, une config exemple), la skill générée peut le créer, clairement marqué comme échafaudage de vérification, et le retirer au nettoyage.
 
-## 2. Generate the skill
+## 2. Générer la skill
 
-Write `.agents/skills/verify-<app>/SKILL.md` with YAML frontmatter (`name: verify-<app>` and a `description` that names the app, the surface, and when to reach for it) and these sections, each grounded in what the interview actually found (no placeholders left):
+Écris `.agents/skills/verify-<app>/SKILL.md` avec un frontmatter YAML (`name: verify-<app>` et une `description` qui nomme l'app, la surface et quand l'utiliser) et ces sections, chacune fondée sur ce que l'interrogation a vraiment trouvé (aucun placeholder restant) :
 
-- **Launch:** the exact command that starts the app for verification, and how to tell it's ready (a log line, a port answering, a prompt). Include teardown. For a short-lived CLI or TUI there is no server to keep alive: launch means build the binary (or install deps) once, then start each drive in its own isolated PTY or tmux session.
-- **Doctor:** one read-only check that answers "is this instance worth driving?" — process up, right version/build, port owned by us, auth valid. An agent runs this first whenever anything looks off.
-- **Drive:** the harness recipe with real selectors/commands from this repo, not examples. Prefer stable handles (ARIA labels, data attributes, prompt strings, route paths) over coordinates and tab order.
-- **Evidence:** what to capture for a proof and where it goes. State the proof standards: exercise the real user path, not internal setters or test-only endpoints; capture the action and the resulting state, not just the final screen; verify side effects (files written, rows inserted, messages sent) alongside what's visible; mocks only where a production boundary already isolates the external system. When the safe path is a dry-run or test mode, verify what it actually skips by observing (files, network, git refs) rather than trusting its name: some dry-runs still touch the network or open a browser.
-- **Cleanup:** how to tear down instances the run created. Never kill by process name; kill what you started. Cleanup removes instances and scratch state, never the evidence: proof artifacts survive the teardown, in a location the skill names.
-- **Helpers:** any script the skill ships is executable and its invocation is shown in the skill body. A helper the reader has to reverse-engineer is not a helper.
+- **Launch :** la commande exacte qui démarre l'app pour vérification, et comment savoir qu'elle est prête (ligne de log, port qui répond, prompt). Inclus le teardown. Pour une CLI ou TUI à courte durée, il n'y a pas de serveur à garder vivant : lancer signifie builder le binaire (ou installer les deps) une fois, puis démarrer chaque pilotage dans sa propre session PTY ou tmux isolée.
+- **Doctor :** une vérification en lecture seule qui répond à "cette instance vaut-elle d'être pilotée?" : processus actif, bonne version/build, port possédé par nous, auth valide. Un agent l'exécute d'abord chaque fois que quelque chose semble anormal.
+- **Drive :** la recette du harnais avec de vrais sélecteurs/commandes de ce dépôt, pas des exemples. Préfère les poignées stables (libellés ARIA, attributs data, chaînes de prompt, chemins de route) aux coordonnées et à l'ordre des onglets.
+- **Preuve :** quoi capturer comme preuve et où ça va. Énonce les standards de preuve : exercer le vrai parcours utilisateur, pas des setters internes ou des endpoints réservés aux tests; capturer l'action et l'état résultant, pas seulement l'écran final; vérifier les effets de bord (fichiers écrits, lignes insérées, messages envoyés) avec ce qui est visible; mocks seulement lorsqu'une frontière de production isole déjà le système externe. Quand le chemin sûr est un dry-run ou un mode test, vérifie ce qu'il saute vraiment par observation (fichiers, réseau, refs git) au lieu de faire confiance à son nom : certains dry-runs touchent quand même le réseau ou ouvrent un navigateur.
+- **Cleanup :** comment arrêter les instances créées par l'exécution. Ne tue jamais par nom de processus; tue ce que tu as démarré. Le nettoyage retire les instances et l'état temporaire, jamais les preuves : les artefacts de preuve survivent au teardown, dans un emplacement nommé par la skill.
+- **Helpers :** tout script livré par la skill est exécutable et son invocation est montrée dans le corps de la skill. Un helper que le lecteur doit rétroconcevoir n'est pas un helper.
 
-## 3. Seed the feature map
+## 3. Amorcer la carte des fonctionnalités
 
-Create `.agents/skills/verify-<app>/features/README.md` plus one file per user-facing feature you can identify (aim for the top 3-5 to start, from routes, commands, menus, or docs). Follow the shape in [`references/feature-map-example/`](references/feature-map-example/), with a README index and one file per feature. Each file answers, from the user's point of view: what the feature is, how to reach it, how to drive it with the harness, and what observable end state proves it works. The four H2s are `Sub-features`, `How to get to it (user POV)`, `Driving it with <harness>`, and `Gotchas`. The map is the repo's maintained verification source; a proof that drives one convenient entry point is incomplete when the map lists others.
+Crée `.agents/skills/verify-<app>/features/README.md` plus un fichier par fonctionnalité visible par l'utilisateur que tu peux identifier (vise les 3 à 5 principales pour commencer, depuis les routes, commandes, menus ou docs). Suis la forme dans [`references/feature-map-example/`](references/feature-map-example/), avec un index README et un fichier par fonctionnalité. Chaque fichier répond, du point de vue de l'utilisateur : ce qu'est la fonctionnalité, comment y accéder, comment la piloter avec le harnais et quel état final observable prouve qu'elle fonctionne. Les quatre H2 sont `Sous-fonctionnalités`, `Comment y accéder (point de vue utilisateur)`, `Pilotage avec <harness>` et `Pièges`. La carte est la source de vérification maintenue du dépôt; une preuve qui pilote un seul point d'entrée pratique est incomplète quand la carte en liste d'autres.
 
-## 4. Prove the generated skill before handing it over
+## 4. Prouver la skill générée avant de la remettre
 
-Run its own instructions end to end once: launch, doctor, drive ONE mapped feature (one is enough; the map exists so later runs can cover the rest), capture evidence, clean up. After cleanup, confirm the evidence still exists at the named location — a cleanup that eats the proof fails this step. Fix what fails, and run the generated cleanup after every failed iteration too, so broken attempts don't strand processes and ports. A generated skill that was never executed is a draft, not a deliverable.
+Exécute ses propres consignes de bout en bout une fois : launch, doctor, piloter UNE fonctionnalité cartographiée (une suffit; la carte existe pour que les exécutions suivantes couvrent le reste), capturer les preuves, nettoyer. Après nettoyage, confirme que les preuves existent encore à l'emplacement nommé : un nettoyage qui mange la preuve échoue cette étape. Corrige ce qui échoue et lance aussi le nettoyage généré après chaque itération échouée, pour que les tentatives cassées ne laissent pas traîner des processus et ports. Une skill générée qui n'a jamais été exécutée est un brouillon, pas un livrable.
 
-## 5. Offer the maintenance loop
+## 5. Proposer la boucle de maintenance
 
-Point the user at `$cstack:maintain-verification-skill` for keeping the map honest as the app changes. Suggest a cadence only if they ask.
+Oriente l'utilisateur vers `$cstack:maintain-verification-skill` pour garder la carte fidèle quand l'app change. Suggère une cadence seulement s'il la demande.

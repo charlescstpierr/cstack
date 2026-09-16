@@ -1,162 +1,162 @@
-### Multi-phase or multi-PR plan
+### Plan multi-phase ou multi-PR
 
-Follow [the Codex runtime contract](../references/codex-runtime.md).
+Suivez [le contrat d’exécution Codex](../references/codex-runtime.md).
 
-**You own the plan. The plan is a checklist that an owner executes and the operator audits from evidence.** Do not implement while Codex is in Plan mode or when the user asked only for a plan.
+**Tu possèdes le plan. Le plan est une liste de contrôle qu’un propriétaire exécute et que l’opérateur audite depuis les preuves.** N’implémente pas pendant que Codex est en mode Plan ou quand l’utilisateur a seulement demandé un plan.
 
-1. If the change is one or two files with an obvious approach, explain why a formal plan adds no value and return the short execution outline.
-2. Settle observable questions with `prototype.md` before writing the plan. Ask only about a product preference or materially branching choice that no run can settle. Record prototype paths and evidence in Appendix A.
-3. Explore independent repository areas with bounded native subagents. Give each a read-only scope and ask for file pointers, conventions, checks, and entry points. Bound how many run at once to native capacity and run excess work in waves. When no subagent slot is available, run each exploration in this session as a separate re-scoped pass, label it `single-agent`, and report the missing independence. Models inherit unless `.cstack/models.json` supplies an available `how explorer` override.
-4. Copy the skeleton below into `.cstack/plans/<slug>.md` unless the user names a path. Fill every placeholder. Keep the headings and blocks in order. Give each PR one change and its own evidence. Choose `autopilot-full.md`, `autopilot-stack.md`, or `orchestrate.md` as the execution playbook.
-5. Read and apply `../../technical-writing/SKILL.md` and `../../unslop/SKILL.md`. Keep the body as a how-to. Use appendices for explanation and reference.
-6. Resolve the plugin root and run `bash <plugin-root>/scripts/run-tool.sh check-plan.mjs <plan.md>`. Fix every reported error.
-7. Return the plan path and validator output. Do not start execution unless the current request already authorized it. A later execution request follows the named playbook.
+1. Si le changement touche un ou deux fichiers avec une approche évidente, explique pourquoi un plan formel n’ajoute pas de valeur et retourne le court aperçu d’exécution.
+2. Tranche les questions observables avec `prototype.md` avant d’écrire le plan. Demande seulement pour une préférence produit ou un choix matériellement divergent qu’aucune exécution ne peut trancher. Enregistre les chemins et preuves de prototype en Annexe A.
+3. Explore les zones indépendantes du dépôt avec des sous-agents natifs bornés. Donne à chacun un périmètre en lecture seule et demande des pointeurs de fichiers, conventions, contrôles et points d’entrée. Limite le nombre d’exécutions simultanées à la capacité native et lance le travail excédentaire par vagues. Quand aucun emplacement de sous-agent n’est disponible, lance chaque exploration dans cette session comme passe séparée au périmètre redéfini, étiquette-la `single-agent` et rapporte l’indépendance manquante. Les modèles héritent sauf si `.cstack/models.json` fournit une surcharge `how explorer` disponible.
+4. Copie le squelette ci-dessous dans `.cstack/plans/<slug>.md` sauf si l’utilisateur nomme un chemin. Remplis chaque placeholder. Garde les titres et blocs dans l’ordre. Donne à chaque PR un changement et ses propres preuves. Choisis `autopilot-full.md`, `autopilot-stack.md` ou `orchestrate.md` comme playbook d’exécution.
+5. Lis et applique `../../technical-writing/SKILL.md` et `../../unslop/SKILL.md`. Garde le corps comme mode d’emploi. Utilise les annexes pour l’explication et la référence.
+6. Résous la racine du plugin et lance `bash <plugin-root>/scripts/run-tool.sh check-plan.mjs <plan.md>`. Corrige chaque erreur rapportée.
+7. Retourne le chemin du plan et la sortie du validateur. Ne commence pas l’exécution sauf si la demande courante l’a déjà autorisée. Une demande d’exécution ultérieure suit le playbook nommé.
 
-**Verification rule.** Tests alone do not verify a PR. Each PR must define unit, live, and performance evidence. The live block is mandatory. The template retains ten distinct live scenarios, including a regression scenario against trunk. Bound how many lanes run at once to native capacity and queue the rest. A missing slot serializes a lane. It never drops one. Models inherit by default. If fewer than ten meaningful scenarios exist, keep each unused lane with `n/a: <reason>` instead of inventing duplicate work.
+**Règle de vérification.** Les tests seuls ne vérifient pas une PR. Chaque PR exige des preuves unitaires, en situation réelle et de performance. Le bloc réel est obligatoire. Le gabarit conserve dix scénarios réels distincts, y compris un scénario de régression contre trunk. Limite le nombre de voies simultanées dans la capacité native et mets le reste en file. Un emplacement manquant sérialise une voie. Il n’en supprime jamais une. Les modèles héritent par défaut. Si moins de dix scénarios significatifs existent, garde chaque voie inutilisée avec `n/a: <reason>` au lieu d’inventer du travail dupliqué.
 
-Run the same load-bearing scenario on trunk and head. If trunk lacks the feature, record that fact and verify the added behavior plus the user-visible end state. The performance block compares like with like. If trunk lacks the scenario, set an absolute budget for the added work and the end state instead of claiming a false ratio.
+Lance le même scénario porteur sur trunk et head. Si trunk n’a pas la fonctionnalité, enregistre ce fait et vérifie le comportement ajouté plus l’état final visible par l’utilisateur. Le bloc performance compare du comparable. Si trunk n’a pas le scénario, fixe un budget absolu pour le travail ajouté et l’état final au lieu de revendiquer un faux ratio.
 
-An interaction change has a review gate. Capture screenshots and a short video, then show them in this task before merge. If the session has no capture tool, record the missing evidence and fail the review gate closed. A PR with no interaction change states `**Review gate.** None. <PR id> is not review-gated.`
+Un changement d’interaction a une barrière de revue. Capture des captures d’écran et une courte vidéo, puis montre-les dans cette tâche avant merge. Si la session n’a pas d’outil de capture, enregistre la preuve manquante et fais échouer la barrière de revue fermée. Une PR sans changement d’interaction indique `**Barrière de revue.** Aucune. <PR id> n’est pas soumis à barrière de revue.`
 
-**Native interface checks.** Use an available Codex browser, simulator, terminal, or repository harness. Name the exact tool or command in each lane. If no tool can drive the interface, record the missing evidence in Appendix C and fail the live gate closed.
+**Contrôles d’interface native.** Utilise un navigateur Codex, simulateur, terminal ou harnais de dépôt disponible. Nomme l’outil ou la commande exacte dans chaque voie. Si aucun outil ne peut piloter l’interface, enregistre la preuve manquante en Annexe C et fais échouer la barrière réelle fermée.
 
 ````markdown
-# <Program> plan
+# Plan <Programme>
 
-<Under ten lines. State what changes, for whom, the rule the program enforces, and the PR ids in order.>
+<Moins de dix lignes. Indiquer ce qui change, pour qui, la règle que le programme applique et les ids de PR dans l’ordre.>
 
-## How to read this
+## Comment lire ceci
 
-One box is one unit of work. Every box names its evidence. Check a box only when that evidence exists as a file, log, screenshot, test run, or SHA.
+Une case est une unité de travail. Chaque case nomme sa preuve. Coche une case seulement quand cette preuve existe comme fichier, log, capture d’écran, exécution de test ou SHA.
 
-The program runs `<plugin-root>/skills/cstack/playbooks/<execution-playbook>.md`. <State who may create PRs and merge, plus operator-reserved items.>
+Le programme lance `<plugin-root>/skills/cstack/playbooks/<execution-playbook>.md`. <Indiquer qui peut créer des PR et fusionner, ainsi que les items réservés à l’opérateur.>
 
-Tests alone do not verify a PR. Each PR requires unit, live, and performance evidence.
+Les tests seuls ne vérifient pas une PR. Chaque PR exige des preuves unitaires, en situation réelle et de performance.
 
-## Program checklist
+## Liste de contrôle du programme
 
-### Start the program
+### Démarrer le programme
 
-- [ ] Confirm the goal, PR order, verification rule, authority boundaries, and done condition from the user's request.
-- [ ] Store the active objective and plan path under `.cstack/`.
-- [ ] Read these files from the installed plugin bundle on disk, not from memory, at program start and at every drain.
+- [ ] Confirmer l’objectif, l’ordre des PR, la règle de vérification, les frontières d’autorité et la condition de fin depuis la demande de l’utilisateur.
+- [ ] Stocker l’objectif actif et le chemin du plan sous `.cstack/`.
+- [ ] Lire ces fichiers depuis l’ensemble de plugin installé sur disque, pas depuis la mémoire, au démarrage du programme et à chaque vidage.
   - [ ] `<plugin-root>/skills/cstack/playbooks/<execution-playbook>.md`
   - [ ] `<plugin-root>/skills/swarm/SKILL.md`
   - [ ] `<plugin-root>/skills/cstack/references/codex-runtime.md`
   - [ ] `<plugin-root>/skills/cstack/playbooks/opening-a-pr.md`
-  - [ ] <Each other bundled skill this program applies.>
-- [ ] Continue in the foreground. Use a native scheduler only when the session exposes one and the user asked for it. Nothing is promised after the app closes. Checkpoint before exit.
-- [ ] Before refilling owners, and at every verification boundary, re-read this playbook and the execution playbooks from the installed plugin bundle on disk, not from memory. Audit the operation against them. Fix drift in that pass. Then post a status message to the operator in chat whether or not anything changed, with the queue table of PR, owner, state, and head SHA, the verdicts since the last audit, what merged, open operator gates, and blockers. Inspect every active owner through native coordination, git, and `gh`. Judge progress by commits, pushes, PR deltas, checks, and receipts.
-- [ ] On the operator's hold, interrupt every owner with a zero-writes instruction.
+  - [ ] <Chaque autre compétence fournie que ce programme applique.>
+- [ ] Continuer au premier plan. Utiliser un planificateur natif seulement quand la session en expose un et que l’utilisateur l’a demandé. Rien n’est promis après fermeture de l’app. Point de reprise avant sortie.
+- [ ] Avant de remplir à nouveau les propriétaires, et à chaque frontière de vérification, relire ce playbook et les playbooks d’exécution depuis l’ensemble de plugin installé sur disque, pas depuis la mémoire. Auditer l’opération contre eux. Corriger la dérive dans cette passe. Puis poster un message de statut à l’opérateur dans le chat, qu’il y ait eu changement ou non, avec le tableau de file PR, propriétaire, état et SHA head, les verdicts depuis le dernier audit, ce qui a fusionné, les barrières opérateur ouvertes et les bloqueurs. Inspecter chaque propriétaire actif par coordination native, git et `gh`. Juger le progrès par commits, pushs, deltas de PR, contrôles et reçus.
+- [ ] Sur hold de l’opérateur, interrompre chaque propriétaire avec une instruction zéro écriture.
 
-### Assign owners
+### Attribuer les responsables
 
-- [ ] Assign one owner per independent PR within native concurrency. Queue the rest.
-- [ ] Follow this dependency graph. Start dependent work only after its parent context exists.
-  - [ ] <PR id> and <PR id> are independent and first. Both branch from trunk.
-  - [ ] <PR id> starts after <PR id> merges, or targets its branch in stack mode.
-- [ ] Hold file boundaries. <PR id or class> may write only `<glob>`.
-- [ ] Hold review gates. <PR ids> wait at merge-ready for the operator's visual review.
+- [ ] Assigner un propriétaire par PR indépendante dans la capacité native. Mettre le reste en file.
+- [ ] Suivre ce graphe de dépendances. Commencer le travail dépendant seulement après que son contexte parent existe.
+  - [ ] <PR id> et <PR id> sont indépendantes et premières. Les deux branchent depuis trunk.
+  - [ ] <PR id> commence après le merge de <PR id>, ou cible sa branche en mode stack.
+- [ ] Tenir les frontières de fichiers. <PR id ou classe> peut écrire seulement `<glob>`.
+- [ ] Tenir les barrières de revue. <PR ids> attendent à merge-ready la revue visuelle de l’opérateur.
 
-### Handle each PR
+### Traiter chaque PR
 
-- [ ] Use git and `gh` only.
-- [ ] Create a ready PR with `gh pr create --base <base-branch>` only when authorized. A stack child targets its parent branch.
-- [ ] Run the repository's targeted checks, lint, and typecheck before the PR-facing push.
-- [ ] Run `<plugin-root>/skills/deslop/SKILL.md` over the diff before each commit. Keep `deslop skipped: <reason>` when a step genuinely cannot run it.
-- [ ] Read and apply `<plugin-root>/skills/no-comments/SKILL.md` before review. This step is mandatory. It is not only for an explicit request.
-- [ ] Read and apply `<plugin-root>/skills/technical-writing/SKILL.md` and `<plugin-root>/skills/unslop/SKILL.md` to the PR title, body, and commit messages. Inspect comments and suppressions in the full diff.
-- [ ] Triage automated review through `../references/bugbot-triage.md`.
-- [ ] Rebase onto current trunk before babysitting and again before the merge-ready report when the execution playbook requires it.
+- [ ] Utiliser seulement git et `gh`.
+- [ ] Créer une PR ready avec `gh pr create --base <base-branch>` seulement avec autorisation. Un enfant de pile cible sa branche parent.
+- [ ] Lancer les contrôles ciblés, lint et typecheck du dépôt avant le push visible côté PR.
+- [ ] Lancer `<plugin-root>/skills/deslop/SKILL.md` sur le diff avant chaque commit. Garder `deslop skipped: <reason>` quand une étape ne peut vraiment pas s’exécuter.
+- [ ] Lire et appliquer `<plugin-root>/skills/no-comments/SKILL.md` avant revue. Cette étape est obligatoire. Elle n’est pas seulement pour une demande explicite.
+- [ ] Lire et appliquer `<plugin-root>/skills/technical-writing/SKILL.md` et `<plugin-root>/skills/unslop/SKILL.md` au titre de PR, au corps et aux messages de commit. Inspecter les commentaires et suppressions dans le diff complet.
+- [ ] Trier la revue automatisée via `../references/bugbot-triage.md`.
+- [ ] Rebase sur le trunk courant avant babysitting puis encore avant le rapport merge-ready quand le playbook d’exécution l’exige.
 
-### Verify and deliver each PR
+### Vérifier et livrer chaque PR
 
-- [ ] At the merge-ready head SHA, run gates, the ten live lanes below, the performance lane, and a diff-and-receipts audit. Bound how many lanes run at once to native capacity and queue the rest. A missing slot serializes a lane. It never drops one. The verdict comes from an actor that did not write the code. When no subagent is available, run a separate review pass over a clean re-read of the diff, label it `single-agent review`, and name the missing independence.
-- [ ] Mark clean only when every applicable lane passes. A changed head gets a fresh verdict unless an unchanged patch ID preserves the code verdict and current CI and mergeability pass.
-- [ ] Follow the merge or append rule from the execution playbook. Do not merge without concrete authorization.
+- [ ] Au SHA head merge-ready, lancer les barrières, les dix voies réelles ci-dessous, la voie de performance et un audit diff-et-reçus. Limiter le nombre de voies simultanées dans la capacité native et mettre le reste en file. Un emplacement manquant sérialise une voie. Il n’en supprime jamais une. Le verdict vient d’un acteur qui n’a pas écrit le code. Quand aucun sous-agent n’est disponible, lancer une passe de revue séparée après relecture propre du diff, l’étiqueter `single-agent review` et nommer l’indépendance manquante.
+- [ ] Marquer clean seulement quand chaque voie applicable passe. Un head changé reçoit un verdict frais sauf si un patch ID inchangé préserve le verdict de code et que la CI et mergeability courantes passent.
+- [ ] Suivre la règle de merge ou append du playbook d’exécution. Ne pas fusionner sans autorisation concrète.
 
-### Boot each live lane
+### Démarrer chaque voie réelle
 
-- [ ] Give the lane a separate checkout or worktree at `<head SHA>` when concurrent writers or runtimes could conflict.
-- [ ] Start the backend and target interface. Wait for its readiness signal.
-- [ ] Deliver input with the named native browser, simulator, terminal, or harness command.
-- [ ] Save artifacts under `.cstack/evidence/<pr-id>/lane-<n>/` and return their paths.
+- [ ] Donner à la voie un checkout ou worktree séparé à `<head SHA>` quand des rédacteurs ou environnements d’exécution concurrents pourraient entrer en conflit.
+- [ ] Démarrer le backend et l’interface cible. Attendre son signal de readiness.
+- [ ] Fournir l’entrée avec le navigateur natif, simulateur, terminal ou commande de harnais nommés.
+- [ ] Sauvegarder les artéfacts sous `.cstack/evidence/<pr-id>/lane-<n>/` et retourner leurs chemins.
 
-## <Task as a verb phrase> (<PR id>)
+## <Tâche sous forme de groupe verbal> (<PR id>)
 
-**Depends on.** <PR id, or None.>
+**Dépend de.** <PR id, ou Aucun.>
 
-**Files.**
+**Fichiers.**
 
-- [ ] Edit `<path>`.
-- [ ] Create `<path>`.
-- [ ] Delete `<path>`.
+- [ ] Modifier `<path>`.
+- [ ] Créer `<path>`.
+- [ ] Supprimer `<path>`.
 
-**Build.**
+**Construire.**
 
-- [ ] <One change. Name the symbol and file.>
+- [ ] <Un changement. Nommer le symbole et le fichier.>
 
-**You see.**
+**Tu vois.**
 
-- [ ] <One observable result with the exact log line or interface state.>
+- [ ] <Un résultat observable avec la ligne de log exacte ou l’état d’interface.>
 
-**Verify, unit.** Tests alone do not verify a PR. Each PR requires unit, live, and performance evidence.
+**Vérifier, unitaire.** Les tests seuls ne vérifient pas une PR. Chaque PR exige des preuves unitaires, en situation réelle et de performance.
 
-- [ ] <Test file and case.> Run `<command>`.
+- [ ] <Fichier et cas de test.> Lancer `<command>`.
 
-**Verify, live.** Tests alone do not verify a PR. Each PR requires unit, live, and performance evidence. Run these scenarios. Bound how many run at once to native capacity and queue the rest. A missing slot serializes a lane. It never drops one.
+**Vérifier, réel.** Les tests seuls ne vérifient pas une PR. Chaque PR exige des preuves unitaires, en situation réelle et de performance. Lancer ces scénarios. Limiter le nombre d’exécutions simultanées dans la capacité native et mettre le reste en file. Un emplacement manquant sérialise une voie. Il n’en supprime jamais une.
 
-- [ ] Lane 1. Regression against trunk. Run <the same load-bearing scenario> on trunk and head. Save `<slug>`. Pass when <predicate>.
-- [ ] Lane 2. <Scenario, artifact, and predicate.>
-- [ ] Lane 3. <Scenario, artifact, and predicate.>
-- [ ] Lane 4. <Scenario, artifact, and predicate.>
-- [ ] Lane 5. <Scenario, artifact, and predicate.>
-- [ ] Lane 6. <Scenario, artifact, and predicate.>
-- [ ] Lane 7. <Scenario, artifact, and predicate.>
-- [ ] Lane 8. <Scenario, artifact, and predicate.>
-- [ ] Lane 9. <Scenario, artifact, and predicate.>
-- [ ] Lane 10. <Scenario, artifact, and predicate.>
+- [ ] Voie 1. Régression contre trunk. Lancer <le même scénario porteur> sur trunk et head. Enregistrer `<slug>`. Réussit quand <prédicat>.
+- [ ] Voie 2. <Scénario, artéfact et prédicat.>
+- [ ] Voie 3. <Scénario, artéfact et prédicat.>
+- [ ] Voie 4. <Scénario, artéfact et prédicat.>
+- [ ] Voie 5. <Scénario, artéfact et prédicat.>
+- [ ] Voie 6. <Scénario, artéfact et prédicat.>
+- [ ] Voie 7. <Scénario, artéfact et prédicat.>
+- [ ] Voie 8. <Scénario, artéfact et prédicat.>
+- [ ] Voie 9. <Scénario, artéfact et prédicat.>
+- [ ] Voie 10. <Scénario, artéfact et prédicat.>
 
-**Verify, performance.** Tests alone do not verify a PR. Each PR requires unit, live, and performance evidence.
+**Vérifier, performance.** Les tests seuls ne vérifient pas une PR. Chaque PR exige des preuves unitaires, en situation réelle et de performance.
 
-- [ ] Metric. <The value measured on trunk and head.>
-- [ ] Probe. <The interleaved command or procedure.>
-- [ ] Baseline. Record the trunk value first.
-- [ ] Rule. <The numeric failure threshold, or absolute budgets when scenarios differ.>
+- [ ] Métrique. <La valeur mesurée sur trunk et head.>
+- [ ] Sonde. <La commande ou procédure entrelacée.>
+- [ ] Référence. Enregistrer d’abord la valeur trunk.
+- [ ] Règle. <Le seuil numérique d’échec, ou les budgets absolus quand les scénarios diffèrent.>
 
-**Review gate.** The operator reviews before merge.
+**Barrière de revue.** L’opérateur révise avant merge.
 
-- [ ] Save review screenshots under `.cstack/evidence/<pr-id>/review/`.
-- [ ] Record a 30 to 60 second video when the native tool supports it.
-- [ ] Show the artifacts in this task and stop at merge-ready for the operator's decision.
+- [ ] Sauvegarder les captures de revue sous `.cstack/evidence/<pr-id>/review/`.
+- [ ] Enregistrer une vidéo de 30 à 60 secondes quand l’outil natif le prend en charge.
+- [ ] Montrer les artéfacts dans cette tâche et s’arrêter à merge-ready pour la décision de l’opérateur.
 
-**Deliver.**
+**Livrer.**
 
-- [ ] Independent clean verdict at the exact head SHA.
-- [ ] Automated-review triage complete.
-- [ ] Current base and patch ID recorded.
-- [ ] <The authorized owner merges, or the topology owner appends the PR and the operator lands the stack.>
+- [ ] Verdict indépendant propre au SHA head exact.
+- [ ] Triage de revue automatisée terminé.
+- [ ] Base courante et patch ID enregistrés.
+- [ ] <Le propriétaire autorisé fusionne, ou le propriétaire de topologie ajoute la PR et l’opérateur fait atterrir la pile.>
 
-## Close the program
+## Fermer le programme
 
-- [ ] Every applicable box has evidence.
-- [ ] Return the report required by the execution playbook.
+- [ ] Chaque case applicable possède une preuve.
+- [ ] Retourner le rapport exigé par le playbook d’exécution.
 
-## Appendix A. Prototype evidence
+## Annexe A. Preuve du prototype
 
-<Each question answered by a prototype, with branch, SHA, and artifact paths. List unproven questions.>
+<Chaque question répondue par un prototype, avec branche, SHA et chemins d’artéfacts. Lister les questions non prouvées.>
 
-## Appendix B. Alternatives rejected
+## Annexe B. Alternatives rejetées
 
-<Each serious alternative and why it lost.>
+<Chaque alternative sérieuse et pourquoi elle a perdu.>
 
-## Appendix C. Risks and missing capabilities
+## Annexe C. Risques et capacités manquantes
 
-<Each risk, its owning PR, and any unavailable native tool or model that limits proof.>
+<Chaque risque, sa PR propriétaire et tout outil ou modèle natif indisponible qui limite la preuve.>
 
-## Appendix D. Links and reading list
+## Annexe D. Liens et liste de lecture
 
-<Files and official docs owners must read. Name which PRs apply how, architect, interrogate, swarm, and show-me-your-work.>
+<Fichiers et docs officielles que les propriétaires doivent lire. Nommer quelles PR appliquent how, architect, interrogate, swarm et show-me-your-work.>
 ````
 
-**Reply:** Return the plan path, PR dependency order, review-gated set, prototype findings and gaps, and the exact validator result. Every claim carries its evidence or its label in the same sentence. Measured, inferred, or guess. A prediction or an unseen cause is a guess. Never hand the human a check you could run.
+**Réponse :** retourner le chemin du plan, l’ordre de dépendance des PR, l’ensemble soumis à barrière de revue, les constats et écarts de prototype, et le résultat exact du validateur. Chaque affirmation porte sa preuve ou son étiquette dans la même phrase. Mesuré, inféré ou supposition. Une prédiction ou une cause non observée est une supposition. Ne remets jamais à l’humain un contrôle que tu pourrais lancer.

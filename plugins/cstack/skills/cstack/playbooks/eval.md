@@ -1,27 +1,27 @@
-### Eval
+### Évaluation
 
-Follow [the Codex runtime contract](../references/codex-runtime.md).
+Suivez [le contrat d’exécution Codex](../references/codex-runtime.md).
 
-**You own the experiment design. Plan, blind, run, synthesize.**
+**Tu possèdes la conception de l’expérience. Planifie, aveugle, lance, synthétise.**
 
-**Non-negotiables for blinding:**
+**Non négociables pour l’aveuglement :**
 
-- No `eval`, `test`, `judge`, `experiment`, `rubric`, `score`, `compare`, `benchmark`, `candidate`, or `arena` in any directory, file, or prompt the candidate sees.
-- The candidate prompt looks like an organic user request. State the goal, not the meta.
-- No chain-eliciting cues. Don't ask the candidate to list which skills, principles, or files they applied. Ask for design notes generally and grade chain-following from code shape, not self-report.
-- Sanitize directory and slug names. Use project-shaped names a user might pick.
-- Don't tell the candidate other candidates exist.
-- The judge can know it's judging but sees outputs by sanitized label only, never by model name.
-- Comparing two variants: one judge scores both sets in a single pass on one scale, blind to which set each came from.
+- Aucun `eval`, `test`, `judge`, `experiment`, `rubric`, `score`, `compare`, `benchmark`, `candidate` ni `arena` dans tout répertoire, fichier ou prompt que le candidat voit.
+- Le prompt candidat ressemble à une demande utilisateur organique. Énonce l’objectif, pas le méta.
+- Aucun indice qui sollicite la chaîne. Ne demande pas au candidat de lister les compétences, principes ou fichiers appliqués. Demande des notes de conception générales et note le suivi de chaîne à partir de la forme du code, pas de l’auto-rapport.
+- Nettoie les noms de répertoire et de slug. Utilise des noms en forme de projet qu’un utilisateur pourrait choisir.
+- Ne dis pas au candidat qu’il existe d’autres candidats.
+- Le juge peut savoir qu’il juge, mais voit les sorties seulement par libellé nettoyé, jamais par nom de modèle.
+- Comparaison de deux variantes : un juge note les deux ensembles dans une seule passe sur une seule échelle, aveugle à la provenance de chaque ensemble.
 
-**Steps:**
+**Étapes :**
 
-1. **Frame.** State what variant is under test and what behavior counts as success. Write the rubric (3-6 concrete criteria) for the judge only. Hold it back from candidates.
-2. **Set up sanitized environments.** Per-candidate working dir with the variant in place. Plant any context an organic task would have: a project skeleton, the skills the candidate would naturally read.
-3. **Author one organic prompt.** What a user would type. No leakage of what's being measured.
-4. **Spawn the candidate panel.** Read and apply `../../arena/SKILL.md`. With no panel configuration, run three independent inherited-model candidates. Give each candidate the same prompt and a separate writable directory. Bound work to native capacity and run excess candidates in waves. Use only available overrides from `.cstack/models.json`.
-5. **Spawn one blinded judge.** Prefer a different available model when the session already exposes one. When no subagent slot is available, run the judge pass in this session as a separate re-scoped pass, label it `single-agent`, and report the missing independence. When the session has only one model, label the verdict `single-model` and never describe it as a blinded multi-model bakeoff. If an explicit judge model is unavailable, stop that selection, inherit, and keep the `single-model` label. The judge sees sanitized labels and the rubric, never model names.
-6. **Verify from observable artifacts.** Inspect each candidate's files, commands, diffs, and tool results available in this task. Use a native task transcript only when the current session exposes it. Never search unrelated conversations or private workspace history. Treat self-report as a pointer, not proof.
-7. **Read every candidate output yourself** end to end. Compare to the judge's verdict. Disagreement means a model is biased or the rubric is ambiguous. Synthesize.
+1. **Cadrer.** Énonce quelle variante est testée et quel comportement compte comme réussite. Écris la rubrique (3 à 6 critères concrets) pour le juge seulement. Ne la donne pas aux candidats.
+2. **Mettre en place des environnements nettoyés.** Répertoire de travail par candidat avec la variante en place. Plante tout contexte qu’une tâche organique aurait : squelette de projet, compétences que le candidat lirait naturellement.
+3. **Rédiger un prompt organique.** Ce qu’un utilisateur taperait. Aucune fuite sur ce qui est mesuré.
+4. **Lancer le panel de candidats.** Lis et applique `../../arena/SKILL.md`. Sans configuration de panel, lance trois candidats indépendants en modèle hérité. Donne à chaque candidat le même prompt et un répertoire inscriptible séparé. Limite le travail à la capacité native et lance les candidats excédentaires par vagues. Utilise seulement les surcharges disponibles depuis `.cstack/models.json`.
+5. **Lancer un juge aveuglé.** Préfère un modèle disponible différent quand la session en expose déjà un. Quand aucun emplacement de sous-agent n’est disponible, lance la passe de juge dans cette session comme passe séparée au périmètre redéfini, étiquette-la `single-agent` et rapporte l’indépendance manquante. Quand la session n’a qu’un modèle, étiquette le verdict `single-model` et ne le décris jamais comme un bakeoff multi-modèle aveuglé. Si un modèle de juge explicite est indisponible, arrête cette sélection, hérite, et garde l’étiquette `single-model`. Le juge voit les libellés nettoyés et la rubrique, jamais les noms de modèle.
+6. **Vérifier depuis les artéfacts observables.** Inspecte les fichiers, commandes, diffs et résultats d’outil de chaque candidat disponibles dans cette tâche. Utilise une transcription de tâche native seulement quand la session courante l’expose. Ne cherche jamais dans des conversations non liées ni dans l’historique privé du workspace. Traite l’auto-rapport comme un pointeur, pas comme une preuve.
+7. **Lis toi-même chaque sortie candidat** de bout en bout. Compare au verdict du juge. Un désaccord signifie qu’un modèle est biaisé ou que la rubrique est ambiguë. Synthétise.
 
-**Reply:** variant under test, rubric, per-candidate notes, judge's verdict, your synthesis, and a recommendation for whether to promote the variant. Name the judge label (`single-model` or multi-model). Every claim carries its evidence or its label in the same sentence. Measured, inferred, or guess. A prediction or an unseen cause is a guess. Never hand the human a check you could run.
+**Réponse :** variante testée, rubrique, notes par candidat, verdict du juge, ta synthèse et une recommandation sur la promotion de la variante. Nomme l’étiquette du juge (`single-model` ou multi-model). Chaque affirmation porte sa preuve ou son étiquette dans la même phrase. Mesuré, inféré ou supposition. Une prédiction ou une cause non observée est une supposition. Ne remets jamais à l’humain un contrôle que tu pourrais lancer.

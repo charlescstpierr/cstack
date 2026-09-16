@@ -1,19 +1,19 @@
-# Attack the Premise
+# Attaquer la prémisse
 
-Read this reference when an active cstack workflow routes here or the user names this principle. Follow the [Codex runtime contract](../codex-runtime.md) for scope and permissions.
+Lisez cette référence lorsqu'un processus cstack actif vous route ici ou lorsque l'utilisateur nomme ce principe. Suivez le [contrat d'exécution Codex](../codex-runtime.md) pour le périmètre et les permissions.
 
-When two or more fixes that share one premise have failed the same gate, suspect the premise, not the fixes.
+Lorsque deux correctifs ou plus qui partagent une même prémisse échouent à la même porte, soupçonnez la prémisse, pas les correctifs.
 
-**Why:** Each failure under a shared premise is evidence about the premise.
+**Pourquoi :** chaque échec sous une prémisse partagée constitue une preuve sur cette prémisse.
 
-**Pattern:**
-- **Write the premise down.** The premise is the one sentence that every failed fix assumed.
-- **Take a census before the next fix.** Count the imbalance per actor. The census shows which actors hold the imbalance, not how large it is. Write the census as a rerunnable script per [Build the Lever](build-the-lever.md).
-- **Read the skew.** If the same few actors hold most of the imbalance on every run, something assigns them that role. Find what assigns the role. That assignment is the next "why" per [Fix Root Causes](fix-root-causes.md).
-- **Remove the asymmetry instead of compensating for it**, per the [Laziness Protocol](laziness-protocol.md). Rotate the role between actors, randomize the assignment, or move the role, so that no actor holds it on every run. A return path, a shared pool, a batched hand-off, or a periodic rebalance leaves the assignment in place and adds work on every run.
+**Motif :**
+- **Écrivez la prémisse.** La prémisse est la phrase unique que chaque correctif échoué supposait.
+- **Faites un recensement avant le correctif suivant.** Comptez le déséquilibre par acteur. Le recensement montre quels acteurs portent le déséquilibre, pas son ampleur. Écrivez le recensement comme script réexécutable, conformément à [Construire le levier](build-the-lever.md).
+- **Lisez le biais.** Si les mêmes quelques acteurs portent la majeure partie du déséquilibre à chaque exécution, quelque chose leur assigne ce rôle. Trouvez ce qui assigne le rôle. Cette assignation est le prochain « pourquoi », conformément à [Corriger les causes racines](fix-root-causes.md).
+- **Supprimez l'asymétrie au lieu de la compenser**, conformément au [Protocole de paresse](laziness-protocol.md). Faites tourner le rôle entre les acteurs, randomisez l'assignation ou déplacez le rôle, afin qu'aucun acteur ne le porte à chaque exécution. Un chemin de retour, un pool partagé, un passage de relais par lot ou un rééquilibrage périodique laisse l'assignation en place et ajoute du travail à chaque exécution.
 
-**Stop:**
-- Do not start the next fix before the premise is written down and the census exists.
-- If the census is even across actors, the premise is not the cause. Look for the cause elsewhere and keep the census as evidence.
+**Arrêt :**
+- Ne commencez pas le correctif suivant avant que la prémisse soit écrite et que le recensement existe.
+- Si le recensement est équilibré entre les acteurs, la prémisse n'est pas la cause. Cherchez la cause ailleurs et gardez le recensement comme preuve.
 
-This principle is distinct from [Redesign from First Principles](redesign-from-first-principles.md), which rebuilds a design around a new requirement. It questions a fact the current design assumes.
+Ce principe est distinct de [Redessiner à partir des premiers principes](redesign-from-first-principles.md), qui reconstruit une conception autour d'une nouvelle exigence. Il questionne un fait que la conception courante suppose.

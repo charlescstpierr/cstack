@@ -1,6 +1,6 @@
 interface:
   display_name: "show-me-your-work"
-  short_description: "Record decisions and evidence for long-running work"
-  default_prompt: "Use $cstack:show-me-your-work for this task."
+  short_description: "Consigner décisions et preuves d'un long travail"
+  default_prompt: "Utilise $cstack:show-me-your-work pour cette tâche."
 policy:
   allow_implicit_invocation: false

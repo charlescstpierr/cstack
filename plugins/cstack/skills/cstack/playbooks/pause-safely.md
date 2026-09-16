@@ -1,12 +1,12 @@
-### Pause safely
+### Mettre en pause sans risque
 
-Follow [the Codex runtime contract](../references/codex-runtime.md).
+Suivez [le contrat d’exécution Codex](../references/codex-runtime.md).
 
-**You own a clean stop. Leave a checkpoint a cold-start agent can resume from.** This is explicit only. On "keep going", "going to bed, keep going", or "don't stop", do not pause.
+**Tu possèdes un arrêt propre. Laisse un point de reprise qu’un agent partant de zéro peut reprendre.** C’est uniquement explicite. Sur « keep going », « going to bed, keep going » ou « don’t stop », ne mets pas en pause.
 
-1. Stop at a safe boundary. Finish the current atomic step or back out of it. Never stop mid-edit in a known-broken state. Start nothing new, and cancel any nested subagents.
-2. Take no irreversible action to pause. No PR and no push unless you already had one out.
-3. Make the work durable. Stage only this task's paths and commit them as one clear `wip:` commit on the current branch so nothing is lost. Leave unrelated changes uncommitted and list them. If the tree is broken, say so in the commit body in one line.
-4. Write the resume note under `.cstack/resume/<slug>.md`. Capture intent, progress, verified results, current state, next steps, key files, and hazards. If a show-me-your-work trail exists, link it instead of duplicating it.
+1. Arrête à une frontière sûre. Termine l’étape atomique courante ou annule-la. Ne t’arrête jamais au milieu d’une édition dans un état connu cassé. Ne commence rien de nouveau et annule tout sous-agent imbriqué.
+2. Ne fais aucune action irréversible pour mettre en pause. Pas de PR ni de push sauf si tu en avais déjà un sorti.
+3. Rends le travail durable. Stage seulement les chemins de cette tâche et committe-les en un commit `wip:` clair sur la branche courante pour ne rien perdre. Laisse les changements non liés non commités et liste-les. Si l’arbre est cassé, dis-le dans le corps du commit en une ligne.
+4. Écris la note de reprise sous `.cstack/resume/<slug>.md`. Capture l’intention, la progression, les résultats vérifiés, l’état courant, les prochaines étapes, les fichiers clés et les risques. Si une trace show-me-your-work existe, lie-la au lieu de la dupliquer.
 
-**Reply:** where you are in the loop, what's on disk versus still in your head (paths, no diff dumps), the commits you made and whether the tree is clean, and the first action on resume. This is a pause, not a final report. Every claim carries its evidence or its label in the same sentence. Measured, inferred, or guess. A prediction or an unseen cause is a guess. Never hand the human a check you could run.
+**Réponse :** où tu en es dans la boucle, ce qui est sur disque par rapport à ce qui reste dans ta tête (chemins, pas de dumps de diff), les commits faits et si l’arbre est propre, puis la première action à la reprise. C’est une pause, pas un rapport final. Chaque affirmation porte sa preuve ou son étiquette dans la même phrase. Mesuré, inféré ou supposition. Une prédiction ou une cause non observée est une supposition. Ne remets jamais à l’humain un contrôle que tu pourrais lancer.

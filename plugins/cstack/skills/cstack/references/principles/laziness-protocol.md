@@ -1,14 +1,14 @@
-# Laziness Protocol
+# Protocole de paresse
 
-Read this reference when an active cstack workflow routes here or the user names this principle. Follow the [Codex runtime contract](../codex-runtime.md) for scope and permissions.
+Lisez cette référence lorsqu'un processus cstack actif vous route ici ou lorsque l'utilisateur nomme ce principe. Suivez le [contrat d'exécution Codex](../codex-runtime.md) pour le périmètre et les permissions.
 
-Aim for the most result with the least code and complexity.
+Visez le maximum de résultat avec le minimum de code et de complexité.
 
-- **Prefer deletion.** When asked to refactor or improve, look for removals before additions.
-- **Maintain a flat call hierarchy.** Avoid deep call chains. A rich interface that hides substantial work is not a deep call chain. If answering a question requires tracing through more than 3 files or layers, flatten it.
-- **Consolidate decisions.** Do not repeat the same choice in several places. Put it behind one source of truth and pass the result as a simple flag.
-- **Minimize the diff.** Make the smallest change that solves the problem. Fewer lines beat "elegant" boilerplate.
-- **Question the threading.** If a task asks you to pass a new signal through types, schemas, pipelines, or similar layers, stop and look for a more direct path.
-- **Sweat the small leaks.** Remove tiny pass-throughs, representation leaks, and duplicated choices before they spread. Small leaks compound into permanent coordination costs.
+- **Préférez la suppression.** Quand on vous demande de refactoriser ou d'améliorer, cherchez les retraits avant les ajouts.
+- **Maintenez une hiérarchie d'appels plate.** Évitez les chaînes d'appels profondes. Une interface riche qui cache un travail substantiel n'est pas une chaîne d'appels profonde. Si répondre à une question exige de suivre plus de 3 fichiers ou couches, aplatissez.
+- **Consolidez les décisions.** Ne répétez pas le même choix à plusieurs endroits. Placez-le derrière une seule source de vérité et passez le résultat comme simple drapeau.
+- **Minimisez le diff.** Faites le plus petit changement qui résout le problème. Moins de lignes bat le passe-partout « élégant ».
+- **Questionnez le câblage.** Si une tâche vous demande de faire passer un nouveau signal à travers des types, schémas, chaînes ou couches similaires, arrêtez-vous et cherchez un chemin plus direct.
+- **Traquez les petites fuites.** Retirez les minuscules pass-throughs, fuites de représentation et choix dupliqués avant qu'ils se propagent. Les petites fuites se composent en coûts de coordination permanents.
 
-**The test:** If a human developer would find the code exhausting to maintain, it is a bad solution.
+**Le test :** si un développeur humain trouverait le code épuisant à maintenir, c'est une mauvaise solution.

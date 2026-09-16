@@ -1,51 +1,57 @@
 ---
 name: how
-description: "Use for $cstack:how, \"how does X work\", code walkthroughs before changing something, and placement / ownership / layering questions (\"where should this live\", \"which package owns this\", \"is this the right layer\"). Explains subsystem architecture, runtime flow, onboarding mental models. Use $cstack:why for motivation."
+description: >-
+  À utiliser pour $cstack:how, « comment X fonctionne-t-il ? », les parcours de
+  code avant de changer quelque chose, et les questions de placement /
+  propriété / couches (« où cela doit-il vivre ? », « quel package possède ceci
+  ? », « est-ce la bonne couche ? »). Explique l'architecture du sous-système,
+  le flux runtime et les modèles mentaux d'accueil. Utilise $cstack:why pour la
+  motivation.
 ---
 
 # How
 
-Runtime: [`../cstack/references/codex-runtime.md`](../cstack/references/codex-runtime.md).
+Runtime : [`../cstack/references/codex-runtime.md`](../cstack/references/codex-runtime.md).
 
-Explore the codebase to answer "how does X work?" questions. Produce architectural explanations at the level of a senior engineer onboarding onto a subsystem, enough to build a working mental model, not so much that it reads like annotated source code.
+Explore le codebase pour répondre aux questions "comment X fonctionne ?". Produis des explications architecturales au niveau d'un ingénieur senior qui arrive sur un sous-système : assez pour construire un modèle mental opérationnel, sans devenir une source annotée.
 
-Follow the runtime contract's direct inheritance path when unconfigured; otherwise resolve each named role with its helper and pass the complete selection, including reasoning effort, to each native spawn. Report host capability gaps rather than dropping a selected field.
+Suis le chemin d'héritage direct du contrat runtime quand rien n'est configuré; sinon résous chaque rôle nommé avec son helper et transmets à chaque spawn natif la sélection complète, effort de raisonnement compris. Signale les lacunes de capacité de l'hôte au lieu de supprimer un champ sélectionné.
 
-A missing subagent serializes a step. It never removes one. When no subagent slot is available, run the explorer, explainer, or synthesizer pass in the same session as a separate, explicitly re-scoped pass, label the result `single-agent`, and report the missing independence.
+Un subagent manquant sérialise une étape. Il ne la retire jamais. Quand aucun slot de subagent n'est disponible, exécute la passe explorer, explainer ou synthesizer dans la même session comme passe séparée et explicitement recadrée, étiquette le résultat `single-agent`, et signale l'indépendance manquante.
 
-## Step 1. Assess Complexity
+## Étape 1. Évaluer la complexité
 
-If the scope is ambiguous, state your interpretation and explore. The user can redirect.
+Si la portée est ambiguë, indique ton interprétation et explore. L'utilisateur peut rediriger.
 
-- **Simple** (a single module, a small utility, a narrow question such as "how does function X work"): no explorers. One explainer explores and explains in a single pass. Go to Step 2b.
-- **Complex** (a subsystem spanning multiple files or services, a cross-cutting feature, a full architectural overview): spawn parallel explorers first, then hand off to the explainer. Go to Step 2a.
+- **Simple** (un seul module, un petit utilitaire, une question étroite comme "comment fonctionne la fonction X") : pas d'explorers. Un explainer explore et explique en une seule passe. Va à l'Étape 2b.
+- **Complexe** (un sous-système couvrant plusieurs fichiers ou services, une fonctionnalité transversale, une vue architecturale complète) : lance d'abord des explorers parallèles, puis transmets à l'explainer. Va à l'Étape 2a.
 
-When in doubt, take the simple path.
+En cas de doute, prends le chemin simple.
 
-## Step 2a. Explore (complex questions only)
+## Étape 2a. Explorer (questions complexes seulement)
 
-Decompose the question into 2 to 4 exploration angles, each a distinct slice of the subsystem. Spawn native review-only subagents concurrently. They inherit the parent model by default. If `.cstack/models.json` defines `how explorer`, follow the runtime contract and do not silently substitute an unavailable explicit override.
+Décompose la question en 2 à 4 angles d'exploration, chacun étant une tranche distincte du sous-système. Lance des subagents natifs en lecture seule en parallèle. Ils héritent du modèle parent par défaut. Si `.cstack/models.json` définit `how explorer`, suis le contrat runtime et ne substitue pas silencieusement une surcharge explicite indisponible.
 
-Each explorer gets the prompt in `references/explorer-prompt.md` with its angle filled in. Then go to Step 3.
+Chaque explorer reçoit le prompt dans `references/explorer-prompt.md` avec son angle rempli. Va ensuite à l'Étape 3.
 
-## Step 2b. Direct Explain (simple questions)
+## Étape 2b. Expliquer directement (questions simples)
 
-Spawn one native review-only subagent that explores and explains in one pass. It inherits the parent model by default. If `.cstack/models.json` defines `how explainer`, follow the runtime contract and do not silently substitute an unavailable explicit override.
+Lance un subagent natif en lecture seule qui explore et explique en une passe. Il hérite du modèle parent par défaut. Si `.cstack/models.json` définit `how explainer`, suis le contrat runtime et ne substitue pas silencieusement une surcharge explicite indisponible.
 
-Build its prompt from `references/explainer-prompt.md` without the explorer-findings section. Go to Step 4.
+Construis son prompt depuis `references/explainer-prompt.md` sans la section des résultats d'explorers. Va à l'Étape 4.
 
-## Step 3. Synthesize (complex questions only)
+## Étape 3. Synthétiser (questions complexes seulement)
 
-Once all explorers have returned, spawn one native review-only subagent to synthesize their findings into one explanation. It inherits the parent model by default. If `.cstack/models.json` defines `how explainer`, follow the runtime contract and do not silently substitute an unavailable explicit override.
+Une fois tous les explorers revenus, lance un subagent natif en lecture seule pour synthétiser leurs résultats en une seule explication. Il hérite du modèle parent par défaut. Si `.cstack/models.json` définit `how explainer`, suis le contrat runtime et ne substitue pas silencieusement une surcharge explicite indisponible.
 
-Build its prompt from `references/explainer-prompt.md` with every explorer's findings filled in.
+Construis son prompt depuis `references/explainer-prompt.md` avec les résultats de chaque explorer remplis.
 
-## Step 4. Present
+## Étape 4. Présenter
 
-Present the explainer's output to the user. Light edits for clarity or context from the conversation are fine. Do not substantially rewrite it.
+Présente la sortie de l'explainer à l'utilisateur. De légères retouches pour la clarté ou le contexte de conversation sont acceptables. Ne la réécris pas substantiellement.
 
-## Output Format
+## Format de sortie
 
-The explanation uses the sections defined in `references/explainer-prompt.md`, dropping any that do not apply: Overview, Key Concepts, How It Works, Where Things Live, Gotchas.
+L'explication utilise les sections définies dans `references/explainer-prompt.md`, en supprimant celles qui ne s'appliquent pas : Vue d'ensemble, Concepts clés, Fonctionnement, Où vivent les choses, Pièges.
 
-Every claim carries its evidence or its label in the same sentence. Measured, inferred, or guess. A prediction or an unseen cause is a guess. Never hand the human a check you could run.
+Chaque affirmation porte sa preuve ou son étiquette dans la même phrase. Mesuré, inféré ou supposition. Une prédiction ou une cause non observée est une supposition. Ne donne jamais à l'humain une vérification que tu pourrais exécuter.

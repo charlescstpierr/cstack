@@ -1,72 +1,72 @@
 ---
 name: arena
-description: "Spawn N parallel candidates at the same task, pick a base, graft the strongest parts of the losers into it. Use for $cstack:arena, 'arena this', 'throw it in the arena', a bakeoff, a race, or selection between N competing implementations or designs."
+description: "Lance N candidats en parallèle sur la même tâche, choisit une base et y greffe les meilleures parties des autres. Utiliser pour $cstack:arena, « passe ceci dans l'arène », « mets ceci dans l'arène », une comparaison concurrentielle, une course ou un choix entre N implémentations ou conceptions concurrentes."
 ---
 
 # Arena
 
-Runtime: [`../cstack/references/codex-runtime.md`](../cstack/references/codex-runtime.md).
+Contrat d’exécution : [`../cstack/references/codex-runtime.md`](../cstack/references/codex-runtime.md).
 
-Fan out N parallel attempts at the same task. Read every candidate end to end. Pick the strongest as the base. Graft the best ideas from the others into it. Verify the synthesized result.
+Déploie N tentatives parallèles sur la même tâche. Lis chaque candidat de bout en bout. Choisis le plus solide comme base. Greffe-y les meilleures idées des autres. Vérifie le résultat synthétisé.
 
-## Start
+## Démarrage
 
-Track one item per phase in the current task before launching anything.
+Suis un élément par phase dans la tâche courante avant de lancer quoi que ce soit.
 
-1. Frame
-2. Fan out
-3. Cross-judge
-4. Pick
-5. Graft
-6. Verify
+1. Cadrer
+2. Déployer
+3. Juger croisé
+4. Choisir
+5. Greffer
+6. Vérifier
 
-## Phase A: Frame
+## Phase A : Cadrer
 
-The N candidates will receive the same prompt, so the prompt is the contract.
+Les N candidats recevront le même prompt; le prompt est donc le contrat.
 
-1. State the artifact each candidate is producing.
-2. Derive the rubric. State what success looks like for *this* task, then turn it into 3-6 concrete gradeable criteria. The rubric is the picker's tool in Phase D. Candidates only see the task.
-3. Pick the runners. An explicit panel supplied by the caller takes precedence, including the panel resolved by Architect. Otherwise use `arena runners` from `.cstack/models.json`, or three inherited-model attempts when absent. Resolve complete selections under the runtime contract and retain both model and reasoning effort at every runner dispatch; do not silently replace an unavailable explicit selection. The selected panel length sets N, bounded by native concurrency.
-4. Assign output paths. Each candidate writes to its own location (a git worktree where possible, otherwise `/tmp/arena-<slug>/candidate-<n>/`), per the [Separate Before Serializing Shared State](../cstack/references/principles/separate-before-serializing-shared-state.md) principle reference.
+1. Nomme l'artefact que chaque candidat doit produire.
+2. Derive la grille. Dis à quoi ressemble la réussite pour *cette* tâche, puis transforme-la en 3 à 6 critères concrets et notables. La grille est l'outil de sélection en phase D. Les candidats ne voient que la tâche.
+3. Choisis les concurrents. Un panel explicite fourni par l'appelant a priorité, y compris celui résolu par Architect. Sinon, utilise `arena runners` dans `.cstack/models.json`, ou trois tentatives avec le modèle hérité s'il est absent. Résous les sélections complètes selon le contrat d’exécution et conserve le modèle ainsi que l'effort de raisonnement à chaque dispatch de concurrent; ne remplace pas silencieusement une sélection explicite indisponible. La taille du panel sélectionné fixe N, limité par le parallélisme natif.
+4. Assigne les chemins de sortie. Chaque candidat écrit dans son propre emplacement (un worktree git quand c'est possible, sinon `/tmp/arena-<slug>/candidate-<n>/`), selon la référence de principe [séparer avant de sérialiser l'état partagé](../cstack/references/principles/separate-before-serializing-shared-state.md).
 
-## Phase B: Fan out
+## Phase B : Déployer
 
-Spawn all N native subagents concurrently, each with the task, the path to the shared grounding, its own output path, and instructions to produce both the artifact and a short rationale. Give every writing agent exclusive ownership of its output path. Native concurrency bounds how many run at once. Queue remaining candidates in later waves. When no subagent slot is available, run each candidate in the same session as a separate, explicitly re-scoped pass, label the result `single-agent`, and report the missing independence. Absent capacity never drops a candidate.
+Lance les N sous-agents natifs en parallèle, chacun avec la tâche, le chemin vers le contexte partagé, son propre chemin de sortie et les consignes pour produire à la fois l'artefact et un court raisonnement. Donne à chaque agent rédacteur la propriété exclusive de son chemin de sortie. La concurrence native limite le nombre d'exécutions simultanées. Mets les candidats restants en file pour des vagues ultérieures. Si aucun emplacement de sous-agent n'est disponible, exécute chaque candidat dans la même session comme passe distincte et explicitement recadrée, étiquette le résultat `single-agent`, puis signale l'indépendance manquante. Le manque de capacité ne supprime jamais un candidat.
 
-Each rationale names the alternatives the candidate considered and what it rejected.
+Chaque raisonnement nomme les alternatives envisagées par le candidat et ce qu'il a rejeté.
 
-If a candidate fails to produce output, proceed with N-1 and note the dropout in the synthesis record.
+Si un candidat ne produit rien, continue avec N-1 et note l'abandon dans le registre de synthèse.
 
-## Phase C: Cross-judge
+## Phase C : Juger croisé
 
-After all Phase B candidates complete, spawn one review-only native subagent as judge. It inherits the parent model by default. If `.cstack/models.json` defines `arena cross-judge pool`, follow the runtime contract and do not silently substitute an unavailable explicit override. The judge sees the rubric and candidates by path label, scores each criterion, and recommends a base with rationale. It can run alongside the parent's reading in Phase D. Do not launch it while candidates are still writing. When no subagent slot is available, run the judge pass in this session over a clean re-read of every candidate, label it `single-agent review`, and report the missing independence. The comparison never disappears.
+Une fois tous les candidats de la phase B terminés, lance un sous-agent natif de revue seule comme juge. Il hérite par défaut du modèle parent. Si `.cstack/models.json` définit `arena cross-judge pool`, suis le contrat d’exécution et ne remplace pas silencieusement une surcharge explicite indisponible. Le juge voit la grille et les candidats par étiquette de chemin, note chaque critère et recommande une base avec son raisonnement. Il peut tourner pendant la lecture du parent en phase D. Ne le lance pas pendant que les candidats écrivent encore. Si aucun emplacement de sous-agent n'est disponible, fais la passe du juge dans cette session après une relecture propre de chaque candidat, étiquette-la `single-agent review`, puis signale l'indépendance manquante. La comparaison ne disparaît jamais.
 
-## Phase D: Pick a base
+## Phase D : Choisir une base
 
-Read every candidate end to end before picking.
+Lis chaque candidat de bout en bout avant de choisir.
 
-Score each candidate against the rubric criterion by criterion, not on holistic feel. Compare against the cross-judge. Agreement on the base confirms the pick. Disagreement means one of you is biased or the rubric was ambiguous. Read both rationales before deciding.
+Note chaque candidat selon la grille, critère par critère, pas au ressenti global. Compare avec le juge croisé. Un accord sur la base confirme le choix. Un désaccord signifie que l'un de vous est biaisé ou que la grille était ambiguë. Lis les deux raisonnements avant de décider.
 
-Pick the base on which candidate a future maintainer can extend most easily without breaking invariants. Prefer the cleaner boundary or smaller API when two feel tied, per the Laziness Protocol.
+Choisis comme base le candidat qu'un futur mainteneur pourra étendre le plus facilement sans casser les invariants. Quand deux candidats semblent à égalité, préfère la frontière la plus nette ou la plus petite API, selon le Laziness Protocol.
 
-Record the pick and the reason in a short synthesis note alongside the base artifact, including the cross-judge's verdict.
+Consigne le choix et sa raison dans une courte note de synthèse à côté de l'artefact de base, avec le verdict du juge croisé.
 
-## Phase E: Graft
+## Phase E : Greffer
 
-Walk each losing candidate once more and identify what is worth porting into the base. The signal is usually one or two things per candidate, not most of it.
+Relis chaque candidat non retenu une fois de plus et identifie ce qui mérite d'être porté dans la base. Le signal tient habituellement en une ou deux choses par candidat, pas dans la majorité du contenu.
 
-Fold each graft in by hand, per the [Redesign From First Principles](../cstack/references/principles/redesign-from-first-principles.md) principle reference. Don't paste mechanically. The result has to remain coherent under one mental model.
+Intègre chaque greffe à la main, selon la référence de principe [reconcevoir depuis les premiers principes](../cstack/references/principles/redesign-from-first-principles.md). Ne colle pas mécaniquement. Le résultat doit rester cohérent sous un seul modèle mental.
 
-Record what was grafted, from which candidate, and what was rejected and why.
+Consigne ce qui a été greffé, depuis quel candidat, ainsi que ce qui a été rejeté et pourquoi.
 
-When N candidates converge on the same shape, that is a strong agreement signal. Note the convergence in the record and ship the consensus shape. No graft is needed. When N candidates wildly diverge, Phase A was under-specified. Reframe and re-run rather than averaging the divergence.
+Quand N candidats convergent vers la même forme, c'est un fort signal d'accord. Note la convergence dans le registre et livre la forme consensuelle. Aucune greffe n'est nécessaire. Quand N candidats divergent fortement, la phase A était sous-spécifiée. Recadre et relance au lieu de faire une moyenne de la divergence.
 
-## Phase F: Verify
+## Phase F : Vérifier
 
-The synthesized artifact has to hold up under the same scrutiny as any other output, per the [Prove It Works](../cstack/references/principles/prove-it-works.md) principle reference.
+L'artefact synthétisé doit tenir sous le même examen que toute autre sortie, selon la référence de principe [prouver que ça marche](../cstack/references/principles/prove-it-works.md).
 
-If verification surfaces a problem the arena did not catch, either Phase A was wrong (re-frame and re-run) or one candidate caught it and you missed the graft (go back to Phase E). Don't paper over.
+Si la vérification révèle un problème que l'arena n'a pas attrapé, soit la phase A était mauvaise (recadre et relance), soit un candidat l'avait capturé et tu as manqué la greffe (retourne à la phase E). Ne maquille pas le problème.
 
-## Outputs
+## Sorties
 
-One synthesized artifact. One short synthesis note alongside, naming the base, the grafts (with source candidate), the rejections, the dropouts if any, and the verification result. Every claim carries its evidence or its label in the same sentence. Measured, inferred, or guess. A prediction or an unseen cause is a guess. Never hand the human a check you could run.
+Un artefact synthétisé. Une courte note de synthèse à côté, nommant la base, les greffes (avec le candidat source), les rejets, les abandons s'il y en a et le résultat de vérification. Chaque affirmation porte sa preuve ou son étiquette dans la même phrase. Mesure, inférence ou supposition. Une prédiction ou une cause non observée est une supposition. Ne donne jamais à l'humain une vérification que tu pourrais exécuter.

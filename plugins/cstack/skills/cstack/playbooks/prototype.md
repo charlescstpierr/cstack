@@ -1,18 +1,18 @@
 ### Prototype
 
-Follow [the Codex runtime contract](../references/codex-runtime.md).
+Suivez [le contrat d’exécution Codex](../references/codex-runtime.md).
 
-**You own the design decision, not the code. The prototype is a throwaway instrument. The real build follows Feature.**
+**Tu possèdes la décision de conception, pas le code. Le prototype est un instrument jetable. La vraie construction suit Feature.**
 
-The one playbook where the Laziness Protocol's "smallest change" and the verification bar invert. Speed over polish, code quality does not matter, no planning. The rigor is in picking the right design cheaply. Propose variations the user didn't ask for, throw an approach away and try another.
+Le seul playbook où le « plus petit changement » du Protocole de paresse et la barre de vérification s’inversent. Vitesse avant finition, la qualité du code ne compte pas, pas de planification. La rigueur est de choisir la bonne conception à peu de frais. Propose des variations que l’utilisateur n’a pas demandées, jette une approche et essaie-en une autre.
 
-1. Scope the decision the prototype exists to make: which layout, which interaction, which density, or for an empirical fork which behavior, timing, or approach. No decision means no prototype. Route to Feature.
-2. Gather references when the design space is open. Search for prior art, summarize a moodboard of themes, palettes, and layouts, let the user pick directions before building. Skip when the direction is set.
-3. Build throwaway in an isolated scratch dir, separate from production source. For a visual decision, vanilla HTML/CSS/JS or the lightest stack that renders the idea, CDN deps, a dev server with hot reload. For a behavioral or timing decision, the smallest script that exercises the question. No production framework, no tests, no abstractions.
-4. When comparing alternatives, build them behind one switcher (buttons or a keypress), each variant labeled. This is the [Exhaust the Design Space](../references/principles/exhaust-the-design-space.md) principle reference made cheap.
-5. Verify with the native tool available for the target. For a visual decision, use an available browser or simulator tool to drive and capture each variant. For a behavioral or timing decision, log the timing, print the output, or inspect the render. The observation is the test.
-6. Present alternatives, tradeoffs, and a recommendation. The output is the decision plus the throwaway artifact, not shippable code. Hand the chosen direction to **Feature** (or `architect` for the shape) for the real build.
+1. Délimite la décision que le prototype doit prendre : quelle mise en page, quelle interaction, quelle densité, ou pour une bifurcation empirique quel comportement, timing ou approche. Pas de décision signifie pas de prototype. Route vers Feature.
+2. Rassemble des références quand l’espace de conception est ouvert. Cherche des précédents, résume un moodboard de thèmes, palettes et mises en page, laisse l’utilisateur choisir des directions avant de construire. Saute cette étape quand la direction est fixée.
+3. Construis du jetable dans un répertoire scratch isolé, séparé de la source de production. Pour une décision visuelle, HTML/CSS/JS vanilla ou la pile la plus légère qui rend l’idée, dépendances CDN, serveur de dev avec hot reload. Pour une décision comportementale ou de timing, le plus petit script qui exerce la question. Pas de framework de production, pas de tests, pas d’abstractions.
+4. Quand tu compares des alternatives, construis-les derrière un seul sélecteur (boutons ou touche), chaque variante libellée. C’est la référence du principe [Épuiser l’espace de conception](../references/principles/exhaust-the-design-space.md) rendue bon marché.
+5. Vérifie avec l’outil natif disponible pour la cible. Pour une décision visuelle, utilise un navigateur ou simulateur disponible pour piloter et capturer chaque variante. Pour une décision comportementale ou de timing, journalise le timing, imprime la sortie ou inspecte le rendu. L’observation est le test.
+6. Présente les alternatives, compromis et une recommandation. La sortie est la décision plus l’artéfact jetable, pas du code expédiable. Passe la direction choisie à **Feature** (ou `architect` pour la forme) pour la vraie construction.
 
-Do not commit the throwaway unless the user asked to keep it. If a commit happens, run `../../deslop/SKILL.md` over the diff first. Keep `deslop skipped: <reason>` when a step genuinely cannot run it.
+Ne committe pas le jetable sauf si l’utilisateur a demandé de le garder. Si un commit arrive, lance d’abord `../../deslop/SKILL.md` sur le diff. Garde `deslop skipped: <reason>` quand une étape ne peut vraiment pas s’exécuter.
 
-**Reply:** the variants explored, the evidence (screenshots for a visual decision, the observed output or timing for a behavioral one), tradeoffs, your recommendation, and the scratch path. Say plainly that the prototype is throwaway. Every claim carries its evidence or its label in the same sentence. Measured, inferred, or guess. A prediction or an unseen cause is a guess. Never hand the human a check you could run.
+**Réponse :** les variantes explorées, les preuves (captures d’écran pour une décision visuelle, sortie ou timing observés pour une décision comportementale), compromis, ta recommandation et le chemin scratch. Dis clairement que le prototype est jetable. Chaque affirmation porte sa preuve ou son étiquette dans la même phrase. Mesuré, inféré ou supposition. Une prédiction ou une cause non observée est une supposition. Ne remets jamais à l’humain un contrôle que tu pourrais lancer.

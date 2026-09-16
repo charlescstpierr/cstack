@@ -64,8 +64,8 @@ const ready = {
 
 void ready;
 
-// PR 179929's shape. Each assertion below stays a single short statement so a
-// reformat cannot drift the directive away from the line that actually errors.
+// Forme de la PR 179929. Chaque assertion ci-dessous reste une seule instruction
+// courte pour qu'un reformatage ne sépare pas la directive de la ligne qui échoue vraiment.
 const refused = {
   kind: "allowed",
   basis: "rollup",
@@ -73,18 +73,18 @@ const refused = {
   headRollupState: "FAILURE",
 } as const;
 
-// @ts-expect-error BLOCKED with a failing rollup is a refusal, not an allowance.
+// @ts-expect-error BLOCKED avec un rollup échouant est un refus, pas une autorisation.
 const refusalIsNotAllowed: GitHubMergeAllowed = refused;
 
-// @ts-expect-error CI cannot be clean while GitHub refuses the merge.
+// @ts-expect-error La CI ne peut pas être propre quand GitHub refuse la fusion.
 const refusalIsNotClean: CiClean = { ...cleanCi, github: refused };
 
-// @ts-expect-error READY cannot carry the failing-checks exit code.
+// @ts-expect-error READY ne peut pas porter le code de sortie de checks échouants.
 const readyWithBlockerExit: ReadyVerdict = { ...ready, exitCode: 4 };
 
 const unprovenPr = { kind: "ready-pr", context } as const;
 
-// @ts-expect-error An open READY row must carry positive readiness proof.
+// @ts-expect-error Une ligne READY ouverte doit porter une preuve positive de l’état prêt.
 const readyWithoutProof: ReadyPr = unprovenPr;
 
 void refusalIsNotAllowed;

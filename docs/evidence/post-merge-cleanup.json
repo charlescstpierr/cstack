@@ -6,7 +6,7 @@
   "plugin_commit": "5814b38bf6490c7518b787644b3f741480226850",
   "base_commit": "ebddda6e64e502e11b0851339b9a9e3f1f3a219e",
   "final_plugin_sha256": "65348b8dec15e20bf54be80fe71990ec837a8821d2b99f179da6dacefa59a2b8",
-  "plugin_hash_policy": "sorted tracked repository-relative plugin path + NUL + bytes + NUL",
+  "plugin_hash_policy": "chemin suivi du plugin relatif au dépôt, trié + NUL + octets + NUL",
   "fixture_generator": "scripts/worktree-cleanup-scenarios.py",
   "fixture_generator_sha256": "51c71cc311e8bd9132ed017ecdd45f57206d95682938795707b7e5043f4af6e7",
   "deterministic_checks": {
@@ -105,15 +105,15 @@
     "evidence": "readable"
   },
   "negative_checker_tests": [
-    "Existing fixture root refused without altering caller data.",
-    "Removing an orphan detached worktree causes the checker to fail."
+    "Racine de scénario existante refusée sans altérer les données de l’appelant.",
+    "La suppression d’un worktree détaché orphelin fait échouer le vérificateur."
   ],
   "limits": [
-    "Native agents operated on real local Git repositories and a local bare origin; GitHub PR responses were supplied by a local stub.",
-    "The baseline also completed the 10-worktree scenario. These trials validate observed behavior, not comparative quality or efficiency.",
-    "The expanded scenario checked 12 linked worktrees plus the primary workspace, including both detached-head outcomes.",
-    "No background scheduler, platform auto-cleaner or application-closed continuation was tested.",
-    "Historical snapshot of plugin commit 5814b38bf6490c7518b787644b3f741480226850, catalog of 28 skills. final_plugin_sha256 describes that tree. Later commits changed plugin bytes. Hash not recomputed."
+    "Les agents natifs ont travaillé sur de vrais dépôts Git locaux et une origine nue locale ; un simulateur local fournissait les réponses des PR GitHub.",
+    "La version de référence a aussi terminé le scénario de 10 worktrees. Ces essais valident le comportement observé, sans comparaison de qualité ni d’efficacité.",
+    "Le scénario étendu a vérifié 12 worktrees liés plus l’espace de travail principal, dont les deux résultats possibles avec HEAD détaché.",
+    "Aucun ordonnanceur en arrière-plan, nettoyage automatique de plateforme ou continuation après fermeture de l’application n’a été testé.",
+    "Instantané historique du commit de plugin 5814b38bf6490c7518b787644b3f741480226850, avec un catalogue de 28 skills. final_plugin_sha256 décrit cet arbre. Les commits suivants ont modifié les octets du plugin. Empreinte non recalculée."
   ],
   "local_evidence_root": ".cstack/tasks/post-merge-cleanup/forward/"
 }

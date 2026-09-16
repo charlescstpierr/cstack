@@ -1,6 +1,6 @@
 interface:
   display_name: "domain"
-  short_description: "Settle vocabulary and durable domain decisions"
-  default_prompt: "Use $cstack:domain to settle project vocabulary and durable domain decisions."
+  short_description: "Trancher vocabulaire et décisions durables"
+  default_prompt: "Utilise $cstack:domain pour trancher le vocabulaire et les décisions durables du projet."
 policy:
   allow_implicit_invocation: false

@@ -1,54 +1,54 @@
-# Slack Conversations
+# Conversations Slack
 
-## What this source contains
+## Ce que cette source contient
 
-- Real-time discussions of problems and decisions
-- Incident channels where fire-drill decisions were made
-- Design discussion threads where tradeoffs were debated
-- Questions answered by senior engineers that didn't make it into docs
-- Post-merge discussions that explain why something was revisited
-- DMs (usually not searchable, scope accordingly)
+- Discussions en temps réel de problèmes et décisions
+- Channels d'incidents où des décisions d'urgence ont été prises
+- Threads de discussion design où les compromis ont été débattus
+- Questions répondues par des ingénieurs seniors qui ne sont pas arrivées dans les docs
+- Discussions post-merge qui expliquent pourquoi quelque chose a été revisité
+- DMs (habituellement non cherchables; borne la portée en conséquence)
 
-Slack is frequently where the *real* decisions got made, especially for smaller changes that didn't warrant a doc. It's also the most ephemeral source. Threads get deleted, channels get archived, and search quality degrades over time.
+Slack est fréquemment là où les *vraies* décisions ont été prises, surtout pour les petits changements qui ne méritaient pas de doc. C'est aussi la source la plus éphémère. Les threads sont supprimés, les channels archivés et la qualité de recherche se dégrade avec le temps.
 
-## How to search it
+## Comment la chercher
 
-Slack connector tools vary. Inspect the available connector's actual schema and authentication state. Use only an authentication flow exposed by that connector when setup is requested. If access is missing or fails, report this source as unavailable and continue independent research; do not invent an authentication tool or install a connector automatically.
+Les outils du connecteur Slack varient. Inspecte le schéma réel du connecteur disponible et son état d'authentification. Utilise seulement un flux d'authentification exposé par ce connecteur quand le setup est demandé. Si l'accès manque ou échoue, rapporte cette source comme indisponible et continue la recherche indépendante; n'invente pas d'outil d'authentification et n'installe pas automatiquement un connecteur.
 
-1. **Author-bounded search.** Messages from the PR author around the PR merge date. Limits scope dramatically and often hits gold.
-2. **Keyword search for the feature name and key symbols.** Include misspellings and casual phrasings.
-3. **PR URL search.** Slack often links PRs when they're reviewed or discussed. Search for the PR URL (or just `/pull/<number>`).
-4. **Error string search.** If the code handles a specific error, search for the error string. Incident threads often surface.
-5. **Channel-scoped search.** Narrow to likely channels:
-   - `#eng-*`. Engineering discussions
-   - `#proj-*`. Project channels
-   - `#incident-*` / `#sev-*`. Incident channels
-   - Team-specific channels for the owning team
-   - Design review channels
-6. **Thread traversal.** When you find a relevant message, fetch the whole thread. The decision often lives in the replies.
+1. **Recherche bornée par auteur.** Messages de l'auteur de PR autour de la date de merge. Cela réduit énormément la portée et trouve souvent de l'or.
+2. **Recherche par mots-clés pour le nom de fonctionnalité et les symboles clés.** Inclus fautes et formulations casual.
+3. **Recherche d'URL de PR.** Slack lie souvent les PR quand elles sont revues ou discutées. Cherche l'URL de PR (ou seulement `/pull/<number>`).
+4. **Recherche de chaîne d'erreur.** Si le code gère une erreur précise, cherche la chaîne d'erreur. Les threads d'incident apparaissent souvent.
+5. **Recherche bornée par channel.** Rétrécis aux channels probables :
+   - `#eng-*`. Discussions d'ingénierie
+   - `#proj-*`. Channels projet
+   - `#incident-*` / `#sev-*`. Channels d'incident
+   - Channels spécifiques à l'équipe propriétaire
+   - Channels de design review
+6. **Parcours de thread.** Quand tu trouves un message pertinent, récupère tout le thread. La décision vit souvent dans les réponses.
 
-## What good evidence looks like here
+## À quoi ressemble une bonne preuve ici
 
-- A thread where tradeoffs were explicitly debated ("I was going to use A but B is better because...")
-- An incident channel message describing the bug the code prevents
-- A question from a reviewer and an authoritative answer from the author or lead
-- A reference to a meeting where a decision was made
-- A message from a product manager or customer-facing engineer explaining a customer ask
+- Un thread où les compromis ont été explicitement débattus ("J'allais utiliser A, mais B est meilleur parce que...")
+- Un message de channel incident décrivant le bug que le code prévient
+- Une question d'un reviewer et une réponse autoritative de l'auteur ou du lead
+- Une référence à une réunion où une décision a été prise
+- Un message d'un product manager ou ingénieur facing client expliquant une demande client
 
-## Common pitfalls
+## Pièges courants
 
-- **Channel archaeology limits.** Very old messages may be gone due to retention policies. If you can't find anything before a certain date, note the retention cliff.
-- **Unsearched DMs.** Many decisions happen in DMs that aren't searchable. You'll miss them. That's a known limitation.
-- **Speculative jokes as "decisions."** Slack is casual. "Lol just do the thing" isn't a decision, even if it preceded the commit. Look for considered discussion.
-- **Context collapse in single messages.** Without the thread, a single message often reads differently than in context. Always fetch threads.
-- **Auth failures.** If the MCP isn't authenticated, stop. Don't make up findings. Report that Slack wasn't searchable.
+- **Limites d'archéologie de channel.** Les très vieux messages peuvent être partis à cause de politiques de rétention. Si tu ne trouves rien avant une date, note la falaise de rétention.
+- **DMs non cherchés.** Beaucoup de décisions arrivent en DMs non cherchables. Tu les manqueras. C'est une limite connue.
+- **Blagues spéculatives comme "décisions".** Slack est casual. "Lol just do the thing" n'est pas une décision, même si cela a précédé le commit. Cherche une discussion réfléchie.
+- **Effondrement de contexte dans un message seul.** Sans le thread, un message isolé se lit souvent autrement. Récupère toujours les threads.
+- **Échecs d'auth.** Si le MCP n'est pas authentifié, arrête. N'invente pas de findings. Rapporte que Slack n'était pas cherchable.
 
-## What to return
+## Quoi retourner
 
-For each relevant thread:
-- Channel name
-- Permalink or thread ID
+Pour chaque thread pertinent :
+- Nom du channel
+- Permalink ou ID de thread
 - Participants
-- Date range of the discussion
-- The key quotes (verbatim) with attribution
-- Context: what thread/incident/discussion this was part of
+- Plage de dates de la discussion
+- Citations clés (verbatim) avec attribution
+- Contexte : thread/incident/discussion dont cela faisait partie
