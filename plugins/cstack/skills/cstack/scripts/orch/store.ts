@@ -402,6 +402,13 @@ function holderIsDead(holder: string): boolean {
   }
 }
 
+function throwLockError(error: unknown): never {
+  if (["ENOENT", "ENOTEMPTY", "EEXIST"].includes(errorCode(error) ?? "")) {
+    throw new UserError("verrou de magasin modifié par un autre processus; réessayez");
+  }
+  throw error;
+}
+
 async function acquireDirectoryLock(
   path: string,
   options: OpenStoreOptions
@@ -422,17 +429,17 @@ async function acquireDirectoryLock(
       if (!LOCK_CONFLICT_CODES.has(errorCode(error) ?? "")) {
         throw error;
       }
-      const info = await lstat(path);
+      const info = await lstat(path).catch(throwLockError);
       if (info.isSymbolicLink()) {
         throw new UserError("verrou de magasin invalide : lien symbolique interdit");
       }
       if (!info.isDirectory()) throw error;
-      const entries = await readdir(path, { withFileTypes: true });
+      const entries = await readdir(path, { withFileTypes: true }).catch(throwLockError);
       const owner = entries[0];
       const match = owner && /^owner\.([1-9]\d*)\.[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.exec(owner.name);
       if (entries.length === 0) {
-        await rmdir(path);
-        await rename(candidate, path);
+        await rmdir(path).catch(throwLockError);
+        await rename(candidate, path).catch(throwLockError);
       } else if (entries.length !== 1 || !owner?.isFile() || !match || !Number.isSafeInteger(Number(match[1]))) {
         throw new UserError("verrou de magasin invalide : propriétaire indéterminé");
       } else {
@@ -441,16 +448,9 @@ async function acquireDirectoryLock(
         else if (options.force) options.onLockStolen?.(holder);
         else throw new UserError(`verrou de magasin detenu par le pid ${holder}`);
         await rm(candidate, { recursive: true });
-        try {
-          // Seule la génération observée est remplacée : un repreneur retardé
-          // ne peut pas déplacer le marqueur d'un nouveau propriétaire.
-          await rename(join(path, owner.name), ownMarker);
-        } catch (error) {
-          if (errorCode(error) === "ENOENT") {
-            throw new UserError("verrou de magasin repris par un autre processus");
-          }
-          throw error;
-        }
+        // Seule la génération observée est remplacée : un repreneur retardé
+        // ne peut pas déplacer le marqueur d'un nouveau propriétaire.
+        await rename(join(path, owner.name), ownMarker).catch(throwLockError);
       }
     }
   } finally {
@@ -483,7 +483,7 @@ async function acquireLock(
   try {
     return await acquireDirectoryLock(path, options);
   } catch (error) {
-    if (!LOCK_CONFLICT_CODES.has(errorCode(error) ?? "") || !(await lstat(path)).isFile()) {
+    if (!LOCK_CONFLICT_CODES.has(errorCode(error) ?? "") || !(await lstat(path).catch(throwLockError)).isFile()) {
       throw error;
     }
   }

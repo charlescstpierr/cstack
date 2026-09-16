@@ -34,6 +34,38 @@ class ProjectSetupTests(unittest.TestCase):
     def tearDown(self) -> None:
         self.temp.cleanup()
 
+    def test_cli_argument_errors_are_french_and_keep_argument_values(self) -> None:
+        literal = "unrecognized arguments: invalid choice: (choose from error)"
+        for script, command, required in [(SCRIPT, "preview", "--options"), (MODELS, "resolve", "role")]:
+            cases = [
+                ([], "arguments requis", "command"),
+                ([command], "arguments requis", required),
+                (["inconnue"], "choix invalide", "inconnue"),
+                (["--workspace"], "un argument attendu", "--workspace"),
+                (["--help=" + literal], "argument explicite ignoré", literal),
+            ]
+            if script == SCRIPT:
+                cases.append((["preview", "--options", "unused.json", "--inconnue"], "arguments non reconnus", "--inconnue"))
+            else:
+                cases.extend([
+                    (["resolve", literal], "choix invalide", literal),
+                    (["resolve", "documentation", "--inconnue"], "arguments non reconnus", "--inconnue"),
+                ])
+            for args, expected, value in cases:
+                with self.subTest(script=script.name, args=args):
+                    result = subprocess.run([sys.executable, str(script), *args], cwd=self.root, capture_output=True, text=True)
+                    self.assertEqual(result.returncode, 2)
+                    self.assertEqual(result.stdout, "")
+                    self.assertIn("utilisation:", result.stderr)
+                    self.assertIn(": erreur:", result.stderr)
+                    self.assertIn(expected, result.stderr)
+                    self.assertIn(value, result.stderr)
+        help_result = subprocess.run([sys.executable, str(MODELS), "resolve", "--help"], capture_output=True, text=True)
+        self.assertEqual(help_result.returncode, 0)
+        self.assertIn("arguments positionnels:", help_result.stdout)
+        self.assertNotIn("positional arguments:", help_result.stdout)
+        self.assertEqual(list(self.root.iterdir()), [])
+
     def _options(self, value: dict | None = None) -> Path:
         path = self.root / "options.json"
         path.write_text(json.dumps(value or {}), encoding="utf-8")

@@ -79,4 +79,24 @@ for (const [language, convert] of [["français", (plan: string) => plan], ["angl
       rmSync(dir, { recursive: true, force: true });
     }
   });
+
+  test(`les diagnostics du plan ${language} nomment seulement le repère manquant`, () => {
+    const dir = mkdtempSync(join(tmpdir(), "cstack-plan-"));
+    try {
+      const path = join(dir, "plan.md");
+      for (const missing of [
+        "Les tests seuls ne vérifient pas une PR. Chaque PR exige des preuves unitaires, en situation réelle et de performance.",
+        "### Démarrer le programme",
+      ]) {
+        writeFileSync(path, convert(example().replace(missing, "")));
+        const result = Bun.spawnSync(["bun", checker, path]);
+        expect(result.exitCode).toBe(1);
+        const errors = result.stderr.toString().trim().split("\n");
+        expect(errors).toHaveLength(1);
+        expect(errors[0]).toContain(convert(missing));
+      }
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
 }

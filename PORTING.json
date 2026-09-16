@@ -527,13 +527,13 @@
       "source": "pstack/skills/poteto-mode/scripts/check-plan.mjs",
       "target": "plugins/cstack/skills/cstack/scripts/check-plan.mjs",
       "status": "ported",
-      "reason": "Adapté ou conservé dans le plugin Codex."
+      "reason": "Plans français et anglais, avec diagnostics conservant la langue des repères manquants."
     },
     {
       "source": "pstack/skills/poteto-mode/scripts/orch/orch.test.ts",
       "target": "plugins/cstack/skills/cstack/scripts/orch/orch.test.ts",
       "status": "ported",
-      "reason": "Tests français et régressions déterministes des reprises concurrentes, de la migration et de la libération des verrous."
+      "reason": "Tests français et régressions déterministes des reprises concurrentes, de la migration, de la libération et des erreurs de diagnostic des verrous."
     },
     {
       "source": "pstack/skills/poteto-mode/scripts/orch/orch.ts",
@@ -545,7 +545,7 @@
       "source": "pstack/skills/poteto-mode/scripts/orch/store.ts",
       "target": "plugins/cstack/skills/cstack/scripts/orch/store.ts",
       "status": "ported",
-      "reason": "Textes français et verrou par génération : reprise atomique, migration des fichiers PID et libération limitée au détenteur exact."
+      "reason": "Textes français et verrou par génération : reprise atomique, migration des fichiers PID, libération limitée au détenteur exact et diagnostics des courses concurrentes."
     },
     {
       "source": "pstack/skills/poteto-mode/scripts/package.json",

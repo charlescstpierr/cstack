@@ -508,6 +508,104 @@ describe("Magasin", () => {
     expect((await readdir(directory)).filter((name) => name.includes(".tmp."))).toEqual([]);
   });
 
+  for (const phase of ["lstat", "readdir", "rmdir", "publication", "migration", "permission"] as const) {
+    it(`gère le diagnostic du verrou pendant ${phase} et permet une nouvelle tentative`, async () => {
+      const directory = await makeDirectory();
+      const worker = join(directory, "diagnostic-worker.ts");
+      await writeFile(worker, `
+import assert from "node:assert/strict";
+import { mock } from "bun:test";
+import { join } from "node:path";
+const fs = { ...await import("node:fs/promises") };
+const directory = ${JSON.stringify(directory)};
+const phase = ${JSON.stringify(phase)};
+const lock = join(directory, ".orch.lock");
+let armed = false;
+let prepared = false;
+let holder;
+let successor;
+mock.module("node:fs/promises", () => ({
+  ...fs,
+  rename: async (source, destination) => {
+    if (armed && phase === "publication" && destination === lock) {
+      armed = false;
+      await successor.units.add({ id: "successeur", track: "build" });
+    }
+    try { return await fs.rename(source, destination); }
+    catch (error) {
+      if (armed && destination === lock && (phase === "lstat" || phase === "readdir")) {
+        armed = false;
+        await holder.close();
+      } else if (!prepared && destination === lock && (phase === "rmdir" || phase === "publication")) {
+        prepared = true;
+        await holder.close();
+        await fs.mkdir(lock);
+        armed = true;
+      }
+      throw error;
+    }
+  },
+  lstat: async (path) => {
+    if (armed && path === lock && phase === "permission") {
+      armed = false;
+      throw Object.assign(new Error("permission refusée"), { code: "EACCES" });
+    }
+    if (armed && path === lock && phase === "migration") {
+      armed = false;
+      const info = await fs.lstat(path);
+      await fs.unlink(path);
+      return info;
+    }
+    if (path === lock && phase === "readdir") {
+      await fs.mkdir(lock);
+      const info = await fs.lstat(path);
+      await fs.rmdir(lock);
+      return info;
+    }
+    return fs.lstat(path);
+  },
+  rmdir: async (path) => {
+    if (armed && path === lock && phase === "rmdir") {
+      armed = false;
+      await successor.units.add({ id: "successeur", track: "build" });
+    }
+    return fs.rmdir(path);
+  },
+}));
+const { openStore, UserError } = await import(${JSON.stringify(join(import.meta.dir, "store.ts"))});
+holder = openStore(directory);
+const contender = openStore(directory);
+successor = openStore(directory);
+try {
+  await holder.init();
+  if (phase === "migration") {
+    await holder.close();
+    await fs.writeFile(lock, String(process.pid));
+  }
+  armed = !["rmdir", "publication"].includes(phase);
+  await assert.rejects(contender.units.add({ id: "refusée", track: "build" }), error =>
+    phase === "permission"
+      ? !(error instanceof UserError) && error.code === "EACCES"
+      : error instanceof UserError && error.message === "verrou de magasin modifié par un autre processus; réessayez");
+  await holder.close();
+  if (phase === "rmdir" || phase === "publication") {
+    await assert.rejects(contender.units.add({ id: "toujours-refusée", track: "build" }), UserError);
+  }
+  await successor.close();
+  await contender.units.add({ id: "nouvelle-tentative", track: "build" });
+  assert.equal((await contender.units.list()).some(unit => unit.id === "refusée"), false);
+} finally {
+  await holder.close();
+  await successor.close();
+  await contender.close();
+}
+`);
+      const child = Bun.spawn([process.execPath, worker], { stdout: "pipe", stderr: "pipe" });
+      const errors = await new Response(child.stderr).text();
+      expect({ code: await child.exited, errors }).toEqual({ code: 0, errors: "" });
+    });
+  }
+
   it("récupère un répertoire de verrou vide après interruption", async () => {
     const { directory, store } = await initializedStore();
     await store.close();

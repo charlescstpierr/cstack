@@ -4,6 +4,10 @@ Les versions suivent SemVer. Le format suit [Keep a Changelog](https://keepachan
 
 ## À publier
 
+- Messages français pour les courses pendant le diagnostic d’un verrou, sans masquer les erreurs de permission. Tests de régression couvrant aussi la migration des anciens fichiers PID.
+- Diagnostics des plans anglais incomplets conservant la langue de leurs repères.
+- Traduction partagée des erreurs d’arguments des commandes de configuration, avec conservation des valeurs saisies et des codes de sortie.
+
 - Correction de la double acquisition du verrou d’orchestration lors d’une reprise concurrente. Chaque acquisition possède désormais un marqueur unique ; un ancien détenteur ne peut plus libérer le verrou de son remplaçant, même dans le même processus.
 - Migration automatique des anciens fichiers PID, reprise après interruption et tests de concurrence déterministes.
 

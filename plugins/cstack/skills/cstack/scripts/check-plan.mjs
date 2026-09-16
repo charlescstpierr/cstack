@@ -104,7 +104,7 @@ const find = (title) => sections.find((s) => s.title === title);
 const findAny = (titles) => titles.flatMap((title) => find(title) ?? []).at(0);
 const bodyText = (s) => s.body.map((l) => l.text).join("\n");
 const boxes = (ls) => ls.filter((l) => !l.code && BOX.test(l.text)).map((l) => ({ n: l.n, text: l.text.match(BOX)[1] }));
-const markerSetFor = (text, groups) => groups.find((markers) => markers.every((marker) => text.includes(marker))) ?? groups[1];
+const markerSetFor = (text, groups, language) => groups.find((markers) => markers.every((marker) => text.includes(marker))) ?? groups[language];
 const startsWithAny = (text, values) => values.some((value) => text.startsWith(value));
 const hasAny = (text, values) => values.some((value) => text.includes(value));
 
@@ -115,8 +115,8 @@ if (!howToRead) fail(1, 'section "## Comment lire ceci" manquante');
 if (h1 !== -1 && howToRead) {
 	const intro = lines.slice(h1 + 1).filter((l) => l.n < howToRead.n && l.text.trim() !== "");
 	if (intro.length >= 10) fail(lines[h1].n, `l’introduction fait ${intro.length} lignes; moins de dix sont requises`);
-	for (const marker of markerSetFor(bodyText(howToRead), HOW_TO_READ_MARKER_GROUPS)) {
-		if (!bodyText(howToRead).includes(marker)) fail(howToRead.n, `Comment lire ceci ne contient pas "${marker}"`);
+	for (const marker of markerSetFor(bodyText(howToRead), HOW_TO_READ_MARKER_GROUPS, H2.howToRead.indexOf(howToRead.title))) {
+		if (!bodyText(howToRead).includes(marker)) fail(howToRead.n, `${howToRead.title} ne contient pas "${marker}"`);
 	}
 }
 
@@ -124,11 +124,11 @@ const program = findAny(H2.program);
 if (!program) fail(1, 'section "## Liste de contrôle du programme" manquante');
 else {
 	const h3s = program.body.filter((l) => !l.code && l.text.startsWith("### ")).map((l) => l.text.slice(4).trim());
-	const expectedH3s = markerSetFor(h3s.join("\n"), PROGRAM_H3_GROUPS);
+	const expectedH3s = markerSetFor(h3s.join("\n"), PROGRAM_H3_GROUPS, H2.program.indexOf(program.title));
 	let cursor = 0;
 	for (const name of expectedH3s) {
 		const at = h3s.findIndex((t, i) => i >= cursor && t.startsWith(name));
-		if (at === -1) fail(program.n, `Liste de contrôle du programme ne contient pas "### ${name}" dans l’ordre`);
+		if (at === -1) fail(program.n, `${program.title} ne contient pas "### ${name}" dans l’ordre`);
 		else cursor = at + 1;
 	}
 	for (const marker of PROGRAM_MARKERS) {

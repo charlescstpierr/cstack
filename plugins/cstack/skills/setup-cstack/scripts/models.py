@@ -6,6 +6,8 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import re
+import sys
 import tempfile
 
 
@@ -37,7 +39,29 @@ class FrenchArgumentParser(argparse.ArgumentParser):
         return super().format_usage().replace("usage:", "utilisation:", 1)
 
     def format_help(self):
-        return super().format_help().replace("usage:", "utilisation:", 1)
+        return (super().format_help().replace("usage:", "utilisation:", 1)
+                .replace("\npositional arguments:\n", "\narguments positionnels:\n"))
+
+    @staticmethod
+    def french_error(message):
+        argument = re.fullmatch(r"argument (.+?): (.+)", message)
+        if argument:
+            return f"argument {argument[1]}: {FrenchArgumentParser.french_error(argument[2])}"
+        for english, french in (
+            (r"the following arguments are required: (.+)", "arguments requis: {}"),
+            (r"unrecognized arguments: (.+)", "arguments non reconnus: {}"),
+            (r"invalid choice: (.+) \(choose from (.+)\)", "choix invalide: {} (choisir parmi {})"),
+            (r"ignored explicit argument (.+)", "argument explicite ignoré {}"),
+            (r"ambiguous option: (.+) could match (.+)", "option ambiguë: {} peut correspondre à {}"),
+        ):
+            match = re.fullmatch(english, message, re.DOTALL)
+            if match:
+                return french.format(*match.groups())
+        return "un argument attendu" if message == "expected one argument" else message
+
+    def error(self, message):
+        self.print_usage(sys.stderr)
+        self.exit(2, f"{self.prog}: erreur: {self.french_error(message)}\n")
 
 
 def ensure_cstack_gitignore(directory):

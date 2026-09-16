@@ -3,7 +3,6 @@
 
 from __future__ import annotations
 
-import argparse
 import base64
 import hashlib
 import importlib.util
@@ -37,14 +36,6 @@ WORKFLOWS = {
 
 class ProjectError(ValueError):
     pass
-
-
-class FrenchArgumentParser(argparse.ArgumentParser):
-    def format_usage(self):
-        return super().format_usage().replace("usage:", "utilisation:", 1)
-
-    def format_help(self):
-        return super().format_help().replace("usage:", "utilisation:", 1)
 
 
 class InterruptedApply(Exception):
@@ -504,11 +495,12 @@ def _catalog(path: Path | None, raw_options: Any) -> dict[str, list[str]] | None
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = FrenchArgumentParser(description=__doc__, add_help=False)
+    parser_class = _models().FrenchArgumentParser
+    parser = parser_class(description=__doc__, add_help=False)
     parser.add_argument("-h", "--help", action="help", help="afficher ce message d’aide et quitter")
     parser.add_argument("--workspace", type=Path, default=Path.cwd())
     parser.add_argument("--catalog", type=Path)
-    commands = parser.add_subparsers(dest="command", required=True, title="commandes", parser_class=FrenchArgumentParser)
+    commands = parser.add_subparsers(dest="command", required=True, title="commandes", parser_class=parser_class)
     preview = commands.add_parser("preview", add_help=False)
     preview.add_argument("-h", "--help", action="help", help="afficher ce message d’aide et quitter")
     preview.add_argument("--options", type=Path, required=True)
