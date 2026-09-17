@@ -1,18 +1,18 @@
-# Migrate Callers Then Delete Legacy APIs
+# Migrer les appelants puis supprimer les API anciennes
 
-Read this reference when an active cstack workflow routes here or the user names this principle. Follow the [Codex runtime contract](../codex-runtime.md) for scope and permissions.
+Lisez cette référence lorsqu'un processus cstack actif vous route ici ou lorsque l'utilisateur nomme ce principe. Suivez le [contrat d'exécution Codex](../codex-runtime.md) pour le périmètre et les permissions.
 
-When we decide a new API is the right design, migrate callers and remove the old API in the same refactor wave instead of preserving compatibility layers.
+Quand nous décidons qu'une nouvelle API est la bonne conception, migrez les appelants et retirez l'ancienne API dans la même vague de refactorisation au lieu de préserver des couches de compatibilité.
 
-**Rule:**
-- Do not keep legacy API paths only because internal callers still exist
-- Inventory callers, migrate them, and delete the old API immediately
-- Treat temporary adapters as exceptional and time-boxed, not default architecture
-- Update tests to assert the new contract, and delete tests that only protect pre-refactor implementation details
+**Règle :**
+- Ne gardez pas les chemins d'API anciennes seulement parce que des appelants internes existent encore
+- Inventoriez les appelants, migrez-les et supprimez immédiatement l'ancienne API
+- Traitez les adaptateurs temporaires comme exceptionnels et limités dans le temps, pas comme architecture par défaut
+- Mettez à jour les tests pour affirmer le nouveau contrat, et supprimez les tests qui protègent seulement des détails d'implémentation pré-refactorisation
 
-**When this applies:**
-- No external users depend on backward compatibility
-- The project can absorb coordinated breaking changes
-- The new API is part of a simplification or refactor initiative
+**Quand cela s'applique :**
+- Aucun utilisateur externe ne dépend de la compatibilité ascendante
+- Le projet peut absorber des changements cassants coordonnés
+- La nouvelle API fait partie d'une initiative de simplification ou de refactorisation
 
-Keeping both old and new APIs creates dual-path complexity, slows cleanup, and makes the codebase feel append-only.
+Garder à la fois l'ancienne et la nouvelle API crée une complexité à deux chemins, ralentit le nettoyage et donne l’impression que la base de code s’alourdit sans fin.

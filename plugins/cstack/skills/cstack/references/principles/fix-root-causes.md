@@ -1,19 +1,19 @@
-# Fix Root Causes
+# Corriger les causes racines
 
-Read this reference when an active cstack workflow routes here or the user names this principle. Follow the [Codex runtime contract](../codex-runtime.md) for scope and permissions.
+Lisez cette référence lorsqu'un processus cstack actif vous route ici ou lorsque l'utilisateur nomme ce principe. Suivez le [contrat d'exécution Codex](../codex-runtime.md) pour le périmètre et les permissions.
 
-When debugging, do not fix symptoms. Trace every problem to its root cause and fix it there.
+En débogage, ne corrigez pas les symptômes. Remontez chaque problème jusqu'à sa cause racine et corrigez-le là.
 
-**Why:** Symptom fixes accumulate. Each workaround makes the system harder to reason about, and the real bug remains. Root-cause fixes are slower upfront but reduce total debugging time.
+**Pourquoi :** les correctifs de symptômes s'accumulent. Chaque contournement rend le système plus difficile à raisonner, et le vrai anomalie reste là. Les correctifs de causes racines sont plus lents au départ mais réduisent le temps total de débogage.
 
-**Pattern:**
-- Reproduce first
-- Ask "why" until you hit the root cause
-- Do not add guards (adding a nil check to silence a crash is a symptom fix)
-- If a workaround needs a paragraph-long comment to justify it, the code is wrong (fix the code, not the comment)
-- Check for the pattern, not just the instance (grep for the same pattern, fix all instances)
-- When stuck, instrument. Don't guess (add logging, read the actual error)
+**Motif :**
+- Reproduire d'abord
+- Demander « pourquoi » jusqu'à atteindre la cause racine
+- Ne pas ajouter de gardes (ajouter une vérification nil pour taire un crash est un correctif de symptôme)
+- Si un contournement nécessite un commentaire d'un paragraphe pour le justifier, le code est mauvais (corrigez le code, pas le commentaire)
+- Chercher le motif, pas seulement l'instance (greppez le même motif, corrigez toutes les instances)
+- Quand vous êtes bloqué, instrumentez. Ne devinez pas (ajoutez des logs, lisez l'erreur réelle)
 
-**Restart bugs: suspect state before code**
+**Anomalies au redémarrage : soupçonner l'état avant le code**
 
-When something "fails after restart," suspect stale persistent state first: config files, caches, lock files, serialized state. If clearing a state file restores behavior, prioritize state validation as the fix.
+Quand quelque chose « échoue après redémarrage », soupçonnez d'abord l'état persistant périmé : fichiers de config, caches, fichiers de verrou, état sérialisé. Si effacer un fichier d'état restaure le comportement, priorisez la validation de l'état comme correctif.

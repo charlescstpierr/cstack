@@ -1,23 +1,23 @@
-### Feature
+### Fonctionnalité
 
-Follow [the Codex runtime contract](../references/codex-runtime.md).
+Suivez [le contrat d’exécution Codex](../references/codex-runtime.md).
 
-**You own the design. Plan, review, verify.** Delegate implementation. Stay in the lead.
+**Tu possèdes la conception. Planifie, relis, vérifie.** Délègue l’implémentation. Reste en tête.
 
-1. Read and apply `../../how/SKILL.md` over the affected subsystem.
-2. Read and apply `../../architect/SKILL.md` for design exploration. Bound how many design runners run at once to native capacity and queue the rest. Keep `architect skipped: <reason>` when the step does not earn its cost.
-3. Write the throughput checkpoint as four todo items. A dimension that genuinely does not apply (single file, no fan-out) keeps its item with `n/a: <reason>` rather than being dropped:
-   - **Blocking first steps.** Gates run before fan-out.
-   - **Independent workstreams.** Disjoint files, services, or layers parallelize. Shared writes serialize.
-   - **Shared mutable state.** Default to splitting the target (the [Separate Before Serializing Shared State](../references/principles/separate-before-serializing-shared-state.md) principle reference). Serialize only for real invariants.
-   - **Smallest safe decomposition.** If one worker is best, name why.
-4. Delegate the code-writing. Review the diff yourself. Give the delegate file ownership, the named data shape, its organizing structure, and success criteria. Preserve the caller-selected role, including `simple edits` for small bounded changes. Use `feature, refactoring` only when no role was selected. Follow the runtime contract for inheritance or configured model and effort. When no subagent slot is available, write the code in this session as a separate re-scoped pass, then run a separate review pass over a clean re-read of the diff, label it `single-agent review`, and report the missing independence. When the implementation admits multiple valid shapes (error handling, abstraction layer, test structure), read and apply `../../arena/SKILL.md`. Mandatory: no skip-with-reason escape, and Laziness Protocol does not override it. Keep edits surgical. Re-ground upstream-derived files against their source. Apply shared improvements to every consumer and verify each. Run `../../deslop/SKILL.md` over the diff before each commit. Keep `deslop skipped: <reason>` when a step genuinely cannot run it.
-5. Verify on the matching surface. "Inconclusive" or wrong-surface is not a pass. Flag it.
-6. Rebase into small, ordered commits. Stack follow-ups.
-   Use the [Sequence work into verifiable units](../references/principles/sequence-verifiable-units.md) principle reference, building, verifying, and committing each small unit before the next.
-7. If the design is contested, `interrogate` before shipping.
-8. Run **Opening a PR** only when the user authorized PR creation.
+1. Lis et applique `../../how/SKILL.md` sur le sous-système touché.
+2. Lis et applique `../../architect/SKILL.md` pour l’exploration de conception. Limite le nombre de exécutants de conception simultanés à la capacité native et mets le reste en file. Garde `architect skipped: <reason>` quand l’étape ne mérite pas son coût.
+3. Écris le point de contrôle de débit comme quatre todos. Une dimension qui ne s’applique vraiment pas (fichier unique, pas de ventilation) garde son item avec `n/a: <reason>` au lieu d’être supprimée :
+   - **Premières étapes bloquantes.** Les barrières passent avant la ventilation.
+   - **Flux de travail indépendants.** Les fichiers, services ou couches disjoints se parallélisent. Les écritures partagées se sérialisent.
+   - **État mutable partagé.** Par défaut, diviser la cible (référence du principe [Séparer avant de sérialiser l’état partagé](../references/principles/separate-before-serializing-shared-state.md)). Sérialiser seulement pour de vrais invariants.
+   - **Plus petite décomposition sûre.** Si un seul worker est préférable, nomme pourquoi.
+4. Délègue l’écriture du code. Relis toi-même le diff. Donne au délégué la propriété des fichiers, la forme de données nommée, sa structure organisatrice et les critères de réussite. Préserve le rôle choisi par l’appelant, y compris `simple edits` pour les petits changements bornés. Utilise `feature, refactoring` seulement quand aucun rôle n’a été sélectionné. Suis le contrat d’exécution pour l’héritage ou le modèle et l’effort configurés. Quand aucun emplacement de sous-agent n’est disponible, écris le code dans cette session comme passe séparée au périmètre redéfini, puis lance une passe de revue séparée après relecture propre du diff, étiquette-la `single-agent review` et rapporte l’indépendance manquante. Quand l’implémentation admet plusieurs formes valides (gestion d’erreurs, couche d’abstraction, structure de tests), lis et applique `../../arena/SKILL.md`. Obligatoire : aucune échappatoire skip-with-reason, et Protocole de paresse ne le remplace pas. Garde des éditions chirurgicales. Ré-ancre les fichiers dérivés de l’amont contre leur source. Applique les améliorations partagées à chaque consommateur et vérifie chacun. Lance `../../deslop/SKILL.md` sur le diff avant chaque commit. Garde `deslop skipped: <reason>` quand une étape ne peut vraiment pas s’exécuter.
+5. Vérifie sur la surface correspondante. « Inconclusive » ou une mauvaise surface n’est pas une réussite. Signale-le.
+6. Rebase en petits commits ordonnés. Empile les suivis.
+   Utilise la référence du principe [Séquencer le travail en unités vérifiables](../references/principles/sequence-verifiable-units.md), en construisant, vérifiant et committant chaque petite unité avant la suivante.
+7. Si la conception est contestée, `interrogate` avant livraison.
+8. Lance **Ouvrir une PR** seulement quand l’utilisateur a autorisé la création de PR.
 
-Code-coupled work goes to one owner with the checkpoint inline. Fan out only independent artifacts, such as audits, cross-subsystem investigations, or competing experiments. Rewrite the checkpoint at phase boundaries. Give follow-up work a complete brief instead of relying on lost context.
+Le travail couplé au code va à un seul propriétaire avec le point de reprise inline. Ne ventile que les artéfacts indépendants, comme des audits, investigations inter-sous-systèmes ou expériences concurrentes. Réécris le point de reprise aux frontières de phase. Donne au travail de suivi un brief complet au lieu de dépendre d’un contexte perdu.
 
-**Reply:** what you built, what you chose and why, the throughput checkpoint, open decisions. Tables for design alternatives. Every claim carries its evidence or its label in the same sentence. Measured, inferred, or guess. A prediction or an unseen cause is a guess. Never hand the human a check you could run.
+**Réponse :** ce que tu as construit, ce que tu as choisi et pourquoi, le point de contrôle de débit, les décisions ouvertes. Tableaux pour les alternatives de conception. Chaque affirmation porte sa preuve ou son étiquette dans la même phrase. Mesuré, inféré ou supposition. Une prédiction ou une cause non observée est une supposition. Ne remets jamais à l’humain un contrôle que tu pourrais lancer.

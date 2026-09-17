@@ -1,18 +1,18 @@
-# Never Block on the Human
+# Ne jamais bloquer sur l'humain
 
-Read this reference when an active cstack workflow routes here or the user names this principle. Follow the [Codex runtime contract](../codex-runtime.md) for scope and permissions.
+Lisez cette référence lorsqu'un processus cstack actif vous route ici ou lorsque l'utilisateur nomme ce principe. Suivez le [contrat d'exécution Codex](../codex-runtime.md) pour le périmètre et les permissions.
 
-The human supervises asynchronously. Agents must stay unblocked. Make reasonable decisions, proceed, and let the human course-correct after the fact.
+L'humain supervise de façon asynchrone. Les agents doivent rester débloqués. Prenez des décisions raisonnables, avancez et laissez l'humain corriger la trajectoire après coup.
 
-**Why:** Every permission pause stalls the pipeline and makes the human the bottleneck. Since code changes are reversible and reviewable, a wrong decision usually costs less than blocking.
+**Pourquoi :** chaque pause de permission bloque la chaîne et fait de l'humain le goulot. Comme les changements de code sont réversibles et relisibles, une mauvaise décision coûte généralement moins cher qu'un blocage.
 
-**Pattern:**
-- **Proceed, then present.** Do the work, show the result. Don't ask "should I do X?" Do X, explain why.
-- **Reserve questions for genuine ambiguity.** Ask only when you cannot infer intent from context.
-- **Make the system self-healing.** When you notice a problem, log it and fix it in the next round.
-- **Supervision is async.** Design workflows for review-after-the-fact.
+**Motif :**
+- **Avancez, puis présentez.** Faites le travail, montrez le résultat. Ne demandez pas « devrais-je faire X ? ». Faites X, expliquez pourquoi.
+- **Réservez les questions aux vraies ambiguïtés.** Demandez seulement lorsque vous ne pouvez pas inférer l'intention depuis le contexte.
+- **Rendez le système autoréparateur.** Quand vous remarquez un problème, consignez-le et corrigez-le au tour suivant.
+- **La supervision est asynchrone.** Concevez les processus pour une revue après coup.
 
-**Boundaries:**
-- **Irreversible actions** (force-push, delete production data, send external messages) require explicit authorization; reuse authorization already present, subject to host approval controls.
-- **Reversible actions** (write code, edit notes, split tasks) should proceed without blocking.
-- **Product direction** comes from the human. *Execution* should not block.
+**Frontières :**
+- **Les actions irréversibles** (force-push, suppression de données de production, envoi de messages externes) nécessitent une autorisation explicite ; réutilisez l'autorisation déjà présente, sous réserve des contrôles d'approbation de l'hôte.
+- **Les actions réversibles** (écrire du code, éditer des notes, diviser des tâches) doivent avancer sans blocage.
+- **La direction produit** vient de l'humain. *L'exécution* ne doit pas bloquer.

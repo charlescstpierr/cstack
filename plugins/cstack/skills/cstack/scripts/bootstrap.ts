@@ -48,12 +48,12 @@ export function ensureDependenciesInstalled(): void {
     process.stdout.write(result.stdout);
     process.stderr.write(result.stderr);
     throw new Error(
-      `bun install --frozen-lockfile --production exited with status ${result.exitCode}`
+      `bun install --frozen-lockfile --production s'est termine avec le statut ${result.exitCode}`
     );
   }
   if (!existsSync(commanderPackagePath)) {
     throw new Error(
-      "bun install --frozen-lockfile completed without installing commander"
+      "bun install --frozen-lockfile s'est termine sans installer commander"
     );
   }
 
@@ -62,7 +62,7 @@ export function ensureDependenciesInstalled(): void {
     return;
   }
 
-  const restarted = Bun.spawnSync([process.execPath, ...process.argv.slice(1)], {
+  const restarted = Bun.spawnSync([process.execPath, ...process.execArgv, ...process.argv.slice(1)], {
     cwd: process.cwd(),
     env: process.env,
     stdin: "inherit",

@@ -1,6 +1,6 @@
 interface:
   display_name: "swarm"
-  short_description: "Distribute independent tasks and verify combined results"
-  default_prompt: "Use $cstack:swarm for this task."
+  short_description: "Distribuer des tâches et vérifier le résultat"
+  default_prompt: "Utilise $cstack:swarm pour cette tâche."
 policy:
   allow_implicit_invocation: false

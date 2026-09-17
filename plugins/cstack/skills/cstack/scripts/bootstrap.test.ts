@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import { copyFile, mkdtemp, rm } from "node:fs/promises";
+import { copyFile, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -7,8 +7,41 @@ import { HELPER_INSTALL_ARGS } from "./bootstrap.ts";
 
 const scriptsDirectory = import.meta.dir;
 
-describe("bootstrap helper install", () => {
-  it("installs production dependencies only", async () => {
+describe("installation du helper bootstrap", () => {
+  it("conserve les drapeaux Bun et les arguments après le premier redémarrage", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "cstack-bootstrap-flags-"));
+    try {
+      for (const file of ["package.json", "bun.lock", "bootstrap.ts"]) {
+        await copyFile(join(scriptsDirectory, file), join(directory, file));
+      }
+      await writeFile(join(directory, ".env"), "CSTACK_BOOTSTRAP_TEST_ENV=ne-doit-pas-etre-charge\n");
+      await writeFile(join(directory, "neutral.toml"), "");
+      await writeFile(join(directory, "entry.ts"), `
+import { ensureDependenciesInstalled } from "./bootstrap.ts";
+const report = () => console.log(JSON.stringify({ flags: process.execArgv, args: process.argv.slice(2), env: process.env.CSTACK_BOOTSTRAP_TEST_ENV ?? null }));
+report();
+ensureDependenciesInstalled();
+report();
+`);
+      const env = { ...process.env };
+      delete env.CSTACK_BOOTSTRAP_ONLY;
+      delete env.CSTACK_BOOTSTRAP_TEST_ENV;
+      const flags = ["--no-env-file", `--config=${join(directory, "neutral.toml")}`];
+      for (const expectedReports of [3, 2]) {
+        const result = Bun.spawnSync([process.execPath, ...flags, "entry.ts", "argument littéral", "--option-utilisateur"], { cwd: directory, env });
+        expect({ code: result.exitCode, error: result.stderr.toString() }).toEqual({ code: 0, error: "" });
+        const reports = result.stdout.toString().trim().split("\n").filter(line => line.startsWith("{"));
+        expect(reports).toHaveLength(expectedReports);
+        for (const report of reports) {
+          expect(JSON.parse(report)).toEqual({ flags, args: ["argument littéral", "--option-utilisateur"], env: null });
+        }
+      }
+    } finally {
+      await rm(directory, { recursive: true, force: true });
+    }
+  });
+
+  it("installe seulement les dépendances de production", async () => {
     expect(HELPER_INSTALL_ARGS).toEqual([
       "install",
       "--frozen-lockfile",

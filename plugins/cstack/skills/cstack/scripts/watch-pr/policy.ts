@@ -225,7 +225,7 @@ export function classifyPr(
   if (row.kind === "open" && row.ci.kind === "ci-pending")
     return { kind: "waiting", frontier: row.context, pending: row.ci.pending };
   const ready = readyContribution(row, allowDraft);
-  if (ready === null) throw new Error("snapshot has no classified decision");
+  if (ready === null) throw new Error("l’instantané n’a aucune décision classée");
   return ready.kind === "merged-pr"
     ? { kind: "merged", pr: ready }
     : { kind: "ready", pr: ready };
@@ -256,7 +256,7 @@ export function selectTierMajorStackDecision(
       .filter((row): row is T.ReadyPr | T.MergedPr => row !== null)
   );
   if (prs === null || prs.length !== rows.length)
-    throw new Error("stack has no classified decision");
+    throw new Error("la pile n'a aucune decision classee");
   return { kind: "clear", prs };
 }
 export const queryBackoffSeconds = (
@@ -430,7 +430,7 @@ export async function runSimple(args: {
         })
       );
     const complete = nonEmpty(rows);
-    if (complete === null) throw new Error("watch context cannot be empty");
+    if (complete === null) throw new Error("le contexte de surveillance ne peut pas être vide");
     if (args.statusOnly)
       return {
         kind: "terminal",
@@ -443,7 +443,7 @@ export async function runSimple(args: {
         }),
       };
     if (args.mode === "queued-stack")
-      throw new Error("queued-stack requires status-only in the simple runner");
+      throw new Error("queued-stack exige status-only dans le runner simple");
     if (args.mode === "stack")
       args.dependencies.emit(
         stamp(
@@ -573,7 +573,7 @@ export function applyQueueSnapshot(
   now: number,
   options: T.PollingOptions
 ): QueueSnapshotResult {
-  if (state.work === null) throw new Error("queue has no read in flight");
+  if (state.work === null) throw new Error("la file n'a aucune lecture en cours");
   const snapshots = new Map(state.snapshots);
   snapshots.set(snapshot.context.number, snapshot);
   const base = { ...state, snapshots };
@@ -581,7 +581,7 @@ export function applyQueueSnapshot(
     return { state: { ...base, work: null }, completedSweepRows: null };
   const [head, ...tail] = state.work.remaining;
   if (head.number !== snapshot.context.number)
-    throw new Error("snapshot does not match sweep head");
+    throw new Error("l’instantané ne correspond pas à la tête du balayage");
   const remaining = nonEmpty(tail);
   if (remaining !== null)
     return {
@@ -595,7 +595,7 @@ export function applyQueueSnapshot(
     })
   );
   if (rows === null || rows.length !== state.queue.length)
-    throw new Error("sweep completed without every snapshot");
+    throw new Error("balayage terminé sans tous les instantanés");
   return {
     state: { ...base, work: null, nextSweepAt: now + options.sweepInterval },
     completedSweepRows: rows,
@@ -657,11 +657,11 @@ export function evaluateQueue(
           : []
       )
     );
-    if (merged === null) throw new Error("empty queue cannot complete");
+    if (merged === null) throw new Error("une file vide ne peut pas se terminer");
     return { kind: "complete", state, merged };
   }
   const rows = nonEmpty(active);
-  if (rows === null) throw new Error("active queue cannot be empty");
+  if (rows === null) throw new Error("la file active ne peut pas être vide");
   const decision = selectTierMajorStackDecision(rows, options.allowDraft);
   if (decision.kind === "blocker")
     return { kind: "blocker", state, blocker: decision.blocker };
@@ -719,7 +719,7 @@ export async function runQueued(args: {
         args.options
       );
       if (complete.kind !== "complete")
-        throw new Error("queue has no work while active");
+        throw new Error("la file active n'a aucun travail");
       return {
         kind: "terminal",
         verdict: stamp({

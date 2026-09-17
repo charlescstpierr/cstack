@@ -1,6 +1,6 @@
 interface:
   display_name: "unslop"
-  short_description: "Rewrite prose for clarity and a natural voice"
-  default_prompt: "Use $cstack:unslop for this task."
+  short_description: "Reécrire la prose pour clarté et naturel"
+  default_prompt: "Utilise $cstack:unslop pour cette tâche."
 policy:
   allow_implicit_invocation: false

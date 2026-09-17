@@ -1,52 +1,52 @@
-# Explorer Prompt Template
+# Modèle de prompt Explorer
 
-Build each explorer subagent's prompt from this template. Fill in the placeholders.
+Construis le prompt de chaque subagent explorer depuis ce modèle. Remplis les placeholders.
 
 ---
 
-You are exploring a codebase to understand how something works. Gather facts: trace code paths, read implementations, map components. A separate agent will write the human-facing explanation from your findings, so favor thoroughness and accuracy over prose.
+Tu explores un codebase pour comprendre comment quelque chose fonctionne. Rassemble des faits : trace les chemins de code, lis les implémentations, cartographie les composants. Un agent séparé écrira l'explication destinée à l'humain depuis tes findings; privilégie donc la rigueur et l'exactitude plutôt que la prose.
 
-Other explorers are investigating different slices of the same subsystem in parallel. Don't try to cover everything. Focus on your assigned angle and go deep.
+D'autres explorers étudient en parallèle différentes tranches du même sous-système. N'essaie pas de tout couvrir. Concentre-toi sur ton angle assigné et va en profondeur.
 
 ## Question
 
 > {QUESTION}
 
-## Your Exploration Angle
+## Ton angle d'exploration
 
 {EXPLORATION_ANGLE}
 
-## Exploration Instructions
+## Instructions d'exploration
 
-Start by finding the relevant code. Use Glob to find directories and files, Grep to find key symbols, Read to understand the actual implementation. Don't guess from names. Read the code.
+Commence par trouver le code pertinent. Utilise Glob pour trouver répertoires et fichiers, Grep pour trouver les symboles clés, Read pour comprendre l'implémentation réelle. Ne devine pas depuis les noms. Lis le code.
 
-Follow this pattern:
-1. **Find the entry point.** What triggers this behavior? A user action, an API call, a scheduled job? Find where it starts.
-2. **Trace the flow.** Follow the call chain from the entry point. Read each function. Understand what data flows through and how it transforms.
-3. **Map the key abstractions.** What types, interfaces, services, or classes are central? Read their definitions. Understand what they represent and why they exist.
-4. **Find the boundaries.** Where does this subsystem interface with others? What goes in, what comes out?
-5. **Look for the non-obvious.** Anything surprising? Anything that looks like a historical artifact? Anything a newcomer would misunderstand?
+Suis ce motif :
+1. **Trouver le point d'entrée.** Qu'est-ce qui déclenche ce comportement ? Une action utilisateur, un appel API, une tâche planifiée ? Trouve où cela commence.
+2. **Tracer le flux.** Suis la chaîne d'appels depuis le point d'entrée. Lis chaque fonction. Comprends quelles données circulent et comment elles se transforment.
+3. **Cartographier les abstractions clés.** Quels types, interfaces, services ou classes sont centraux ? Lis leurs définitions. Comprends ce qu'ils représentent et pourquoi ils existent.
+4. **Trouver les frontières.** Où ce sous-système s'interface-t-il avec les autres ? Qu'est-ce qui entre, qu'est-ce qui sort ?
+5. **Chercher le non évident.** Quelque chose de surprenant ? Un artefact historique ? Quelque chose qu'un nouvel arrivant comprendrait mal ?
 
-Keep exploring until you can describe the full picture without hand-waving. If you hit a part you can't trace, say so explicitly. "I couldn't determine how X connects to Y" is better than making something up.
+Continue jusqu'à pouvoir décrire l'image complète sans gestes vagues. Si tu atteins une partie impossible à tracer, dis-le explicitement. "Je n'ai pas pu déterminer comment X se connecte à Y" vaut mieux qu'inventer.
 
-## Output
+## Sortie
 
-Return your findings in this structure. Be factual and specific. Reference exact file paths, function names, type names, and line numbers where relevant.
+Retourne tes findings dans cette structure. Sois factuel et précis. Référence les chemins exacts, noms de fonctions, noms de types et numéros de lignes quand pertinent.
 
-### Components Found
-The key types, services, classes, and abstractions. For each: name, file path, and a one-sentence description of what it does.
+### Composants trouvés
+Les types, services, classes et abstractions clés. Pour chacun : nom, chemin de fichier et description d'une phrase de ce qu'il fait.
 
-### Flow
-The execution flow step by step. For each step: what function/method runs, what file it's in, what it does, what it calls next. Include the data that flows between steps.
+### Flux
+Le flux d'exécution étape par étape. Pour chaque étape : quelle fonction/méthode s'exécute, dans quel fichier, ce qu'elle fait, ce qu'elle appelle ensuite. Inclus les données qui circulent entre étapes.
 
-### Files Read
-Every file you read during exploration, so the explainer can reference them.
+### Fichiers lus
+Chaque fichier lu pendant l'exploration, pour que l'explainer puisse les référencer.
 
-### Boundaries
-Where this subsystem connects to other parts of the codebase. The inputs and outputs.
+### Frontières
+Où ce sous-système se connecte aux autres parties du codebase. Les entrées et sorties.
 
-### Non-Obvious Things
-Anything surprising, historically motivated, or easy to get wrong. Things that look like they should work one way but work another.
+### Choses non évidentes
+Tout ce qui est surprenant, motivé historiquement ou facile à se tromper. Les choses qui semblent devoir fonctionner d'une façon mais fonctionnent autrement.
 
-### Open Questions
-Anything you couldn't fully trace or understand. Be honest about gaps.
+### Questions ouvertes
+Tout ce que tu n'as pas pu tracer ou comprendre entièrement. Sois honnête sur les écarts.

@@ -8,7 +8,7 @@ Les exemples donnent la forme minimale d'une bonne demande. Remplacez les chemin
 $cstack:how explique d'abord cette initialisation. Puis $cstack:why cherche la raison de la régression récente.
 ```
 
-## Obtenir un second avis sur un design
+## Obtenir un second avis sur une conception
 
 ```text
 $cstack:arena compare trois formes pour cette interface et explique le choix final.
@@ -26,7 +26,7 @@ $cstack:swarm contrôle chaque paquet sous packages/ et rends un rapport unique.
 $cstack:interrogate examine toute la branche sans modifier les fichiers. Signale seulement les bugs ou régressions.
 ```
 
-## Corriger un bug avec une preuve ciblée
+## Corriger une anomalie avec une preuve ciblée
 
 ```text
 $cstack:cstack reproduis l'écriture en double. Si le test local est bon marché, utilise $cstack:tdd, puis corrige et rejoue la preuve.
@@ -58,7 +58,7 @@ $cstack:bro
 
 ## Les pièges
 
-- Énumérer les compétences dans chaque demande. Donnez l'objectif et les contraintes ; le playbook séquence le reste.
+- Énumérer les compétences dans chaque demande. Donnez l'objectif et les contraintes ; le guide d'exécution séquence le reste.
 - Donner une condition de fin vague. Préférez une commande, une valeur, un fichier ou un flux qui peut passer ou échouer.
 - Faire écrire plusieurs agents dans une même worktree. Isolez les tentatives et fusionnez après vérification.
 - Utiliser `$cstack:arena` pour une matrice de couverture. Utilisez `$cstack:swarm` pour répartir des tranches.

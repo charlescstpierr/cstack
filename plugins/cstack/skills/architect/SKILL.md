@@ -1,84 +1,84 @@
 ---
 name: architect
-description: "Sketch types, signatures, and module structure before code, then stay in the loop while implementation fills in. Use for $cstack:architect, 'architect this', 'design this', or non-trivial work where jumping to code would lock in the wrong shape."
+description: "Ébauche les types, signatures et structure de modules avant le code, puis reste dans la boucle pendant que l'implémentation remplit le tout. À utiliser pour $cstack:architect, « architecturer ceci », « concevoir ceci », ou un travail non trivial où passer directement au code figerait la mauvaise forme."
 ---
 
-# Architect
+# Architecte
 
-Runtime: [`../cstack/references/codex-runtime.md`](../cstack/references/codex-runtime.md).
+Environnement d'exécution : [`../cstack/references/codex-runtime.md`](../cstack/references/codex-runtime.md).
 
-Design before implementing. Sketch types, function signatures, class shapes, and module boundaries with `not implemented` bodies and pseudocode. Synthesize across multiple model perspectives, then fill in code against the chosen sketch. If implementation proves the sketch wrong, throw it out and redesign.
+Conçois avant d'implémenter. Ébauche les types, signatures de fonctions, formes de classes et frontières de modules avec des corps `not implemented` et du pseudocode. Synthétise plusieurs perspectives de modèles, puis remplis le code selon l'ébauche choisie. Si l'implémentation prouve que l'ébauche est mauvaise, jette-la et reconçois.
 
-## Start
+## Démarrage
 
-Track one item per phase in the current task before starting.
+Suis un élément par phase dans la tâche courante avant de commencer.
 
-1. Ground
-2. Sketch
-3. Agree
-4. Implement
-5. Scrap
+1. Ancrer
+2. Ébaucher
+3. Valider
+4. Implémenter
+5. Jeter
 
-## Phase A: Ground the problem
+## Phase A : Ancrer le problème
 
-Build a real mental model of every system the new code touches. Run the **how** skill over the relevant subsystems.
+Construis un vrai modèle mental de chaque système touché par le nouveau code. Exécute la compétence **how** sur les sous-systèmes pertinents.
 
-Naming a file isn't grounding. Produce the traced model `how` prescribes. If the design redefines ownership or layering, also run the **why** skill on the existing shape so the rationale becomes a constraint, not a guess.
+Nommer un fichier n'est pas ancrer le problème. Produis le modèle tracé prescrit par `how`. Si la conception redéfinit la propriété ou les couches, exécute aussi la compétence **why** sur la forme existante afin que la justification devienne une contrainte, pas une supposition.
 
-Skip Phase A only when the work is genuinely greenfield with no surrounding system to integrate.
+Saute la Phase A seulement quand le travail est réellement nouveau et qu'aucun système environnant n'est à intégrer.
 
-## Phase B: Sketch
+## Phase B : Ébaucher
 
-Run the **arena** skill with the design-sketch task and the Phase A grounding artifacts. Pass `references/runner-prompt.md` as each runner's prompt. Each candidate produces a design package shaped per `references/rationale-template.md`.
+Exécute la compétence **arena** avec la tâche d'ébauche de conception et les artefacts d'ancrage de la Phase A. Passe `references/runner-prompt.md` comme prompt de chaque exécuteur. Chaque candidat produit un dossier de conception conforme à `references/rationale-template.md`.
 
-Resolve the `architect runners` panel, defaulting to three inherited-model attempts. A configured panel must have at least two entries; report a shorter panel as a configuration error rather than silently changing its count. Resolve complete selections under the runtime contract, retaining both model and reasoning effort. Pass that exact panel and count to Arena; it takes precedence over `arena runners` for this invocation, even when both keys are configured. Report an unavailable explicit override without silently substituting another model.
+Résous le panneau `architect runners`, par défaut avec trois tentatives héritant du modèle. Un panneau configuré doit contenir au moins deux entrées; signale un panneau plus court comme erreur de configuration au lieu de modifier silencieusement son compte. Résous les sélections complètes selon le contrat runtime, en conservant le modèle et l'effort de raisonnement. Passe ce panneau exact et ce compte à Arena; il a priorité sur `arena runners` pour cette invocation, même si les deux clés sont configurées. Signale toute surcharge explicite indisponible sans substituer silencieusement un autre modèle.
 
-Design it twice. Require at least two structurally distinct candidates before synthesis, even when the first looks sufficient. This is the [Exhaust the Design Space](../cstack/references/principles/exhaust-the-design-space.md) principle reference made concrete. Whole-shape alternatives, not point fixes inside one shape.
+Conçois-le deux fois. Exige au moins deux candidats structurellement distincts avant la synthèse, même si le premier semble suffisant. C'est la référence au principe [Épuiser l’espace de conception](../cstack/references/principles/exhaust-the-design-space.md) rendue concrète. Il faut des alternatives de forme globale, pas des corrections ponctuelles dans une seule forme.
 
-Screen every candidate against [`references/design-red-flags.md`](references/design-red-flags.md) before synthesis. Reject or revise shallow modules, information leakage, temporal decomposition, and pass-through methods.
+Passe chaque candidat au crible de [`references/design-red-flags.md`](references/design-red-flags.md) avant la synthèse. Rejette ou révise les modules superficiels, les fuites d'information, la décomposition temporelle et les méthodes relais.
 
-Compare viable candidates on interface depth. Prefer the design that hides more complexity behind a smaller, simpler public surface. A rich interface can keep call chains short by concentrating capability instead of scattering it across layers.
+Compare les candidats viables selon la profondeur d'interface. Préfère la conception qui cache le plus de complexité derrière une surface publique plus petite et plus simple. Une interface riche peut raccourcir les chaînes d'appels en concentrant la capacité au lieu de l'éparpiller entre les couches.
 
-Arena returns one synthesized design package. The synthesis decision populates the rationale's "Synthesis decision" section.
+Arena retourne un dossier de conception synthétisé. La décision de synthèse remplit la section "Décision de synthèse" de la justification.
 
-## Phase C: Agree (opt-in)
+## Phase C : Valider (sur demande)
 
-If the concrete task already authorizes implementation, proceed with the synthesized design without a redundant checkpoint. For a design-only request or Codex Plan mode, return the design and stop before implementation.
+Si la tâche concrète autorise déjà l'implémentation, avance avec la conception synthétisée sans point de contrôle redondant. Pour une demande de conception seule ou en mode Codex Plan, retourne la conception et arrête avant l'implémentation.
 
-Opt in to a checkpoint when the invoker explicitly asks: "$cstack:architect with checkpoint," "stop and show me before implementing," or similar. Then surface the synthesized design and pause for sign-off.
+Active un point de contrôle quand l'appelant le demande explicitement : "$cstack:architect avec point de contrôle", "arrête-toi et montre-moi avant d’implémenter", ou formulation semblable. Présente alors la conception synthétisée et mets-toi en pause pour validation.
 
-During already-authorized implementation, the synthesis can be its own commit, as the "scaffold first" mode of the [Foundational Thinking](../cstack/references/principles/foundational-thinking.md) principle reference. A design-only or Plan-mode invocation does not create commits. For adversarial pressure before implementation, run the **interrogate** skill on the synthesized sketch within the same scope.
+Pendant une implémentation déjà autorisée, la synthèse peut être son propre commit, comme mode "échafaudage d’abord" de la référence au principe [Pensée fondatrice](../cstack/references/principles/foundational-thinking.md). Une invocation de conception seule ou en mode Plan ne crée pas de commits. Pour une pression adversariale avant l'implémentation, exécute la compétence **interrogate** sur l'ébauche synthétisée dans la même portée.
 
-If the human pushes back on the shape (in a checkpoint or after the fact), treat that as Phase A evidence. Re-ground and re-run Phase B before writing more code.
+Si l'humain repousse la forme (dans un point de contrôle ou après coup), traite cela comme une preuve de Phase A. Ré-ancre et relance la Phase B avant d'écrire plus de code.
 
-## Phase D: Implement against the sketch
+## Phase D : Implémenter selon l'ébauche
 
-Replace `not implemented` bodies with code, pseudocode with logic. The synthesized sketch is the contract.
+Remplace les corps `not implemented` par du code, le pseudocode par de la logique. L'ébauche synthétisée est le contrat.
 
-Deviations from the sketch are signal worth surfacing, not friction to absorb silently. If a function needs a parameter the sketch didn't anticipate, ask whether the sketch was wrong, the requirement was missed, or the implementation is overreaching.
+Les écarts par rapport à l'ébauche sont des signaux à exposer, pas de la friction à absorber en silence. Si une fonction a besoin d'un paramètre que l'ébauche n'avait pas anticipé, demande si l'ébauche était mauvaise, si l'exigence a été manquée ou si l'implémentation va trop loin.
 
-## Phase E: Scrap when the architecture is wrong
+## Phase E : Jeter quand l'architecture est mauvaise
 
-If implementation keeps producing friction the sketch can't absorb, throw the sketch out. Don't bolt fixes onto a wrong design, per the [Redesign From First Principles](../cstack/references/principles/redesign-from-first-principles.md) and [Fix Root Causes](../cstack/references/principles/fix-root-causes.md) principle references.
+Si l'implémentation produit constamment de la friction que l'ébauche ne peut pas absorber, jette l'ébauche. Ne boulonne pas des correctifs sur une mauvaise conception, conformément aux références de principes [Reconcevoir depuis les premiers principes](../cstack/references/principles/redesign-from-first-principles.md) et [Corriger les causes racines](../cstack/references/principles/fix-root-causes.md).
 
-The signal is a *pattern*, not single instances. Tells:
+Le signal est un *motif*, pas des cas isolés. Indices :
 
-- The same shape of workaround appearing repeatedly across unrelated code.
-- Multiple unrelated edge cases that all need special-case branches.
-- Types that need escape hatches (`any`, casts, optional fields always set in practice) to compile.
-- The "we need a lock" reflex when the sketch said the state wasn't shared.
-- Callers having to know the abstraction's internal rules to use it.
-- Two or more independent Phase D deviations of the same shape across the implementation.
+- La même forme de contournement apparaît à répétition dans du code sans lien direct.
+- Plusieurs cas limites sans rapport exigent tous des branches spéciales.
+- Des types ont besoin d'échappatoires (`any`, casts, champs optionnels toujours définis en pratique) pour compiler.
+- Le réflexe "il nous faut un verrou" quand l'ébauche disait que l'état n'était pas partagé.
+- Les appelants doivent connaître les règles internes de l'abstraction pour l'utiliser.
+- Deux écarts de Phase D indépendants ou plus ont la même forme dans l'implémentation.
 
-Use judgment. A few edge cases don't condemn an architecture. Some problems are legitimately complex. Complexity in the data is not complexity in the design.
+Fais preuve de jugement. Quelques cas limites ne condamnent pas une architecture. Certains problèmes sont légitimement complexes. La complexité dans les données n'est pas la complexité dans la conception.
 
-When you scrap:
+Quand tu jettes :
 
-1. Re-run the **how** skill over what's been built.
-2. Redesign as if the new constraints had been day-one assumptions, per redesign-from-first-principles.
-3. Subtract before adding, per the [Subtract Before You Add](../cstack/references/principles/subtract-before-you-add.md) principle reference. The new sketch should be smaller than the old one before it grows.
-4. Return to Phase B and re-run arena.
+1. Relance la compétence **how** sur ce qui a été construit.
+2. Reconçois comme si les nouvelles contraintes avaient été des hypothèses du premier jour, conformément à la reconception depuis les premiers principes.
+3. Soustrais avant d'ajouter, conformément à la référence au principe [Soustraire avant d’ajouter](../cstack/references/principles/subtract-before-you-add.md). La nouvelle ébauche doit être plus petite que l'ancienne avant de grandir.
+4. Retourne à la Phase B et relance arena.
 
-## Outputs
+## Sorties
 
-The caller's usage is written first and the type sketch derived from it. One file with new types and signatures for small changes. Module map plus type definitions for larger work. The rationale ships alongside, shaped per `references/rationale-template.md`, including the usage sketch and the synthesis decision.
+L'usage côté appelant est écrit d'abord et l'ébauche de types en dérive. Un seul fichier avec nouveaux types et signatures pour les petits changements. Carte de modules plus définitions de types pour les travaux plus larges. La justification accompagne le tout, conforme à `references/rationale-template.md`, avec l'ébauche d'usage et la décision de synthèse.

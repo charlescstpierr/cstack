@@ -21,14 +21,14 @@ class RunToolTest(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         root = Path(self.temp.name).resolve()
-        self.plugin = root / "read only plugin"
+        self.plugin = root / "plugin en lecture seule"
         self.source = self.plugin / "skills/cstack/scripts"
         scripts = self.plugin / "scripts"
         scripts.mkdir(parents=True)
         self.source.mkdir(parents=True)
         shutil.copy2(LAUNCHER, scripts / "run-tool.sh")
         shutil.copy2(PY_LAUNCHER, scripts / "run_tool.py")
-        self.cwd = root / "target workspace"
+        self.cwd = root / "espace de travail cible"
         self.cwd.mkdir()
         self.bin = root / "bin"
         self.bin.mkdir()
@@ -86,7 +86,7 @@ class RunToolTest(unittest.TestCase):
                 while len(list(barrier.iterdir())) < 2 and time.monotonic() < deadline:
                     time.sleep(0.01)
                 if len(list(barrier.iterdir())) < 2:
-                    raise SystemExit("helpers did not overlap")
+                    raise SystemExit("les utilitaires ne se sont pas exécutés simultanément")
             print(json.dumps({
                 "argv": args[1:], "cwd": os.getcwd(),
                 "entry": str(entry), "content": entry.read_text(),
@@ -132,7 +132,7 @@ class RunToolTest(unittest.TestCase):
     def test_stages_read_only_sources_and_preserves_cwd_and_arguments(self):
         helper = self.source / "watch-pr/watch-pr"
         helper.parent.mkdir()
-        helper.write_text("version one\n")
+        helper.write_text("première version\n")
         (self.source / "node_modules").mkdir()
         (self.source / "node_modules/ignored").write_text("ignored")
         (self.source / "cache").mkdir()
@@ -147,12 +147,12 @@ class RunToolTest(unittest.TestCase):
 
         install_log = self.bin.parent / "installs"
         env = self.env | {"FAKE_BUN_INSTALL_LOG": str(install_log)}
-        result = self.run_tool("watch-pr/watch-pr", "space value", "$(literal)", "", env=env)
+        result = self.run_tool("watch-pr/watch-pr", "valeur avec espace", "$(literal)", "", env=env)
         data = json.loads(result.stdout)
 
-        self.assertEqual(data["argv"], ["space value", "$(literal)", ""])
+        self.assertEqual(data["argv"], ["valeur avec espace", "$(literal)", ""])
         self.assertEqual(data["cwd"], str(self.cwd))
-        self.assertEqual(data["content"], "version one\n")
+        self.assertEqual(data["content"], "première version\n")
         self.assertTrue(data["node_modules"])
         self.assertFalse(data["ignored_module"])
         self.assertFalse(data["cache"])
@@ -179,12 +179,12 @@ class RunToolTest(unittest.TestCase):
         (self.source / "tool.ts").write_text("trusted")
         (self.source / "package.json").write_text("{}")
         (self.source / "bun.lock").write_text("")
-        (self.source / "bootstrap.ts").write_text("trusted bootstrap")
+        (self.source / "bootstrap.ts").write_text("initialisation de confiance")
         tools = self.cwd / ".cstack/tools"
         planted = tools / ("0" * 64)
         (planted / "node_modules").mkdir(parents=True)
         (planted / "tool.ts").write_text("tampered")
-        (planted / "bootstrap.ts").write_text("tampered bootstrap")
+        (planted / "bootstrap.ts").write_text("initialisation altérée")
         (planted / "node_modules/.cstack-tools-install-key").write_text("forged")
         install_log = self.bin.parent / "installs"
         env = self.env | {"FAKE_BUN_INSTALL_LOG": str(install_log)}
@@ -203,8 +203,8 @@ class RunToolTest(unittest.TestCase):
 
     def test_stages_at_git_root_when_called_from_a_subdirectory(self):
         (self.source / "tool.ts").write_text("git root")
-        repository = self.cwd / "repo root"
-        nested = repository / "nested dir"
+        repository = self.cwd / "racine du dépôt"
+        nested = repository / "sous-dossier"
         nested.mkdir(parents=True)
         subprocess.run(["git", "init", "-q", str(repository)], check=True)
         self.cwd = nested
@@ -230,7 +230,7 @@ class RunToolTest(unittest.TestCase):
         (path / "python3").symlink_to(Path(sys.executable))
         result = self.run_tool("tool.ts", check=False, env=self.env | {"PATH": str(path)})
         self.assertEqual(result.returncode, 2)
-        self.assertIn("required runtime not found: bun", result.stderr)
+        self.assertIn("environnement d’exécution requis introuvable: bun", result.stderr)
 
     def test_rejects_unsafe_or_missing_entrypoints(self):
         (self.source / "ok.ts").write_text("")
@@ -252,7 +252,7 @@ class RunToolTest(unittest.TestCase):
         state.symlink_to(outside, target_is_directory=True)
         result = self.run_tool("tool.ts", check=False)
         self.assertEqual(result.returncode, 2)
-        self.assertIn("escapes workspace", result.stderr)
+        self.assertIn("sort de l’espace de travail", result.stderr)
         self.assertFalse((outside / "tools").exists())
 
         state.unlink()
@@ -260,11 +260,11 @@ class RunToolTest(unittest.TestCase):
         (state / "tools").symlink_to(outside, target_is_directory=True)
         result = self.run_tool("tool.ts", check=False)
         self.assertEqual(result.returncode, 2)
-        self.assertIn("escapes workspace", result.stderr)
+        self.assertIn("sort de l’espace de travail", result.stderr)
 
     def test_filesystem_errors_are_reported_without_a_traceback(self):
         (self.source / "tool.ts").write_text("")
-        (self.cwd / ".cstack").write_text("not a directory")
+        (self.cwd / ".cstack").write_text("pas un dossier")
         result = self.run_tool("tool.ts", check=False)
         self.assertEqual(result.returncode, 2)
         self.assertIn("run-tool:", result.stderr)
@@ -309,7 +309,7 @@ class RunToolTest(unittest.TestCase):
             env=self.env | {"FAKE_BUN_SETUP_SIGNAL": "SIGTERM"},
         )
         self.assertEqual(result.returncode, 128 + signal.SIGTERM)
-        self.assertIn("dependency setup exited with status", result.stderr)
+        self.assertIn("installation des dépendances terminée avec le statut", result.stderr)
 
     def test_failed_dependency_setup_keeps_its_exit_code(self):
         (self.source / "tool.ts").write_text("trusted")
@@ -342,7 +342,7 @@ class RunToolTest(unittest.TestCase):
             env=self.env | {"FAKE_BUN_LOCK_STAGE": "1", "FAKE_BUN_EXIT": "7"},
         )
         self.assertEqual(result.returncode, 7)
-        self.assertIn("failed to remove staged helper", result.stderr)
+        self.assertIn("échec de suppression", result.stderr)
 
     def test_creates_cstack_gitignore_without_clobbering(self):
         (self.source / "tool.ts").write_text("trusted")

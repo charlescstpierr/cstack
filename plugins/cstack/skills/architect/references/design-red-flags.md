@@ -1,33 +1,33 @@
-# Design red flags
+# Signaux rouges de conception
 
-Screen every candidate before synthesis. A red flag is a reason to revise or reject the shape.
+Passe chaque candidat au crible avant la synthèse. Un signal rouge est une raison de réviser ou rejeter la forme.
 
-## Shallow module
+## Module superficiel
 
-A shallow module exposes a large interface while hiding little complexity. Judge depth by the capability and policy hidden behind the public surface relative to the size of that surface. Prefer a simple interface backed by substantial behavior.
+Un module superficiel expose une grande interface tout en cachant peu de complexité. Juge la profondeur par la capacité et la politique cachées derrière la surface publique, relativement à la taille de cette surface. Préfère une interface simple soutenue par un comportement substantiel.
 
-Do not confuse a deep module with a deep call chain. A deep call chain scatters understanding across layers. A deep module concentrates capability behind one interface.
+Ne confonds pas module profond et chaîne d'appels profonde. Une chaîne d'appels profonde éparpille la compréhension entre les couches. Un module profond concentre la capacité derrière une interface.
 
-Look for these signs:
+Cherche ces signes :
 
-- Callers coordinate several methods to complete one operation.
-- Public options expose internal stages or implementation choices.
-- Learning the interface does not save the caller from learning the implementation.
+- Les appelants coordonnent plusieurs méthodes pour terminer une opération.
+- Les options publiques exposent des étapes internes ou des choix d'implémentation.
+- Apprendre l'interface n'évite pas à l'appelant d'apprendre l'implémentation.
 
-## Information leakage
+## Fuite d'information
 
-Information leakage makes multiple modules depend on the same internal decision. A representation, policy, or protocol detail appears in more than one place, so changing it requires coordinated edits.
+La fuite d'information fait dépendre plusieurs modules de la même décision interne. Un détail de représentation, de politique ou de protocole apparaît à plusieurs endroits, si bien que le changer exige des modifications coordonnées.
 
-Public re-exports of transport or wire types are leakage. Parse external data into domain types behind the interface. Keep storage schemas, framework objects, and protocol details private.
+Les réexports publics de types de transport ou wire sont des fuites. Analyse les données externes en types de domaine derrière l'interface. Garde privés les schémas de stockage, objets de framework et détails de protocole.
 
-## Temporal decomposition
+## Décomposition temporelle
 
-Temporal decomposition organizes modules by execution order instead of the knowledge they own. Separate load, validate, transform, and save stages often repeat one representation and its invariants across several boundaries.
+La décomposition temporelle organise les modules par ordre d'exécution plutôt que par connaissance possédée. Des étapes séparées load, validate, transform et save répètent souvent une représentation et ses invariants à plusieurs frontières.
 
-Group code around domain knowledge and ownership. Methods that run at different times can still belong to one module when they protect the same decisions.
+Regroupe le code autour de la connaissance du domaine et de la propriété. Des méthodes qui s'exécutent à des moments différents peuvent quand même appartenir à un même module lorsqu'elles protègent les mêmes décisions.
 
-## Pass-through method
+## Méthode relais
 
-A pass-through method forwards the same arguments to another method with the same shape. It adds a layer without hiding complexity.
+Une méthode relais transmet les mêmes arguments à une autre méthode de même forme. Elle ajoute une couche sans cacher de complexité.
 
-Remove it or move responsibility to the module that can complete the operation. Keep a forwarding boundary only when it adds policy, adaptation, or a distinct abstraction.
+Supprime-la ou déplace la responsabilité vers le module capable de terminer l'opération. Garde une frontière de forwarding seulement quand elle ajoute une politique, une adaptation ou une abstraction distincte.

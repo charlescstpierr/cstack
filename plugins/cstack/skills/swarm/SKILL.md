@@ -1,45 +1,45 @@
 ---
 name: swarm
-description: "Fan out N parallel workers, drain them, and return one report. Use for $cstack:swarm, 'swarm this', or parallel coverage, races, gauntlets, and exploration."
+description: "Déploie N workers parallèles, récupère leurs résultats et rend un rapport unique. Utiliser pour $cstack:swarm, 'lance un swarm sur ceci', ou la couverture parallèle, les courses, gauntlets et explorations."
 ---
 
 # Swarm
 
-Runtime: [`../cstack/references/codex-runtime.md`](../cstack/references/codex-runtime.md).
+Contrat d'exécution : [`../cstack/references/codex-runtime.md`](../cstack/references/codex-runtime.md).
 
-Fan out N parallel native subagents. They may cover separate slices, race the same brief, or mix both. The parent waits, aggregates, and returns one report.
+Déploie N sous-agents natifs parallèles. Ils peuvent couvrir des tranches séparées, courir sur le même brief, ou melanger les deux. Le parent attend, agrége et rend un rapport unique.
 
-## Start
+## Démarrage
 
-Track one item per phase in the current task before launching anything.
+Suis un élément par phase dans la tâche courante avant de lancer quoi que ce soit.
 
-1. Frame
-2. Fan out
-3. Aggregate
-4. Report
+1. Cadrer
+2. Déployer
+3. Agreger
+4. Rapporter
 
-## Phase A: Frame
+## Phase A : Cadrer
 
-1. State the done predicate and the artifact or report the swarm must return.
-2. Choose the shape. Partition into slices, race N workers on identical briefs, or mix both. For a race or mixed shape, declare `first pass`, `rank all`, or `best-of` before spawning.
-3. Set N from the user or derive it from the shape. Cap N at the native concurrency available in the current session and account for the parent slot.
-4. Use the specialized role or complete selection supplied by the caller first. Otherwise resolve `swarm workers` under the runtime contract. Preserve both model and reasoning effort at dispatch and report unsupported overrides or capabilities without substitution. For a model race, name verified overrides up front.
-5. Give each worker its own writable output when it writes.
+1. Énonce le prédicat de terminé et l'artefact ou rapport que le swarm doit rendre.
+2. Choisis la forme. Partitionne en tranches, fais courir N workers sur des briefs identiques, ou melange les deux. Pour une course ou forme mixte, declare `first pass`, `rank all` ou `best-of` avant le lancement.
+3. Fixe N depuis l'utilisateur ou dérive-le de la forme. Plafonne N à la concurrence native disponible dans la session courante et tiens compte de l'emplacement parent.
+4. Utilise d'abord le rôle spécialisé ou la sélection complète fournie par l'appelant. Sinon, résous `swarm workers` sous le contrat d’exécution. Préserve le modèle et l'effort de raisonnement au dispatch et signale les surcharges ou capacités non prises en charge sans substitution. Pour une course de modèles, nomme les surcharges vérifiées dès le début.
+5. Donne à chaque worker sa propre sortie inscriptible quand il écrit.
 
-## Phase B: Fan out
+## Phase B : Déployer
 
-Spawn all N native subagents concurrently. Each brief must assign a bounded scope and exclusive file ownership when the worker writes. Use read-only scopes for investigation and review. Native concurrency bounds how many run at once. Queue remaining workers in later waves. When no subagent slot is available, run each worker brief in the same session as a separate, explicitly re-scoped pass, label the result `single-agent`, and report the missing independence. Absent capacity never drops a required slice.
+Lance les N sous-agents natifs en parallèle. Chaque brief doit assigner une portée bornée et une propriété exclusive des fichiers quand le worker écrit. Utilise des portées en lecture seule pour l'investigation et la revue. La concurrence native limite le nombre d'exécutions simultanées. Mets les workers restants en file pour des vagues ultérieures. Si aucun emplacement de sous-agent n'est disponible, exécute chaque brief de worker dans la même session comme passe séparée et explicitement recadrée, étiquette le résultat `single-agent`, puis signale l'indépendance manquante. Le manque de capacité ne supprime jamais une tranche requise.
 
-Every brief stands alone. Include the goal, scope, exact slice or race arm, how to verify, and what to report. Reports use `PASS`, `ISSUES`, or `BLOCKED` with evidence.
+Chaque brief tient seul. Inclus l'objectif, la portée, la tranche où le bras de course exact, comment vérifier, et quoi rapporter. Les rapports utilisent `PASS`, `ISSUES` ou `BLOCKED` avec preuves.
 
-If a worker drops out, proceed with N-1 and note it.
+Si un worker abandonne, continue avec N-1 et note-le.
 
-## Phase C: Aggregate
+## Phase C : Agreger
 
-Read the terminal results. For coverage, every required slice needs a result. For a race, apply the selection rule declared up front. Use first pass, rank all, or best-of. Do not paste raw worker dumps.
+Lis les résultats terminaux. Pour la couverture, chaque tranche requise doit avoir un résultat. Pour une course, applique la règle de sélection declaree dès le début. Utilise first pass, rank all ou best-of. Ne colle pas les dumps bruts des workers.
 
-Keep a compact result table, one-line evidenced issues, and explicit gaps or dropouts.
+Garde un tableau de résultats compact, des problèmes etayes en une ligne, et les manques ou abandons explicites.
 
-## Phase D: Report
+## Phase D : Rapporter
 
-Return one consolidated in-chat report with the table, issue one-liners, gaps or dropouts, and the race rule when used. Every claim carries its evidence or its label in the same sentence. Measured, inferred, or guess. A prediction or an unseen cause is a guess. Never hand the human a check you could run.
+Rends dans le chat un rapport consolidé unique avec le tableau, les problèmes en une ligne, les manques ou abandons, et la règle de course quand elle est utilisée. Chaque affirmation porte sa preuve ou son étiquette dans la même phrase. Mesure, inférence ou supposition. Une prédiction ou une cause non observée est une supposition. Ne donne jamais à l'humain une vérification que tu pourrais exécuter.

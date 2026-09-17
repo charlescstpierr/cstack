@@ -1,8 +1,8 @@
 ---
 name: bro
-description: "Use for $cstack:bro to restate the last message in plain human language, with no jargon."
+description: "Utiliser pour $cstack:bro afin de reformuler le dernier message en langage humain simple, sans jargon."
 ---
 
-Runtime: [`../cstack/references/codex-runtime.md`](../cstack/references/codex-runtime.md).
+Contrat d’exécution : [`../cstack/references/codex-runtime.md`](../cstack/references/codex-runtime.md).
 
-Restate your last message. Stop using jargon and speak coherently. State it more simply and concisely, like one human talking to another.
+Reformule ton dernier message. Arrête le jargon et parle clairement. Dis-le plus simplement et plus concisément, comme un humain qui parle à un autre.

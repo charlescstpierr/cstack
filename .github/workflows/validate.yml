@@ -1,4 +1,4 @@
-name: Validate cstack
+name: Valider cstack
 on: [push, pull_request]
 permissions:
   contents: read

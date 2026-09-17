@@ -1,13 +1,13 @@
-# Guard the Context Window
+# Garder la fenêtre de contexte
 
-Read this reference when an active cstack workflow routes here or the user names this principle. Follow the [Codex runtime contract](../codex-runtime.md) for scope and permissions.
+Lisez cette référence lorsqu'un processus cstack actif vous route ici ou lorsque l'utilisateur nomme ce principe. Suivez le [contrat d'exécution Codex](../codex-runtime.md) pour le périmètre et les permissions.
 
-The context window is finite and non-renewable within a session. Every token should be worth its cost.
+La fenêtre de contexte est finie et non renouvelable dans une session. Chaque token doit valoir son coût.
 
-**Why:** Context overflow degrades reasoning quality, creates compression artifacts, and halts progress.
+**Pourquoi :** le débordement de contexte dégrade la qualité du raisonnement, crée des artefacts de compression et bloque la progression.
 
-**Pattern:**
-- **Isolate large payloads.** Route verbose outputs, screenshots, and large documents to subagents. The main context gets summaries, not raw data.
-- **Don't read what you won't use.** Read selectively based on relevance. If a file isn't needed for the current task, skip it.
-- **Keep frequently used content inline.** Templates and references used on every invocation belong in the skill file, not in separate files that cost a read each time.
-- **Size phases and cap scope.** Limit files per phase, set turn budgets, account for mechanism costs.
+**Motif :**
+- **Isolez les grosses charges utiles.** Routez les sorties verbeuses, captures d'écran et documents volumineux vers des sous-agents. Le contexte principal reçoit des résumés, pas des données brutes.
+- **Ne lisez pas ce que vous n'utiliserez pas.** Lisez sélectivement selon la pertinence. Si un fichier n'est pas nécessaire à la tâche courante, sautez-le.
+- **Gardez le contenu fréquemment utilisé en ligne.** Les modèles et références utilisés à chaque invocation appartiennent au fichier de compétence, pas à des fichiers séparés qui coûtent une lecture à chaque fois.
+- **Dimensionnez les phases et plafonnez le périmètre.** Limitez les fichiers par phase, fixez des budgets de tours, comptabilisez les coûts de mécanisme.

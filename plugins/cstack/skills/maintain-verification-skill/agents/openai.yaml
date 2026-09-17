@@ -1,6 +1,6 @@
 interface:
   display_name: "maintain-verification-skill"
-  short_description: "Keep project verification steps accurate and runnable"
-  default_prompt: "Use $cstack:maintain-verification-skill for this task."
+  short_description: "Garder les vérifications exactes et exécutables"
+  default_prompt: "Utilise $cstack:maintain-verification-skill pour cette tâche."
 policy:
   allow_implicit_invocation: false

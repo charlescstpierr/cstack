@@ -1,130 +1,130 @@
 ---
 name: technical-writing
-description: "Layered technical-writing standard: Diátaxis structure, Google developer style sentences, STE instruction rules, Global English syntax. Use for $cstack:technical-writing or when writing or reviewing docs, RFCs, readmes, PR descriptions, or commit messages."
+description: "Standard de rédaction technique par couches : structure Diátaxis, phrases du style développeur Google, règles d'instructions STE, syntaxe Global English. Utiliser pour $cstack:technical-writing ou pour écrire ou relire docs, RFC, readmes, descriptions de PR ou messages de commit."
 ---
 
-# Technical writing
+# Rédaction technique
 
-Runtime: [`../cstack/references/codex-runtime.md`](../cstack/references/codex-runtime.md).
+Contrat d'exécution : [`../cstack/references/codex-runtime.md`](../cstack/references/codex-runtime.md).
 
-If delegating documentation-only work, use the `documentation` role under that contract, preserving the complete model and effort selection. Direct writing keeps the current session settings.
+Si tu délègues un travail uniquement documentaire, utilise le rôle `documentation` sous ce contrat, en préservant la sélection complète de modèle et d'effort. L'écriture directe garde les réglages de la session courante.
 
-The goal is writing a tired engineer understands on the first read. Four layers get you there, one question each: what kind of document is this, how do sentences address the reader, how much does each sentence carry, and can any sentence be read two ways. Apply all four.
+Le but est un texte qu'un ingénieur fatigué comprend à la première lecture. Quatre couches y mènent, avec une question chacune : quel type de document est-ce, comment les phrases s'adressent au lecteur, combien chaque phrase porte, et une phrase peut-elle être lue de deux façons. Applique les quatre.
 
-Three rules sit above the layers:
+Trois règles passent avant les couches :
 
-- **Cut every word that does no work.** If the sentence survives without a word, the word goes. "In order to" is "to". "It is important to note that" is nothing.
-- **Use the short, everyday word.** "Use", not "utilize". "Help", not "facilitate". "Do", not "perform". A long word has to buy its length with precision.
-- **When a rule makes a sentence worse, fix the sentence another way or leave it alone.** The rules serve the reader. A sentence that follows every rule and sounds like a machine wrote it has failed.
+- **Coupe chaque mot qui ne travaille pas.** Si la phrase survit sans un mot, le mot part. En anglais, "In order to" devient "to". "It is important to note that" ne sert à rien.
+- **Utilise le mot court et ordinaire.** En anglais, "use", pas "utilize"; "help", pas "facilitate"; "do", pas "perform". Un mot long doit payer sa longueur par plus de précision.
+- **Quand une règle rend une phrase moins bonne, corrige la phrase autrement ou laisse-la.** Les règles servent le lecteur. Une phrase qui suit toutes les règles et sonne comme écrite par une machine a échoué.
 
-The codebase is the word list. Write the real symbol, file, flag, or command name, not a synonym or a description of it.
+Le codebase est la liste de mots. Écris le vrai symbole, fichier, flag ou nom de commande, pas un synonyme ou une description.
 
-Don't invent jargon. Use the words a developer would say out loud: "move", "delete", "a budget that only decreases", not "evacuate", "ratchet", or "endgame". A named pattern is fine when the doc says what it means the first time. Propose a new offender and its replacement as an addition to `unslop`'s abstract-metaphor rule in your reply, with the diff. Don't edit that skill.
+N'invente pas de jargon. Utilise les mots qu'un développeur dirait à voix haute : "déplacer", "supprimer", "un budget qui ne fait que diminuer", pas "évacuer", "ratchet" ou "endgame". Un pattern nommé convient quand la doc dit ce qu'il signifie la première fois. Propose tout nouveau terme fautif et son remplacement comme ajout à la règle de métaphores abstraites de `unslop` dans ta réponse, avec le diff. Ne modifie pas cette skill.
 
-## Vary the rhythm
+## Varier le rythme
 
-The layers decide what a document says and how much each sentence carries. A doc can obey all of them and still read machine-written: every sentence clipped short, no view anywhere, nothing specific.
+Les couches décident ce qu'un document dit et combien chaque phrase porte. Une doc peut leur obéir et quand même sembler écrite par une machine : chaque phrase coupée court, aucun point de vue, rien de spécifique.
 
-- Mix sentence lengths on purpose. Short sentences land a point. Longer ones that take their time carry a fact with its condition or consequence.
-- One thought per sentence does not mean one length per sentence. Split the sentence that carries two thoughts. Keep the long sentence that carries one.
-- Have a view where the mode allows it. Explanation weighs trade-offs, so say what you make of them instead of listing pros and cons. Reference stays dry.
-- Be specific over sterile. Not "schema changes can cause issues" but "a column rename fails the build".
+- Mélange volontairement les longueurs de phrases. Les phrases courtes font atterrir un point. Les plus longues portent un fait avec sa condition ou sa conséquence.
+- Une pensée par phrase ne signifie pas une seule longueur par phrase. Scinde la phrase qui porte deux pensées. Garde la phrase longue qui en porte une seule.
+- Aie un point de vue quand le mode l'autorise. L'explication pèse les compromis; dis donc ce que tu en penses au lieu de lister seulement des avantages et inconvénients. La référence reste sèche.
+- Préfère le spécifique au stérile. Pas "des changements de schéma peuvent causer des problèmes", mais "un renommage de colonne fait échouer le build".
 
-## Pick the mode first (Diátaxis)
+## Choisir d'abord le mode (Diataxis)
 
-One document, one mode. Two questions pick it: does the content inform action (doing) or understanding (thinking), and does it serve learning or work?
+Un document, un mode. Deux questions le choisissent : le contenu sert-il l'action (faire) ou la compréhension (penser), et sert-il l'apprentissage où le travail?
 
-- Action + learning: **tutorial**.
-- Action + work: **how-to**.
-- Understanding + work: **reference**.
-- Understanding + learning: **explanation**.
+- Action + apprentissage : **tutoriel**.
+- Action + travail : **guide pratique**.
+- Compréhension + travail : **référence**.
+- Compréhension + apprentissage : **explication**.
 
-Use the compass on a whole document or on one sentence.
+Utilise la boussole sur tout un document ou sur une seule phrase.
 
-**Tutorial: learning by doing.** You are the teacher. The learner's success is your job, not theirs. Open by saying what the learner will build, not what they will "learn". Every step produces a visible result, early and often. Tell them what they should see: the expected output, the prompt change, the log line. Cut explanation to one clause and a link. Teaching pauses break the lesson. Stay concrete. Write as "we", in commands: "First, do x. Now, do y."
+**Tutoriel : apprendre en faisant.** Tu es l'enseignant. La réussite de l'apprenant est ton travail, pas le sien. Ouvre en disant ce que l'apprenant construira, pas ce qu'il "apprendra". Chaque étape produit un résultat visible, tôt et souvent. Dis ce qu'il doit voir : sortie attendue, changement de prompt, ligne de log. Coupe l'explication à une proposition et un lien. Les pauses d'enseignement cassent la leçon. Reste concret. Écris en "nous", avec des commandes : "D'abord, fais x. Maintenant, fais y."
 
-**How-to: steps to a goal.** Solve a problem a person has, not an operation the machine can perform. Assume competence. Skip teaching. Action only: no digressions, no background, no completeness for its own sake. Link those instead. Allow forks and judgment: "If you want x, do y." Name the guide by the task: "How to calibrate the radar array", not "Radar array calibration".
+**Guide pratique : étapes vers un objectif.** Résous un problème qu'une personne a, pas une opération que la machine peut effectuer. Suppose la compétence. Saute l'enseignement. Action seulement : pas de digressions, pas de contexte, pas d'exhaustivité pour elle-même. Mets plutôt des liens. Autorise les embranchements et le jugement : "Si tu veux x, fais y." Nomme le guide par la tâche : "Comment calibrer le réseau radar", pas "calibration du réseau radar".
 
-**Reference: facts for lookup.** Describe. Only describe. No instruction, no persuasion, no opinion. Be dry, complete, and sure. State facts, options, limits, and errors with no hedging. Mirror the structure of the thing described, so code and docs can be navigated together. Put material where readers expect it. Generate from code where possible, so it stays true.
+**Référence : faits pour consultation.** Décris. Seulement décris. Pas d'instruction, pas de persuasion, pas d'opinion. Sois sec, complet et certain. Énonce faits, options, limites et erreurs sans précautions molles. Miroite la structure de la chose décrite afin que code et docs se naviguent ensemble. Mets la matière là où les lecteurs l'attendent. Génère depuis le code quand c'est possible, pour rester vrai.
 
-**Explanation: understanding and why.** One bounded topic, readable away from the product. Each title should tolerate an implicit "About..." in front. Anchor on a real why question. Give context: design decisions, history, constraints, alternatives. Opinion is allowed here and nowhere else.
+**Explication : compréhension et pourquoi.** Un sujet borné, lisible loin du produit. Chaque titre doit tolérer un "À propos de..." implicite devant lui. Ancre-toi sur une vraie question de pourquoi. Donne le contexte : décisions de conception, histoire, contraintes, alternatives. L'opinion est permise ici et nulle part ailleurs.
 
-Don't mix modes: no reference tables inside a tutorial, no tutorial hand-holding inside reference, no arguing inside a how-to. Split and link instead.
+Ne mélange pas les modes : pas de tableaux de référence dans un tutoriel, pas de prise par la main de tutoriel dans une référence, pas d'argumentation dans un guide pratique. Sépare et lie plutôt.
 
-Source: diataxis.fr, fetched 2026-07-18.
+Source : diataxis.fr, récupéré le 2026-07-18.
 
-## Write sentences to the reader (Google developer style)
+## Écrire des phrases pour le lecteur (style développeur Google)
 
-- Talk to the reader as "you", in the present tense. "Will" only for things that genuinely happen later.
-- Say who does what: "the compiler checks", not "is checked". Passive is fine only when the actor is unknown or beside the point.
-- Write instructions as commands: "Click Submit." State facts plainly. Never "should be done".
-- Put the condition before the instruction: "To delete the document, click Delete." The reader skips what does not apply.
-- Put the common case first. Exceptions after.
-- Sound like a knowledgeable friend. No buzzwords, no figurative language, no "please" in instructions, and never "simply", "easy", or "quickly" in a procedure. If it were simple, the reader would not be here.
-- Don't pre-announce ("we will soon support...") and don't start consecutive sentences with the same phrase.
-- Link with words that say where the link goes: the page title or a short description. Never "click here". Prefer a sentence of context on the page over a link off it.
-- Headings carry the point, not just the topic ("Pick the mode first", not "Modes"). Sentence case. A task heading is a bare verb phrase ("Create an instance"). A concept heading is a noun phrase. One h1 per page, no skipped levels.
-- Numbered lists for sequences, bullets for everything else. Introduce a list with a complete sentence. Keep items parallel.
-- Code goes in code font. UI elements go in bold. Use serial commas. Drop "etc." and say up front that a list is partial.
+- Parle au lecteur avec "tu", au présent. "Will" seulement pour les choses qui arriveront vraiment plus tard.
+- Dis qui fait quoi : "le compilateur vérifie", pas "est vérifié". Le passif convient seulement quand l'acteur est inconnu ou hors sujet.
+- Écris les instructions comme des commandes : "Clique sur Submit." Énonce les faits clairement. Jamais "should be done".
+- Mets la condition avant l'instruction : "Pour supprimer le document, clique sur Delete." Le lecteur saute ce qui ne s'applique pas.
+- Mets le cas courant d'abord. Les exceptions ensuite.
+- Sonne comme un ami compétent. Pas de buzzwords, pas de langage figuré, pas de "please" dans les instructions, et jamais "simply", "easy" ou "quickly" dans une procédure. Si c'était simple, le lecteur ne serait pas là.
+- N'annonce pas à l'avance ("nous prendrons bientôt en charge...") et ne commence pas deux phrases consécutives par la même formule.
+- Lie avec des mots qui disent où le lien va : le titre de la page ou une courte description. Jamais "clique ici". Préfère une phrase de contexte sur la page à un lien hors de celle-ci.
+- Les titres portent le point, pas seulement le sujet ("Choisir d'abord le mode", pas "Modes"). Casse de phrase. Un titre de tâche est un groupe verbal nu ("Créer une instance"). Un titre de concept est un groupe nominal. Un seul h1 par page, pas de niveaux sautés.
+- Listes numérotées pour les séquences, puces pour le reste. Introduis une liste avec une phrase complète. Garde les éléments parallèles.
+- Le code va en police code. Les éléments d'UI vont en gras. Utilise les virgules de série en anglais quand tu écris en anglais. Supprime "etc." et dis dès le départ qu'une liste est partielle.
 
-Source: developers.google.com/style, fetched 2026-07-18.
+Source : developers.google.com/style, récupéré le 2026-07-18.
 
-## Make statements load one at a time (STE rules)
+## Charger une seule idée par phrase (règles STE)
 
-- One instruction per sentence. One thought per sentence everywhere else.
-- Split instructions longer than about 20 words and other sentences longer than about 25.
-- Put the warning or condition before the step it guards: "If hot oil touches your skin, injuries can occur."
-- Keep "the" and "a": "Remove backup file" reads two ways. "Remove the backup file" reads one.
-- Give each word one meaning and one job, then keep it. If "check" means inspect, don't also use it for restrain.
-- Pick one word per action and stick to it: "start", not "start" here and "initiate" there.
-- Write procedures as direct commands, never as narration and never in the passive: "Install the component", not "the component must be installed".
-- Avoid "-ing" words where you can. They take too many grammatical jobs and breed misreadings.
+- Une instruction par phrase. Une pensée par phrase ailleurs.
+- Scinde les instructions de plus d'environ 20 mots et les autres phrases de plus d'environ 25.
+- Mets l'avertissement ou la condition avant l'étape qu'il protège : "Si l'huile chaude touche ta peau, des blessures peuvent survenir."
+- Garde "the" et "a" en anglais : "Remove backup file" se lit de deux façons. "Remove the backup file" se lit d'une seule.
+- Donne à chaque mot un seul sens et un seul travail, puis garde-le. Si "check" signifie inspecter, ne l'utilise pas aussi pour retenir.
+- Choisis un mot par action et tiens-t'y : "start", pas "start" ici et "initiate" la.
+- Écris les procédures comme commandes directes, jamais comme narration et jamais au passif : "Installe le composant", pas "le composant doit être installé".
+- Évite les mots en "-ing" quand tu peux. Ils prennent trop de fonctions grammaticales et créent des mauvaises lectures.
 
-Source: asd-ste100.org (Issue 9, 2025), fetched 2026-07-18. The numbered rules and dictionary live in the spec PDF. The principles above are the transferable core.
+Source : asd-ste100.org (Issue 9, 2025), récupéré le 2026-07-18. Les règles numérotées et le dictionnaire vivent dans le PDF de spécification. Les principes ci-dessus sont le noyau transférable.
 
-## Leave no sentence open to two readings (Global English)
+## Ne laisser aucune phrase ouverte à deux lectures (Global English)
 
-- Keep words like "only" and "not" next to the word they change: "only fails on growth" and "fails only on growth" say different things.
-- Break up long noun strings: "the proto import budget check script" becomes "the script that checks the proto-import budget".
-- Make every "it", "they", and "this" point at one obvious thing. Repeat the noun when in doubt. Never use "this" or "which" to point at a whole clause.
-- Don't drop verbs: "Phase 1 moves the converters and Phase 2 the runtime" leaves Phase 2 without one. Give it one.
-- Keep the small words that show structure. "Ensure that the switch is off" keeps "that" because it makes the sentence parse one way. Never trade clarity for word count.
-- Repeat the article in a series when it prevents a misread: "the client and the host", not "the client and host", when they are two things.
-- Say which parts "and" or "or" joins when a sentence can group two ways. "Both...and", "either...or", and "if...then" are free disambiguators.
-- Use periods, not semicolons. Replace an em dash with a new sentence.
-- Make text in parentheses a full grammatical unit or its own sentence. Never form plurals with "(s)".
-- No slashes: write "a, b, or both" instead of "a/b" or "and/or".
-- Call each thing by one name, everywhere. A doc that says "the gate", "the ratchet", and "the budget check" for one thing teaches three things. Rewording an unchanged sentence between edits costs the same way. Don't churn what didn't change.
-- Skip idioms, colloquialisms, Latin abbreviations, and metaphors. A non-native reader, a translator, and an agent all parse plain constructions best.
+- Garde les mots comme "only" et "not" près du mot qu'ils changent : "only fails on growth" et "fails only on growth" ne disent pas la même chose.
+- Casse les longues chaînes nominales : "the proto import budget check script" devient "the script that checks the proto-import budget".
+- Fais pointer chaque "it", "they" et "this" vers une seule chose évidente. Répète le nom en cas de doute. N'utilise jamais "this" ou "which" pour pointer vers toute une proposition.
+- Ne supprime pas les verbes : "Phase 1 moves the converters and Phase 2 the runtime" laisse Phase 2 sans verbe. Donne-lui en un.
+- Garde les petits mots qui montrent la structure. "Ensure that the switch is off" garde "that" parce qu'il force une seule lecture. N'échange jamais la clarté contre le nombre de mots.
+- Répète l'article dans une série quand cela évite une mauvaise lecture : "the client and the host", pas "the client and host", quand ce sont deux choses.
+- Dis quelles parties "and" ou "or" relient quand une phrase peut se grouper de deux façons. "Both...and", "either...or" et "if...then" sont des désambiguateurs gratuits.
+- Utilise des points, pas des points-virgules. Remplace un tiret cadratin par une nouvelle phrase.
+- Fais du texte entre parenthèses une unité grammaticale complète ou sa propre phrase. Ne forme jamais les pluriels avec "(s)".
+- Pas de slashs : écris "a, b, or both" au lieu de "a/b" ou "and/or".
+- Appelle chaque chose par un seul nom, partout. Une doc qui dit "la barrière", "le cliquet" et "le check de budget" pour une chose enseigne trois choses. Reformuler une phrase inchangée entre éditions coûte pareil. Ne churn pas ce qui n'a pas changé.
+- Saute les idiomes, expressions familières, abréviations latines et métaphores. Un lecteur non natif, un traducteur et un agent parsant utilisent tous mieux les constructions simples.
 
-Source: Kohl, The Global English Style Guide (SAS Press). Guideline text fetched from the Internet Archive and the SAS sample chapter, 2026-07-18.
+Source : Kohl, The Global English Style Guide (SAS Press). Texte des consignes récupéré depuis Internet Archive et le chapitre exemple SAS, 2026-07-18.
 
-## Voice and repo specifics
+## Voix et spécificités du dépôt
 
-- Apply the **unslop** skill to every doc this skill touches. That skill owns the slop-pattern catalog: AI vocabulary, filler, hedging, formatting tells.
-- PR descriptions and commit messages are writing too. Every layer except Diátaxis applies to them. A PR body is a briefing that a reviewer can read in under a minute. Do not paste swarm logs, SHA lists, or metric tables. Link them.
-- Product UI strings are not documentation. Use your product's copy guidelines for those.
-- Indent code snippets with tabs. Write real paths and real symbols. Make every count or tree claim true at the commit that lands it, and include the command that regenerates it.
+- Applique la skill **unslop** à chaque doc que cette skill touche. Cette skill possède le catalogue des signes de rédaction artificielle : vocabulaire IA, remplissage, précautions de langage et tics de formatage.
+- Les descriptions de PR et messages de commit sont aussi de la rédaction. Toutes les couches sauf Diataxis s'y appliquent. Le corps d’une PR est un résumé qu'un relecteur peut lire en moins d'une minute. Ne colle pas les journaux de `swarm`, listes de SHA ou tableaux de métriques. Lie-les.
+- Les textes de l’interface du produit ne sont pas de la documentation. Utilise les consignes de rédaction du produit pour elles.
+- Indente les extraits de code avec des tabulations. Écris de vrais chemins et symboles. Rends chaque affirmation de compte ou d'arbre vraie au commit qui l'introduit, et inclus la commande qui la régénère.
 
-## Worked example
+## Exemple travaillé
 
-Before:
+Avant :
 
-> Configuration of the proto import ratchet budget script parameters is performed via budget.json. Note that it's important to remember that running with --write, which updates the committed budget to reflect the current count, should only be done when lowering it. If exceeded, CI fails.
+> La configuration des paramètres du script de budget du ratchet d'import de protos est effectuée via budget.json. Il est important de se rappeler que l'exécution avec --write, qui met à jour le budget enregistré dans Git pour refléter le compte actuel, ne doit être faite que lorsqu'on l'abaisse. En cas de dépassement, CI échoue.
 
-After:
+Après :
 
-> `budget.mjs` reads the committed budget from `budget.json` and counts the files that import protos. If the count exceeds the budget, CI fails. Run `budget.mjs --write` only to lower the budget.
+> `budget.mjs` lit le budget enregistré dans Git depuis `budget.json` et compte les fichiers qui importent des protos. Si le compte dépasse le budget, CI échoue. Exécute `budget.mjs --write` seulement pour abaisser le budget.
 
-## Review checklist
+## Liste de contrôle de revue
 
-Apply to any prose this skill covers. Item 1 applies only to document sets:
+Applique-la à toute prose couverte par cette skill. L'élément 1 s'applique seulement aux ensembles de documents :
 
-1. Is each file one Diátaxis mode, with links where modes meet?
-2. Is every instruction written as a command, with its condition in front?
-3. Does any sentence carry two instructions or two thoughts? Split it.
-4. Can any word be cut without losing meaning? Cut it.
-5. Is "only" next to the word it changes? Does every "it" point at one thing? Does every clause keep its verb?
-6. Does each thing have exactly one name across the docs?
-7. Would a developer say these words out loud? Replace invented metaphors and fancy synonyms with the plain word or the real symbol name.
-8. Are all symbols, paths, and counts real at this commit, with the commands that regenerate the counts?
+1. Chaque fichier a-t-il un seul mode Diátaxis, avec des liens là où les modes se rencontrent?
+2. Chaque instruction est-elle écrite comme une commande, avec sa condition devant?
+3. Une phrase porte-t-elle deux instructions ou deux pensées? Scinde-la.
+4. Un mot peut-il être coupé sans perte de sens? Coupe-le.
+5. "only" est-il près du mot qu'il change? Chaque "it" pointe-t-il vers une seule chose? Chaque proposition garde-t-elle son verbe?
+6. Chaque chose a-t-elle exactement un nom dans toute la doc?
+7. Un développeur dirait-il ces mots à voix haute? Remplace les métaphores inventées et synonymes chics par le mot simple ou le vrai nom du symbole.
+8. Tous les symboles, chemins et comptes sont-ils réels à ce commit, avec les commandes qui régénèrent les nombres ?

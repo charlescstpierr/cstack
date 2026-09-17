@@ -6,7 +6,7 @@ export function nonEmpty<T>(items: readonly T[]): NonEmpty<T> | null {
 }
 export function parsePrNumber(value: unknown, label = "PR number"): PrNumber {
   if (typeof value !== "number" || !Number.isInteger(value) || value <= 0)
-    throw new Error(`${label} must be a positive integer`);
+    throw new Error(`${label} doit être un entier positif`);
   return value as PrNumber;
 }
 export interface Repository {
@@ -52,7 +52,9 @@ export interface PullRequestFacts {
 }
 export interface OpenPullRequest {
   readonly number: PrNumber;
+  readonly headRepository: Repository;
   readonly headRefName: string;
+  readonly baseRepository: Repository;
   readonly baseRefName: string;
 }
 export interface ReviewComment {
@@ -249,17 +251,23 @@ export type QueryFailure =
       readonly kind: "stack-cycle";
       readonly retryable: false;
       readonly detail: string;
+    }
+  | {
+      readonly kind: "stack-ambiguous";
+      readonly retryable: false;
+      readonly detail: string;
     };
 /**
- * `frontier` names the lowest unmerged PR that is actually waiting, and
- * `pending` is that PR's checks only. Pooling every row's pending under the
- * bottom PR's number misattributed upstack waits to the frontier.
+ * `frontier` nomme la plus basse PR non fusionnee qui attend vraiment, et
+ * `pending` contient seulement les checks de cette PR. Regrouper les checks
+ * pending de toutes les lignes sous le numéro de la PR du bas attribuait mal
+ * les attentes plus haut dans la pile à la frontière.
  *
- * This decision serves single and `--stack` mode. Queued mode deliberately
- * reports its own merge frontier instead: when that PR is blocker-free it
- * emits a merge-queue wait that ignores upstack pending, because upstack
- * checks do not block the frontier's merge. That is the Python watcher's
- * contract, not an attribution bug.
+ * Cette decision sert les modes single et `--stack`. Le mode queued rapporte
+ * volontairement sa propre frontiere de fusion: quand cette PR n'a pas de
+ * bloqueur, il emet une attente de merge-queue qui ignore les pending plus
+ * hauts, car ils ne bloquent pas la fusion de la frontiere. C'est le contrat
+ * du watcher Python, pas un bogue d'attribution.
  */
 export interface WaitingDecision {
   readonly kind: "waiting";

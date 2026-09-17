@@ -1,50 +1,50 @@
 ---
 name: domain
-description: "Use when explicitly selected as $cstack:domain or routed during an explicitly selected cstack task to settle project vocabulary and record authorized glossary entries or sparse ADRs."
+description: "Utiliser quand $cstack:domain est sélectionne explicitement ou route pendant une tâche cstack explicite afin de trancher le vocabulaire du projet et consigner les entrées de glossaire ou ADR epars autorisés."
 ---
 
-# Domain
+# Domaine
 
-Runtime: [`../cstack/references/codex-runtime.md`](../cstack/references/codex-runtime.md).
+Contrat d’exécution : [`../cstack/references/codex-runtime.md`](../cstack/references/codex-runtime.md).
 
-Use this skill when the user explicitly selects `$cstack:domain`, or when the active `$cstack:cstack` coordinator or its preparation skills route a material terminology decision here. It is for active domain work: resolving vocabulary, checking model boundaries, and recording a small number of durable decisions. Merely reading a glossary is not this skill.
+Utilise cette skill quand l'utilisateur sélectionne explicitement `$cstack:domain`, ou quand le coordinateur `$cstack:cstack` actif ou ses skills de préparation routent ici une décision terminologique matérielle. Elle sert au travail de domaine actif : résoudre le vocabulaire, vérifier les frontières de modèle et consigner un petit nombre de décisions durables. Lire simplement un glossaire n'est pas cette skill.
 
-Read `docs/agents/cstack.md` if the project has it; it may define local conventions, but its absence is fine. Do not require setup, Matt Pocock skills, global skills, or another plugin.
+Lis `docs/agents/cstack.md` si le projet l'a; il peut définir des conventions locales, mais son absence est acceptable. N'exige pas setup, les skills Matt Pocock, des skills globales ou un autre plugin.
 
-## Locate the artifacts
+## Localiser les artefacts
 
-Inspect the repository before choosing paths or formats.
+Inspecte le dépôt avant de choisir chemins ou formats.
 
-- If the root has `CONTEXT-MAP.md`, use the context it maps for the topic.
-- Otherwise use the root `CONTEXT.md` when it exists.
-- If neither exists, propose a root `CONTEXT.md` only when a term actually resolves and a document write is authorized. Never scaffold it speculatively.
-- Inspect existing ADR locations, numbering, frontmatter, and templates. Follow those conventions. If none exist, a sparse ADR may use `docs/adr/NNNN-slug.md` with one to three sentences.
+- Si la racine contient `CONTEXT-MAP.md`, utilise le contexte qu'il mappe pour le sujet.
+- Sinon, utilise le `CONTEXT.md` racine quand il existe.
+- Si aucun des deux n'existe, propose un `CONTEXT.md` racine seulement quand un terme est vraiment résolu et qu'une écriture documentaire est autorisée. Ne l'echafaude jamais spéculativement.
+- Inspecte les emplacements ADR existants, la numérotation, le frontmatter et les templates. Suis ces conventions. S'il n'en existe aucun, un ADR epars peut utiliser `docs/adr/NNNN-slug.md` avec une à trois phrases.
 
-## Sharpen the language
+## Affuter le langage
 
-For each disputed or overloaded term:
+Pour chaque terme dispute ou surcharge :
 
-1. Find its actual uses in the code and existing domain documents, reusing [`$cstack:how`](../how/SKILL.md) when the flow or ownership is broad. Use observed code as evidence, not as a substitute for the user's product decision.
-2. Call out conflicting definitions or synonyms and propose one precise canonical term.
-3. Test the boundary with a concrete scenario. Ask the user to choose when the meaning affects business rules, ownership, or externally visible behavior. Never infer a material business decision.
-4. Draft a glossary entry that defines what the thing **is**, in one or two sentences, and list rejected synonyms under `_Avoid_`. Keep implementation details, specs, and scratch notes out of `CONTEXT.md`.
+1. Trouve ses usages réels dans le code et les documents de domaine existants, en réutilisant [`$cstack:how`](../how/SKILL.md) quand le flux ou la responsabilité est large. Utilise le code observé comme preuve, pas comme substitut à la décision produit de l'utilisateur.
+2. Signale les définitions ou synonymes conflictuels et propose un terme canonique précis.
+3. Teste la frontière avec un scénario concret. Demande à l'utilisateur de choisir quand le sens affecte les règles métier, la responsabilité où le comportement visible de l'extérieur. N'infère jamais une décision métier matérielle.
+4. Redige une entrée de glossaire qui définit ce que la chose **est**, en une ou deux phrases, et liste les synonymes rejetés sous `_Avoid_`. Garde les détails d'implémentation, specs et notes scratch hors de `CONTEXT.md`.
 
-Write a resolved entry inline when the current task already authorizes document writes. If it does not, return the proposed entry in chat. Do not ask for approval again for each entry after write authority is established. In Plan mode or read-only work, always return drafts and do not write files.
+Écris une entrée résolue en place quand la tâche courante autorise déjà les écritures documentaires. Sinon, retourne l'entrée proposée dans le chat. Ne redemande pas d'approbation pour chaque entrée une fois l'autorité d'écriture établie. En mode Plan ou travail en lecture seule, retourne toujours les brouillons et n'écris pas de fichiers.
 
-## Record decisions sparingly
+## Consigner les décisions avec parcimonie
 
-Offer an ADR only when all three conditions hold:
+Propose un ADR seulement quand les trois conditions tiennent :
 
-1. The choice is hard to reverse.
-2. A future reader would find it surprising without context.
-3. It resulted from a real trade-off between alternatives.
+1. Le choix est difficile à inverser.
+2. Un futur lecteur le trouverait surprenant sans contexte.
+3. Il resulte d'un vrai compromis entre alternatives.
 
-Keep the ADR to the repository's existing format and record context, decision, and reason. If a material business choice is still open, ask the user and do not record a decision. When the choice is settled and document writes are authorized, record it without another per-ADR approval loop. Do not turn ordinary implementation choices into ADRs.
+Garde l'ADR au format existant du dépôt et consigne contexte, décision et raison. Si un choix métier matériel reste ouvert, demandé à l'utilisateur et ne consigne pas de décision. Quand le choix est tranche et que les écritures documentaires sont autorisées, consigne-le sans autre boucle d'approbation par ADR. Ne transforme pas des choix d'implémentation ordinaires en ADR.
 
-## Facts, writing, and judgment
+## Faits, rédaction et jugement
 
-The default is zero extra agents. When independent repository facts need separate coverage, use the configured `how explorer` role, one delegate per fact at most, bounded by native capacity. Queue extra facts when native concurrency is smaller. When no subagent slot is available, investigate in the same session, label the result `single-agent`, and report the missing independence. When a separate document draft is useful and writing is authorized, use the configured `documentation` role. When an independent rationale or judgment pass is useful, use `judgment and prose`. Resolve each role through the trusted helper and forward the complete model and reasoning-effort selection; do not hard-code model names or add a role.
+Le défaut est zéro agent supplémentaire. Quand des faits de dépôt indépendants exigent une couverture séparée, utilise le rôle configuré `how explorer`, avec au plus un délégué par fait, limité par la capacité native. Mets les faits supplémentaires en file quand la concurrence native est plus petite. Si aucun emplacement de sous-agent n'est disponible, enquête dans la même session, étiquette le résultat `single-agent`, puis signale l'indépendance manquante. Quand un brouillon de document séparé est utile et que l'écriture est autorisée, utilise le rôle configuré `documentation`. Quand une passe indépendante de raisonnement ou de jugement est utile, utilise `judgment and prose`. Résous chaque rôle via le helper de confiance et transmets la sélection complète de modèle et d'effort de raisonnement; ne hard-code pas des noms de modèle et n'ajoute pas de rôle.
 
-The parent owns the final judgment and verification. This skill never creates goals, implementation changes, trackers, PRs, deployments, or external messages. Its only durable writes are explicitly authorized glossary or ADR documents.
+Le parent possède le jugement final et la vérification. Cette skill ne crée jamais d'objectifs, de changements d'implémentation, de trackers, de PR, de déploiements ou de messages externes. Ses seules écritures durables sont des documents de glossaire ou ADR explicitement autorisés.
 
-For requirements clarification before domain recording, use [`$cstack:clarify`](../clarify/SKILL.md).
+Pour clarifier les exigences avant consignation de domaine, utilise [`$cstack:clarify`](../clarify/SKILL.md).

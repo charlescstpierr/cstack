@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate isolated projects and native Codex behavior cases."""
+"""Génère des projets isolés et des scénarios de comportement Codex natifs."""
 
 from __future__ import annotations
 
@@ -18,7 +18,7 @@ MODEL = {"model": "gpt-5.6-luna", "reasoning_effort": "max"}
 IGNORED_DIRS = {".git", "__pycache__", "node_modules"}
 FORBIDDEN_PROMPT_LABELS = re.compile(r"\b(?:eval|test|judge|candidate|benchmark)\b", re.IGNORECASE)
 PANEL_LENGTHS = {"interrogate reviewers": 3}
-GIT_NAME = "cstack scenario fixture"
+GIT_NAME = "scénario cstack"
 GIT_EMAIL = "cstack-scenario@example.invalid"
 
 
@@ -53,7 +53,7 @@ def tree_hash(root: Path) -> str:
 def copy_bundle(source: Path, output: Path, label: str) -> Path:
     source = source.expanduser().resolve()
     if not source.is_dir() or not (source / "skills").is_dir():
-        raise ValueError(f"plugin root must contain a skills directory: {source}")
+        raise ValueError(f"la racine du plugin doit contenir un dossier skills: {source}")
     destination = output / "resources" / label
     shutil.copytree(source, destination, ignore=lambda _, names: set(names) & IGNORED_DIRS)
     return destination
@@ -73,7 +73,7 @@ def seed_git(project: Path, branch: str | None = None) -> None:
     git(project, "add", ".")
     git(
         project, "-c", f"user.name={GIT_NAME}", "-c", f"user.email={GIT_EMAIL}",
-        "commit", "-m", "seed scenario",
+        "commit", "-m", "initialiser le scénario",
     )
     if branch:
         git(project, "switch", "-c", branch)
@@ -97,11 +97,11 @@ def prompt(bundle: Path, skill: str, body: str, french: bool = False) -> str:
     note = (
         f"La version source n'est pas installée. Lis directement ce fichier de compétence avant d'agir : {skill_path}"
         if french else
-        f"The source version is not installed. Read this skill file directly before acting: {skill_path}"
+        f"La version source n’est pas installée. Lis directement ce fichier de compétence avant d’agir : {skill_path}"
     )
     value = body.strip() + "\n\n" + note
     if FORBIDDEN_PROMPT_LABELS.search(value):
-        raise ValueError(f"forbidden evaluation label in prompt for {skill}")
+        raise ValueError(f"libellé d’évaluation interdit dans la consigne de {skill}")
     return value
 
 
@@ -124,9 +124,9 @@ def register(
         seed_git(project)
     discovered = subprocess.check_output(["git", "rev-parse", "--show-toplevel"], cwd=project, text=True).strip()
     if Path(discovered).resolve() != project.resolve():
-        raise ValueError(f"fixture inherited a different repository: {project}")
+        raise ValueError(f"le scénario a hérité d’un autre dépôt: {project}")
     if (body is None) == (bodies is None):
-        raise ValueError(f"{case_id}: provide body or bodies")
+        raise ValueError(f"{case_id}: fournissez body ou bodies")
     texts = bodies if bodies is not None else [body]
     prompts = [prompt(bundle, skill, text, french) for text in texts if text is not None]
     case: dict[str, Any] = {"id": case_id, "cwd": str(project), "sandbox": sandbox}
@@ -147,37 +147,37 @@ def register(
 
 def interrogate_project(output: Path, name: str, catalog: Path | None) -> Path:
     project = create_project(output, name, {
-        "README.md": """# Cedar event service
+        "README.md": """# Service d’événements Cedar
 
-## Approved behavior
+## Comportement approuvé
 
-The command accepts --json.
-The README must explain that --json preserves field order and malformed input exits nonzero.
+La commande accepte --json.
+Le README doit expliquer que --json préserve l’ordre des champs et qu’une entrée mal formée entraîne un code de sortie non nul.
 """,
         "src/feature.py": """def normalize_owner(value):
     return value.strip()
 """,
     }, ["interrogate reviewers"], catalog)
     seed_git(project, "feature/review")
-    write_text(project, "README.md", """# Cedar event service
+    write_text(project, "README.md", """# Service d’événements Cedar
 
-## Output
+## Sortie
 
-Use cedar --json for machine-readable records.
+Utilisez cedar --json pour des enregistrements lisibles par une machine.
 """)
     git(project, "add", "README.md")
     write_text(project, "src/feature.py", """def normalize_owner(value):
     return " ".join(value.split()).title()
 """)
-    write_text(project, "notes.md", "Existing working note; it is outside the requested review scope.\n")
+    write_text(project, "notes.md", "Note de travail existante ; elle est hors du périmètre de revue demandé.\n")
     return project
 
 
 def setup_project(output: Path, name: str, catalog: Path | None) -> Path:
     project = create_project(output, name, {}, [], catalog)
-    (project / "AGENTS.md").write_bytes(b"# Manual project rules\r\n\r\nKeep this exact line.\r\n")
-    (project / "CLAUDE.md").write_bytes(b"# Manual Claude rules\r\n\r\nKeep this exact line too.\r\n")
-    (project / ".gitignore").write_bytes(b"# Manual ignore\r\nbuild/\r\n")
+    (project / "AGENTS.md").write_bytes("# Règles manuelles du projet\r\n\r\nConserver cette ligne exacte.\r\n".encode("utf-8"))
+    (project / "CLAUDE.md").write_bytes("# Règles manuelles Claude\r\n\r\nConserver aussi cette ligne exacte.\r\n".encode("utf-8"))
+    (project / ".gitignore").write_bytes(b"# Exclusions manuelles\r\nbuild/\r\n")
     (project / ".cstack/models.json").write_bytes(
         b'{\n  "documentation": {\n    "model": "gpt-5.6-luna",\n    "reasoning_effort": "max"\n  }\n}\n'
     )
@@ -201,9 +201,9 @@ def filter_events(events, start, today):
     return [event for event in events if start < event["date"] <= today]
 """,
     }
-    correction = """Use $cstack:cstack for this small Python correction. In events.py, make the lower bound inclusive and reject events after today. Add verify_events.py with direct assertions for the start boundary and future events. Work directly in this project. Do not spawn subagents, create commits, or change unrelated files."""
+    correction = """Utilise $cstack:cstack pour cette petite correction Python. Dans events.py, rends la borne inférieure inclusive et rejette les événements postérieurs à aujourd’hui. Ajoute verify_events.py avec des assertions directes pour la borne de début et les événements futurs. Travaille directement dans ce projet. Ne crée aucun sous-agent ni commit et ne modifie aucun fichier sans rapport avec la tâche."""
     explanation = """Utilise $cstack:how pour expliquer comment events.py filtre les événements et où ses bornes sont définies. Réponds avec les chemins et les symboles utiles. Ne modifie aucun fichier, ne délègue pas et ne crée aucun commit."""
-    review = """Use $cstack:interrogate for a read-only review of the current work. Review the staged change in README.md against this approved requirement: explain that --json preserves field order and malformed input exits nonzero. Inspect the branch and working tree for context. The unstaged change in src/feature.py and untracked notes.md are pre-existing context; do not edit, commit, or include them in the review scope. Use the configured reviewer panel and return only evidence-backed findings."""
+    review = """Utilise $cstack:interrogate pour une revue en lecture seule du travail actuel. Examine la modification indexée de README.md selon cette exigence approuvée : expliquer que --json préserve l’ordre des champs et qu’une entrée mal formée entraîne un code de sortie non nul. Examine la branche et l’arbre de travail pour comprendre le contexte. La modification non indexée de src/feature.py et le fichier non suivi notes.md existaient déjà ; ne les modifie pas, ne les commite pas et ne les inclus pas dans le périmètre de revue. Utilise le panel de réviseurs configuré et ne rapporte que des constats étayés."""
 
     for case_id, name, bundle in (
         ("clear_python_correction_baseline", "alder", old),
@@ -232,7 +232,7 @@ def filter_events(events, start, today):
 
     storage = {"storage.py": "def save_record(record, existing):\n    if record[\"id\"] not in existing:\n        raise KeyError(record[\"id\"])\n    return record\n"}
     overwrite = """Utilise $cstack:clarify pour préparer une décision sur storage.py. Lorsqu'un enregistrement existant serait écrasé, le produit n'a pas encore choisi entre remplacer, conserver l'ancien ou refuser. Inspecte les faits du dépôt, puis pose les questions de frontière nécessaires avec des recommandations. Ne choisis pas pour moi, ne modifie aucun fichier et n'écris aucun document."""
-    complete = """Use $cstack:clarify only to inspect this fully specified request. save_record must replace an existing record, return the new record, and preserve the existing error for a missing id. If no material ambiguity remains, say so and finish without inventing a question. Do not edit files, create documents, or implement anything."""
+    complete = """Utilise $cstack:clarify uniquement pour examiner cette demande entièrement définie. save_record doit remplacer un enregistrement existant, renvoyer le nouvel enregistrement et conserver l’erreur existante pour un identifiant absent. S’il ne reste aucune ambiguïté importante, indique-le et termine sans inventer de question. Ne modifie aucun fichier, ne crée aucun document et n’implémente rien."""
     register(cases, expectations, case_id="clarify_overwrite",
              project=create_project(output, "spruce", storage, [], catalog),
              bundle=new, skill="clarify", roles=[], body=overwrite, french=True, sandbox="read-only")
@@ -240,18 +240,18 @@ def filter_events(events, start, today):
              project=create_project(output, "willow", storage, [], catalog),
              bundle=new, skill="clarify", roles=[], body=complete, sandbox="read-only")
 
-    setup_first = """Use $cstack:setup-cstack in this project. I authorize one setup pass with these exact choices: add the passive cstack block to AGENTS.md, add project guidance under docs/agents/cstack.md, and configure the local markdown tracker under docs/agents/issue-tracker.md. Preserve manual AGENTS.md and CLAUDE.md bytes outside managed content, including CRLF line endings. Preserve existing .gitignore entries and append only the required setup ignore entry. Keep the existing .cstack/models.json byte-for-byte unchanged; make no model choices. Use only the trusted project.py helper for this project setup; do not invoke models.py. Do not spawn subagents, write global files, access remote services, create a goal, commit, or open a PR. Apply the local project setup and report the paths changed."""
-    setup_second = """Use $cstack:setup-cstack again with exactly the same choices: the passive AGENTS.md block, project guidance, and local markdown tracker, with no model choices. Re-read the current project state and apply the setup; the expected result is a no-op. Preserve the manual CRLF files, .gitignore entries, and existing .cstack/models.json. Use only the trusted project.py helper; do not invoke models.py. Do not spawn subagents, write global files, access remote services, create a goal, commit, or open a PR."""
+    setup_first = """Utilise $cstack:setup-cstack dans ce projet. J’autorise une configuration avec ces choix exacts : ajouter le bloc passif cstack à AGENTS.md, ajouter les consignes du projet dans docs/agents/cstack.md et configurer le suivi local Markdown dans docs/agents/issue-tracker.md. Préserve les octets manuels d’AGENTS.md et CLAUDE.md hors du contenu géré, y compris les fins de ligne CRLF. Préserve les entrées existantes de .gitignore et ajoute uniquement l’entrée d’exclusion nécessaire à la configuration. Conserve .cstack/models.json strictement à l’identique ; ne choisis aucun modèle. Utilise uniquement l’utilitaire de confiance project.py pour cette configuration ; n’invoque pas models.py. Ne crée aucun sous-agent, fichier global, objectif, commit ou PR et n’accède à aucun service distant. Applique la configuration locale du projet et indique les chemins modifiés."""
+    setup_second = """Utilise à nouveau $cstack:setup-cstack avec exactement les mêmes choix : bloc passif AGENTS.md, consignes du projet et suivi local Markdown, sans choix de modèles. Relis l’état actuel du projet et applique la configuration ; aucune modification n’est attendue. Préserve les fichiers manuels en CRLF, les entrées .gitignore et .cstack/models.json. Utilise uniquement l’utilitaire de confiance project.py ; n’invoque pas models.py. Ne crée aucun sous-agent, fichier global, objectif, commit ou PR et n’accède à aucun service distant."""
     register(cases, expectations, case_id="setup_project_twice",
              project=setup_project(output, "hazel", catalog), bundle=new,
              skill="setup-cstack", roles=[], bodies=[setup_first, setup_second])
 
     domain_files = {
-        "CONTEXT.md": "# Cedar terms\n\nManual line: preserve this exact sentence.\n",
+        "CONTEXT.md": "# Termes Cedar\n\nLigne manuelle : conserver cette phrase exacte.\n",
         "members.py": 'def member_label(row):\n    return row["name"]\n',
     }
     domain_readonly = """Utilise $cstack:domain. Lis members.py et CONTEXT.md, puis propose dans la conversation une entrée pour le terme ambigu « member ». Le choix métier reste humain. Ne modifie aucun fichier et ne crée aucun document."""
-    domain_write = """Use $cstack:domain. I explicitly authorize this task to update CONTEXT.md for the resolved term Member; preserve every existing manual byte sequence, append only the approved glossary entry, and do not edit code. In this repository, a Member is a person with access to a workspace. Write the glossary entry under the existing document conventions without creating an ADR for this vocabulary entry. Do not ask for approval again after this authorization."""
+    domain_write = """Utilise $cstack:domain. J’autorise explicitement cette tâche à mettre à jour CONTEXT.md pour le terme défini Member ; préserve toutes les séquences d’octets manuelles existantes, ajoute uniquement l’entrée de glossaire approuvée et ne modifie pas le code. Dans ce dépôt, un Member est une personne ayant accès à un espace de travail. Rédige l’entrée selon les conventions existantes du document sans créer d’ADR pour ce terme. Ne redemande pas d’autorisation après celle-ci."""
     register(cases, expectations, case_id="domain_readonly",
              project=create_project(output, "ash", domain_files, ["documentation"], catalog),
              bundle=new, skill="domain", roles=["documentation"],
@@ -260,22 +260,22 @@ def filter_events(events, start, today):
              project=create_project(output, "beech", domain_files, ["documentation"], catalog),
              bundle=new, skill="domain", roles=["documentation"], body=domain_write)
 
-    horizon_readme = """# Archive migration
+    horizon_readme = """# Migration des archives
 
-## Primary facts
+## Faits principaux
 
-- Events are stored in data/archive.jsonl.
-- The current retention period is 90 days.
-- Nightly snapshots are retained for 30 days.
-- The migration must preserve event order and allow rollback for 14 days.
+- Les événements sont stockés dans data/archive.jsonl.
+- La durée de conservation actuelle est de 90 jours.
+- Les instantanés nocturnes sont conservés pendant 30 jours.
+- La migration doit conserver l’ordre des événements et permettre un retour arrière pendant 14 jours.
 
-## Research questions
+## Questions de recherche
 
-1. Which fact determines the retention and backup schedule?
-2. Which fact determines the rollback procedure?
+1. Quel fait détermine la durée de conservation et la fréquence des sauvegardes ?
+2. Quel fait détermine la procédure de retour arrière ?
 """
-    horizon_first = """Use $cstack:horizon to chart this multi-session effort. The destination is already defined: migrate the event archive to append-only storage with zero data loss and a 14-day rollback window. I authorize writes to Horizon planning artifacts under .cstack/horizon/, but do not edit product code, create a PR, or create a native goal. The provided README is the primary source for two read-only research questions. Create exactly these tickets: 001 research the retention and backup facts from the README; 002 research the rollback facts from the README; 003 is a human policy decision blocked by 001 and 002; 004 is a human policy decision blocked by 003. Dispatch one native research child for each ready research ticket using the configured how explorer role. On this invocation, resolve only 001 and 002; leave 003 and 004 open. Do not answer for a human."""
-    horizon_second = """Use $cstack:horizon to continue from the existing Horizon state. Resolve only ticket 003 with this user decision: retain source events for 90 days, keep nightly snapshots for 30 days, and require a 14-day rollback window. Ticket 004 must remain open because it depends on 003 and has no human answer. Plan artifact writes remain authorized; do not edit product code, create a PR, or create a native goal. Verify the research artifacts for 001 and 002 before recording 003, and do not answer 004."""
+    horizon_first = """Utilise $cstack:horizon pour organiser ce travail sur plusieurs sessions. La destination est déjà définie : migrer les archives d’événements vers un stockage en ajout seul, sans perte de données et avec un retour arrière possible pendant 14 jours. J’autorise l’écriture des documents de planification Horizon dans .cstack/horizon/, mais ne modifie pas le code du produit et ne crée ni PR ni objectif natif. Le README fourni est la source principale pour deux questions de recherche en lecture seule. Crée exactement ces tickets : 001 recherche les faits de conservation et sauvegarde dans le README ; 002 recherche les faits de retour arrière dans le README ; 003 est une décision humaine de politique bloquée par 001 et 002 ; 004 est une décision humaine de politique bloquée par 003. Affecte un sous-agent natif de recherche à chaque ticket de recherche prêt en utilisant le rôle how explorer configuré. Lors de cette invocation, résous uniquement 001 et 002 ; laisse 003 et 004 ouverts. Ne réponds pas à la place d’un humain."""
+    horizon_second = """Utilise $cstack:horizon pour reprendre depuis l’état Horizon existant. Résous uniquement le ticket 003 avec cette décision utilisateur : conserver les événements source pendant 90 jours, garder les instantanés nocturnes pendant 30 jours et exiger un retour arrière possible pendant 14 jours. Le ticket 004 doit rester ouvert, car il dépend de 003 et n’a aucune réponse humaine. L’écriture des documents du plan reste autorisée ; ne modifie pas le code du produit et ne crée ni PR ni objectif natif. Vérifie les documents de recherche de 001 et 002 avant d’enregistrer 003 et ne réponds pas à 004."""
     register(cases, expectations, case_id="horizon_two_research_then_policy",
              project=create_project(output, "fir", {"README.md": horizon_readme}, ["how explorer"], catalog),
              bundle=new, skill="horizon", roles=["how explorer"],
@@ -295,22 +295,23 @@ def filter_events(events, start, today):
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--baseline", type=Path, required=True, help="trusted baseline plugin root")
-    parser.add_argument("--proposed", type=Path, required=True, help="trusted proposed plugin root")
-    parser.add_argument("--output", type=Path, required=True, help="new local root for projects, resources, and JSON")
-    parser.add_argument("--catalog", type=Path, help="optional live model catalog copied into generated projects")
+    parser = argparse.ArgumentParser(description=__doc__, add_help=False)
+    parser.add_argument("-h", "--help", action="help", help="affiche cette aide puis quitte")
+    parser.add_argument("--baseline", type=Path, required=True, help="racine de confiance du plugin de référence")
+    parser.add_argument("--proposed", type=Path, required=True, help="racine de confiance du plugin proposé")
+    parser.add_argument("--output", type=Path, required=True, help="nouvelle racine locale des projets, ressources et fichiers JSON")
+    parser.add_argument("--catalog", type=Path, help="catalogue actuel facultatif des modèles, copié dans les projets générés")
     args = parser.parse_args(argv)
     output = args.output.expanduser().resolve()
     if output.exists() and any(output.iterdir()):
-        parser.error("--output must be absent or empty; refusing to overwrite existing data")
+        parser.error("--output doit être absent ou vide ; refus d’écraser les données existantes")
     baseline = args.baseline.expanduser().resolve()
     proposed = args.proposed.expanduser().resolve()
     catalog = args.catalog.expanduser().resolve() if args.catalog else None
     if catalog is not None and not catalog.is_file():
-        parser.error("--catalog must point to a regular file")
+        parser.error("--catalog doit pointer vers un fichier ordinaire")
     if any(output == root or output in root.parents or root in output.parents for root in (baseline, proposed)):
-        parser.error("--output must be outside both plugin roots")
+        parser.error("--output doit être situé hors des deux racines de plugins")
     output.mkdir(parents=True, exist_ok=True)
     cases, expectations = build_cases(baseline, proposed, output, catalog)
     (output / "cases.json").write_text(json.dumps(cases, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")

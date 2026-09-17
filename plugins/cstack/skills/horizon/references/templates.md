@@ -1,8 +1,8 @@
-# Horizon artifact templates
+# Modèles d'artefacts Horizon
 
-Use these shapes for local Markdown state. A configured external tracker keeps the same conceptual fields and relationships through the operations named by `docs/agents/issue-tracker.md`.
+Utilise ces formes pour l'état Markdown local. Un tracker externe configuré garde les mêmes champs et relations conceptuels via les opérations nommées par `docs/agents/issue-tracker.md`.
 
-## Local layout
+## Layout local
 
 ```text
 .cstack/horizon/<slug>/
@@ -16,96 +16,96 @@ Use these shapes for local Markdown state. A configured external tracker keeps t
     └── <id>-<slug>.md
 ```
 
-The map and ticket files are the planning record. Research files are child-owned evidence. `spec.md` is the single coherent handoff that cites the decision tickets. Unit files describe build slices and acceptance; they do not redefine decisions.
+Les fichiers carte et ticket sont le registre de planification. Les fichiers de recherche sont les preuves possédées par les enfants. `spec.md` est le handoff cohérent unique qui cite les tickets de décision. Les fichiers d'unités décrivent les tranches de build et l'acceptation; ils ne redéfinissent pas les décisions.
 
-## Map
+## Carte
 
 ```markdown
 ---
 id: map
-title: <map title>
+title: <titre de la carte>
 type: map
 status: open | research-pending | cleared
 blocked_by: []
-owner: <parent owner or empty>
+owner: <owner parent ou vide>
 ---
 
 ## Destination
 
-<what the whole effort must reach>
+<destination à atteindre par tout l'effort>
 
 ## Notes
 
-<domain, companion skills, and explicit user constraints>
+<domaine, compétences compagnes et contraintes utilisateur explicites>
 
-## Decisions so far
+## Décisions à ce stade
 
-- [<ticket title>](tickets/<id>-<slug>.md): <one-line gist>
+- [<titre du ticket>](tickets/<id>-<slug>.md): <résumé d'une ligne>
 
-## Not yet specified
+## Pas encore spécifié
 
-- <sharp-enough area to revisit, but not yet a precise question>
+- <zone assez nette à revisiter, mais pas encore une question précise>
 
-## Out of scope
+## Hors portée
 
-- <excluded work and why>
+- <travail exclu et pourquoi>
 ```
 
-The map indexes closed decisions; it does not repeat ticket answers. Remove fog when it graduates into a ticket.
+La carte indexe les décisions fermées; elle ne répète pas les réponses de tickets. Retire le brouillard quand il devient un ticket.
 
-For local state, the ticket id is the exact `id` metadata value and the filename prefix before the first `-`: `tickets/01-choose-storage.md` has `id: 01`. Map links use the complete filename. Every `blocked_by` entry names another ticket's `id`; reject duplicate ids, missing ids, filename/metadata mismatches, and dependency cycles before selecting work.
+Pour l'état local, l'id du ticket est la valeur exacte des métadonnées `id` et le préfixe du nom de fichier avant le premier `-` : `tickets/01-choose-storage.md` a `id: 01`. Les liens de carte utilisent le nom de fichier complet. Chaque entrée `blocked_by` nomme le `id` d'un autre ticket; rejette les ids dupliqués, ids manquants, incohérences fichier/métadonnées et cycles de dépendance avant de sélectionner le travail.
 
-## Decision ticket
+## Ticket de décision
 
 ```markdown
 ---
-id: <id matching the filename prefix>
-title: <question title>
+id: <id correspondant au préfixe du nom de fichier>
+title: <titre de la question>
 type: research | prototype | grilling | task
 status: ready | claimed | waiting | resolved | out-of-scope
 blocked_by: []
-owner: <empty until claimed>
-child_handle: <empty unless type is research>
-native_handle: <empty until the native child is dispatched>
-child_state: <empty | queued | pending | running | completed | failed>
-artifact: <empty unless type is research>
+owner: <vide jusqu'à revendication>
+child_handle: <vide sauf si le type est research>
+native_handle: <vide jusqu'au dispatch de l'enfant natif>
+child_state: <vide | queued | pending | running | completed | failed>
+artifact: <vide sauf si le type est research>
 attempt: 0
 ---
 
 ## Question
 
-<one decision or prerequisite this ticket resolves>
+<une décision ou un prérequis résolu par ce ticket>
 
-## Answer
+## Réponse
 
-<write only when resolved; link research or prototype artifacts>
+<écrire seulement quand résolu; lier les artefacts de recherche ou prototype>
 ```
 
-`blocked_by` contains ticket ids, not prose. A ticket is frontier-eligible only with `status: ready`, an empty `owner`, and all blockers `resolved`. `owner` is a stable coordinator or authenticated user identity and remains set while `waiting`; never claim another owner's ticket or bypass an unresolved blocker. For research, write `child_handle`, `native_handle` (empty until dispatch), `child_state: queued` before dispatch (`pending` once dispatch begins), `artifact`, and `attempt`; record the returned native handle before returning. A `pending` or `running` child is active; `queued` is reserved for a later wave. A nonterminal handle prevents duplicate children. A partial artifact is not a resolution.
+`blocked_by` contient des ids de tickets, pas de prose. Un ticket est éligible au frontier seulement avec `status: ready`, un `owner` vide et tous les bloqueurs `resolved`. `owner` est une identité stable de coordinateur ou d'utilisateur authentifié et reste défini pendant `waiting`; ne revendique jamais le ticket d'un autre owner et ne contourne pas un bloqueur non résolu. Pour la recherche, écris `child_handle`, `native_handle` (vide jusqu'au dispatch), `child_state: queued` avant dispatch (`pending` une fois le dispatch commencé), `artifact` et `attempt`; enregistre le handle natif retourné avant de revenir. Un enfant `pending` ou `running` est actif; `queued` est réservé pour une vague ultérieure. Un handle non terminal empêche les enfants en double. Un artefact partiel n'est pas une résolution.
 
-## Coherent spec and vertical units
+## Spec cohérente et unités verticales
 
 ```markdown
-# <destination> spec
+# Spec <destination>
 
 ## Destination
-<one paragraph>
+<un paragraphe>
 
-## Decisions
-- [<ticket title>](tickets/<id>-<slug>.md): <decision gist>
+## Décisions
+- [<titre du ticket>](tickets/<id>-<slug>.md): <résumé de décision>
 
-## Observable acceptance
-- [ ] <behavior that can fail at the chosen verification seam>
+## Acceptation observable
+- [ ] <comportement pouvant échouer à la frontière de vérification choisie>
 
-## Out of scope
-- <excluded behavior>
+## Hors portée
+- <comportement exclu>
 
-## Vertical units
-### <unit title>
-**Delivers:** <complete behavior visible to a user or caller>
-**Blocked by:** <unit ids or None>
-**Acceptance:**
-- [ ] <independent observable criterion>
+## Unités verticales
+### <titre de l'unité>
+**Livre :** <comportement complet visible par un utilisateur ou appelant>
+**Bloquée par :** <ids d'unités ou aucune>
+**Acceptation :**
+- [ ] <critère observable indépendant>
 ```
 
-The spec is the decision-to-build bridge. Each unit crosses the relevant layers and is independently verifiable; choose the existing cstack playbook only after this handoff is complete.
+La spec est le pont décision-vers-build. Chaque unité traverse les couches pertinentes et se vérifie indépendamment; choisis le playbook cstack existant seulement après l'achèvement de ce handoff.

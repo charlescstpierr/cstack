@@ -1,90 +1,90 @@
 ---
 name: deslop
-description: "Strip slop out of a code diff before it is committed or reviewed. Use for $cstack:deslop, 'deslop it', 'clean this diff', and as the required pre-commit pass in every cstack implementation playbook. Use $cstack:unslop for prose and $cstack:no-comments for a delegated comment review."
+description: "Retire le slop d'un diff de code avant commit ou revue. Utiliser pour $cstack:deslop, 'deslop it', 'clean this diff', et comme passe pré-commit requise dans chaque playbook d'implémentation cstack. Utiliser $cstack:unslop pour la prose et $cstack:no-comments pour une revue déléguée des commentaires."
 ---
 
 # Deslop
 
-Runtime: [`../cstack/references/codex-runtime.md`](../cstack/references/codex-runtime.md).
+Contrat d’exécution : [`../cstack/references/codex-runtime.md`](../cstack/references/codex-runtime.md).
 
-Slop is code that survives review because nobody can point at the line that is wrong. It is not a style question. Narrating comments and defensive dead weight read as unfinished, and the extra code is where the next bug hides.
+Le slop est du code qui survit à la revue parce que personne ne peut pointer la ligne fausse. Ce n'est pas une question de style. Les commentaires narratifs et le poids mort défensif donnent une impression d'inachevé, et le code en trop est l'endroit où se cache le prochain bug.
 
-Three cleanups, three targets. `deslop` cleans the code. [`unslop`](../unslop/SKILL.md) cleans the prose. [`no-comments`](../no-comments/SKILL.md) hands the comments to a reviewer who did not write them.
+Trois nettoyages, trois cibles. `deslop` nettoie le code. [`unslop`](../unslop/SKILL.md) nettoie la prose. [`no-comments`](../no-comments/SKILL.md) confie les commentaires à un relecteur qui ne les a pas écrits.
 
-Deslop runs over **the diff**, never the repository. It removes weight. It never changes behavior.
+Deslop s'exécute sur **le diff**, jamais sur le dépôt. Il retire du poids. Il ne change jamais le comportement.
 
-## When it runs
+## Quand il s'exécute
 
-- Before every commit of an authorized implementation or documentation change.
-- Before handing a diff to a reviewer, a PR, or a verification lane.
-- On request: `$cstack:deslop`, "deslop it", "clean this diff".
+- Avant chaque commit d'un changement d'implémentation ou de documentation autorisé.
+- Avant de remettre un diff à un relecteur, une PR ou une voie de vérification.
+- Sur demande : `$cstack:deslop`, "deslop it", "nettoie ce diff".
 
-A playbook that skips it keeps `deslop skipped: <reason>` in its plan and its reply. There is no silent skip.
+Un playbook qui le saute conserve `deslop skipped: <reason>` dans son plan et sa réponse. Aucun saut silencieux.
 
-## Bound the scope
+## Borner la portée
 
-1. List the task's own changed paths. Use `git diff --stat` against the base, or `git diff --stat --cached` for staged work. Never widen to files the task did not touch.
-2. Read every added and modified hunk in full. A hunk you did not read is not desloped.
-3. Preserve pre-existing unrelated changes exactly as they are, and say so in the report.
+1. Liste les chemins modifiés par la tâche elle-même. Utilise `git diff --stat` contre la base, ou `git diff --stat --cached` pour le travail stagé. N'élargis jamais aux fichiers que la tâche n'a pas touchés.
+2. Lis en entier chaque hunk ajouté et modifié. Un hunk que tu n'as pas lu n'est pas desloped.
+3. Préserve exactement les changements préexistants sans rapport, et dis-le dans le rapport.
 
-## The slop catalogue
+## Le catalogue du slop
 
-Classify every added line as load-bearing, slop, or uncertain. Delete the slop. Keep the uncertain lines and name each one in the report.
+Classe chaque ligne ajoutée comme porteuse, slop ou incertaine. Supprime le slop. Garde les lignes incertaines et nomme chacune dans le rapport.
 
-**Narrating comments.** A comment that restates the next line, labels an obvious block, or announces a section. Delete. Keep a comment only for a non-obvious reason the code cannot express, and for licenses, public contracts, accessibility rationale, and verified tool constraints.
+**Commentaires narratifs.** Un commentaire qui répète la ligne suivante, étiquette un bloc évident ou annonce une section. Supprime. Garde un commentaire seulement pour une raison non évidente que le code ne peut pas exprimer, ainsi que pour les licences, contrats publics, justifications d’accessibilité et contraintes d’outil vérifiées.
 
-**Unsupported guards.** A null check, `try`/`catch`, default, or early return for a state the types, the call sites, or an invariant already exclude. Delete the guard and let the real contract hold. Keep it when a caller outside the module can actually produce that state, and name the caller.
+**Gardes non étayées.** Un null check, `try`/`catch`, défaut ou retour anticipé pour un état que les types, les sites d'appel ou un invariant excluent déjà. Supprime la garde et laisse le vrai contrat tenir. Garde-la quand un appelant hors du module peut vraiment produire cet état, et nomme l'appelant.
 
-**Dead compatibility paths.** A fallback for a shape that no longer exists, an alias kept "for safety", a branch for a version the project dropped, a re-export left behind by a migration. Delete, and migrate the remaining callers in the same change. Half a migration is slop with a deadline.
+**Chemins de compatibilité morts.** Un fallback pour une forme qui n'existe plus, un alias gardé "for safety", une branche pour une version que le projet à abandonnée, un re-export laissé par une migration. Supprime, puis migre les appelants restants dans le même changement. Une demi-migration est du slop avec une échéance.
 
-**Swallowed errors.** `catch` that logs and continues, a bare `except`, an error converted to a default value. Either handle the failure or let it propagate. Keep a swallow only where the surrounding contract documents best-effort behavior.
+**Erreurs avalées.** Un `catch` qui logue puis continue, un `except` nu, une erreur convertie en valeur par défaut. Gère l'échec ou laisse-le se propager. Garde un avalement seulement quand le contrat environnant documente un comportement best-effort.
 
-**Speculative generality.** A parameter, option, hook, strategy, or config flag with one caller and no second one in sight. An interface with one implementation. A factory that constructs one thing. Inline it.
+**Generalite spéculative.** Un paramètre, une option, un hook, une stratégie ou un flag de config avec un seul appelant et aucun second en vue. Une interface avec une seule implémentation. Une factory qui construit une seule chose. Inline.
 
-**Ceremony.** A wrapper that forwards its arguments unchanged, a barrel file added for one symbol, a constant that is used once next to its definition, a variable that exists only to be returned.
+**Cérémonie.** Un wrapper qui transmet ses arguments sans changement, un barrel file ajouté pour un seul symbole, une constante utilisée une seule fois près de sa définition, une variable qui existe seulement pour être retournée.
 
-**Duplicated logic.** The same computation pasted into a second place instead of called. Call it. When the two copies are genuinely diverging, say why in the report instead of extracting a shared abstraction that fits neither.
+**Logique dupliquée.** Le même calcul colle à un second endroit au lieu d'être appele. Appelle-le. Quand les deux copies divergent vraiment, dis pourquoi dans le rapport au lieu d'extraire une abstraction partagée qui ne convient à aucune.
 
-**Redundant state.** A stored value that is derivable from other state, a boolean pair that encodes a state machine, a cache with no invalidation path. Derive it, or model the states.
+**État redondant.** Une valeur stockée dérivable d'un autre état, une paire de booléens qui encode une machine à états, un cache sans chemin d'invalidation. Derive-la, ou modélise les états.
 
-**Placeholder residue.** `TODO`, `FIXME`, "implement later", commented-out code, a mock return, a stub that returns a plausible constant, debug logging, a scratch file. Either finish it inside the authorized scope or delete it and record the follow-up in the reply. Never ship a placeholder as if it were the feature.
+**Résidus de placeholder.** `TODO`, `FIXME`, "implement later", code commenté, retour mock, stub qui retourne une constante plausible, logs de debug, fichier scratch. Termine-le dans la portée autorisée ou supprime-le et consigne le suivi dans la réponse. Ne livre jamais un placeholder comme s'il était la fonctionnalité.
 
-**Unrelated edits.** Reformatting, import reordering, rename churn, or a drive-by fix outside the task's purpose. Revert those hunks. A real improvement you found goes in the reply as a follow-up, not in this diff.
+**Éditions sans rapport.** Reformatage, réordonnancement d'imports, churn de renommage ou correction opportuniste hors de l'objet de la tâche. Revert ces hunks. Une vraie amélioration trouvée va dans la réponse comme suivi, pas dans ce diff.
 
-**Test padding.** A test that asserts a default, a field copy, a forwarding call, a mock echoing its own input, a bare "does not throw", or a parameter row that walks the same path as the row above it. Delete it. A test earns its place only when a plausible bug would fail it.
+**Rembourrage de tests.** Un test qui asserte un défaut, une copie de champ, un appel de transfert, un mock qui répète sa propre entrée, un simple "does not throw", ou une ligne de paramètre qui parcourt le même chemin que la ligne au-dessus. Supprime. Un test mérite sa place seulement quand un bug plausible le ferait échouer.
 
-**Misleading names.** `data`, `utils`, `helper`, `manager`, `temp`, `newThing`, `handleX` for something that is not a handler. Rename to what the value is or what the function does. Renaming a symbol that crosses the module boundary is a public change: do it only inside the authorized scope and migrate every caller.
+**Noms trompeurs.** `data`, `utils`, `helper`, `manager`, `temp`, `newThing`, `handleX` pour quelque chose qui n'est pas un handler. Renomme selon ce qu'est la valeur ou ce que fait la fonction. Renommer un symbole qui traverse la frontière du module est un changement public : fais-le seulement dans la portée autorisée et migre chaque appelant.
 
-**Invented documentation.** A doc line, changelog entry, or comment describing behavior the diff does not implement, or a measurement nobody took. Delete it or replace it with the claim you can actually support.
+**Documentation inventée.** Une ligne de doc, une entrée de changelog ou un commentaire qui décrit un comportement que le diff n'implémente pas, ou une mesure que personne n'a prise. Supprime-la ou remplace-la par l'affirmation que tu peux vraiment soutenir.
 
-## Prove it was weight
+## Prouver que c'était du poids
 
-Deslop is behavior-preserving by construction, so it is checkable.
+Deslop préserve le comportement par construction, donc il est verifiable.
 
-1. Run the same verification that already covered the change: the test, the command, or the runtime probe named by the playbook.
-2. A check that flips from pass to fail means a deleted line was load-bearing. Restore that exact line and reclassify it. Do not "fix" the check.
-3. When no check covers a deleted line, say so in the report. An untested deletion is a claim, not a proof.
+1. Exécute la même vérification qui couvrait déjà le changement : le test, la commande ou la sonde d’exécution nommée par le playbook.
+2. Une vérification qui passe d'un succès à un échec signifie qu'une ligne supprimée était porteuse. Restaure exactement cette ligne et reclasse-la. Ne "corrige" pas la vérification.
+3. Quand aucune vérification ne couvre une ligne supprimée, dis-le dans le rapport. Une suppression non testée est une affirmation, pas une preuve.
 
-## Forbidden
+## Interdit
 
-- Changing behavior, output, public signatures, or error semantics.
-- Touching files outside the task's changed paths.
-- Deleting licenses, copyright headers, accessibility rationale, security notes, or a comment that records a verified tool or platform constraint.
-- Extracting a new abstraction. Deslop only subtracts.
-- Rewriting someone else's uncommitted work.
-- Calling the pass complete without rerunning the change's own verification.
+- Changer le comportement, la sortie, les signatures publiques ou la sémantique d'erreur.
+- Toucher des fichiers hors des chemins modifiés par la tâche.
+- Supprimer licences, en-têtes de copyright, justifications d'accessibilité, notes de sécurité ou un commentaire qui consigne une contrainte d'outil ou de plateforme vérifiée.
+- Extraire une nouvelle abstraction. Deslop ne fait que soustraire.
+- Reécrire le travail non commit de quelqu'un d'autre.
+- Declarer la passe terminée sans relancer la vérification propre au changement.
 
-## Reply
+## Réponse
 
-One table plus the leftovers.
+Un tableau plus les restes.
 
-| category | file:line | removed | why it was weight |
+| catégorie | file:line | retire | pourquoi c'était du poids |
 |---|---|---|---|
 
-Then:
+Puis :
 
-- Lines kept as uncertain, with the reason each one might be load-bearing.
-- Deletions no check covers.
-- Follow-ups found but deliberately left out of this diff.
-- The verification command rerun after the pass, and its result.
-- `deslop skipped: <reason>` when a playbook step could not run it.
+- Lignes gardees comme incertaines, avec la raison pour laquelle chacune pourrait être porteuse.
+- Suppressions qu'aucune vérification ne couvre.
+- Suivis trouves mais volontairement exclus de ce diff.
+- La commande de vérification relancee après la passe, et son résultat.
+- `deslop skipped: <reason>` quand une étape de playbook n'a pas pu l'exécuter.

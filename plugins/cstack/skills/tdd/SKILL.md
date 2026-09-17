@@ -1,45 +1,45 @@
 ---
 name: tdd
-description: "Use for $cstack:tdd only when the user explicitly asks for TDD, a failing test, or a regression test, OR when the bug has an obvious cheap local test target. Skip when the test path is unclear, expensive, integration-heavy, or not requested."
+description: "Utiliser $cstack:tdd seulement quand l'utilisateur demande explicitement du TDD, un test échouant ou un test de régression, OU quand le bug à une cible de test locale évidente et peu coûteuse. Sauter quand le chemin de test est flou, coûteux, lourd en intégration ou non demandé."
 ---
 
-# TDD Bug Fix
+# Correction de bug en TDD
 
-Runtime: [`../cstack/references/codex-runtime.md`](../cstack/references/codex-runtime.md).
+Contrat d'exécution : [`../cstack/references/codex-runtime.md`](../cstack/references/codex-runtime.md).
 
-When fixing a bug with a clear, cheap test path, make the broken behavior executable before changing production code. The goal is a focused regression test that fails before the fix and passes after it.
+Quand tu corriges un bug avec un chemin de test clair et peu coûteux, rends le comportement cassé exécutable avant de changer le code de production. L'objectif est un test de régression cible qui échoue avant le correctif et passe après.
 
-Do not force a test when it would be impractical. If the available test would require broad harness setup, brittle mocks, slow end-to-end infrastructure, production-only state, vague reproduction steps, or large unrelated fixture churn, skip adding a new test and use the closest useful verification instead.
+Ne force pas un test quand ce serait impraticable. Si le test disponible exigeait une large configuration de harnais, des mocks fragiles, une infrastructure end-to-end lente, un état production-only, des étapes de reproduction vagues ou un gros churn de fixtures sans rapport, saute l'ajout d'un nouveau test et utilise plutôt la vérification utile la plus proche.
 
-## Workflow
+## Flux de travail
 
-1. **Understand the bug.** Identify the intended behavior, current behavior, affected path, and smallest observable reproduction.
-2. **Choose the narrowest executable check.** Prefer the closest unit, component, integration, or regression test already used for that codepath. If no practical test path is obvious, do not create one from scratch just to satisfy the workflow.
-3. **Write the failing test first.** Add the smallest focused test that would have caught the bug. The test should encode intended behavior, not mirror the current implementation.
-4. **Run the new test before fixing.** Confirm it fails for the intended reason. If it passes or fails for an unrelated reason, correct the test or reproduction before editing the implementation.
-5. **Fix the bug.** Make the smallest production change that satisfies the intended behavior while preserving nearby contracts.
-6. **Rerun the regression test.** Confirm the test now passes.
-7. **Run nearby validation.** Run relevant adjacent tests, type checks, lint, or scenario checks when the change has broader risk.
+1. **Comprendre le bug.** Identifie le comportement attendu, le comportement actuel, le chemin touché et la plus petite reproduction observable.
+2. **Choisir la vérification exécutable la plus étroite.** Préfère le test unitaire, composant, intégration ou régression le plus proche déjà utilisé pour ce chemin de code. Si aucun chemin de test pratique n'est évident, n'en crée pas un depuis zéro seulement pour satisfaire le flux de travail.
+3. **Écrire d'abord le test échouant.** Ajoute le plus petit test cible qui aurait attrapé le bug. Le test doit encoder le comportement attendu, pas miroiter l'implémentation courante.
+4. **Exécuter le nouveau test avant de corriger.** Confirme qu'il échoue pour la raison attendue. S'il passe ou échoue pour une raison sans rapport, corrige le test ou la reproduction avant de modifier l'implémentation.
+5. **Corriger le bug.** Fais le plus petit changement de production qui satisfait le comportement attendu tout en préservant les contrats voisins.
+6. **Relancer le test de régression.** Confirme que le test passe maintenant.
+7. **Exécuter la validation voisine.** Lance les tests adjacents pertinents, typéchecks, lint ou checks de scénario quand le changement à un risque plus large.
 
-## If a Failing Test Is Impractical
+## Si un test échouant est impraticable
 
-Do not silently skip the regression step. Before fixing, explicitly explain why a failing test is impossible or not worth the cost, then choose the closest executable regression check available. Examples include a targeted script, manual reproduction command, browser automation, snapshot comparison, log assertion, or focused integration check.
+Ne saute pas silencieusement l'étape de régression. Avant de corriger, explique explicitement pourquoi un test échouant est impossible ou ne vaut pas son coût, puis choisis la vérification de régression exécutable disponible la plus proche. Exemples : script cible, commande de reproduction manuelle, automatisation navigateur, comparaison de snapshots, assertion de logs ou check d'intégration cible.
 
-Prefer no new test over a bad test. A bad test is one that mostly tests mocks, encodes current implementation details, depends on timing or unrelated global state, needs expensive infrastructure for a small fix, or would be deleted immediately after proving the fix.
+Préfère aucun nouveau test à un mauvais test. Un mauvais test teste surtout des mocks, encode des détails de l'implémentation courante, dépend du timing ou d'un état global sans rapport, exige une infrastructure coûteuse pour un petit correctif, ou serait supprimé immédiatement après avoir prouvé le correctif.
 
-## Guardrails
+## Garde-fous
 
-- Do not change tests merely to match a wrong implementation.
-- Do not weaken existing assertions unless the expected behavior has genuinely changed and the reason is clear.
-- Keep the regression test focused on the bug. Avoid broad fixture churn or unrelated coverage expansion.
-- Do not add tests when the practical signal is weak. Use manual or scripted verification and say why.
-- If the bug is flaky, make the test deterministic where possible and document the signal being locked down.
-- If the bug exposes a broader class of failures, first land the focused regression path, then consider additional sibling coverage.
+- Ne change pas les tests simplement pour correspondre à une implémentation fausse.
+- N'affaiblis pas les assertions existantes sauf si le comportement attendu à vraiment change et que la raison est claire.
+- Garde le test de régression centre sur le bug. Évite le grand churn de fixtures ou l'expansion de couverture sans rapport.
+- N'ajoute pas de tests quand le signal pratique est faible. Utilise une vérification manuelle ou scriptee et dis pourquoi.
+- Si le bug est flaky, rends le test deterministe quand c'est possible et documente le signal verrouille.
+- Si le bug expose une classe plus large d'échecs, livre d'abord le chemin de régression cible, puis envisage une couverture sœur supplémentaire.
 
-## Final Response
+## Réponse finale
 
-Report the evidence, not just the outcome:
+Rapporte les preuves, pas seulement le résultat :
 
-- Name the failing-before test or executable check and the failure it produced.
-- Name the passing-after test run and any nearby validation performed.
-- If failing-before evidence could not be demonstrated, state why and describe the closest regression check used instead.
+- Nomme le test ou check exécutable échouant avant correction et l'échec qu'il a produit.
+- Nomme l'exécution de test passant après correction et toute validation voisine effectuee.
+- Si la preuve d'échec avant correction n'a pas pu être démontrée, dis pourquoi et décris le check de régression le plus proche utilisé à la place.

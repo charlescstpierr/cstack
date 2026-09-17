@@ -33,16 +33,16 @@ def validate_source(source):
         for name in directories:
             path = Path(root, name)
             if path.is_symlink():
-                fail(f"source entry is not a regular directory: {path.relative_to(source)}")
+                fail(f"l’entrée source n’est pas un dossier régulier: {path.relative_to(source)}")
         for name in sorted(names):
             path = Path(root, name)
             resolved = path.resolve()
             try:
                 resolved.relative_to(source)
             except ValueError:
-                fail(f"source symlink escapes helper directory: {path.relative_to(source)}")
+                fail(f"le lien symbolique source sort du dossier des scripts d’aide: {path.relative_to(source)}")
             if not resolved.is_file():
-                fail(f"source entry is not a regular file: {path.relative_to(source)}")
+                fail(f"l’entrée source n’est pas un fichier régulier: {path.relative_to(source)}")
 
 
 def workspace_root():
@@ -62,7 +62,7 @@ def require_inside(path, root, label):
     try:
         path.resolve().relative_to(root)
     except ValueError:
-        fail(f"{label} escapes workspace: {path}")
+        fail(f"{label} sort de l’espace de travail: {path}")
 
 
 def ensure_cstack_gitignore(state):
@@ -111,7 +111,7 @@ def sweep_stale_stages(tools):
         try:
             shutil.rmtree(path)
         except OSError as error:
-            print(f"run-tool: leftover stage {path.name}: {error}", file=sys.stderr)
+            print(f"run-tool: zone temporaire restante {path.name}: {error}", file=sys.stderr)
 
 
 def bun_command(bunfig, *args):
@@ -120,22 +120,22 @@ def bun_command(bunfig, *args):
 
 def main():
     if len(sys.argv) < 2:
-        fail("usage: run-tool.sh <relative-helper> [args ...]")
+        fail("utilisation: run-tool.sh <script-aide-relatif> [args ...]")
 
     requested = PurePath(sys.argv[1])
     if requested.is_absolute() or ".." in requested.parts or not requested.parts:
-        fail("helper must be a relative path within skills/cstack/scripts")
+        fail("le script d’aide doit être un chemin relatif dans skills/cstack/scripts")
 
     source = (Path(__file__).resolve().parent.parent / "skills/cstack/scripts").resolve()
     entry = (source / requested).resolve()
     try:
         resolved_relative = entry.relative_to(source)
     except ValueError:
-        fail("helper resolves outside skills/cstack/scripts")
+        fail("le script d’aide se résout hors de skills/cstack/scripts")
     if EXCLUDED.intersection(requested.parts) or EXCLUDED.intersection(resolved_relative.parts):
-        fail("helper is inside an excluded cache directory")
+        fail("le script d’aide est dans un dossier de cache exclu")
     if not entry.is_file():
-        fail(f"helper is not a regular file: {sys.argv[1]}")
+        fail(f"le script d’aide n’est pas un fichier régulier: {sys.argv[1]}")
 
     suffix = entry.suffix
     if suffix == ".sh":
@@ -143,23 +143,23 @@ def main():
     elif suffix in {"", ".ts", ".js", ".mjs"}:
         runtime = "bun"
     else:
-        fail(f"unsupported helper type: {suffix or '<none>'}")
+        fail(f"type de script d’aide non pris en charge: {suffix or '<aucun>'}")
     if shutil.which(runtime) is None:
-        fail(f"required runtime not found: {runtime}")
+        fail(f"environnement d’exécution requis introuvable: {runtime}")
 
     validate_source(source)
     workspace = workspace_root().resolve()
     state = workspace / ".cstack"
     if state.is_symlink():
-        require_inside(state, workspace, ".cstack symlink")
+        require_inside(state, workspace, "lien symbolique .cstack")
     state.mkdir(exist_ok=True)
-    require_inside(state, workspace, ".cstack directory")
+    require_inside(state, workspace, "dossier .cstack")
     ensure_cstack_gitignore(state)
     tools = state / "tools"
     if tools.is_symlink():
-        require_inside(tools, workspace, "tools symlink")
+        require_inside(tools, workspace, "lien symbolique tools")
     tools.mkdir(exist_ok=True)
-    require_inside(tools, workspace, "tools directory")
+    require_inside(tools, workspace, "dossier tools")
     sweep_stale_stages(tools)
     staged = Path(tempfile.mkdtemp(prefix="run-", dir=tools))
     (staged / OWNER_PID).write_text(f"{os.getpid()}\n")
@@ -213,13 +213,13 @@ def main():
             )
             if setup:
                 status = exit_status(setup)
-                print(f"run-tool: dependency setup exited with status {status}", file=sys.stderr)
+                print(f"run-tool: installation des dépendances terminée avec le statut {status}", file=sys.stderr)
                 raise SystemExit(status)
 
         staged_entry = (staged / requested).resolve()
-        require_inside(staged_entry, staged.resolve(), "staged helper")
+        require_inside(staged_entry, staged.resolve(), "script d’aide préparé")
         if not staged_entry.is_file():
-            fail(f"staged helper is not a regular file: {sys.argv[1]}")
+            fail(f"le script d’aide préparé n’est pas un fichier régulier: {sys.argv[1]}")
         if runtime == "bun":
             command = bun_command(bunfig, str(staged_entry), *sys.argv[2:])
         else:
@@ -231,7 +231,7 @@ def main():
         try:
             shutil.rmtree(staged)
         except OSError as error:
-            print(f"run-tool: failed to remove staged helper: {error}", file=sys.stderr)
+            print(f"run-tool: échec de suppression du script d’aide préparé: {error}", file=sys.stderr)
 
 
 if __name__ == "__main__":

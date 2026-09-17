@@ -1,13 +1,14 @@
 #!/usr/bin/env bash
-# Read-only worktree prune audit. Classifies every git worktree by size, merge
-# state, uncommitted work, and remote/PR state. Emits a table sorted by size
-# with a conservative review bucket. Never deletes or fetches anything.
+# Audit en lecture seule des worktrees à nettoyer. Classe chaque worktree git
+# par taille, état de fusion, travail non commité et état distant/PR. Émet une
+# table triée par taille avec un regroupement de revue conservateur. Ne supprime
+# rien et ne récupère rien.
 #
-# Usage: worktree-audit.sh [repo-path]   (defaults to the current repo)
+# Utilisation: worktree-audit.sh [chemin-dépôt]   (dépôt courant par défaut)
 set -u
 
 repo="${1:-$(git rev-parse --show-toplevel 2>/dev/null)}"
-[ -z "$repo" ] && { echo "not in a git repo; pass a repo path" >&2; exit 1; }
+[ -z "$repo" ] && { echo "pas dans un dépôt git; passer un chemin de dépôt" >&2; exit 1; }
 cd "$repo" || exit 1
 
 worktrees() {
@@ -16,17 +17,17 @@ worktrees() {
 	done
 }
 
-# Main worktree is the first entry; everything else is a candidate.
+# Le worktree principal est la première entrée; tout le reste est candidat.
 worktree_paths=()
 while IFS= read -r -d '' wt; do worktree_paths+=("$wt"); done < <(worktrees)
-[ "${#worktree_paths[@]}" -eq 0 ] && { echo "repo has no worktrees" >&2; exit 1; }
+[ "${#worktree_paths[@]}" -eq 0 ] && { echo "le dépôt n’a aucun worktree" >&2; exit 1; }
 main_wt=${worktree_paths[0]}
 
-# Use the locally recorded remote default without mutating refs.
+# Utiliser la branche distante par défaut enregistrée localement sans muter les refs.
 base_ref=$(git symbolic-ref --quiet --short refs/remotes/origin/HEAD 2>/dev/null || true)
-[ -z "$base_ref" ] && echo "warn: origin/HEAD is unavailable; merged column will be unknown" >&2
+[ -z "$base_ref" ] && echo "avertissement: origin/HEAD est indisponible; la colonne fusionnée sera inconnue" >&2
 
-# PR state by branch, fetched once. Empty if gh is unavailable.
+# État des PR par branche, récupéré une fois. Vide si gh est indisponible.
 prs=$(mktemp)
 trap 'rm -f "$prs"' EXIT
 gh pr list --author "@me" --state all --limit 1000 \
@@ -34,7 +35,7 @@ gh pr list --author "@me" --state all --limit 1000 \
 
 now=$(date +%s)
 
-printf "SIZE\tAGE\tMERGED\tDIRTY\tREMOTE\tPR\tLAST_CHAT\tBUCKET\tWORKTREE\n"
+printf "TAILLE\tÂGE\tFUSIONNÉ\tSALE\tDISTANT\tPR\tDERNIER_CHAT\tGROUPE\tWORKTREE\n"
 
 for wt in "${worktree_paths[@]}"; do
 	[ "$wt" = "$main_wt" ] && continue
@@ -44,13 +45,14 @@ for wt in "${worktree_paths[@]}"; do
 	head_ts=$(git -C "$wt" log -1 --format='%ct' HEAD 2>/dev/null || echo 0)
 	age=$([ "$head_ts" -gt 0 ] 2>/dev/null && echo "$(( (now - head_ts) / 86400 ))d" || echo "?")
 
-	# Squash-merged branches are not ancestors of the default branch, so PR state is the
-	# real signal; merge-base only catches fast-forward/rebase merges.
+	# Les branches squash-merged ne sont pas ancêtres de la branche par défaut:
+	# l’état de PR est donc le vrai signal; merge-base ne voit que les fusions
+	# fast-forward/rebase.
 	if [ -z "$base_ref" ]; then merged="?"
 	elif git merge-base --is-ancestor "$head" "$base_ref" 2>/dev/null; then merged=YES
 	else merged=no; fi
 
-	# Distinguish real WIP (tracked edits) from disposable untracked scratch.
+	# Distinguer le vrai WIP (edits suivis) du brouillon non suivi jetable.
 	if porcelain=$(git -C "$wt" status --porcelain 2>/dev/null); then
 		if [ -z "$porcelain" ]; then dirty=clean
 		elif printf '%s\n' "$porcelain" | grep -qv '^??'; then
@@ -71,7 +73,7 @@ for wt in "${worktree_paths[@]}"; do
 		"$branch" "$prs" 2>/dev/null)
 	[ -z "$pr" ] && pr="-"
 
-	last=unavailable
+	last=indisponible
 
 	case "$dirty" in unknown) bucket=hold-unknown ;; wip:*) bucket=hold-wip ;; *)
 		case "$pr" in *OPEN*) bucket=hold-open-pr ;; *)

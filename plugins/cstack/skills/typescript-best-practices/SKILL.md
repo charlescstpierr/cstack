@@ -1,31 +1,31 @@
 ---
 name: typescript-best-practices
-description: "Use for $cstack:typescript-best-practices. Cstack routes it when the change touches .ts or .tsx files."
+description: "Utiliser pour $cstack:typescript-best-practices. Cstack y route quand le changement touché des fichiers .ts ou .tsx."
 ---
 
-# TypeScript best practices
+# Bonnes pratiques TypeScript
 
-Runtime: [`../cstack/references/codex-runtime.md`](../cstack/references/codex-runtime.md).
+Contrat d'exécution : [`../cstack/references/codex-runtime.md`](../cstack/references/codex-runtime.md).
 
-Apply the [Type System Discipline](../cstack/references/principles/type-system-discipline.md) principle reference first.
+Applique d'abord la référence de principe [discipline du système de types](../cstack/references/principles/type-system-discipline.md).
 
-| Rule | Summary |
+| Règle | Résumé |
 |------|---------|
-| Discriminated unions | Model variants with a `kind` literal discriminant so impossible states can't be represented. No optional-field bags. |
-| Branded types | Brand primitives with `& { readonly __brand: "X" }` so they can't be mixed up. Validate once at the boundary. |
-| Constructive modeling | Build the shape so the illegal value can't be constructed. `[T, ...T[]]` for non-empty, `[T, T][]` for even length, `start` plus `duration` for a range. Not a runtime guard, not a wish for refinement types. |
-| Simplest total type | Keep `T[]` while every operation on it stays total. Strengthen to `NonEmpty<T>` only where the loose type forces `!`, a cast, or a "should never happen" throw. |
-| `unknown` over `any` | External data is `unknown`. |
-| Schemas before guards | Before hand-writing a property-by-property type guard, use the repository's runtime schema library and infer the type from the schema, such as `z.infer`. |
-| No `as` casts | Every `as` is a runtime crash waiting. Cast only after validation. |
-| Narrowing hierarchy | Discriminant switch > `in` operator > `typeof`/`instanceof` > user-defined type guard > `as`. |
-| Type guards | Must verify the claim. A lying guard is worse than `as` because the bug hides behind a name that says it's safe. Name them `isX` or `hasX`. |
-| Exhaustiveness | Inline `const _exhaustive: never = x;` in default arms so the compiler errors when a new variant is added. |
-| `satisfies` over `as` | Validates the value without widening literal types. |
-| Boundary validation | Parse where data crosses in, into a named domain type. `Record<string, unknown>` (however spelled) stops at that parse. Trust types inside. See the [Boundary Discipline](../cstack/references/principles/boundary-discipline.md) principle reference. |
-| Schema-derived types | Reach for `Pick`/`Omit`/`Parameters`/`ReturnType`/`Awaited`/`typeof` before declaring a new interface. |
-| Object args | Pass objects, not positional, so argument order is self-documenting. Skip on hot paths (per-frame render, tokenizers, parsers). |
-| Real tests | Don't mock what you can run. Prefer the framework's real test primitives with leak/disposable checks, and verify UI in a running build. Mock only what you can't run locally. |
-| Structured telemetry | Prefer structured logger diagnostics with enough context to debug from an id. No `console.log` in shipped code. |
+| Unions discriminées | Modélise les variantes avec un discriminant littéral `kind` pour que les états impossibles ne puissent pas être représentés. Pas de sacs de champs optionnels. |
+| Types marqués | Marque les primitives avec `& { readonly __brand: "X" }` pour éviter les confusions. Valide une fois à la frontière. |
+| Modélisation constructive | Construis la forme pour que la valeur illégale ne puisse pas être construite. `[T, ...T[]]` pour non vide, `[T, T][]` pour longueur paire, `start` plus `duration` pour une plage. Pas une garde runtime, pas un souhait de types de raffinement. |
+| Type total le plus simple | Garde `T[]` tant que chaque opération dessus reste totale. Renforce vers `NonEmpty<T>` seulement là où le type souple force `!`, un cast ou un throw "cela ne devrait jamais arriver". |
+| `unknown` plutôt que `any` | Les données externes sont `unknown`. |
+| Schémas avant gardes | Avant d'écrire à la main une garde de type propriété par propriété, utilise la bibliothèque de schémas runtime du dépôt et infère le type depuis le schéma, comme `z.infer`. |
+| Aucun cast `as` | Chaque `as` est un crash d’exécution en attente. Caste seulement après validation. |
+| Hiérarchie de narrowing | Switch discriminant > opérateur `in` > `typeof`/`instanceof` > garde de type définie par l'utilisateur > `as`. |
+| Gardes de type | Elles doivent vérifier l'affirmation. Une garde menteuse est pire que `as` car le bug se cache derrière un nom qui dit que c'est sur. Nomme-les `isX` ou `hasX`. |
+| Exhaustivité | Mets `const _exhaustive: never = x;` inline dans les bras default pour que le compilateur échoue quand une nouvelle variante est ajoutée. |
+| `satisfies` plutôt que `as` | Valide la valeur sans élargir les types littéraux. |
+| Validation de frontière | Parse quand les données entrent, vers un type de domaine nommé. `Record<string, unknown>` (quelle que soit son orthographe) s'arrête à ce parse. Fais confiance aux types dedans. Voir la référence de principe [discipline des frontières](../cstack/references/principles/boundary-discipline.md). |
+| Types dérivés des schémas | Prends `Pick`/`Omit`/`Parameters`/`ReturnType`/`Awaited`/`typeof` avant de déclarer une nouvelle interface. |
+| Arguments objets | Passe des objets, pas des positionnels, pour que l'ordre des arguments soit auto-documente. Saute sur les chemins chauds (rendu par frame, tokenizers, parsers). |
+| Vrais tests | Ne mocke pas ce que tu peux exécuter. Préfère les primitives de test réelles du framework avec checks de fuite/disposable, et vérifie l'UI dans un build qui tourne. Mocke seulement ce que tu ne peux pas exécuter localement. |
+| Télémétrie structurée | Préfère des diagnostics de logger structurés avec assez de contexte pour déboguer depuis un id. Pas de `console.log` dans le code livré. |
 
-Examples: `references/patterns.md`.
+Exemples : `references/patterns.md`.

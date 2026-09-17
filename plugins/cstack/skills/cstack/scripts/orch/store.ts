@@ -1,15 +1,15 @@
 import { execFileSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
-import type { Dirent } from "node:fs";
+import type { Dirent, Stats } from "node:fs";
 import {
   access,
-  link,
+  lstat,
   mkdir,
-  open,
   readFile,
   readdir,
   rename,
   rm,
+  rmdir,
   unlink,
   writeFile,
 } from "node:fs/promises";
@@ -18,6 +18,7 @@ import { basename, dirname, join, resolve } from "node:path";
 const UNIT_HEADER = "id\ttrack\tstate\tbranch\tpr\tsha\tbrief";
 const LEDGER_HEADER = "pr\tsha\tverdict\tevidence\tverifier\tts";
 const LOCK_FILE = ".orch.lock";
+const LOCK_CONFLICT_CODES = new Set(["EEXIST", "ENOTEMPTY", "ENOTDIR", "EISDIR", "EPERM"]);
 
 export type Verdict =
   | "live-ui-verified"
@@ -177,6 +178,7 @@ export interface AddStandingParams {
 
 export interface OpenStoreOptions {
   readonly force?: boolean;
+  // Les rappels signalent une tentative de reprise, pas une acquisition réussie.
   readonly onLockStolen?: (holder: string) => void;
   readonly onStaleLock?: (holder: string) => void;
 }
@@ -288,7 +290,7 @@ export function parseVerdict(value: string): Verdict {
   const verdict = verdictOrNull(value);
   if (verdict === null) {
     throw new UserError(
-      "verdict must be live-ui-verified, unit-test-verified, type-check-only, verifier-blocked, or verifier-failed"
+      "le verdict doit être live-ui-verified, unit-test-verified, type-check-only, verifier-blocked ou verifier-failed"
     );
   }
   return verdict;
@@ -302,7 +304,7 @@ function cleanCell(value: string): string {
 function requiredCell(value: string, label: string): string {
   const cleaned = cleanCell(value);
   if (cleaned.trim().length === 0) {
-    throw new UserError(`${label} must not be empty`);
+    throw new UserError(`${label} ne doit pas être vide`);
   }
   return cleaned;
 }
@@ -310,14 +312,14 @@ function requiredCell(value: string, label: string): string {
 function requiredLine(value: string, label: string): string {
   const cleaned = value.replace(/[\n\r]/g, " ").trim();
   if (cleaned.length === 0) {
-    throw new UserError(`${label} must not be empty`);
+    throw new UserError(`${label} ne doit pas être vide`);
   }
   return cleaned;
 }
 
 function positiveInteger(value: number, label: string): number {
   if (!Number.isSafeInteger(value) || value < 1) {
-    throw new UserError(`${label} must be a positive integer`);
+    throw new UserError(`${label} doit être un entier positif`);
   }
   return value;
 }
@@ -359,7 +361,7 @@ async function requiredFile(path: string): Promise<string> {
   } catch (error) {
     if (errorCode(error) === "ENOENT") {
       throw new UserError(
-        `store is not initialized at ${dirname(path)}; run orch init`
+        `le magasin n'est pas initialise dans ${dirname(path)}; lancer orch init`
       );
     }
     throw error;
@@ -382,7 +384,7 @@ async function requireInitializedStore(store: string): Promise<void> {
   const ledgerHeader = await firstLineOf(join(store, "ledger.tsv"));
   if (unitsHeader !== UNIT_HEADER || ledgerHeader !== LEDGER_HEADER) {
     throw new UserError(
-      `store is not initialized at ${store}; run orch init`
+      `le magasin n'est pas initialise dans ${store}; lancer orch init`
     );
   }
 }
@@ -400,93 +402,123 @@ function holderIsDead(holder: string): boolean {
   }
 }
 
+function throwLockError(error: unknown): never {
+  if (["ENOENT", "ENOTEMPTY", "EEXIST"].includes(errorCode(error) ?? "")) {
+    throw new UserError("verrou de magasin modifié par un autre processus; réessayez");
+  }
+  throw error;
+}
+
+async function acquireDirectoryLock(
+  path: string,
+  options: OpenStoreOptions
+) {
+  const pid = String(process.pid);
+  const generation = randomUUID();
+  const marker = `owner.${pid}.${generation}`;
+  const ownMarker = join(path, marker);
+  const candidate = `${path}.tmp.${pid}.${generation}`;
+  await mkdir(candidate);
+  try {
+    await writeFile(join(candidate, marker), "", { flag: "wx" });
+    try {
+      // Le répertoire publié contient déjà son propriétaire ; un verrou actif
+      // non vide ne peut pas être remplacé par ce renommage.
+      await rename(candidate, path);
+    } catch (error) {
+      if (!LOCK_CONFLICT_CODES.has(errorCode(error) ?? "")) {
+        throw error;
+      }
+      const info = await lstat(path).catch(throwLockError);
+      if (info.isSymbolicLink()) {
+        throw new UserError("verrou de magasin invalide : lien symbolique interdit");
+      }
+      if (!info.isDirectory()) throw error;
+      const entries = await readdir(path, { withFileTypes: true }).catch(throwLockError);
+      const owner = entries[0];
+      const match = owner && /^owner\.([1-9]\d*)\.[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.exec(owner.name);
+      if (entries.length === 0) {
+        await rmdir(path).catch(throwLockError);
+        await rename(candidate, path).catch(throwLockError);
+      } else if (entries.length !== 1 || !owner?.isFile() || !match || !Number.isSafeInteger(Number(match[1]))) {
+        throw new UserError("verrou de magasin invalide : propriétaire indéterminé");
+      } else {
+        const holder = match[1];
+        if (holderIsDead(holder)) options.onStaleLock?.(holder);
+        else if (options.force) options.onLockStolen?.(holder);
+        else throw new UserError(`verrou de magasin detenu par le pid ${holder}`);
+        await rm(candidate, { recursive: true });
+        // Seule la génération observée est remplacée : un repreneur retardé
+        // ne peut pas déplacer le marqueur d'un nouveau propriétaire.
+        await rename(join(path, owner.name), ownMarker).catch(throwLockError);
+      }
+    }
+  } finally {
+    await rm(candidate, { recursive: true, force: true });
+  }
+
+  return {
+    assertOwned: async (): Promise<void> => {
+      try {
+        if ((await lstat(ownMarker)).isFile()) return;
+      } catch (error) {
+        if (!["ENOENT", "ENOTDIR"].includes(errorCode(error) ?? "")) throw error;
+      }
+      throw new UserError("verrou de magasin perdu; ouvrir un nouveau handle avant de modifier le magasin");
+    },
+    release: async (): Promise<void> => {
+      try {
+        await unlink(ownMarker);
+      } catch (error) {
+        if (errorCode(error) === "ENOENT") return;
+        throw error;
+      }
+      try {
+        await rmdir(path);
+      } catch (error) {
+        // Un successeur peut publier son répertoire après le retrait du marqueur.
+        if (!["ENOENT", "ENOTEMPTY", "EEXIST"].includes(errorCode(error) ?? "")) {
+          throw error;
+        }
+      }
+    },
+  };
+}
+
 async function acquireLock(
   store: string,
   options: OpenStoreOptions
-): Promise<() => Promise<void>> {
+): ReturnType<typeof acquireDirectoryLock> {
   const path = join(store, LOCK_FILE);
-  const pid = String(process.pid);
-  const create = async (): Promise<void> => {
-    const handle = await open(path, "wx");
-    await handle.writeFile(`${pid}\n`);
-    await handle.close();
-  };
-
-  const readHolder = async (): Promise<string> => {
-    try {
-      return (await readFile(path, "utf8")).trim() || "unknown";
-    } catch {
-      return "unknown";
-    }
-  };
-
-  const takeOver = async (): Promise<void> => {
-    const claim = join(store, `${LOCK_FILE}.${pid}.${randomUUID()}`);
-    const stale = join(store, `${LOCK_FILE}.stale.${pid}.${randomUUID()}`);
-    const handle = await open(claim, "wx");
-    await handle.writeFile(`${pid}\n`);
-    await handle.close();
-    try {
-      try {
-        await rename(path, stale);
-      } catch (error) {
-        if (errorCode(error) === "ENOENT") {
-          throw new UserError(`store lock held by pid ${await readHolder()}`);
-        }
-        throw error;
-      }
-      try {
-        // link never replaces its destination, so a writer that took the lock
-        // inside the rename gap keeps it and this take-over loses.
-        await link(claim, path);
-      } catch (error) {
-        if (errorCode(error) === "EEXIST") {
-          await rm(stale, { force: true });
-          throw new UserError(`store lock held by pid ${await readHolder()}`);
-        }
-        try {
-          await link(stale, path);
-        } catch {
-          // Best effort restore of the stolen stale lock.
-        }
-        await rm(stale, { force: true });
-        throw error;
-      }
-      await rm(stale, { force: true });
-    } finally {
-      await rm(claim, { force: true });
-    }
-  };
-
   try {
-    await create();
+    return await acquireDirectoryLock(path, options);
   } catch (error) {
-    if (errorCode(error) !== "EEXIST") {
+    if (!LOCK_CONFLICT_CODES.has(errorCode(error) ?? "") || !(await lstat(path).catch(throwLockError)).isFile()) {
       throw error;
-    }
-    const holder = await readHolder();
-    if (holderIsDead(holder)) {
-      options.onStaleLock?.(holder);
-      await takeOver();
-    } else if (options.force) {
-      options.onLockStolen?.(holder);
-      await takeOver();
-    } else {
-      throw new UserError(`store lock held by pid ${holder}`);
     }
   }
 
-  return async (): Promise<void> => {
+  // Les anciens fichiers PID sont migrés sous le même protocole de verrouillage,
+  // y compris lorsque le processus de migration précédent est mort.
+  const migrationLock = await acquireDirectoryLock(`${path}.migration`, {});
+  try {
+    let info: Stats | undefined;
     try {
-      if ((await readFile(path, "utf8")).trim() === pid) {
-        await unlink(path);
-      }
+      info = await lstat(path);
     } catch (error) {
-      if (errorCode(error) !== "ENOENT") {
-        throw error;
-      }
+      if (errorCode(error) !== "ENOENT") throw error;
     }
-  };
+    if (info?.isFile()) {
+      const holder = (await readFile(path, "utf8")).trim() || "unknown";
+      if (holderIsDead(holder)) options.onStaleLock?.(holder);
+      else if (options.force) options.onLockStolen?.(holder);
+      else throw new UserError(`verrou de magasin detenu par le pid ${holder}`);
+      await unlink(path);
+    }
+    return await acquireDirectoryLock(path, options);
+  } finally {
+    await migrationLock.release();
+  }
 }
 
 async function readTsv(
@@ -496,14 +528,14 @@ async function readTsv(
 ): Promise<readonly (readonly string[])[]> {
   const lines = (await requiredFile(path)).replace(/\r/g, "").split("\n");
   if (lines.shift() !== header) {
-    throw new UserError(`${basename(path)} has an invalid header`);
+    throw new UserError(`${basename(path)} a un en-tete invalide`);
   }
   return lines
     .filter((value) => value.length > 0)
     .map((value) => {
       const cells = value.split("\t");
       if (cells.length !== width) {
-        throw new UserError(`${basename(path)} has a malformed row`);
+        throw new UserError(`${basename(path)} contient une ligne mal formee`);
       }
       return cells;
     });
@@ -558,7 +590,7 @@ async function readLedger(store: string): Promise<readonly LedgerEntry[]> {
       const rawVerdict = row[2] ?? "";
       const verdict = verdictOrNull(rawVerdict);
       if (verdict === null) {
-        throw new UserError(`ledger.tsv has invalid verdict ${rawVerdict}`);
+        throw new UserError(`ledger.tsv contient le verdict invalide ${rawVerdict}`);
       }
       return {
         pr: row[0] ?? "",
@@ -613,7 +645,7 @@ async function pointerFileNames(
   } catch (error) {
     if (errorCode(error) === "ENOENT") {
       throw new UserError(
-        `store is not initialized at ${dirname(directory)}; run orch init`
+        `le magasin n'est pas initialise dans ${dirname(directory)}; lancer orch init`
       );
     }
     throw error;
@@ -634,7 +666,7 @@ async function parsePointerFile(
   );
   const row = raw.split("\t");
   if (/[\r\n]/.test(raw) || row.length !== 5) {
-    throw new UserError(`inbox pointer ${name} is malformed`);
+    throw new UserError(`le pointeur de boite de reception ${name} est mal forme`);
   }
   return {
     ts: row[0] ?? "",
@@ -662,15 +694,15 @@ function renderGates(rows: readonly Gate[]): string {
   }
   const blocks = rows.map((gate) => {
     const answer =
-      gate.kind === "resolved" ? `\n- Answer: ${gate.answer}` : "";
+      gate.kind === "resolved" ? `\n- Reponse: ${gate.answer}` : "";
     return `## ${gate.id}
 
-- Status: ${gate.kind}
+- Statut: ${gate.kind}
 - Question: ${gate.question}
 - Options: ${gate.options}
-- Default: ${gate.defaultAnswer}${answer}`;
+- Defaut: ${gate.defaultAnswer}${answer}`;
   });
-  return `# Gates\n\n${blocks.join("\n\n")}\n`;
+  return `# Barrieres\n\n${blocks.join("\n\n")}\n`;
 }
 
 async function readGates(store: string): Promise<readonly Gate[]> {
@@ -680,9 +712,11 @@ async function readGates(store: string): Promise<readonly Gate[]> {
   if (raw.length === 0) {
     return [];
   }
-  const prefix = "# Gates\n\n## ";
+  const prefix = raw.startsWith("# Gates\n\n## ")
+    ? "# Gates\n\n## "
+    : "# Barrieres\n\n## ";
   if (!raw.startsWith(prefix)) {
-    throw new UserError("gates.md has an invalid heading");
+    throw new UserError("gates.md a un titre invalide");
   }
   const result: Gate[] = [];
   for (const block of raw.slice(prefix.length).split("\n\n## ")) {
@@ -692,39 +726,39 @@ async function readGates(store: string): Promise<readonly Gate[]> {
     for (const value of lines) {
       const match = /^- ([^:]+): (.*)$/.exec(value);
       if (match === null) {
-        throw new UserError(`gates.md has a malformed gate ${id}`);
+        throw new UserError(`gates.md contient une barrière mal formée ${id}`);
       }
       fields.set(match[1] ?? "", match[2] ?? "");
     }
-    const status = fields.get("Status");
+    const status = fields.get("Status") ?? fields.get("Statut");
     const question = fields.get("Question");
     const options = fields.get("Options");
-    const defaultAnswer = fields.get("Default");
+    const defaultAnswer = fields.get("Default") ?? fields.get("Defaut");
     if (
       id.length === 0 ||
       question === undefined ||
       options === undefined ||
       defaultAnswer === undefined
     ) {
-      throw new UserError(`gates.md has a malformed gate ${id}`);
+      throw new UserError(`gates.md contient une barrière mal formée ${id}`);
     }
     if (status === "open") {
       result.push({ kind: "open", id, question, options, defaultAnswer });
-    } else if (status === "resolved" && fields.has("Answer")) {
+    } else if (status === "resolved" && (fields.has("Answer") || fields.has("Reponse"))) {
       result.push({
         kind: "resolved",
         id,
         question,
         options,
         defaultAnswer,
-        answer: fields.get("Answer") ?? "",
+        answer: fields.get("Answer") ?? fields.get("Reponse") ?? "",
       });
     } else {
-      throw new UserError(`gates.md has invalid status ${status ?? ""}`);
+      throw new UserError(`gates.md contient le statut invalide ${status ?? ""}`);
     }
   }
   if (new Set(result.map((gate) => gate.id)).size !== result.length) {
-    throw new UserError("gates.md has duplicate gate ids");
+    throw new UserError("gates.md contient des ids de barrière en double");
   }
   return result;
 }
@@ -734,10 +768,10 @@ function parseFrontier(raw: string): Frontier {
   try {
     value = JSON.parse(raw);
   } catch {
-    throw new UserError("frontier.json is not valid JSON");
+    throw new UserError("frontier.json n'est pas un JSON valide");
   }
   if (!isRecord(value)) {
-    throw new UserError("frontier.json must contain an object");
+    throw new UserError("frontier.json doit contenir un objet");
   }
   if (Object.keys(value).length === 0) {
     return { generation: 0, prs: [], lowestUnmerged: null };
@@ -753,7 +787,7 @@ function parseFrontier(raw: string): Frontier {
         Number.isSafeInteger(value.lowestUnmerged))
     )
   ) {
-    throw new UserError("frontier.json has an invalid shape");
+    throw new UserError("frontier.json a une forme invalide");
   }
   const prs: FrontierPr[] = [];
   for (const row of value.prs) {
@@ -770,7 +804,7 @@ function parseFrontier(raw: string): Frontier {
       typeof row.sha !== "string" ||
       state === null
     ) {
-      throw new UserError("frontier.json has an invalid PR row");
+      throw new UserError("frontier.json contient une ligne de PR invalide");
     }
     prs.push({
       pr: row.pr,
@@ -805,7 +839,7 @@ async function readStanding(
     const match = /^([1-9]\d*)\. (.+)$/.exec(value);
     const number = Number(match?.[1] ?? 0);
     if (match === null || number !== result.length + 1) {
-      throw new UserError("preferences.md has malformed numbering");
+      throw new UserError("preferences.md a une numérotation mal formée");
     }
     result.push({ number, line: match[2] ?? "" });
   }
@@ -899,7 +933,7 @@ function previousSummary(raw: string): StatusSummary | null {
 
 function changed(before: StatusSummary | null, after: StatusSummary): string {
   if (before === null) {
-    return "first render";
+    return "premier rendu";
   }
   const result: string[] = [];
   const groups: readonly {
@@ -908,12 +942,12 @@ function changed(before: StatusSummary | null, after: StatusSummary): string {
     readonly newCounts: Counts;
   }[] = [
     {
-      label: "units",
+      label: "unités",
       oldCounts: before.unitStates,
       newCounts: after.unitStates,
     },
     {
-      label: "ledger",
+      label: "registre",
       oldCounts: before.ledgerVerdicts,
       newCounts: after.ledgerVerdicts,
     },
@@ -932,15 +966,15 @@ function changed(before: StatusSummary | null, after: StatusSummary): string {
   }
   if (before.frontierGeneration !== after.frontierGeneration) {
     result.push(
-      `frontier generation ${before.frontierGeneration}->${after.frontierGeneration}`
+      `generation de frontiere ${before.frontierGeneration}->${after.frontierGeneration}`
     );
   }
   if (before.openGateIds.join("\0") !== after.openGateIds.join("\0")) {
     result.push(
-      `open gates ${before.openGateIds.length}->${after.openGateIds.length}`
+      `barrières ouvertes ${before.openGateIds.length}->${after.openGateIds.length}`
     );
   }
-  return result.length === 0 ? "no derived changes" : result.join("; ");
+  return result.length === 0 ? "aucun changement derive" : result.join("; ");
 }
 
 function markdown(value: string): string {
@@ -952,7 +986,7 @@ function table(
   rows: readonly (readonly string[])[]
 ): string {
   if (rows.length === 0) {
-    return "(none)";
+    return "(aucun)";
   }
   return [
     `| ${headers.join(" | ")} |`,
@@ -968,35 +1002,35 @@ function statusMarkdown(
   gateRows: readonly Gate[],
   currentSummary: StatusSummary
 ): string {
-  return `# Orchestrate status
+  return `# Statut d'orchestration
 
-Generated: ${new Date().toISOString()}
+Genere: ${new Date().toISOString()}
 
-## Units
+## Unites
 
-States: ${countLine(currentSummary.unitStates)}
+Etats: ${countLine(currentSummary.unitStates)}
 
 ${table(
-  ["ID", "Track", "State", "Branch", "PR", "SHA", "Brief"],
+  ["ID", "Piste", "Etat", "Branche", "PR", "SHA", "Brief"],
   unitRows.map(unitCells)
 )}
 
-## Verification ledger
+## Registre de verification
 
 Verdicts: ${countLine(currentSummary.ledgerVerdicts)}
 
 ${table(
-  ["PR", "SHA", "Verdict", "Evidence", "Verifier", "Timestamp"],
+  ["PR", "SHA", "Verdict", "Preuve", "Verificateur", "Horodatage"],
   ledgerRows.map(ledgerCells)
 )}
 
-## Frontier
+## Frontiere
 
 Generation: ${currentFrontier.generation}
-Lowest unmerged: ${currentFrontier.lowestUnmerged ?? "none"}
+Plus basse non fusionnee: ${currentFrontier.lowestUnmerged ?? "aucune"}
 
 ${table(
-  ["Branch", "PR", "SHA", "State"],
+  ["Branche", "PR", "SHA", "Etat"],
   currentFrontier.prs.map((row) => [
     row.branches,
     String(row.pr),
@@ -1005,10 +1039,10 @@ ${table(
   ])
 )}
 
-## Gates
+## Barrieres
 
 ${table(
-  ["ID", "Status", "Question", "Options", "Default", "Answer"],
+  ["ID", "Statut", "Question", "Options", "Defaut", "Reponse"],
   gateRows.map((gate) => [
     gate.id,
     gate.kind,
@@ -1026,7 +1060,7 @@ ${table(
 function countLine(value: Counts): string {
   const entries = Object.entries(value);
   return entries.length === 0
-    ? "none"
+    ? "aucun"
     : entries.map(([name, count]) => `${name}=${count}`).join(", ");
 }
 
@@ -1058,7 +1092,7 @@ function commandOutput({
       stdio: ["ignore", "pipe", "pipe"],
     });
   } catch (error) {
-    throw new UserError(`${label} failed: ${errorMessage(error)}`);
+    throw new UserError(`${label} a échoué: ${errorMessage(error)}`);
   }
   return raw.trim();
 }
@@ -1067,13 +1101,13 @@ function parseCommandJson(raw: string, label: string): unknown {
   try {
     return JSON.parse(raw);
   } catch (error) {
-    throw new UserError(`${label} returned invalid JSON: ${errorMessage(error)}`);
+    throw new UserError(`${label} a renvoye un JSON invalide: ${errorMessage(error)}`);
   }
 }
 
 function requiredString(value: unknown, label: string): string {
   if (typeof value !== "string" || value.length === 0) {
-    throw new UserError(`gh output has an invalid ${label}`);
+    throw new UserError(`la sortie de gh contient ${label} invalide`);
   }
   return value;
 }
@@ -1098,26 +1132,26 @@ function githubPullRequests(repo: string): readonly GitHubPullRequest[] {
     "gh pr list"
   );
   if (!isUnknownArray(value)) {
-    throw new UserError("gh pr list output must be an array");
+    throw new UserError("la sortie de gh pr list doit être un tableau");
   }
-  // ponytail: fail closed at gh's list cap; paginate if repos exceed 1,000 PRs.
+  // ponytail: échouer fermé à la limite de gh; paginer si un dépôt dépasse 1 000 PR.
   if (value.length >= 1000) {
     throw new UserError(
-      "gh pr list returned 1000 PRs; stack history may be incomplete"
+      "gh pr list a renvoyé 1000 PR; l’historique de pile peut être incomplet"
     );
   }
   return value.map((item, index) => {
     if (!isRecord(item)) {
-      throw new UserError(`gh pr list row ${index + 1} is invalid`);
+      throw new UserError(`la ligne ${index + 1} de gh pr list est invalide`);
     }
     const pr = item.number;
     const state = frontierPrStateOrNull(item.state);
     const sha = requiredString(item.headRefOid, "headRefOid");
     if (!Number.isSafeInteger(pr) || Number(pr) <= 0 || state === null) {
-      throw new UserError(`gh pr list row ${index + 1} is invalid`);
+      throw new UserError(`la ligne ${index + 1} de gh pr list est invalide`);
     }
     if (!/^[0-9a-f]{40,64}$/i.test(sha)) {
-      throw new UserError(`gh pr list row ${index + 1} has an invalid head SHA`);
+      throw new UserError(`la ligne ${index + 1} de gh pr list a un SHA de tete invalide`);
     }
     return {
       pr: Number(pr),
@@ -1134,7 +1168,7 @@ function currentBranch(repo: string): string {
     command: "git",
     args: ["symbolic-ref", "--quiet", "--short", "HEAD"],
     repo,
-    label: "git current branch lookup",
+    label: "recherche de la branche courante git",
   });
 }
 
@@ -1149,9 +1183,9 @@ function defaultBranch(repo: string): string {
     "gh repo view"
   );
   if (!isRecord(value) || !isRecord(value.defaultBranchRef)) {
-    throw new UserError("gh repo view output has no default branch");
+    throw new UserError("la sortie de gh repo view ne contient pas de branche par defaut");
   }
-  return requiredString(value.defaultBranchRef.name, "default branch");
+  return requiredString(value.defaultBranchRef.name, "branche par defaut");
 }
 
 function livePreferred(
@@ -1170,7 +1204,7 @@ function oneByHead(
   );
   if (matches.length > 1) {
     throw new UserError(
-      `GitHub returned multiple PRs for head branch ${branch}: ${matches
+      `GitHub a renvoye plusieurs PR pour la branche de tete ${branch}: ${matches
         .map((row) => row.pr)
         .sort((a, b) => a - b)
         .join(",")}`
@@ -1189,14 +1223,14 @@ function verifyLocalHead(repo: string, row: GitHubPullRequest): FrontierPr {
       label: `git branch ${row.branches}`,
     });
   } catch {
-    throw new UserError(`GitHub stack branch ${row.branches} is missing locally`);
+    throw new UserError(`la branche de pile GitHub ${row.branches} manque localement`);
   }
   if (!/^[0-9a-f]{40,64}$/i.test(local)) {
-    throw new UserError(`git branch ${row.branches} returned an invalid SHA`);
+    throw new UserError(`git branch ${row.branches} a renvoye un SHA invalide`);
   }
   if (local.toLowerCase() !== row.sha.toLowerCase()) {
     throw new UserError(
-      `PR #${row.pr} head SHA mismatch for branch ${row.branches}: GitHub ${row.sha}; local ${local}`
+      `SHA de tete non concordant pour la PR #${row.pr} sur la branche ${row.branches}: GitHub ${row.sha}; local ${local}`
     );
   }
   return {
@@ -1213,7 +1247,7 @@ function resolveFrontier(repo: string): readonly FrontierPr[] {
   const trunk = defaultBranch(repo);
   const start = oneByHead(rows, branch);
   if (start === undefined) {
-    throw new UserError(`GitHub has no PR for current branch ${branch}`);
+    throw new UserError(`GitHub n'a pas de PR pour la branche courante ${branch}`);
   }
 
   const down: GitHubPullRequest[] = [];
@@ -1223,12 +1257,12 @@ function resolveFrontier(repo: string): readonly FrontierPr[] {
     const parent = oneByHead(rows, cursor.base);
     if (parent === undefined) {
       throw new UserError(
-        `GitHub stack is missing a PR for base branch ${cursor.base}`
+        `la pile GitHub n'a pas de PR pour la branche de base ${cursor.base}`
       );
     }
     if (seen.has(parent.branches)) {
       throw new UserError(
-        `GitHub PR stack contains a cycle at ${parent.branches}`
+        `la pile de PR GitHub contient un cycle a ${parent.branches}`
       );
     }
     seen.add(parent.branches);
@@ -1244,7 +1278,7 @@ function resolveFrontier(repo: string): readonly FrontierPr[] {
     );
     if (children.length > 1) {
       throw new UserError(
-        `GitHub PR stack branches at ${cursor.branches}: ${children
+        `la pile de PR GitHub bifurque à ${cursor.branches}: ${children
           .map((row) => row.pr)
           .sort((a, b) => a - b)
           .join(",")}`
@@ -1256,7 +1290,7 @@ function resolveFrontier(repo: string): readonly FrontierPr[] {
     }
     if (seen.has(child.branches)) {
       throw new UserError(
-        `GitHub PR stack contains a cycle at ${child.branches}`
+        `la pile de PR GitHub contient un cycle a ${child.branches}`
       );
     }
     seen.add(child.branches);
@@ -1288,17 +1322,17 @@ function validateFrontierPin({
   const extra = actual.filter((pr) => !expectedSet.has(pr));
   const drift: string[] = [];
   if (missing.length > 0) {
-    drift.push(`missing from GitHub: ${missing.join(",")}`);
+    drift.push(`manquantes dans GitHub: ${missing.join(",")}`);
   }
   if (extra.length > 0) {
-    drift.push(`extra in GitHub: ${extra.join(",")}`);
+    drift.push(`en trop dans GitHub: ${extra.join(",")}`);
   }
   if (missing.length === 0 && extra.length === 0) {
     drift.push(
-      `order differs: expected ${expected.join(",")}; GitHub ${actual.join(",")}`
+      `ordre différent: attendu ${expected.join(",")}; GitHub ${actual.join(",")}`
     );
   }
-  throw new UserError(`frontier pin mismatch: ${drift.join("; ")}`);
+  throw new UserError(`l'ancrage de frontiere ne correspond pas: ${drift.join("; ")}`);
 }
 
 export function openStore(
@@ -1307,23 +1341,24 @@ export function openStore(
 ): Store {
   const store = resolve(directory);
   let closed = false;
-  let releaseLock: (() => Promise<void>) | null = null;
+  let heldLock: Awaited<ReturnType<typeof acquireLock>> | null = null;
   let lockRequest: Promise<void> | null = null;
 
   const ensureOpen = (): void => {
     if (closed) {
-      throw new UserError("store is closed");
+      throw new UserError("le magasin est ferme");
     }
   };
 
   const ensureLock = async (): Promise<void> => {
     ensureOpen();
-    if (releaseLock !== null) {
+    if (heldLock !== null) {
+      await heldLock.assertOwned();
       return;
     }
     if (lockRequest === null) {
-      lockRequest = acquireLock(store, options).then((release) => {
-        releaseLock = release;
+      lockRequest = acquireLock(store, options).then((lock) => {
+        heldLock = lock;
       });
     }
     try {
@@ -1358,7 +1393,7 @@ export function openStore(
         };
         const rows = [...(await readUnits(store))];
         if (rows.some((unit) => unit.id === row.id)) {
-          throw new UserError(`unit ${row.id} already exists`);
+          throw new UserError(`l’unité ${row.id} existe déjà`);
         }
         rows.push(row);
         await saveUnits(store, rows);
@@ -1372,7 +1407,7 @@ export function openStore(
         const index = rows.findIndex((unit) => unit.id === id);
         const old = rows[index];
         if (index < 0 || old === undefined) {
-          throw new NotFoundError(`unit ${id} not found`);
+          throw new NotFoundError(`unité ${id} introuvable`);
         }
         const row: Unit = {
           ...old,
@@ -1401,7 +1436,7 @@ export function openStore(
           (unit) => unit.id === cleanId
         );
         if (row === undefined) {
-          throw new NotFoundError(`unit ${cleanId} not found`);
+          throw new NotFoundError(`unité ${cleanId} introuvable`);
         }
         return row;
       },
@@ -1494,7 +1529,7 @@ export function openStore(
         const inbox = join(store, "inbox");
         if (!(await exists(inbox))) {
           throw new UserError(
-            `store is not initialized at ${store}; run orch init`
+            `le magasin n'est pas initialise dans ${store}; lancer orch init`
           );
         }
         const timestamp = pointer.ts.replace(/[:.]/g, "-");
@@ -1561,7 +1596,7 @@ export function openStore(
         const index = rows.findIndex((gate) => gate.id === id);
         const old = rows[index];
         if (index < 0 || old === undefined) {
-          throw new NotFoundError(`gate ${id} not found`);
+          throw new NotFoundError(`barrière ${id} introuvable`);
         }
         const gate: ResolvedGate = {
           kind: "resolved",
@@ -1585,7 +1620,7 @@ export function openStore(
             ? undefined
             : params.prs.map((pr) => positiveInteger(pr, "PR"));
         if (pin !== undefined && new Set(pin).size !== pin.length) {
-          throw new UserError("--prs must not contain duplicates");
+          throw new UserError("--prs ne doit pas contenir de doublons");
         }
         const old = await readFrontier(store);
         const prs = resolveFrontier(repo);
@@ -1621,7 +1656,7 @@ export function openStore(
         const rows = [...(await readStanding(store))];
         const item: StandingLine = {
           number: rows.length + 1,
-          line: requiredLine(params.line, "standing order"),
+          line: requiredLine(params.line, "consigne permanente"),
         };
         rows.push(item);
         await atomicWrite(
@@ -1689,14 +1724,14 @@ export function openStore(
         try {
           await lockRequest;
         } catch {
-          // A failed acquisition has no lock to release.
+          // Une acquisition échouée n’a aucun verrou à libérer.
         }
       }
-      const release = releaseLock;
-      releaseLock = null;
+      const lock = heldLock;
+      heldLock = null;
       closed = true;
-      if (release !== null) {
-        await release();
+      if (lock !== null) {
+        await lock.release();
       }
     },
   };

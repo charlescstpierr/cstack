@@ -1,16 +1,16 @@
 # Construire le changement et nettoyer le diff
 
-Donnez au playbook le symptôme, le résultat attendu et la preuve. `$cstack:cstack` choisit ensuite le flux de bug, fonctionnalité, refactoring ou performance adapté.
+Donnez au guide d'exécution le symptôme, le résultat attendu et la preuve. `$cstack:cstack` choisit ensuite le processus adapté : correction, fonctionnalité, refactorisation ou performance.
 
 ```text
 $cstack:cstack cette commande écrit deux lignes après un retry. Reproduis, corrige, puis vérifie.
 ```
 
-Le [playbook de bug](../../skills/cstack/playbooks/bug-fix.md) reproduit avant la correction. Le [playbook de fonctionnalité](../../skills/cstack/playbooks/feature.md) fixe la forme des données. Le [playbook de refactoring](../../skills/cstack/playbooks/refactoring.md) capture le comportement avant de déplacer le code. Le [playbook de performance](../../skills/cstack/playbooks/perf-issue.md) mesure avant d'optimiser.
+Le [guide d'exécution de bug](../../skills/cstack/playbooks/bug-fix.md) reproduit avant la correction. Le [guide d'exécution de fonctionnalité](../../skills/cstack/playbooks/feature.md) fixe la forme des données. Le [guide d'exécution de refactoring](../../skills/cstack/playbooks/refactoring.md) capture le comportement avant de restructurer le code. Le [guide d'exécution de performance](../../skills/cstack/playbooks/perf-issue.md) mesure avant d'optimiser.
 
-## Donner au playbook ce que vous savez
+## Donner au guide d'exécution ce que vous savez
 
-Indiquez le déclencheur, les invariants à conserver et la preuve attendue. Cette information permet au playbook de choisir une étape de reproduction, de caractérisation ou de mesure sans vous faire répéter la procédure.
+Indiquez le déclencheur, les invariants à conserver et la preuve attendue. Cette information permet au guide d'exécution de choisir une étape de reproduction, de caractérisation ou de mesure sans vous faire répéter la procédure.
 
 ## Écrire le test utile avec `$cstack:tdd`
 

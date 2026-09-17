@@ -42,8 +42,8 @@ const options = {
   allowDraft: false,
 } satisfies PollingOptions;
 
-describe("readiness truth table", () => {
-  it("covers every specified row and every UNKNOWN rollup value", () => {
+describe("table de vérité de l’état prêt", () => {
+  it("couvre chaque ligne spécifiée et chaque valeur rollup UNKNOWN", () => {
     const cases: readonly [
       PullRequestFacts["mergeStateStatus"],
       RollupState,
@@ -68,7 +68,7 @@ describe("readiness truth table", () => {
     }
   });
 
-  it("turns a clean visible list plus GitHub refusal into an explicit CI blocker", async () => {
+  it("transforme une liste visible propre plus un refus GitHub en bloqueur CI explicite", async () => {
     const reader = fakeReader({
       facts: { mergeStateStatus: "BLOCKED" },
       fastPath: { kind: "checks", checks: [passingCheck()] },
@@ -81,7 +81,7 @@ describe("readiness truth table", () => {
       allowDraft: false,
     });
     expect(snapshot.kind).toBe("open");
-    if (snapshot.kind !== "open") throw new Error("expected open snapshot");
+    if (snapshot.kind !== "open") throw new Error("snapshot open attendu");
     expect(snapshot.ci.kind).toBe("ci-github-rejected");
     expect(classifyPr(snapshot)).toMatchObject({
       kind: "blocker",
@@ -90,8 +90,8 @@ describe("readiness truth table", () => {
   });
 });
 
-describe("snapshot query planning", () => {
-  it("does not query commit rollups while queued checks are pending", async () => {
+describe("planification des requêtes de snapshot", () => {
+  it("ne demande pas les rollups de commit pendant que les vérifications en file sont pending", async () => {
     const reader = fakeReader({
       fastPath: { kind: "checks", checks: [pendingCheck()] },
     });
@@ -102,7 +102,7 @@ describe("snapshot query planning", () => {
       allowDraft: false,
     });
     expect(snapshot.kind).toBe("open");
-    if (snapshot.kind !== "open") throw new Error("expected open snapshot");
+    if (snapshot.kind !== "open") throw new Error("snapshot open attendu");
     expect(snapshot.ci.kind).toBe("ci-pending");
     expect(reader.calls).toEqual([
       "pullRequest",
@@ -111,7 +111,7 @@ describe("snapshot query planning", () => {
     ]);
   });
 
-  it("queries rollups for settled and failed lists", async () => {
+  it("demande les rollups pour les listes réglées et échouées", async () => {
     const settled = fakeReader();
     await readSnapshot({
       reader: settled,
@@ -133,7 +133,7 @@ describe("snapshot query planning", () => {
     expect(failed.calls).toContain("commitRollups");
   });
 
-  it("short-circuits merged rows before threads and checks", async () => {
+  it("court-circuite les lignes fusionnées avant fils et vérifications", async () => {
     const reader = fakeReader({
       facts: { state: "MERGED", mergedAt: "2026-07-26T00:00:00Z" },
     });
@@ -151,7 +151,7 @@ describe("snapshot query planning", () => {
   });
 });
 
-it("scans stacks tier-major so an upstack conflict outranks frontier CI", async () => {
+it("scanne les piles par tier-major afin qu’un conflit upstack prime sur la CI de frontière", async () => {
   const frontier = await readSnapshot({
     reader: fakeReader({
       fastPath: { kind: "checks", checks: [failedCheck()] },
@@ -174,7 +174,7 @@ it("scans stacks tier-major so an upstack conflict outranks frontier CI", async 
   });
 });
 
-it("attributes a stack wait to the PR whose checks are pending, not the bottom", async () => {
+it("attribue une attente de pile à la PR dont les vérifications sont pending, pas au bas", async () => {
   const readyBottom = await readSnapshot({
     reader: fakeReader(),
     context: context(20),
@@ -197,7 +197,7 @@ it("attributes a stack wait to the PR whose checks are pending, not the bottom",
   });
 });
 
-it("waits on a draft while checks are pending, then reports the draft gate", async () => {
+it("attend sur un brouillon pendant que les vérifications sont pending, puis rapporte la barrière de brouillon", async () => {
   const pending = await readSnapshot({
     reader: fakeReader({
       facts: { isDraft: true },
@@ -221,7 +221,7 @@ it("waits on a draft while checks are pending, then reports the draft gate", asy
   });
 });
 
-describe("queued-stack cadence", () => {
+describe("cadence queued-stack", () => {
   async function openSnapshot(pr: PrContext) {
     return readSnapshot({
       reader: fakeReader(),
@@ -231,7 +231,7 @@ describe("queued-stack cadence", () => {
     });
   }
 
-  it("drops a sweep head only after its snapshot succeeds", async () => {
+  it("retire une tête de sweep seulement après le succès de son snapshot", async () => {
     const queue = [
       context(20),
       context(21),
@@ -252,7 +252,7 @@ describe("queued-stack cadence", () => {
     });
   });
 
-  it("resumes the sweep at the PR whose read failed", async () => {
+  it("reprend le sweep à la PR dont la lecture a échoué", async () => {
     const middle = context(21);
     const base = fakeReader();
     let failNext = true;
@@ -266,7 +266,7 @@ describe("queued-stack cadence", () => {
           throw new WatcherQueryError({
             kind: "command-exit",
             retryable: true,
-            detail: "rate limited",
+            detail: "limite de debit",
             code: 1,
           });
         }
@@ -286,7 +286,7 @@ describe("queued-stack cadence", () => {
             timeline.push("sleep");
             now += seconds;
             sleeps += 1;
-            if (sleeps === 2) throw new Error("stop after resume proof");
+            if (sleeps === 2) throw new Error("arret apres preuve de reprise");
           },
         },
         emit(verdict) {
@@ -296,7 +296,7 @@ describe("queued-stack cadence", () => {
       contexts: [context(20), middle, context(22)],
       options,
     });
-    await expect(running).rejects.toThrow("stop after resume proof");
+    await expect(running).rejects.toThrow("arret apres preuve de reprise");
     expect(timeline).toEqual([
       "emit:QUEUE",
       "read:20",
@@ -311,7 +311,7 @@ describe("queued-stack cadence", () => {
     ]);
   });
 
-  it("emits a completed sweep only after its final successful snapshot", async () => {
+  it("émet un sweep terminé seulement après son dernier snapshot réussi", async () => {
     const queue = [context(30), context(31)] satisfies NonEmpty<PrContext>;
     let state = createQueueState(queue, 0);
     const first = applyQueueSnapshot(
@@ -334,7 +334,7 @@ describe("queued-stack cadence", () => {
     expect(second.state.nextSweepAt).toBe(305);
   });
 
-  it("ADVANCE continues directly to the new frontier without sleeping", async () => {
+  it("ADVANCE continue directement vers la nouvelle frontière sans sleep", async () => {
     const one = context(40);
     const two = context(41);
     const base = fakeReader();
@@ -369,7 +369,7 @@ describe("queued-stack cadence", () => {
             timeline.push("sleep");
             now += seconds;
             sleeps += 1;
-            if (sleeps === 2) throw new Error("stop after advance proof");
+            if (sleeps === 2) throw new Error("arret apres preuve ADVANCE");
           },
         },
         emit(verdict) {
@@ -380,7 +380,7 @@ describe("queued-stack cadence", () => {
       contexts: [one, two],
       options,
     });
-    await expect(running).rejects.toThrow("stop after advance proof");
+    await expect(running).rejects.toThrow("arret apres preuve ADVANCE");
     expect(emitted.some((event) => event.kind === "ADVANCE")).toBe(true);
     const firstSleep = timeline.indexOf("sleep");
     expect(timeline.slice(firstSleep, firstSleep + 5)).toEqual([
@@ -392,7 +392,7 @@ describe("queued-stack cadence", () => {
     ]);
   });
 
-  it("deduplicates identical waits and schedules the next due sweep", async () => {
+  it("dédoublonne les attentes identiques et planifie le prochain sweep suivant", async () => {
     const queue = [context(50)] satisfies NonEmpty<PrContext>;
     let state = createQueueState(queue, 0);
     state = applyQueueSnapshot(
@@ -403,17 +403,17 @@ describe("queued-stack cadence", () => {
     ).state;
     const first = evaluateQueue(state, 0, options);
     expect(first.kind).toBe("waiting");
-    if (first.kind !== "waiting") throw new Error("expected waiting");
+    if (first.kind !== "waiting") throw new Error("waiting attendu");
     expect(first.emit).toBe(true);
     const second = evaluateQueue(first.state, 10, options);
     expect(second.kind).toBe("waiting");
-    if (second.kind !== "waiting") throw new Error("expected waiting");
+    if (second.kind !== "waiting") throw new Error("waiting attendu");
     expect(second.emit).toBe(false);
     expect(planQueue(second.state, 300).work?.kind).toBe("whole-stack-sweep");
   });
 });
 
-it("uses the specified retry floor and cap", () => {
+it("utilise le plancher et le plafond de réessai spécifiés", () => {
   expect(queryBackoffSeconds(1, 1)).toBe(60);
   expect(queryBackoffSeconds(1, 2)).toBe(120);
   expect(queryBackoffSeconds(60, 4)).toBe(300);

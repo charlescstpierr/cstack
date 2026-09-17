@@ -1,30 +1,30 @@
-# Boundary Discipline
+# Discipline des frontières
 
-Read this reference when an active cstack workflow routes here or the user names this principle. Follow the [Codex runtime contract](../codex-runtime.md) for scope and permissions.
+Lisez cette référence lorsqu'un processus cstack actif vous route ici ou lorsque l'utilisateur nomme ce principe. Suivez le [contrat d'exécution Codex](../codex-runtime.md) pour le périmètre et les permissions.
 
-Place validation, type narrowing, and error handling at system boundaries. Trust internal code unconditionally. Business logic lives in pure functions. The shell is thin and mechanical.
+Placez la validation, le rétrécissement de types et la gestion des erreurs aux frontières du système. Faites confiance au code interne sans condition. La logique métier vit dans des fonctions pures. La coquille est mince et mécanique.
 
-**Why:** Scattered validation is noisy, redundant, and gives a false sense of safety. Keep logic out of framework wiring so it can be tested without the framework.
+**Pourquoi :** la validation dispersée est bruyante, redondante et donne un faux sentiment de sécurité. Gardez la logique hors du câblage du framework afin qu'elle puisse être testée sans le framework.
 
-**The pattern:**
-- **At boundaries** (CLI args, config files, external APIs, network protocols): validate, return errors, handle defensively.
-- **Inside the system:** typed data, error propagation, no re-validation. Trust the types.
-- **Across the boundary.** Expose domain concepts, not the boundary's private representation. Keep general-purpose mechanism inside and special-purpose policy at the edge.
+**Le motif :**
+- **Aux frontières** (arguments CLI, fichiers de config, API externes, protocoles réseau) : valider, retourner les erreurs, gérer défensivement.
+- **Dans le système :** données typées, propagation d'erreurs, pas de revalidation. Faites confiance aux types.
+- **À travers la frontière.** Exposez les concepts du domaine, pas la représentation privée de la frontière. Gardez le mécanisme général à l'intérieur et la politique spécialisée au bord.
 
 **Applications:**
 
-Validation and error handling:
-- Validate config at parse time (the boundary), not inside business logic
-- Parse raw data into domain types at the boundary
-- Do not re-export transport, storage, framework, or wire types through the public surface
-- No redundant nil checks deep in call chains if the boundary already validated
+Validation et gestion des erreurs :
+- Valider la config au moment du analyse (la frontière), pas dans la logique métier
+- Analyseur les données brutes en types de domaine à la frontière
+- Ne pas réexporter les types de transport, stockage, framework ou filaire via la surface publique
+- Pas de vérifications nil redondantes au fond des chaînes d'appels si la frontière a déjà validé
 
-Code organization:
-- Business logic in pure functions with no framework dependencies
-- Parse functions: pure transforms from raw bytes to typed state
-- Prompt construction: structured state in, string out
-- Scoring and assessment: pure transforms from state to results
+Organisation du code :
+- Logique métier dans des fonctions pures sans dépendances au framework
+- Fonctions d'analyse : transformations pures d'octets bruts vers un état typé
+- Construction d'invite : état structuré en entrée, chaîne en sortie
+- Scoring et évaluation : transformations pures d'un état vers des résultats
 
-**The tests:**
-- "Is this data crossing a system boundary right now?" If not, validation is redundant.
-- "Can this be a pure function that the shell just calls?" If yes, extract it.
+**Les tests :**
+- « Ces données traversent-elles une frontière système maintenant ? » Sinon, la validation est redondante.
+- « Ceci peut-il être une fonction pure que la coquille appelle simplement ? » Si oui, extrayez-la.

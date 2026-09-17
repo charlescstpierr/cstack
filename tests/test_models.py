@@ -1,4 +1,4 @@
-"""Model choices survive setup, legacy configs, panels and rejected writes."""
+"""Les choix de modèles résistent à la configuration, aux anciens formats, aux panels et aux écritures refusées."""
 
 import importlib.util
 import json
@@ -22,7 +22,7 @@ class ModelSetupTests(unittest.TestCase):
             path = Path(directory) / ".cstack/models.json"
             config, digest = models.read_config(path)
             preview = models.preview(config, digest, CATALOG)
-            self.assertFalse(path.exists(), "preview must be read-only")
+            self.assertFalse(path.exists(), "l’aperçu doit rester en lecture seule")
             choices = {}
             expected = {}
             groups = {}
@@ -85,7 +85,7 @@ class ModelSetupTests(unittest.TestCase):
                 self.assertEqual(path.read_bytes(), original)
             with self.assertRaises(ValueError):
                 models.apply_choices(path, {"documentation": "inherit-parent"}, "stale", CATALOG)
-            with patch.object(models.os, "replace", side_effect=OSError("simulated failed save")):
+            with patch.object(models.os, "replace", side_effect=OSError("échec de sauvegarde simulé")):
                 with self.assertRaises(OSError):
                     models.apply_choices(path, {"documentation": "inherit-parent"}, digest, CATALOG)
             self.assertEqual(path.read_bytes(), original)

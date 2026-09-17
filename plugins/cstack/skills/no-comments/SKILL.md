@@ -1,23 +1,23 @@
 ---
 name: no-comments
-description: "Use for $cstack:no-comments when running an independent comment review, then fix accepted findings and offer encodings for claimed constraints."
+description: "Utiliser pour $cstack:no-comments lors d'une revue indépendante des commentaires, puis corriger les constats acceptés et proposer des encodages pour les contraintes déclarées."
 ---
 
 # No comments
 
-Runtime: [`../cstack/references/codex-runtime.md`](../cstack/references/codex-runtime.md).
+Contrat d’exécution : [`../cstack/references/codex-runtime.md`](../cstack/references/codex-runtime.md).
 
-Run an independent comment review, then act on accepted findings. `deslop` (`../deslop/SKILL.md`) cleans slop out of code, `unslop` (`../unslop/SKILL.md`) cleans it out of prose, and `no-comments` hands the comments to a reviewer who did not write them.
+Exécute une revue indépendante des commentaires, puis agis sur les constats acceptés. `deslop` (`../deslop/SKILL.md`) nettoie le slop du code, `unslop` (`../unslop/SKILL.md`) le nettoie de la prose, et `no-comments` confie les commentaires à un relecteur qui ne les a pas écrits.
 
-## Scope
+## Portée
 
-Use the caller's files or diff. Otherwise use the current diff against the base branch, default `main`, including the working tree.
+Utilise les fichiers ou le diff de l'appelant. Sinon, utilise le diff courant contre la branche de base, par défaut `main`, y compris le working tree.
 
-## Steps
+## Étapes
 
-1. Read [`../cstack/references/agents/comment-reviewer.md`](../cstack/references/agents/comment-reviewer.md) and pass that prompt plus the scope to one native subagent. The assignment is read-only; no named registered role is required. When no subagent slot is available, run the same prompt in this session as a separate, explicitly re-scoped pass, label the result `single-agent`, and report the missing independence. Absent capacity never deletes the review.
-2. Inspect its report. Reject scope escapes, exception-protected deletions, and flags that treat intentional comments as guilty. A keep survives only with proof that the constraint cannot be expressed in code. Audit missed scoped lint and TypeScript suppressions. Correctness or safety suppressions remain actionable. Before accepting thin `IMPORTANT` or `do not remove` findings, run `$cstack:how` or `$cstack:why` on the symbol. Rerun one rejected review with the failure named. Reject a second, report it open, and fail `$cstack:no-comments`.
-3. Fix trivial accepted findings directly by deleting dead narration, dropping a workaround, or using the real API. If any fix needs a shape, run `$cstack:architect` once for the accepted set and surrounding code. Stop at the sketch; Step 4 implements it.
-4. Implement the smallest root-cause fix in scope. Remove every named workaround. If the root cause is out of scope, land the smallest in-scope fix and report the rest open. The [Fix Root Causes](../cstack/references/principles/fix-root-causes.md) and [Redesign From First Principles](../cstack/references/principles/redesign-from-first-principles.md) references guide intent only. Neither authorizes widening the fence nor fixing instances outside it. Never bolt on symptom guards.
-5. For constraint comments such as `do not remove`, `do not change wording`, or `talk to X before changing`, leave proven constraints about things outside the codebase. Offer the cheapest in-scope type, runtime check, test, or CI lint. Encode it when the current task authorizes that edit; otherwise keep the proven comment and report the possible encoding.
-6. Report the deletion count, restored comments, reruns, architect sketch, fixes, encoding offers, encodings, unenforced constraints, and other open work.
+1. Lis [`../cstack/references/agents/comment-reviewer.md`](../cstack/references/agents/comment-reviewer.md) et transmets ce prompt plus la portée à un sous-agent natif. L'assignation est en lecture seule; aucun rôle enregistré nommé n'est requis. Si aucun emplacement de sous-agent n'est disponible, exécute le même prompt dans cette session comme passe séparée et explicitement recadrée, étiquette le résultat `single-agent`, puis signale l'indépendance manquante. Le manque de capacité ne supprime jamais la revue.
+2. Inspecte son rapport. Rejette les échappées de portée, les suppressions protégées par exception et les signalements qui traitent des commentaires intentionnels comme coupables. Une conservation survit seulement avec preuve que la contrainte ne peut pas être exprimée en code. Audite les suppressions de lint bornées et TypeScript manquées. Les suppressions de correction ou de sécurité restent actionnables. Avant d'accepter des constats minces `IMPORTANT` ou `do not remove`, exécute `$cstack:how` ou `$cstack:why` sur le symbole. Relance une revue rejetée avec l'échec nommé. Si la seconde revue est encore rejetée, signale le problème comme ouvert et fais échouer `$cstack:no-comments`.
+3. Corrige directement les constats triviaux acceptés en supprimant la narration morte, en retirant un contournement ou en utilisant la vraie API. Si un correctif exige une forme, exécute `$cstack:architect` une fois pour l'ensemble accepté et le code environnant. Arrête-toi à l'esquisse; l'étape 4 l'implémente.
+4. Implémente le plus petit correctif de cause racine dans la portée. Retire chaque contournement nommé. Si la cause racine est hors portée, livre le plus petit correctif dans la portée et signale le reste ouvert. Les références [corriger les causes racines](../cstack/references/principles/fix-root-causes.md) et [reconcevoir depuis les premiers principes](../cstack/references/principles/redesign-from-first-principles.md) guident seulement l'intention. Aucune n'autorise l'élargissement de la clôture ni la correction d'instances hors de celle-ci. Ne boulonne jamais des gardes de symptôme.
+5. Pour les commentaires de contrainte tels que `do not remove`, `do not change wording` ou `talk to X before changing`, laisse les contraintes prouvées concernant des choses hors du codebase. Propose le type, le contrôle d’exécution, test ou lint CI dans la portée le moins cher. Encode-le quand la tâche courante autorise cette édition; sinon, garde le commentaire prouvé et signale l'encodage possible.
+6. Rapporte le nombre de suppressions, les commentaires restaurés, les relances, l'esquisse architect, les correctifs, les offres d'encodage, les encodages, les contraintes non appliquées et les autres travaux ouverts.

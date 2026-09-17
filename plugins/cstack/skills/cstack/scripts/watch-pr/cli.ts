@@ -34,34 +34,34 @@ export interface CliOptions {
 function positiveNumber(value: string): number {
   const parsed = Number(value);
   if (!Number.isFinite(parsed) || parsed <= 0)
-    throw new InvalidArgumentError("must be greater than zero");
+    throw new InvalidArgumentError("doit être supérieur à zéro");
   return parsed;
 }
 function nonNegativeNumber(value: string): number {
   const parsed = Number(value);
   if (!Number.isFinite(parsed) || parsed < 0)
-    throw new InvalidArgumentError("must be zero or greater");
+    throw new InvalidArgumentError("doit être zéro ou plus");
   return parsed;
 }
 function positiveInteger(value: string): number {
   const parsed = Number(value);
   if (!Number.isInteger(parsed) || parsed <= 0)
-    throw new InvalidArgumentError("must be a positive integer");
+    throw new InvalidArgumentError("doit être un entier positif");
   return parsed;
 }
 function prNumber(value: string): T.PrNumber {
   try {
     return parsePrNumber(Number(value.replace(/^#/, "")));
   } catch {
-    throw new InvalidArgumentError("must be a positive integer");
+    throw new InvalidArgumentError("doit être un entier positif");
   }
 }
 function stackPrList(value: string): T.NonEmpty<T.PrNumber> {
   const numbers = value.split(",").map((part) => prNumber(part.trim()));
   if (new Set(numbers).size !== numbers.length)
-    throw new InvalidArgumentError("contains a duplicate PR");
+    throw new InvalidArgumentError("contient une PR en double");
   const parsed = nonEmpty(numbers);
-  if (parsed === null) throw new InvalidArgumentError("cannot be empty");
+  if (parsed === null) throw new InvalidArgumentError("ne peut pas être vide");
   return parsed;
 }
 interface RawOptions {
@@ -85,54 +85,58 @@ export function parseArgs(
 ): CliOptions {
   const program = new Command("watch-pr")
     .description(
-      "Watch one pull request, a connected stack, or an immutable queued stack.\nJSON (NDJSON while polling) is the default; --pretty renders human text."
+      "Surveille une pull request, une pile connectée ou une pile en file immuable.\nJSON (NDJSON pendant le polling) est la sortie par défaut; --pretty rend du texte humain."
     )
     .configureOutput({ writeOut: io.stdout, writeErr: io.stderr })
     .exitOverride()
-    .option("--owner <owner>", "GitHub repository owner")
-    .option("--repo <repo>", "GitHub repository name")
-    .option("--pr <number>", "pull request number", prNumber)
+    .helpOption("-h, --help", "afficher l’aide de la commande")
+    .option("--owner <owner>", "propriétaire du dépôt GitHub")
+    .option("--repo <repo>", "nom du dépôt GitHub")
+    .option("--pr <number>", "numéro de pull request", prNumber)
     .addOption(
-      new Option("--stack", "watch the connected open stack")
+      new Option(
+        "--stack",
+        "surveiller les ancêtres et descendants ouverts de la PR sélectionnée"
+      )
         .default(false)
         .conflicts("queuedStack")
     )
     .option(
       "--queued-stack",
-      "watch the captured stack until all PRs merge",
+      "surveiller la pile capturee jusqu'a fusion de toutes les PR",
       false
     )
     .option(
       "--stack-prs <n,...>",
-      "frozen bottom-to-top queue (queued mode only)",
+      "file gelee du bas vers le haut (mode queued seulement)",
       stackPrList
     )
-    .option("--interval <seconds>", "poll interval", positiveNumber, 60)
+    .option("--interval <seconds>", "intervalle de polling", positiveNumber, 60)
     .option(
       "--sweep-interval <seconds>",
-      "whole-stack sweep interval",
+      "intervalle de balayage de toute la pile",
       positiveNumber,
       300
     )
     .option(
       "--timeout <seconds>",
-      "deadline; 0 disables it",
+      "delai maximal; 0 le desactive",
       nonNegativeNumber,
       0
     )
     .option(
       "--max-query-errors <count>",
-      "consecutive query-error budget",
+      "budget d’erreurs de requête consécutives",
       positiveInteger,
       5
     )
-    .option("--status-only", "print one status table and exit 0", false)
-    .option("--allow-draft", "do not treat a draft as a merge gate", false)
-    .option("--pretty", "render human text instead of JSON", false);
+    .option("--status-only", "afficher une seule table de statut et sortir avec 0", false)
+    .option("--allow-draft", "ne pas traiter un brouillon comme une barrière de fusion", false)
+    .option("--pretty", "rendre du texte humain au lieu du JSON", false);
   program.parse(argv, { from: "user" });
   const raw = program.opts<RawOptions>();
   if (raw.stackPrs !== undefined && !raw.queuedStack)
-    program.error("error: --stack-prs requires --queued-stack");
+    program.error("erreur: --stack-prs exige --queued-stack");
   return {
     owner: raw.owner ?? null,
     repo: raw.repo ?? null,

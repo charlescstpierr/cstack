@@ -1,6 +1,6 @@
 # Adapter cstack à votre façon de travailler
 
-Le routeur et les playbooks sont génériques. Vos compétences locales peuvent exprimer les conventions du dépôt, à condition de rester explicites, vérifiables et dans le périmètre demandé.
+Le routeur et les guides d'exécution sont génériques. Vos compétences locales peuvent exprimer les conventions du dépôt, à condition de rester explicites, vérifiables et dans le périmètre demandé.
 
 ## Générer un mode personnel avec `$cstack:automate-me`
 
@@ -24,7 +24,7 @@ $cstack:reflect cette tâche a pris trop longtemps. Propose une règle qui évit
 $cstack:cstack écris une compétence pour vérifier les migrations de base de données de ce dépôt.
 ```
 
-Suivez le [playbook d'auteur de compétence](../../skills/cstack/playbooks/authoring-a-skill.md). Vérifiez le frontmatter, les liens et un exemple réel. Une compétence locale ne doit pas être enregistrée comme compétence globale sans demande explicite.
+Suivez le [guide d'exécution d'auteur de compétence](../../skills/cstack/playbooks/authoring-a-skill.md). Vérifiez le frontmatter, les liens et un exemple réel. Une compétence locale ne doit pas être enregistrée comme compétence globale sans demande explicite.
 
 ## Écrire une documentation lisible
 
@@ -37,9 +37,9 @@ $cstack:technical-writing relis cette documentation et rends les étapes exécut
 ## Tester une modification de compétence
 
 ```text
-$cstack:cstack exécute le playbook eval sur cette modification de compétence. Compare les preuves sans révéler les variantes.
+$cstack:cstack exécute le guide d'exécution eval sur cette modification de compétence. Compare les preuves sans révéler les variantes.
 ```
 
-Le [playbook eval](../../skills/cstack/playbooks/eval.md) teste le comportement dans des répertoires isolés. Relisez les sorties et ne mélangez pas la modification de compétence avec une fonctionnalité produit.
+Le [guide d'exécution eval](../../skills/cstack/playbooks/eval.md) teste le comportement dans des répertoires isolés. Relisez les sorties et ne mélangez pas la modification de compétence avec une fonctionnalité produit.
 
 Suivant : [recettes et pièges](./10-recipes-and-pitfalls.md).

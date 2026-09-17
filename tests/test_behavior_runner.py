@@ -38,17 +38,17 @@ class BehaviorRunnerTests(unittest.TestCase):
             project = root / "project"
             project.mkdir()
             cases = root / "cases.json"
-            cases.write_text(json.dumps([{"id": "one", "cwd": str(project), "prompt": "Read only."}]))
+            cases.write_text(json.dumps([{"id": "one", "cwd": str(project), "prompt": "Lecture seule."}]))
             evidence = root / "evidence"
             evidence.mkdir()
             saved = evidence / "summary.json"
-            saved.write_text("preserve previous evidence")
+            saved.write_text("conserver les preuves précédentes")
             with patch.object(verify_behavior, "build_command") as build:
                 for output in (project, project / "results", root, evidence):
                     with self.subTest(output=output), self.assertRaises(verify_behavior.HarnessError):
                         verify_behavior.main(["--cases", str(cases), "--output", str(output)])
                 build.assert_not_called()
-            self.assertEqual(saved.read_text(), "preserve previous evidence")
+            self.assertEqual(saved.read_text(), "conserver les preuves précédentes")
 
     def test_dispatch_metadata_is_recorded_separately_from_effective_metadata(self):
         current = state()
@@ -78,7 +78,7 @@ class BehaviorRunnerTests(unittest.TestCase):
     def test_closed_child_thread_is_a_metadata_gap_not_case_failure(self):
         class ClosedChildServer:
             def request(self, *args, **kwargs):
-                raise verify_behavior.HarnessError("thread not loaded: child")
+                raise verify_behavior.HarnessError("conversation non chargée : child")
 
         current = state()
         metadata = verify_behavior.capture_thread_metadata(
@@ -86,7 +86,7 @@ class BehaviorRunnerTests(unittest.TestCase):
         )
         self.assertIsNone(metadata)
         self.assertEqual(current["metadata_gaps"][0]["thread_id"], "child")
-        self.assertIn("thread/read unavailable", current["metadata_gaps"][0]["reason"])
+        self.assertIn("thread/read indisponible", current["metadata_gaps"][0]["reason"])
 
     def test_agent_message_with_null_questions_is_not_input(self):
         current = state()
@@ -127,8 +127,8 @@ class BehaviorRunnerTests(unittest.TestCase):
                     "item": {
                         "type": "agentMessage",
                         "id": "m1",
-                        "text": "question pending",
-                        "questions": [{"id": "choice", "text": "Which policy?"}],
+                        "text": "question en attente",
+                        "questions": [{"id": "choice", "text": "Quelle politique ?"}],
                     },
                 },
             },
@@ -136,19 +136,19 @@ class BehaviorRunnerTests(unittest.TestCase):
             "parent",
         )
         self.assertEqual(current["questions"][0][0]["id"], "choice")
-        self.assertEqual(current["messages"], ["question pending"])
+        self.assertEqual(current["messages"], ["question en attente"])
         verify_behavior.update_state(
             {
                 "method": "item/completed",
                 "params": {
                     "threadId": "parent",
-                    "item": {"type": "agentMessage", "id": "m1", "text": "final answer", "questions": []},
+                    "item": {"type": "agentMessage", "id": "m1", "text": "réponse finale", "questions": []},
                 },
             },
             current,
             "parent",
         )
-        self.assertEqual(current["messages"], ["final answer"])
+        self.assertEqual(current["messages"], ["réponse finale"])
 
     def test_missing_codex_config_fails_loudly(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -183,11 +183,11 @@ class BehaviorRunnerTests(unittest.TestCase):
                 with patch.dict(sys.modules, {"tomllib": fake}):
                     with self.assertRaises(verify_behavior.HarnessError) as ctx:
                         verify_behavior.config_names()
-        self.assertIn("cannot read Codex config", str(ctx.exception))
+        self.assertIn("impossible de lire la configuration Codex", str(ctx.exception))
 
     def test_python39_requires_tomllib_to_parse_config(self):
         if sys.version_info >= (3, 11):
-            self.skipTest("this interpreter can parse TOML")
+            self.skipTest("cet interpréteur peut lire le TOML")
         with tempfile.TemporaryDirectory() as directory:
             home = Path(directory)
             (home / "config.toml").write_text("[plugins]\n")

@@ -22,7 +22,7 @@ class LogScriptTest(unittest.TestCase):
 
     def log(self):
         return subprocess.run(
-            [BASH, str(SCRIPT), str(self.logfile), "build", "chose bun", "already vendored", "bun test", "pass"],
+            [BASH, str(SCRIPT), str(self.logfile), "build", "choix de bun", "déjà présent dans le dépôt", "bun test", "pass"],
             cwd=self.root, text=True, capture_output=True, check=True,
         )
 
@@ -30,7 +30,7 @@ class LogScriptTest(unittest.TestCase):
         self.log()
         self.assertEqual((self.state / ".gitignore").read_text(), "*\n")
         row = self.logfile.read_text().splitlines()[1].split("\t")
-        self.assertEqual(row[1:], ["build", "chose bun", "already vendored", "bun test", "pass"])
+        self.assertEqual(row[1:], ["build", "choix de bun", "déjà présent dans le dépôt", "bun test", "pass"])
 
     def test_dangling_gitignore_symlink_is_not_followed(self):
         self.state.mkdir()

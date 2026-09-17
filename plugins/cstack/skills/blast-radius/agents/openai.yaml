@@ -1,6 +1,6 @@
 interface:
   display_name: "blast-radius"
-  short_description: "Trace callers and contracts that a change could affect"
-  default_prompt: "Use $cstack:blast-radius for this task."
+  short_description: "Tracer appelants et contrats touchés"
+  default_prompt: "Utilise $cstack:blast-radius pour cette tâche."
 policy:
   allow_implicit_invocation: false

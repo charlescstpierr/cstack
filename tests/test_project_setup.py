@@ -1,4 +1,4 @@
-"""Project setup plans are fixed, resumable, and conservative."""
+"""Les plans de configuration du projet sont figés, reprenables et prudents."""
 
 from __future__ import annotations
 
@@ -33,6 +33,38 @@ class ProjectSetupTests(unittest.TestCase):
 
     def tearDown(self) -> None:
         self.temp.cleanup()
+
+    def test_cli_argument_errors_are_french_and_keep_argument_values(self) -> None:
+        literal = "unrecognized arguments: invalid choice: (choose from error)"
+        for script, command, required in [(SCRIPT, "preview", "--options"), (MODELS, "resolve", "role")]:
+            cases = [
+                ([], "arguments requis", "command"),
+                ([command], "arguments requis", required),
+                (["inconnue"], "choix invalide", "inconnue"),
+                (["--workspace"], "un argument attendu", "--workspace"),
+                (["--help=" + literal], "argument explicite ignoré", literal),
+            ]
+            if script == SCRIPT:
+                cases.append((["preview", "--options", "unused.json", "--inconnue"], "arguments non reconnus", "--inconnue"))
+            else:
+                cases.extend([
+                    (["resolve", literal], "choix invalide", literal),
+                    (["resolve", "documentation", "--inconnue"], "arguments non reconnus", "--inconnue"),
+                ])
+            for args, expected, value in cases:
+                with self.subTest(script=script.name, args=args):
+                    result = subprocess.run([sys.executable, str(script), *args], cwd=self.root, capture_output=True, text=True)
+                    self.assertEqual(result.returncode, 2)
+                    self.assertEqual(result.stdout, "")
+                    self.assertIn("utilisation:", result.stderr)
+                    self.assertIn(": erreur:", result.stderr)
+                    self.assertIn(expected, result.stderr)
+                    self.assertIn(value, result.stderr)
+        help_result = subprocess.run([sys.executable, str(MODELS), "resolve", "--help"], capture_output=True, text=True)
+        self.assertEqual(help_result.returncode, 0)
+        self.assertIn("arguments positionnels:", help_result.stdout)
+        self.assertNotIn("positional arguments:", help_result.stdout)
+        self.assertEqual(list(self.root.iterdir()), [])
 
     def _options(self, value: dict | None = None) -> Path:
         path = self.root / "options.json"
@@ -79,14 +111,14 @@ class ProjectSetupTests(unittest.TestCase):
         self.assertEqual((self.root / ".gitignore").read_bytes(), b".cstack/\n")
         agents = (self.root / "AGENTS.md").read_text()
         self.assertIn("cstack:managed:start", agents)
-        self.assertIn("only after the user explicitly invokes a cstack skill", agents)
+        self.assertIn("seulement après invocation explicite d’une skill cstack par l’utilisateur", agents)
         guide = (self.root / "docs/agents/cstack.md").read_text()
-        self.assertIn("| `clarify` | `$cstack:clarify` | 0 by default; one explorer per delegated independent fact | `how explorer` |", guide)
-        self.assertIn("| `domain` | `$cstack:domain` | 0 by default; optional fact delegation | `how explorer`, `documentation`, `judgment and prose` |", guide)
-        self.assertIn("| `horizon` | `$cstack:horizon` | variable research children; optional 1 synthesis (judgment and prose) |", guide)
-        self.assertIn("| `audit-architecture` | `$cstack:audit-architecture` | at most 1 initial explorer | `how explorer` |", guide)
-        self.assertIn("model and reasoning-effort choices", guide)
-        self.assertIn("Use `hardest tasks` only for explicit complex architecture", guide)
+        self.assertIn("| `clarify` | `$cstack:clarify` | 0 par défaut; un explorateur par fait indépendant délégué | `how explorer` |", guide)
+        self.assertIn("| `domain` | `$cstack:domain` | 0 par défaut; délégation factuelle optionnelle | `how explorer`, `documentation`, `judgment and prose` |", guide)
+        self.assertIn("| `horizon` | `$cstack:horizon` | enfants de recherche variables; 1 synthèse optionnelle (judgment and prose) |", guide)
+        self.assertIn("| `audit-architecture` | `$cstack:audit-architecture` | au plus 1 explorateur initial | `how explorer` |", guide)
+        self.assertIn("choix de modèles et d’effort de raisonnement", guide)
+        self.assertIn("Utiliser `hardest tasks` seulement pour l’architecture complexe explicite", guide)
         self.assertFalse((self.root / "CONTEXT.md").exists())
         self.assertFalse((self.root / "ADR").exists())
 
@@ -119,24 +151,24 @@ class ProjectSetupTests(unittest.TestCase):
         self.assertEqual(before, after)
 
     def test_manual_text_crlf_and_existing_claude_are_preserved(self) -> None:
-        (self.root / "AGENTS.md").write_bytes(b"human rule\r\n")
-        (self.root / "CLAUDE.md").write_bytes(b"# Existing rules\r\n")
+        (self.root / "AGENTS.md").write_bytes("règle humaine\r\n".encode("utf-8"))
+        (self.root / "CLAUDE.md").write_bytes("# Règles existantes\r\n".encode("utf-8"))
         docs = self.root / "docs/agents"
         docs.mkdir(parents=True)
-        (docs / "cstack.md").write_bytes(b"manual prefix\r\n" + project.START + b"\r\nold\r\n" + project.END + b"\r\nmanual suffix\r\n")
+        (docs / "cstack.md").write_bytes("préfixe manuel\r\n".encode("utf-8") + project.START + b"\r\nold\r\n" + project.END + b"\r\nsuffixe manuel\r\n")
         tracker = docs / "issue-tracker.md"
-        tracker.write_bytes(b"existing tracker\r\n")
+        tracker.write_bytes(b"suivi existant\r\n")
         options, plan = self._preview()
         result = self._apply(options, plan)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         agents = (self.root / "AGENTS.md").read_bytes()
-        self.assertTrue(agents.startswith(b"human rule\r\n"))
+        self.assertTrue(agents.startswith("règle humaine\r\n".encode("utf-8")))
         self.assertIn(b"[CLAUDE.md](CLAUDE.md)", agents)
         updated = (docs / "cstack.md").read_bytes()
-        self.assertTrue(updated.startswith(b"manual prefix\r\n"))
-        self.assertTrue(updated.endswith(b"manual suffix\r\n"))
-        self.assertEqual(tracker.read_bytes(), b"existing tracker\r\n")
-        self.assertEqual((self.root / "CLAUDE.md").read_bytes(), b"# Existing rules\r\n")
+        self.assertTrue(updated.startswith("préfixe manuel\r\n".encode("utf-8")))
+        self.assertTrue(updated.endswith(b"suffixe manuel\r\n"))
+        self.assertEqual(tracker.read_bytes(), b"suivi existant\r\n")
+        self.assertEqual((self.root / "CLAUDE.md").read_bytes(), "# Règles existantes\r\n".encode("utf-8"))
 
     def test_explicit_tracker_modes_are_local_and_github_is_validation_only(self) -> None:
         options, plan = self._preview({"tracker": {"mode": "github", "owner": "acme", "repo": "app"}})
@@ -154,7 +186,7 @@ class ProjectSetupTests(unittest.TestCase):
         self.assertIn("research/<id>.md", local_tracker)
         self.assertIn("ready", local_tracker)
         self.assertIn("blocked_by", local_tracker)
-        self.assertIn("Record the answer before setting a ticket to `resolved`", local_tracker)
+        self.assertIn("Enregistrer la réponse avant de mettre un ticket à `resolved`", local_tracker)
         bad = self._cli("preview", options=self._options({"tracker": {"mode": "github", "owner": "bad/name", "repo": "app"}}))
         self.assertNotEqual(bad.returncode, 0)
 
@@ -166,7 +198,7 @@ class ProjectSetupTests(unittest.TestCase):
         (self.root / "AGENTS.md").unlink()
         docs = self.root / "docs/agents"
         docs.mkdir(parents=True)
-        (docs / "cstack.md").write_text("human-owned document\n")
+        (docs / "cstack.md").write_text("document de l’utilisateur\n")
         result = self._cli("preview")
         self.assertNotEqual(result.returncode, 0)
         self.assertEqual(json.loads(result.stdout)["status"], "rejected")
@@ -210,10 +242,10 @@ class ProjectSetupTests(unittest.TestCase):
             (self.root / "docs").unlink(missing_ok=True)
             outside.rmdir()
         options, plan = self._preview()
-        (self.root / "AGENTS.md").write_text("manual edit\n")
+        (self.root / "AGENTS.md").write_text("modification manuelle\n")
         result = self._apply(options, plan)
         self.assertNotEqual(result.returncode, 0)
-        self.assertEqual((self.root / "AGENTS.md").read_text(), "manual edit\n")
+        self.assertEqual((self.root / "AGENTS.md").read_text(), "modification manuelle\n")
         self.assertFalse((self.root / "docs/agents/cstack.md").exists())
 
     def test_model_choices_use_existing_validator_and_preserve_other_roles(self) -> None:
@@ -245,7 +277,7 @@ class ProjectSetupTests(unittest.TestCase):
             nonlocal calls
             calls += 1
             if calls == 2:
-                raise OSError("simulated write failure")
+                raise OSError("échec d’écriture simulé")
             return original_replace(source, target)
 
         project.os.replace = fail_second
@@ -286,7 +318,7 @@ class ProjectSetupTests(unittest.TestCase):
             nonlocal injected
             temp = original_temp(parent, data, mode)
             if not injected:
-                (self.root / "AGENTS.md").write_bytes(b"manual edit during staging\n")
+                (self.root / "AGENTS.md").write_bytes("modification manuelle pendant la préparation\n".encode("utf-8"))
                 injected = True
             return temp
 
@@ -296,7 +328,7 @@ class ProjectSetupTests(unittest.TestCase):
         finally:
             project._temp = original_temp
         self.assertEqual(result["status"], "rolled_back")
-        self.assertEqual((self.root / "AGENTS.md").read_bytes(), b"manual edit during staging\n")
+        self.assertEqual((self.root / "AGENTS.md").read_bytes(), "modification manuelle pendant la préparation\n".encode("utf-8"))
         self.assertFalse((self.root / "docs/agents/cstack.md").exists())
 
     def test_rollback_removes_directories_created_during_staging(self) -> None:
@@ -308,7 +340,7 @@ class ProjectSetupTests(unittest.TestCase):
             nonlocal calls
             calls += 1
             if calls == 2:
-                raise OSError("simulated write failure")
+                raise OSError("échec d’écriture simulé")
             return original_replace(source, target)
 
         project.os.replace = fail_second

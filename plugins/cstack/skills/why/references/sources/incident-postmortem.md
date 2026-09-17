@@ -1,15 +1,15 @@
-# Incident & Postmortem Context
+# Contexte incident et postmortem
 
-Not a separate source, a **cross-cutting angle**. Incidents often motivate defensive code ("we added this check after the X outage"), so if the target looks defensive (null checks, retry logic, timeout handling, rate limiting, feature flags), specifically hunt for incident history across every available source:
+Pas une source séparée, un **angle transversal**. Les incidents motivent souvent du code défensif ("nous avons ajouté ce check après la panne X"), donc si la cible semble défensive (checks de nullité, logique de retry, gestion de timeout, limitation de débit, feature flags), cherche spécifiquement l'historique d'incidents dans chaque source disponible :
 
-- **Notion**: search for postmortems mentioning the target file, feature, or error string
-- **Linear**: look for tickets labeled `incident`, `sev-*`, `postmortem-action-item`, `reliability`
-- **Slack**: search `#sev-*` and `#incident-*` channels around the dates the target code was added
-- **Git**: commits with messages like "fix for incident", "add defensive check", "revert" followed by "re-apply with..." are strong signals
-- **Datadog**: `search_datadog_incidents` for formal incident records with timelines, dashboards and monitors created as postmortem action items
-- **Sentry**: issues whose first-seen/last-seen window aligns with the target's PR ship date, stack traces through the target
-- **Databricks**: product-analytics events that classify an error condition (client-reported failures, user-visible retry events, etc.) often spike during an incident window. A drop in that event count after the target PR ships is circumstantial support that the target code resolved the user-visible symptom, even when Datadog/Sentry signal is noisy.
+- **Notion** : cherche des postmortems qui mentionnent le fichier cible, la fonctionnalité ou la chaîne d'erreur
+- **Linear** : cherche les tickets étiquetés `incident`, `sev-*`, `postmortem-action-item`, `reliability`
+- **Slack** : cherche les channels `#sev-*` et `#incident-*` autour des dates d'ajout du code cible
+- **Git** : les commits avec des messages comme "fix d'incident", "ajout d'un check défensif", "revert" suivi de "réappliquer avec..." sont de forts signaux
+- **Datadog** : `search_datadog_incidents` pour des dossiers d'incident formels avec timelines, dashboards et monitors créés comme actions de postmortem
+- **Sentry** : issues dont la fenêtre first-seen/last-seen s'aligne avec la date de livraison PR de la cible, stack traces passant par la cible
+- **Databricks** : les événements d'analytique produit qui classifient une condition d'erreur (échecs rapportés par client, événements de retry visibles utilisateur, etc.) montent souvent pendant une fenêtre d'incident. Une baisse de ce count après livraison de la PR cible est un support circonstanciel que le code cible a résolu le symptôme visible par l'utilisateur, même quand le signal Datadog/Sentry est bruité.
 
-If you find an incident link, fetch the full postmortem. Postmortems typically have an "Action Items" section that ties directly to code changes. When multiple sources corroborate (a Datadog incident ID appears in a Linear ticket, which appears in a Notion postmortem, which appears in a Slack thread that links to the target PR, and the Databricks error-event count drops after the fix), the evidence is especially strong.
+Si tu trouves un lien d'incident, récupère le postmortem complet. Les postmortems ont typiquement une section "Actions à faire" qui lie directement les changements de code. Quand plusieurs sources corroborent (un ID d'incident Datadog apparaît dans un ticket Linear, qui apparaît dans un postmortem Notion, qui apparaît dans un thread Slack qui lie la PR cible, et le count d'événements d'erreur Databricks baisse après le fix), la preuve est particulièrement forte.
 
-Worth spending time on when the code's defensive character makes an incident-driven origin plausible. Skip it for code that doesn't look defensive.
+Cela vaut le temps quand le caractère défensif du code rend plausible une origine liée à incident. Saute-le pour du code qui ne semble pas défensif.

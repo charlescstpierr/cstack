@@ -1,67 +1,67 @@
-# Datadog Telemetry
+# Télémétrie Datadog
 
-## What this source contains
+## Ce que cette source contient
 
-Datadog holds the runtime record, what actually happened in production, as opposed to what was planned or discussed.
+Datadog contient l'enregistrement runtime, ce qui s'est réellement passé en production, par opposition à ce qui était planifié ou discuté.
 
-- **Metrics.** Counters, gauges, histograms instrumented by the team. A metric's *presence* is itself evidence. Someone thought this number worth watching.
-- **Monitors & alerts.** Conditions the team decided warranted waking someone up. A monitor firing on `rate_limit_hit > 10/min` is direct evidence the team worried about that threshold.
-- **Dashboards.** Curated views. The charts tell you what the team considers important for a subsystem.
-- **APM traces & spans.** Request-level runtime data. Useful for "why is this slow" / "why is there a timeout here" questions.
-- **Logs.** High-volume event records. Often contain the error conditions that motivated defensive code.
-- **Incidents.** Formal incident records with timelines and linked postmortems.
-- **Notebooks.** Exploratory investigations. Often contain hypotheses and analyses.
+- **Metrics.** Counters, gauges, histograms instrumentés par l'équipe. La *présence* d'une métrique est elle-même une preuve. Quelqu'un a jugé ce nombre digne d'être observé.
+- **Monitors & alerts.** Conditions que l'équipe a jugées assez importantes pour réveiller quelqu'un. Un monitor qui fire sur `rate_limit_hit > 10/min` est une preuve directe que l'équipe se souciait de ce seuil.
+- **Dashboards.** Vues curées. Les graphiques disent ce que l'équipe considère important pour un sous-système.
+- **APM traces & spans.** Données runtime par requête. Utile pour les questions "pourquoi est-ce lent" / "pourquoi ce timeout ici".
+- **Logs.** Enregistrements d'événements à grand volume. Contiennent souvent les conditions d'erreur qui ont motivé du code défensif.
+- **Incidents.** Dossiers d'incidents formels avec timelines et postmortems liés.
+- **Notebooks.** Investigations exploratoires. Contiennent souvent hypothèses et analyses.
 
-Datadog answers "what was the production reality around the time this code was written?", which often explains the code's shape.
+Datadog répond à "quelle était la réalité production autour du moment où ce code a été écrit ?", ce qui explique souvent la forme du code.
 
-## How to search it
+## Comment la chercher
 
-Use the Datadog MCP. Start broad, then narrow.
+Utilise le MCP Datadog. Commence large, puis rétrécis.
 
-1. **Identify the owning service(s).**
-
-   ```
-   search_datadog_services (filter by name or team)
-   search_datadog_service_dependencies (see upstream/downstream)
-   ```
-
-2. **Dashboards and monitors first. They tell you what the team cares about.**
+1. **Identifier les services propriétaires.**
 
    ```
-   search_datadog_dashboards (query: feature name, service name, symbol)
-   search_datadog_monitors   (same queries)
+   search_datadog_services (filtrer par nom ou équipe)
+   search_datadog_service_dependencies (voir amont/aval)
    ```
 
-   When a dashboard or monitor covers the target, note its queries and watched thresholds. The threshold is frequently the answer to "why is this clamped at N?"
+2. **Dashboards et monitors d'abord. Ils disent ce qui compte pour l'équipe.**
 
-3. **Metrics around the target.**
+   ```
+   search_datadog_dashboards (requête : nom de fonctionnalité, nom de service, symbole)
+   search_datadog_monitors   (mêmes requêtes)
+   ```
+
+   Quand un dashboard ou monitor couvre la cible, note ses requêtes et seuils surveillés. Le seuil est fréquemment la réponse à "pourquoi ce clamp à N ?"
+
+3. **Métriques autour de la cible.**
 
    ```
    search_datadog_metrics (by name pattern, e.g., the feature or symbol)
    get_datadog_metric_context (metadata: description, units, tags)
-   get_datadog_metric (timeseries; "was there a spike around the PR date?")
+   get_datadog_metric (timeseries; "y a-t-il eu un pic autour de la date de PR ?")
    ```
 
-   Correlating a metric's trajectory with the target's add/change date is strong supporting evidence: "the `payment_timeout` metric spiked 2023-11-03, and the retry logic merged 2023-11-06."
+   Corréler la trajectoire d'une métrique avec la date d'ajout/changement de la cible est une preuve de support forte : "la métrique `payment_timeout` a spiké le 2023-11-03, et la logique de retry a merge le 2023-11-06."
 
-4. **Logs. Narrow, don't dump.**
-
-   ```
-   search_datadog_logs (raw log patterns near the target, set use_log_patterns=true)
-   analyze_datadog_logs (SQL-style aggregations, only when you need counts)
-   ```
-
-   Search with symbols, error strings, or feature names. **Strongly prefer time-bounded queries** (e.g., 30 days before/after the change). Log volume is huge. Unconstrained searches waste time and may time out.
-
-5. **APM spans and traces.**
+4. **Logs. Rétrécis, ne dump pas.**
 
    ```
-   aggregate_spans    (stats: "how often does this endpoint fail?")
+   search_datadog_logs (motifs de logs bruts près de la cible, définir use_log_patterns=true)
+   analyze_datadog_logs (agrégations de type SQL, seulement quand tu as besoin de décomptes)
+   ```
+
+   Cherche avec symboles, chaînes d'erreur ou noms de fonctionnalités. **Préfère fortement les requêtes bornées dans le temps** (p. ex. 30 jours avant/après le changement). Le volume de logs est énorme. Les recherches non bornées gaspillent du temps et peuvent time out.
+
+5. **Spans et traces APM.**
+
+   ```
+   aggregate_spans    (stats: "à quelle fréquence cet endpoint échoue-t-il ?")
    search_datadog_spans (inspect individual spans)
    get_datadog_trace  (a specific trace ID)
    ```
 
-   Useful for timeouts, retries, slow paths, and cross-service behavior.
+   Utile pour timeouts, retries, chemins lents et comportement cross-service.
 
 6. **Incidents.**
 
@@ -70,30 +70,30 @@ Use the Datadog MCP. Start broad, then narrow.
    get_datadog_incident     (full detail for a specific incident)
    ```
 
-   If the target looks defensive, search for incidents around the time it was added. An incident whose timeline includes "added defensive check for X" is near-direct evidence.
+   Si la cible semble défensive, cherche des incidents autour de sa date d'ajout. Un incident dont la timeline inclut "ajout d'un check défensif pour X" est une preuve quasi directe.
 
-## What good evidence looks like here
+## À quoi ressemble une bonne preuve ici
 
-- A monitor whose query and threshold match the constraint the code enforces (code clamps to 100, monitor alerts when requests exceed 100/min)
-- A dashboard created by the target's author, with widgets that correspond to what the code measures or guards against
-- A metric showing a production spike immediately before the code was merged, and stable values after
-- An incident record referencing the target code, the same symbols, or the same error strings
-- Logs showing a specific error pattern the defensive code would prevent, timestamped in the window before the change
+- Un monitor dont la requête et le seuil correspondent à la contrainte appliquée par le code (le code clamp à 100, le monitor alerte quand les requêtes dépassent 100/min)
+- Un dashboard créé par l'auteur de la cible, avec widgets correspondant à ce que le code mesure ou protège
+- Une métrique montrant un spike production juste avant le merge du code, puis des valeurs stables après
+- Un dossier d'incident qui référence le code cible, les mêmes symboles ou les mêmes chaînes d'erreur
+- Des logs montrant un motif d'erreur précis que le code défensif empêcherait, timestampé dans la fenêtre avant le changement
 
-## Common pitfalls
+## Pièges courants
 
-- **Correlation is not causation.** A spike before a PR and stabilization after is suggestive, not definitive. Other changes may have landed in the same window. Check neighboring PRs.
-- **Overfitting to the chart you found.** Datadog visualizations are *made* by humans and reflect that human's framing. A chart named "retry success rate" is evidence the team cared about retry success, not that it's why a specific line of code exists.
-- **Vanished telemetry.** Metrics can be renamed, deleted, or have short retention. If you can't find data from the relevant window, that's a gap, not a null result.
-- **Noise at scale.** Searching logs for a common string returns thousands of matches. Narrow by service, tag, and time aggressively. Use `analyze_datadog_logs` to aggregate rather than dumping raw logs.
-- **Instrumented != caused.** A metric's existence tells you someone cared enough to measure something, not that the code was added *because* of it. Cross-reference with commit/PR dates.
+- **Corrélation n'est pas causalité.** Un spike avant une PR puis stabilisation après est suggestif, pas définitif. D'autres changements ont pu arriver dans la même fenêtre. Vérifie les PR voisines.
+- **Surajustement au graphique trouvé.** Les visualisations Datadog sont *faites* par des humains et reflètent leur cadrage. Un graphique nommé "retry success rate" prouve que l'équipe se souciait du succès des retries, pas que c'est pourquoi une ligne précise existe.
+- **Télémétrie disparue.** Les métriques peuvent être renommées, supprimées ou avoir une rétention courte. Si tu ne trouves pas de données de la fenêtre pertinente, c'est un écart, pas un résultat nul.
+- **Bruit à l'échelle.** Chercher une chaîne courante dans les logs retourne des milliers de résultats. Rétrécis agressivement par service, tag et temps. Utilise `analyze_datadog_logs` pour agréger plutôt que dumper les logs bruts.
+- **Instrumenté != causé.** L'existence d'une métrique dit que quelqu'un se souciait assez pour mesurer, pas que le code a été ajouté *à cause* d'elle. Croise avec les dates de commit/PR.
 
-## What to return
+## Quoi retourner
 
-For each relevant item:
+Pour chaque élément pertinent :
 - Type (dashboard / monitor / metric / log pattern / trace / incident / notebook)
-- Title or name
-- Link or identifier (dashboard ID, monitor ID, metric name, incident ID)
-- Owner/author and created/modified date
-- The specific condition, query, or quote that bears on the question (verbatim where possible)
-- Relevance: what this suggests about the target code, and how strong the connection is
+- Titre ou nom
+- Lien ou identifiant (dashboard ID, monitor ID, nom de métrique, incident ID)
+- Owner/auteur et date de création/modification
+- La condition, requête ou citation précise qui pèse sur la question (verbatim quand possible)
+- Pertinence : ce que cela suggère sur le code cible, et force du lien

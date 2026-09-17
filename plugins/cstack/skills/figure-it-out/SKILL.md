@@ -1,54 +1,54 @@
 ---
 name: figure-it-out
-description: "Design an auditable playbook when no narrower one fits: a large migration, an ambitious multi-part change, or work a human reviews after stepping away. Scales rigor to the task, runs a hypothesis loop, and logs decisions via show-me-your-work. Use for $cstack:figure-it-out, 'figure it out', a large migration, or when no narrower playbook applies."
+description: "Conçoit un playbook auditable quand aucun plus étroit ne convient : grande migration, changement ambitieux en plusieurs parties, ou travail qu'un humain relit après s'être absenté. Ajuste la rigueur à la tâche, exécute une boucle d'hypothèses et journalise les décisions via show-me-your-work. Utiliser pour $cstack:figure-it-out, 'figure it out', une grande migration ou quand aucun playbook plus étroit ne s'applique."
 ---
 
 # Figure it out
 
-Runtime: [`../cstack/references/codex-runtime.md`](../cstack/references/codex-runtime.md).
+Contrat d’exécution : [`../cstack/references/codex-runtime.md`](../cstack/references/codex-runtime.md).
 
-When the task matches no playbook, design one. The deliverable before any code is the workflow itself: a sequence of phases that scales rigor to the task, runs the scientific method, and leaves a decision trail a human can audit after stepping away. Bias toward more rigor. The cost of building the wrong thing dwarfs the cost of being careful.
+Quand la tâche ne correspond à aucun playbook, conçois-en un. Le livrable avant tout code est le flux de travail lui-même : une séquence de phases qui ajuste la rigueur à la tâche, applique la méthode scientifique et laisse une trace de décisions qu'un humain peut auditer après s'être absenté. Biaise vers plus de rigueur. Le coût de construire la mauvaise chose écrase le coût d'être prudent.
 
-## Start
+## Démarrage
 
-Start the task list by reading the common rules and principle routes in the [cstack skill](../cstack/SKILL.md). Read the individual references whose triggers apply, then add the phases below to the task list. Reuse an existing Horizon handoff and verified decisions when they already establish the framing; retain the playbook's review and verification gates.
+Commence la liste de tâches en lisant les règles communes et routes de principes dans la [skill cstack](../cstack/SKILL.md). Lis les références individuelles dont les déclencheurs s'appliquent, puis ajoute les phases ci-dessous à la liste de tâches. Réutilise un handoff Horizon existant et les décisions vérifiées quand ils établissent déjà le cadrage; conserve les portes de revue et de vérification du playbook.
 
-## Phase A: Frame
+## Phase A : Cadrer
 
-Ground first, then commit. Don't start the run until you can state:
+Ancre d'abord, puis engage-toi. Ne démarre pas l'exécution tant que tu ne peux pas énoncer :
 
-- The definition of done as a falsifiable predicate (the [Prove It Works](../cstack/references/principles/prove-it-works.md) principle reference).
-- Scope, quantified: rough units and effort, plus the blockers grounding surfaced.
-- The rigor level, biased high. One-way doors and high blast radius get more. Reversible low-stakes steps get less. Rigor is gates and artifacts, not "try harder".
+- La définition de terminé comme prédicat falsifiable (référence de principe [prouver que ça marche](../cstack/references/principles/prove-it-works.md)).
+- La portée, quantifiée : unités et effort approximatifs, plus les bloqueurs révélés par l'ancrage.
+- Le niveau de rigueur, avec biais haut. Les portes à sens unique et forts rayons d'impact en reçoivent plus. Les étapes réversibles à faible enjeu en reçoivent moins. La rigueur, ce sont des portes et des artefacts, pas "try harder".
 
-Present the framing and tradeoffs before committing to a long run. Reversible work proceeds (the [Never Block on the Human](../cstack/references/principles/never-block-on-the-human.md) principle reference), but a multi-hour run earns one checkpoint.
+Présente le cadrage et les compromis avant de t'engager dans une longue exécution. Le travail réversible avance (référence de principe [ne jamais bloquer sur l'humain](../cstack/references/principles/never-block-on-the-human.md)), mais une exécution de plusieurs heures mérite un checkpoint.
 
-## Phase B: Design the workflow
+## Phase B : Concevoir le flux de travail
 
-Decompose into atomic, independently-landable units. Sequence riskiest-unknown-first. Scaffold and verification come before features (the [Foundational Thinking](../cstack/references/principles/foundational-thinking.md) principle reference).
+Décompose en unités atomiques et livrables indépendamment. Séquence les inconnues les plus risquées d'abord. L'échafaudage et la vérification viennent avant les fonctionnalités (référence de principe [pensée fondatrice](../cstack/references/principles/foundational-thinking.md)).
 
-- Build the verification harness before the work, with the baseline captured from the pre-change state, so the check reads as "old value vs new value".
-- For one-way-door design decisions, run the **architect** skill (it runs **arena**). Skip it for mechanical work whose shape is already concrete. A second arena over a settled design is over-engineering (the [Laziness Protocol](../cstack/references/principles/laziness-protocol.md) principle reference).
-- Decide what fans out. Parallelize only across seams, and give each worker its own worktree or branch (the [Separate Before Serializing Shared State](../cstack/references/principles/separate-before-serializing-shared-state.md) principle reference). Don't over-fan.
-- Write the designed phase list down. That list is what the human reviews.
+- Construis le harnais de vérification avant le travail, avec la baseline capturée depuis l'état pré-changement, pour que la vérification se lise comme "ancienne valeur vs nouvelle valeur".
+- Pour les décisions de conception à portée à sens unique, exécute la skill **architect** (elle exécute **arena**). Saute-la pour le travail mécanique dont la forme est déjà concrète. Une seconde arena sur une conception tranchée est de la suringénierie (référence de principe [Laziness Protocol](../cstack/references/principles/laziness-protocol.md)).
+- Décide ce qui se déploie en parallèle. Parallélise seulement entre frontières, et donne à chaque worker son propre worktree ou sa propre branche (référence de principe [séparer avant de sérialiser l'état partagé](../cstack/references/principles/separate-before-serializing-shared-state.md)). Ne déploie pas trop.
+- Écris la liste de phases conçue. Cette liste est ce que l'humain relit.
 
-Then execute the design. Add its steps to the current task list after Phase C and before Phase D. Run each under the Phase C loop discipline, and weave the Phase D log through them as each step lands.
+Ensuite, exécute la conception. Ajoute ses étapes à la liste de tâches courante après la phase C et avant la phase D. Exécute chacune selon la discipline de boucle de la phase C, et tisse le journal de phase D à travers elles à mesure que chaque étape atterrit.
 
-## Phase C: Run the loop
+## Phase C : Exécuter la boucle
 
-Each unit is an experiment. State the hypothesis, make the smallest change, measure against the predicate on the real artifact, keep it if it advanced, revert it if it didn't.
-Apply the [Sequence work into verifiable units](../cstack/references/principles/sequence-verifiable-units.md) principle reference, verifying each unit before starting the next instead of batching checks at the end.
+Chaque unité est une expérience. Énonce l'hypothèse, fais le plus petit changement, mesure contre le prédicat sur le vrai artefact, garde-le s'il a fait avancer, revert s'il ne l'a pas fait.
+Applique la référence de principe [séquencer le travail en unités vérifiables](../cstack/references/principles/sequence-verifiable-units.md), en vérifiant chaque unité avant de démarrer la suivante au lieu de regrouper les checks à la fin.
 
-- Verify by inspecting the artifact, never a self-report. When something passes too easily, suspect the observation method before the system.
-- Pair delegated work with a judge and audit the delegates' artifacts yourself before trusting them. If a worker games the gate, reset and harden the contract. If the gate itself is wrong, fix the gate in its own change rather than routing around it. When no subagent slot is available, the same session runs a separate review pass over a clean re-read of the artifacts, labels it `single-agent review`, and reports the missing independence. The judge never disappears.
-- A verdict is VERIFIED, NOT VERIFIED, or INCONCLUSIVE. Inconclusive is not a pass. Don't hide a negative.
+- Vérifie en inspectant l'artefact, jamais un auto-rapport. Quand quelque chose passe trop facilement, soupçonne la méthode d'observation avant le système.
+- Associe le travail délégué à un juge et audite toi-même les artefacts des délégués avant de leur faire confiance. Si un worker manipule la porte, réinitialise et durcis le contrat. Si la porte elle-même est fausse, corrige la porte dans son propre changement au lieu de la contourner. Si aucun emplacement de sous-agent n'est disponible, la même session exécute une passe de revue séparée sur une relecture propre des artefacts, l'étiquette `single-agent review`, puis signale l'indépendance manquante. Le juge ne disparaît jamais.
+- Un verdict est VERIFIED, NOT VERIFIED ou INCONCLUSIVE. Inconclusive n'est pas un succès. Ne cache pas un négatif.
 
-## Phase D: Keep the audit trail
+## Phase D : Garder la trace d'audit
 
-Log the run via the **show-me-your-work** skill, one canonical TSV with a row per decision and per unit, evidence as links. figure-it-out's work is usually ambitious enough to commit the trail so the reviewer can read it in the PR. Commit it when confidence has to be shown. Prefer evidence produced by committed scripts. The trail plus the diff is what lets the human come back and trust the work.
+Journalise l'exécution via la skill **show-me-your-work**, dans un TSV canonique avec une ligne par décision et par unité, et les preuves en liens. Le travail de figure-it-out est généralement assez ambitieux pour committer la trace afin que le relecteur puisse la lire dans la PR. Committe-la quand il faut montrer la confiance. Préfère les preuves produites par des scripts committés. La trace plus le diff permettent à l'humain de revenir et de faire confiance au travail.
 
-## Phase E: Verify and hand back
+## Phase E : Vérifier et remettre
 
-Check the whole against the Phase A predicate on the real product, not just the harness. Encode any recurring correction as a gate, a lint rule, a check, or a script (the [Encode Lessons in Structure](../cstack/references/principles/encode-lessons-in-structure.md) principle reference).
+Vérifie l'ensemble contre le prédicat de phase A sur le vrai produit, pas seulement le harnais. Encode toute correction récurrente comme porte, règle de lint, check ou script (référence de principe [encoder les leçons dans la structure](../cstack/references/principles/encode-lessons-in-structure.md)).
 
-**Reply:** the playbook you designed, the rigor level and why, the decision-trail path, what's verified against the predicate, and what's still open.
+**Réponse :** le playbook que tu as conçu, le niveau de rigueur et pourquoi, le chemin de la trace de décision, ce qui est vérifié contre le prédicat et ce qui reste ouvert.

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run isolated native Codex turns and preserve evidence for a blind judge."""
+"""Exécute des tours Codex natifs isolés et conserve les preuves pour une évaluation à l’aveugle."""
 
 from __future__ import annotations
 
@@ -21,9 +21,9 @@ MAX_TURN_SECONDS = 900.0
 SKIP_DIRS = {".git", "__pycache__", "node_modules"}
 SAFE_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
 NEUTRAL_INSTRUCTIONS = (
-    "Use the selected local bundle and project guidance. Use generic native agent "
-    "roles. Follow the user prompt and current project scope. Do not use unrelated "
-    "plugins or workflows."
+    "Utilisez le paquet local sélectionné et les consignes du projet. Utilisez des rôles "
+    "natifs génériques. Respectez la demande utilisateur et le périmètre actuel du projet. N’utilisez pas de "
+    "plugins ou de processus sans rapport avec la tâche."
 )
 
 
@@ -36,7 +36,7 @@ class NeedsInput(HarnessError):
 
 
 def scrub(value):
-    """Keep evidence useful while avoiding credentials in summary.json."""
+    """Conserve des preuves utiles sans exposer de secrets dans summary.json."""
     if isinstance(value, dict):
         result = {}
         for key, item in value.items():
@@ -131,7 +131,7 @@ def capture_thread_metadata(server, thread_id, timeout, state, parent_thread, ki
         state["metadata_gaps"].append({
             "kind": kind,
             "thread_id": thread_id,
-            "reason": "thread/read unavailable; metadata not observed",
+            "reason": "thread/read indisponible ; métadonnées non observées",
             "error": str(error),
         })
         return None
@@ -162,7 +162,7 @@ class AppServer:
 
     def send(self, message):
         if self.process.stdin is None:
-            raise HarnessError("app-server stdin is closed")
+            raise HarnessError("l’entrée standard d’app-server est fermée")
         self.process.stdin.write((json.dumps(message, ensure_ascii=False) + "\n").encode())
         self.process.stdin.flush()
 
@@ -185,15 +185,15 @@ class AppServer:
                 try:
                     return json.loads(raw.decode("utf-8"))
                 except (UnicodeDecodeError, json.JSONDecodeError) as error:
-                    raise HarnessError(f"invalid app-server JSON: {error}") from error
+                    raise HarnessError(f"JSON d’app-server invalide: {error}") from error
             remaining = deadline - time.monotonic()
             if remaining <= 0:
-                raise TimeoutError("app-server response timeout")
+                raise TimeoutError("délai de réponse d’app-server dépassé")
             if not self.selector.select(min(0.25, remaining)):
                 continue
             chunk = os.read(self.process.stdout.fileno(), 65536)
             if not chunk:
-                raise HarnessError(f"app-server closed with code {self.process.poll()}")
+                raise HarnessError(f"app-server fermé avec le code {self.process.poll()}")
             self.buffer += chunk
 
     def request(self, method, params, timeout, on_event):
@@ -205,10 +205,10 @@ class AppServer:
             message = self.read(deadline)
             if isinstance(message, dict) and "id" in message and "method" in message:
                 on_event(message)
-                raise NeedsInput(f"native request requires input: {message.get('method')}")
+                raise NeedsInput(f"la requête native nécessite une réponse: {message.get('method')}")
             if isinstance(message, dict) and message.get("id") == request_id:
                 if "error" in message:
-                    raise HarnessError(f"{method} failed: {scrub(message['error'])}")
+                    raise HarnessError(f"échec de {method} : {scrub(message['error'])}")
                 return message.get("result", {})
             on_event(message)
 
@@ -239,7 +239,7 @@ def update_state(message, state, parent_thread):
         if encoded not in state["question_keys"]:
             state["question_keys"].add(encoded)
             state["questions"].append(scrub(question))
-        raise NeedsInput(f"native request requires input: {message.get('method', 'question')}")
+        raise NeedsInput(f"la requête native nécessite une réponse: {message.get('method', 'question')}")
 
     event_thread = first(message.get("params", {}), ("threadId", "thread_id"))
     for item in dicts(message):
@@ -315,7 +315,7 @@ def config_path():
     if home is None:
         return Path.home() / ".codex" / "config.toml"
     if home == "":
-        raise HarnessError("CODEX_HOME is set but empty")
+        raise HarnessError("CODEX_HOME est défini mais vide")
     return Path(home) / "config.toml"
 
 
@@ -324,12 +324,12 @@ def parse_toml(raw, path):
         import tomllib
     except ImportError as error:
         raise HarnessError(
-            f"Python 3.11+ is required to parse {path}; this interpreter is {sys.version.split()[0]}"
+            f"Python 3.11 ou ultérieur est requis pour lire {path} ; cet interpréteur utilise {sys.version.split()[0]}"
         ) from error
     try:
         return tomllib.loads(raw)
     except tomllib.TOMLDecodeError as error:
-        raise HarnessError(f"cannot read Codex config: {path}") from error
+        raise HarnessError(f"impossible de lire la configuration Codex: {path}") from error
 
 
 def config_names():
@@ -337,7 +337,7 @@ def config_names():
     try:
         raw = path.read_text()
     except OSError as error:
-        raise HarnessError(f"cannot read Codex config: {path}") from error
+        raise HarnessError(f"impossible de lire la configuration Codex: {path}") from error
     config = parse_toml(raw, path)
     plugins = config.get("plugins", {})
     mcp_servers = config.get("mcp_servers", {})
@@ -378,31 +378,31 @@ def read_cases(path):
     try:
         payload = json.loads(path.read_text())
     except (OSError, json.JSONDecodeError) as error:
-        raise HarnessError(f"cannot read cases JSON: {path}") from error
+        raise HarnessError(f"impossible de lire le JSON des scénarios: {path}") from error
     if not isinstance(payload, list) or not payload:
-        raise HarnessError("cases JSON must be a non-empty array")
+        raise HarnessError("le JSON des scénarios doit être un tableau non vide")
     cases = []
     ids = set()
     for row in payload:
         if not isinstance(row, dict) or not isinstance(row.get("id"), str) or not SAFE_ID.fullmatch(row["id"]):
-            raise HarnessError("each case needs a safe string id")
+            raise HarnessError("chaque scénario nécessite un identifiant textuel sûr")
         case_id = row["id"]
         if case_id in ids:
-            raise HarnessError(f"duplicate case id: {case_id}")
+            raise HarnessError(f"identifiant de scénario dupliqué: {case_id}")
         ids.add(case_id)
         cwd = Path(row.get("cwd", "")).expanduser().resolve()
         if not cwd.is_dir():
-            raise HarnessError(f"case cwd is not a directory: {cwd}")
+            raise HarnessError(f"le cwd du scénario n’est pas un dossier: {cwd}")
         has_prompt = isinstance(row.get("prompt"), str)
         has_prompts = isinstance(row.get("prompts"), list)
         if has_prompt == has_prompts:
-            raise HarnessError(f"{case_id}: provide exactly one of prompt or prompts")
+            raise HarnessError(f"{case_id}: fournissez exactement un champ parmi prompt et prompts")
         prompts = [row["prompt"]] if has_prompt else row["prompts"]
         if not prompts or not all(isinstance(prompt, str) for prompt in prompts):
-            raise HarnessError(f"{case_id}: prompts must be a non-empty string array")
+            raise HarnessError(f"{case_id}: prompts doit être un tableau non vide de chaînes")
         sandbox = row.get("sandbox", "workspace-write")
         if not isinstance(sandbox, str) or not sandbox:
-            raise HarnessError(f"{case_id}: sandbox must be a string")
+            raise HarnessError(f"{case_id}: sandbox doit être une chaîne")
         cases.append({"id": case_id, "cwd": cwd, "prompts": prompts, "sandbox": sandbox})
     return cases
 
@@ -438,7 +438,7 @@ def run_case(case, output, command, model, effort, timeout):
         thread_result = server.request("thread/start", thread_params, timeout, lambda message: update_state(message, state, parent_thread))
         parent_thread = first(thread_result, ("threadId", "thread_id")) or first(first(thread_result, ("thread",)) or {}, ("id",))
         if not parent_thread:
-            raise HarnessError("thread/start returned no thread id")
+            raise HarnessError("thread/start n’a renvoyé aucun identifiant de conversation")
         for index, prompt in enumerate(case["prompts"]):
             state["current_turn"] = {"index": index, "prompt": prompt, "messages": [], "status": None}
             state["messages"] = []
@@ -511,35 +511,36 @@ def write_summary(output, results, selected_case_ids):
 
 
 def main(argv=None):
-    parser = argparse.ArgumentParser(description="Run isolated native Codex behavior-proof cases.")
-    parser.add_argument("--cases", type=Path, required=True, help="JSON array of trusted cases")
-    parser.add_argument("--output", type=Path, required=True, help="artifact directory outside each case cwd")
-    parser.add_argument("--case-id", action="append", dest="case_ids", help="run only this case id; repeatable")
-    parser.add_argument("--model", help="optional native model override")
-    parser.add_argument("--effort", help="optional native reasoning effort")
-    parser.add_argument("--turn-timeout", type=float, default=DEFAULT_TURN_SECONDS, help="turn timeout in seconds, max 900")
+    parser = argparse.ArgumentParser(description="Exécute des scénarios Codex natifs isolés pour vérifier le comportement.", add_help=False)
+    parser.add_argument("-h", "--help", action="help", help="affiche cette aide puis quitte")
+    parser.add_argument("--cases", type=Path, required=True, help="tableau JSON de scénarios de confiance")
+    parser.add_argument("--output", type=Path, required=True, help="dossier des artefacts situé hors du cwd de chaque scénario")
+    parser.add_argument("--case-id", action="append", dest="case_ids", help="exécute uniquement ce scénario ; option répétable")
+    parser.add_argument("--model", help="modèle natif de remplacement facultatif")
+    parser.add_argument("--effort", help="effort de raisonnement natif facultatif")
+    parser.add_argument("--turn-timeout", type=float, default=DEFAULT_TURN_SECONDS, help="délai maximal par tour en secondes, maximum 900")
     args = parser.parse_args(argv)
     if args.turn_timeout <= 0 or args.turn_timeout > MAX_TURN_SECONDS:
-        parser.error("--turn-timeout must be between 0 and 900 seconds")
+        parser.error("--turn-timeout doit être supérieur à 0 et inférieur ou égal à 900 secondes")
     cases = read_cases(args.cases)
     if args.case_ids:
         wanted = set(args.case_ids)
         unknown = wanted - {case["id"] for case in cases}
         if unknown:
-            raise HarnessError(f"unknown case id: {', '.join(sorted(unknown))}")
+            raise HarnessError(f"identifiant de scénario inconnu: {', '.join(sorted(unknown))}")
         cases = [case for case in cases if case["id"] in wanted]
     output = args.output.expanduser().resolve()
     for case in cases:
         if output == case["cwd"] or case["cwd"] in output.parents or output in case["cwd"].parents:
-            raise HarnessError(f"output must be outside case cwd: {case['id']}")
+            raise HarnessError(f"la sortie doit être située hors du cwd du scénario: {case['id']}")
     if output.exists() and any(output.iterdir()):
-        raise HarnessError("output must be absent or empty; refusing to overwrite evidence")
+        raise HarnessError("le dossier de sortie doit être absent ou vide ; refus d’écraser les preuves")
     output.mkdir(parents=True, exist_ok=True)
     command = build_command()
     results = []
     selected_case_ids = [case["id"] for case in cases]
     for case in cases:
-        print(f"[{case['id']}] start", flush=True)
+        print(f"[{case['id']}] démarrage", flush=True)
         try:
             result = run_case(case, output, command, args.model, args.effort, args.turn_timeout)
         except Exception as error:
@@ -550,7 +551,7 @@ def main(argv=None):
     write_summary(output, results, selected_case_ids)
     if any(result["status"] != "completed" for result in results):
         return 2 if any(result["status"] == "needs_input" for result in results) else 1
-    print(f"summary: {output / 'summary.json'}", flush=True)
+    print(f"résumé : {output / 'summary.json'}", flush=True)
     return 0
 
 

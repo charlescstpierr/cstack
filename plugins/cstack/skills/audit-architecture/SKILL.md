@@ -1,42 +1,42 @@
 ---
 name: audit-architecture
-description: "Run a bounded, read-only brownfield architecture survey that finds evidence-backed deepening candidates without refactoring. Use for $cstack:audit-architecture or when the user asks what architecture should improve."
+description: "Mène un audit d'architecture brownfield borné et en lecture seule, qui trouve des pistes d'approfondissement étayées sans refactorer. Utiliser pour $cstack:audit-architecture ou quand l'utilisateur demande quelle architecture devrait être améliorée."
 ---
 
-# Audit architecture
+# Auditer l'architecture
 
-Runtime: [`../cstack/references/codex-runtime.md`](../cstack/references/codex-runtime.md).
+Contrat d’exécution : [`../cstack/references/codex-runtime.md`](../cstack/references/codex-runtime.md).
 
-Survey the existing codebase for worthwhile architectural improvements. This skill finds and compares candidates; it does not redesign or refactor the code.
+Examine le code existant pour trouver des améliorations architecturales utiles. Cette skill trouve et compare des candidats; elle ne reconçoit pas et ne refactore pas le code.
 
-## Scope and exploration
+## Portée et exploration
 
-1. Use the user's named subsystem or paths as the scope. If none is named, inspect a bounded recent history (`git log --oneline -20`) and follow the files and areas that are actively changing. State the scope before scanning.
-2. Read the actual code, callers, tests, configuration, and relevant project guidance in that scope. Do not infer a candidate from filenames or generic architecture advice.
-3. Run one bounded, read-only explorer for the initial map. Resolve it as the existing `how explorer` role, preserving the configured model and reasoning effort through the native runtime contract. Give it the scope and ask for paths, symbols, callers, hotspots, and evidence; it must not edit files, spawn descendants, or propose a refactor. When no subagent slot is available, inspect in this session as a separate, explicitly re-scoped pass, label the result `single-agent`, and report the missing independence. Absent capacity never skips the map.
-4. The lead agent synthesizes the explorer result with direct inspection. A delegated summary is not evidence until the cited code is read.
+1. Utilise comme portée le sous-système ou les chemins nommés par l'utilisateur. S'il n'en nomme aucun, inspecte un historique récent borné (`git log --oneline -20`) et suis les fichiers et zones qui changent activement. Énonce la portée avant de scanner.
+2. Lis le code réel, les appelants, les tests, la configuration et les consignes de projet pertinentes dans cette portée. N'infère pas un candidat depuis les noms de fichiers ou des conseils d'architecture génériques.
+3. Lance un explorateur borné et en lecture seule pour la carte initiale. Résous-le comme le rôle `how explorer` existant, en préservant le modèle configuré et l'effort de raisonnement via le contrat d’exécution natif. Donne-lui la portée et demande chemins, symboles, appelants, points chauds et preuves; il ne doit pas modifier de fichiers, lancer de descendants ni proposer de refactor. Si aucun emplacement de sous-agent n'est disponible, inspecte dans cette session comme passe distincte et explicitement recadrée, étiquette le résultat `single-agent`, puis signale l'indépendance manquante. Le manque de capacité ne saute jamais la carte.
+4. L'agent principal synthétise le résultat de l'explorateur avec son inspection directe. Un résumé délégué n'est pas une preuve tant que le code cité n'a pas été lu.
 
-## Candidate standard
+## Standard d'un candidat
 
-A candidate must name:
+Un candidat doit nommer :
 
-- the affected paths and symbols;
-- the problem and current friction, with `path:line` evidence and relevant callers;
-- the deletion test: whether removing the proposed module would concentrate complexity behind a smaller interface or merely move it;
-- interface depth: what callers currently know, what a proposed seam would hide, and which invariants or policies would gain locality;
-- a recommendation: `Strong`, `Worth exploring`, `Speculative`, or `No worthwhile candidate`;
-- a plausible before/after sketch labelled **proposed, not verified**.
+- les chemins et symboles touchés;
+- le problème et la friction actuelle, avec des preuves `path:line` et les appelants pertinents;
+- le test de suppression : si retirer le module proposé concentrerait la complexité derrière une interface plus petite ou ne ferait que la déplacer;
+- la profondeur d'interface : ce que les appelants savent aujourd'hui, ce qu'une frontière proposée cacherait, et quels invariants ou politiques gagneraient en localité;
+- une recommandation : `Strong`, `Worth exploring`, `Speculative` ou `No worthwhile candidate`;
+- une esquisse avant/après plausible étiquetée **proposé, non vérifié**.
 
-Use the domain's existing terms. Keep candidates tied to the observed code and be willing to return no worthwhile candidate. Do not invent a second adapter, caller, invariant, performance benefit, or historical reason.
+Utilise les termes existants du domaine. Garde les candidats liés au code observé et accepte de conclure qu'il n'y a aucun candidat utile. N'invente pas un second adaptateur, un appelant, un invariant, un gain de performance ou une raison historique.
 
-The default report is Markdown in the conversation. In Plan mode or a request that prohibits file writes, keep the report in chat and create no artifact. Otherwise, create a report artifact only when the user asks for or authorizes that output; source and configuration stay read-only. Do not require a browser, CDN, Mermaid, `xdg-open`, or screenshot; use an available browser only when the user explicitly requests visual inspection and the tool exists.
+Le rapport par défaut est du Markdown dans la conversation. En mode Plan ou lors d'une demande qui interdit les écritures de fichiers, garde le rapport dans le chat et ne crée aucun artefact. Sinon, crée un artefact de rapport seulement quand l'utilisateur demande ou autorise cette sortie; les sources et la configuration restent en lecture seule. N'exige pas de navigateur, CDN, Mermaid, `xdg-open` ou capture d'écran; utilise un navigateur disponible seulement quand l'utilisateur demande explicitement une inspection visuelle et que l'outil existe.
 
-## Hard boundaries
+## Limites strictes
 
-This run is read-only. Do not edit source, tests, `AGENTS.md`, `CONTEXT.md`, ADRs, `.cstack/`, or configuration. Do not create branches, commits, PRs, messages, installations, dependencies, or background work. Do not automatically apply a candidate or start a refactoring playbook.
+Cette exécution est en lecture seule. Ne modifie pas les sources, les tests, `AGENTS.md`, `CONTEXT.md`, les ADR, `.cstack/` ou la configuration. Ne crée pas de branches, commits, PR, messages, installations, dépendances ou travaux en arrière-plan. N'applique pas automatiquement un candidat et ne démarre pas de playbook de refactorisation.
 
-If the user selects a candidate, pass the evidence and constraints to `$cstack:architect`. Keep the result design-only unless implementation was already explicitly authorized in the same task. Let Architect preserve the configured `architect runners` panel count and each model/reasoning-effort selection; do not add a fixed panel size or substitute another redesign engine.
+Si l'utilisateur choisit un candidat, transmets les preuves et contraintes à `$cstack:architect`. Garde le résultat en conception seulement, sauf si l'implémentation a déjà été explicitement autorisée dans la même tâche. Laisse Architect préserver le nombre de panels `architect runners` configuré et chaque sélection de modèle/effort de raisonnement; n'ajoute pas de taille de panel fixe et ne substitue pas un autre moteur de reconception.
 
-Use the existing cstack runtime contract for tools and delegation. Missing tools or unavailable model/effort selections are evidence gaps to report, never reasons to fabricate results or silently substitute a selection.
+Utilise le contrat d’exécution cstack existant pour les outils et la délégation. Les outils manquants ou les sélections modèle/effort indisponibles sont des manques de preuve à signaler, jamais des raisons de fabriquer des résultats ou de substituer silencieusement une sélection.
 
-Every claim carries its evidence or its label in the same sentence. Measured, inferred, or guess. A prediction or an unseen cause is a guess. Never hand the human a check you could run.
+Chaque affirmation porte sa preuve ou son étiquette dans la même phrase. Mesure, inférence ou supposition. Une prédiction ou une cause non observée est une supposition. Ne donne jamais à l'humain une vérification que tu pourrais exécuter.

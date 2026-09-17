@@ -1,144 +1,144 @@
-# Epistemics
+# Épistémique
 
-How to reason about confidence when evidence is historical, fragmentary, and sometimes contradictory, and how to communicate it without flattening it into false certainty.
+Comment raisonner sur la confiance quand les preuves sont historiques, fragmentaires et parfois contradictoires, et comment la communiquer sans l'aplatir en fausse certitude.
 
-Code doesn't carry its own motivation. You can read what code does. You can't read *why it exists*. That lives in commits, PRs, tickets, docs, and conversations, all incomplete, biased, and sometimes missing entirely. Pretending otherwise produces confident-sounding guesses that mislead the user.
+Le code ne porte pas sa propre motivation. Tu peux lire ce que le code fait. Tu ne peux pas lire *pourquoi il existe*. Cela vit dans les commits, PR, tickets, docs et conversations, tous incomplets, biaisés et parfois entièrement manquants. Faire semblant du contraire produit des suppositions qui semblent confiantes et induisent l'utilisateur en erreur.
 
-## Confidence Tiers
+## Niveaux de confiance
 
-Every claim in the final output must sit in one of these tiers. The tier determines which output section the claim goes in and how it's phrased.
+Chaque affirmation dans la sortie finale doit appartenir à l'un de ces niveaux. Le niveau détermine dans quelle section l'affirmation va et comment elle est formulée.
 
-### 1. Direct
+### 1. Directe
 
-An explicit, textual citation that answers the question. Not "the code does X so the author must have wanted X." Something an author actually *wrote* that says why.
+Une citation textuelle explicite qui répond à la question. Pas "le code fait X donc l'auteur a dû vouloir X". Quelque chose qu'un auteur a réellement *écrit* et qui dit pourquoi.
 
-Examples:
-- A PR description that says "this fixes the bug where users with >1000 items couldn't paginate"
-- A ticket that says "we're adding this because customer Acme requested it in their security review"
-- A code comment that says "// clamp to 100 because the upstream API rejects larger values"
-- A design doc that says "we chose option A over option B because we need persistence across restarts"
-- A chat message from the author saying "switching to this approach since the old one was flaky in tests"
+Exemples :
+- Une description de PR qui dit "ceci corrige le bug où les utilisateurs avec plus de 1000 éléments ne pouvaient pas paginer"
+- Un ticket qui dit "nous ajoutons ceci parce que le client Acme l'a demandé dans sa revue de sécurité"
+- Un commentaire de code qui dit "// borner à 100 parce que l'API amont rejette les valeurs plus grandes"
+- Un doc de conception qui dit "nous avons choisi l'option A plutôt que l'option B parce qu'il nous faut une persistance entre redémarrages"
+- Un message de chat de l'auteur disant "nous passons à cette approche car l'ancienne était flaky dans les tests"
 
-Phrasing: confident, present tense. "This exists because X." Cite the source.
+Formulation : confiante, présent. "Ceci existe parce que X." Cite la source.
 
-### 2. Supported
+### 2. Soutenue
 
-Multiple pieces of indirect evidence converge. No single source states it explicitly, but the pattern across sources makes it likely.
+Plusieurs preuves indirectes convergent. Aucune source ne le dit explicitement seule, mais le motif entre sources le rend probable.
 
-Examples:
-- The PR title says "improve performance," the ticket is labeled "perf," and the surrounding commits all touch the same hot path
-- Multiple tests were added alongside the change, all exercising edge cases with very large inputs
-- The author's other PRs from the same week all mention the same incident in their descriptions
+Exemples :
+- Le titre de PR dit "améliorer les performances", le ticket est étiqueté "perf" et les commits voisins touchent tous le même hot path
+- Plusieurs tests ont été ajoutés avec le changement, tous exerçant des cas limites à très grandes entrées
+- Les autres PR de l'auteur la même semaine mentionnent toutes le même incident dans leurs descriptions
 
-Phrasing: confident but clearly derived. "The evidence points strongly to X: [the specific pieces]." Cite multiple sources.
+Formulation : confiante mais clairement dérivée. "Les preuves pointent fortement vers X : [les pièces précises]." Cite plusieurs sources.
 
-### 3. Inferred
+### 3. Inférée
 
-A reasonable reading of the context, but nothing explicitly supports it. The reader should understand this is *your interpretation*, not a fact from the record.
+Une lecture raisonnable du contexte, mais rien ne la soutient explicitement. Le lecteur doit comprendre que c'est *ton interprétation*, pas un fait du dossier.
 
-Examples:
-- The PR doesn't say why, but given the error was happening in production (per the incident channel timing) and the fix was rushed (merged the same day), it was likely a hotfix.
-- The function name suggests retry logic. The retry count is 3. This matches the team's general convention of "3 retries" seen elsewhere in the codebase.
+Exemples :
+- La PR ne dit pas pourquoi, mais vu que l'erreur arrivait en production (selon le timing du channel incident) et que le fix a été merge le même jour, c'était probablement un hotfix.
+- Le nom de fonction suggère une logique de retry. Le nombre de retries est 3. Cela correspond à la convention générale de l'équipe "3 retries" observée ailleurs dans le codebase.
 
-Phrasing: hedged. "It appears", "likely", "suggests", "is consistent with", "one reading is". Make the inference chain explicit: "Given A and B, C seems likely because D."
+Formulation : nuancée. "Il semble", "probablement", "suggère", "est cohérent avec", "une lecture est". Rends la chaîne d'inférence explicite : "Vu A et B, C semble probable parce que D."
 
-### 4. Speculative
+### 4. Spéculative
 
-A plausible hypothesis, but the evidence is thin and other explanations fit equally well. Presenting these is valuable, but mark them clearly as guesses.
+Une hypothèse plausible, mais les preuves sont minces et d'autres explications conviennent aussi bien. Les présenter est utile, mais marque-les clairement comme suppositions.
 
-Examples:
-- "This might be a workaround for a browser bug that's since been fixed, but we found no contemporary evidence of that."
-- "It's possible this threshold was chosen to match an SLA commitment, but no SLA doc references it."
+Exemples :
+- "Cela pourrait être un workaround pour un bug navigateur corrigé depuis, mais nous n'avons trouvé aucune preuve contemporaine."
+- "Il est possible que ce seuil ait été choisi pour correspondre à un engagement SLA, mais aucun doc SLA ne le référence."
 
-Phrasing: explicitly speculative. "One possibility is X, but we have no direct evidence." Usually lives in the "Competing Hypotheses" section alongside other possibilities.
+Formulation : explicitement spéculative. "Une possibilité est X, mais nous n'avons pas de preuve directe." Vit généralement dans la section "Hypothèses concurrentes" avec d'autres possibilités.
 
-### 5. Unknown
+### 5. Inconnue
 
-You looked and couldn't find out. A valid and important outcome. Document it.
+Tu as cherché et tu n'as pas trouvé. C'est un résultat valide et important. Documente-le.
 
-Phrasing: "We searched X, Y, and Z and found no evidence of why." Be specific about *what* you searched. "We couldn't find out" is less useful than "we searched the ticket tracker with keywords A and B, scanned the 6 PRs that touched this file since 2023, and grep'd the repo for string literals matching the threshold. None surfaced a rationale."
+Formulation : "Nous avons cherché X, Y et Z et trouvé aucune preuve du pourquoi." Sois précis sur *ce que* tu as cherché. "Nous n'avons pas pu trouver" est moins utile que "nous avons cherché dans le tracker avec les mots-clés A et B, scanné les 6 PR qui ont touché ce fichier depuis 2023, et grep le dépôt pour les littéraux correspondant au seuil. Rien n'a fait émerger de justification."
 
-## Phrasing Guide
+## Guide de formulation
 
-### Words that carry confidence. Use carefully
+### Mots qui portent de la confiance. À utiliser prudemment
 
-These imply **Direct** or **Supported** confidence. Don't use them for inferences.
+Ceux-ci impliquent une confiance **Directe** ou **Soutenue**. Ne les utilise pas pour des inférences.
 
-- "because". Implies a causal claim with evidence
-- "the reason is". Same
-- "was designed to". Claims author intent
-- "fixes", "addresses", "solves". Claims the change achieved its goal
-- "the team decided". Claims a group decision happened
+- "parce que". Implique une causalité prouvée
+- "la raison est". Même chose
+- "a été conçu pour". Revendique l'intention de l'auteur
+- "corrige", "traite", "résout". Revendique que le changement a atteint son objectif
+- "l'équipe a décidé". Revendique une décision de groupe
 
-If you're using these, you should have a citation immediately adjacent.
+Si tu les utilises, il faut une citation immédiatement adjacente.
 
-### Words that hedge. Use for inferences
+### Mots de nuance. À utiliser pour les inférences
 
-- "appears to"
-- "seems to"
-- "likely"
-- "suggests"
-- "is consistent with"
-- "one reading is"
-- "plausibly"
-- "may have been"
-- "the evidence points toward"
+- "semble"
+- "paraît"
+- "probablement"
+- "suggère"
+- "est cohérent avec"
+- "une lecture est"
+- "plausiblement"
+- "a pu être"
+- "les preuves pointent vers"
 
-These signal that you're interpreting, not reporting. Use them liberally in the "What We Can Reasonably Infer" section.
+Ils signalent que tu interprètes, pas que tu rapportes. Utilise-les largement dans la section "Ce que nous pouvons raisonnablement inférer".
 
-### Words to avoid
+### Mots à éviter
 
-- "obviously". If it were obvious, the user wouldn't be asking
-- "clearly". Almost always precedes a claim that isn't clear
-- "of course". Same
-- "just" (as in "it's just X for performance"). Dismissive and usually hides uncertainty
-- "I think" / "I believe". You're synthesizing evidence, not giving a personal opinion. Use "the evidence suggests" instead.
+- "évidemment". Si c'était évident, l'utilisateur ne demanderait pas
+- "clairement". Précède presque toujours une affirmation qui n'est pas claire
+- "bien sûr". Même chose
+- "simplement" (comme dans "it's just X for performance"). Dismissif et cache souvent l'incertitude
+- "je pense" / "je crois". Tu synthétises des preuves, tu ne donnes pas une opinion personnelle. Utilise plutôt "the evidence suggests".
 
-### Avoid rationalization
+### Éviter la rationalisation
 
-Code that "makes sense" today may have been written for reasons that no longer apply, or that were wrong when they were written. Don't retrofit a clean rationale onto messy history.
+Un code qui "a du sens" aujourd'hui a pu être écrit pour des raisons qui ne s'appliquent plus, ou qui étaient fausses au moment de l'écriture. Ne greffe pas une justification propre sur une histoire désordonnée.
 
-Resist the urge to:
-- Assume the author did the "right" thing and work backward to justify it
-- Assume a consistent pattern across the codebase was intentional when it might be copy-paste
-- Turn an absence of evidence into evidence of absence ("no one mentioned security concerns, so it must not have been a concern")
+Résiste à l'envie de :
+- Supposer que l'auteur a fait la "bonne" chose et reconstruire une justification à rebours
+- Supposer qu'un motif cohérent dans le codebase était intentionnel alors que ce peut être du copier-coller
+- Transformer une absence de preuve en preuve d'absence ("personne n'a mentionné la sécurité, donc cela n'a pas dû compter")
 
-## The Sycophancy Trap
+## Le piège de la complaisance
 
-Users often phrase `why` questions with an embedded hypothesis: "Why do we do it this way, I assume it's for performance?" Don't simply confirm it. Treat it as one candidate among others and check the evidence independently. If the evidence supports it, say so with citations. If not, say so and present what the evidence *does* support.
+Les utilisateurs formulent souvent les questions `why` avec une hypothèse intégrée : "Why do we do it this way, I assume it's for performance?" Ne la confirme pas simplement. Traite-la comme une candidate parmi d'autres et vérifie les preuves indépendamment. Si les preuves la soutiennent, dis-le avec citations. Sinon, dis-le et présente ce que les preuves *soutiennent*.
 
-The user's guess is a prompt for investigation, not a conclusion to validate.
+La supposition de l'utilisateur est une invite d'enquête, pas une conclusion à valider.
 
-## When Evidence Contradicts
+## Quand les preuves se contredisent
 
-If two sources disagree (the PR description says one thing, the ticket says another), surface both. Don't pick the one that fits a tidier narrative. A typical pattern:
+Si deux sources se contredisent (la description de PR dit une chose, le ticket une autre), expose les deux. Ne choisis pas celle qui donne le récit le plus propre. Motif typique :
 
-- **The ticket says** "we need this for customer X's compliance requirement"
-- **The PR says** "cleaning up tech debt in this area"
+- **Le ticket dit** "we need this for customer X's compliance requirement"
+- **La PR dit** "cleaning up tech debt in this area"
 
-Both may be true (the ticket motivated the work, the PR is the author's framing of it), or one may be wrong. Present both with their citations and let the user make the call.
+Les deux peuvent être vrais (le ticket a motivé le travail, la PR est le cadrage de l'auteur), ou l'un peut être faux. Présente les deux avec leurs citations et laisse l'utilisateur juger.
 
-## When Evidence Is Missing
+## Quand les preuves manquent
 
-An honest "we don't know" is one of the most valuable outputs this skill can produce. The user now knows:
+Un honnête "nous ne savons pas" est l'une des sorties les plus précieuses de cette skill. L'utilisateur sait alors :
 
-- The answer isn't in the obvious places
-- They'll need to ask a human (the original author, the product owner, the team lead) to find out
-- Or they can decide the question isn't worth pursuing further
+- La réponse n'est pas dans les endroits évidents
+- Il faudra demander à un humain (auteur original, product owner, team lead)
+- Ou il peut décider que la question ne mérite pas d'aller plus loin
 
-Failing to mark a gap and filling it with a confident guess actively harms the user. They'll act on the guess.
+Ne pas marquer un écart et le remplir par une supposition confiante nuit activement à l'utilisateur. Il agira sur la supposition.
 
-When you hit a gap, name it concretely:
-- What question you were trying to answer
-- What sources you searched
-- What you searched for in each
-- What you found (nothing, or only tangentially related material)
+Quand tu rencontres un écart, nomme-le concrètement :
+- Quelle question tu essayais de résoudre
+- Quelles sources tu as cherchées
+- Ce que tu as cherché dans chacune
+- Ce que tu as trouvé (rien, ou seulement du matériel tangentiel)
 
-## Calibration Check Before Finalizing
+## Check de calibration avant finalisation
 
-Before delivering the output, the synthesizer should review every claim in "What We Found" and "What We Can Reasonably Infer" and ask:
+Avant de livrer la sortie, le synthétiseur doit relire chaque affirmation dans "Ce que nous avons trouvé" et "Ce que nous pouvons raisonnablement inférer" et demander :
 
-1. Does this claim have a citation? If not, either add one or move it to "Inferred" / "Hypotheses".
-2. Is the phrasing calibrated to the tier? (A Direct claim can use "because". An Inferred claim cannot.)
-3. Am I treating the code itself as evidence for its own intent? If so, that's not evidence. Remove or reclassify.
-4. Does the output include a "What We Don't Know" section? If no gaps are mentioned, that's suspicious. Either the evidence was unusually complete or something is being swept under the rug.
+1. Cette affirmation a-t-elle une citation ? Sinon, ajoute-en une ou déplace-la vers "Inférées" / "Hypothèses".
+2. La formulation est-elle calibrée au niveau ? (Une affirmation Direct peut utiliser "parce que". Une affirmation Inférée ne le peut pas.)
+3. Suis-je en train de traiter le code lui-même comme preuve de sa propre intention ? Si oui, ce n'est pas une preuve. Supprime ou reclassifie.
+4. La sortie inclut-elle une section "Ce que nous ne savons pas" ? Si aucun écart n'est mentionné, c'est suspect. Soit les preuves étaient inhabituellement complètes, soit quelque chose est balayé sous le tapis.

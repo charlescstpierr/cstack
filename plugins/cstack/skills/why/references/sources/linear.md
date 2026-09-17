@@ -1,48 +1,48 @@
-# Linear Tickets
+# Tickets Linear
 
-## What this source contains
+## Ce que cette source contient
 
-- Issues describing features, bugs, and their motivation
-- Project docs attached to issues (often PRDs or specs)
-- Parent/sub-issue relationships (broader initiative → specific tickets)
-- Comments on issues (clarifications, scope changes, "why we're doing this" rationale)
-- Labels (e.g., `compliance`, `customer-request`, `perf`) that signal the type of motivation
-- Status updates that explain scope changes
-- Attachments and linked GitHub PRs
+- Issues décrivant fonctionnalités, bugs et leur motivation
+- Docs projet attachés aux issues (souvent PRD ou specs)
+- Relations parent/sous-issue (initiative large -> tickets précis)
+- Commentaires d'issues (clarifications, changements de portée, justification "pourquoi on fait ça")
+- Labels (p. ex. `compliance`, `customer-request`, `perf`) qui signalent le type de motivation
+- Mises à jour de statut qui expliquent les changements de portée
+- Pièces jointes et PR GitHub liées
 
-Linear is where the product/business context often lives: the "we're doing this because customer X asked" or "this is for the Q3 compliance initiative" layer.
+Linear est l'endroit où vit souvent le contexte produit/business : la couche "nous faisons ceci parce que le client X l'a demandé" ou "c'est pour l'initiative conformité du T3".
 
-## How to search it
+## Comment la chercher
 
-Use the Linear MCP.
+Utilise le MCP Linear.
 
-1. **Start with linked tickets.** If the seed commits or PRs reference ticket IDs (e.g., `ENG-1234`, `[BUG-567]`), fetch those first with `get_issue`. Read the full issue including comments.
-2. **List related issues by keyword.** Use `list_issues` with text search for the feature name, key symbol, or business term. Try multiple phrasings.
-3. **Walk the issue tree.** If you land on a sub-issue, fetch its parent. Sub-issues are tactical. Parents often carry the "why."
-4. **Read project docs.** If the issue belongs to a project, use `get_project` and check attached docs. Project-level documents are where specs and rationale are most often captured.
-5. **Check labels and milestones.** Labels hint at the category of motivation (customer-request, incident-followup, compliance). Milestones tie work to deadlines, which often reveal motivation.
+1. **Commence par les tickets liés.** Si les commits ou PR graine référencent des IDs de tickets (p. ex. `ENG-1234`, `[BUG-567]`), récupère-les d'abord avec `get_issue`. Lis toute l'issue, commentaires inclus.
+2. **Liste les issues liées par mots-clés.** Utilise `list_issues` avec recherche texte pour le nom de fonctionnalité, symbole clé ou terme métier. Essaie plusieurs formulations.
+3. **Parcours l'arbre d'issues.** Si tu arrives sur une sous-issue, récupère son parent. Les sous-issues sont tactiques. Les parents portent souvent le "pourquoi".
+4. **Lis les docs projet.** Si l'issue appartient à un projet, utilise `get_project` et vérifie les docs attachés. Les documents de niveau projet capturent le plus souvent specs et justification.
+5. **Vérifie labels et jalons.** Les labels suggèrent la catégorie de motivation (customer-request, incident-followup, compliance). Les milestones lient le travail à des échéances, qui révèlent souvent la motivation.
 
-## What good evidence looks like here
+## À quoi ressemble une bonne preuve ici
 
-- An issue description stating the business problem: "Customer Acme needs X because of their SOC2 audit"
-- A comment recording a decision: "We decided to go with approach B because approach A would require touching the billing service"
-- A parent issue titled like an initiative: "Q3 Enterprise Readiness" or "Reduce Payment Failures"
-- An attached PRD or spec
-- Labels like `customer:acme`, `incident-followup`, `compliance`, `perf-regression`
+- Une description d'issue énonçant le problème business : "Le client Acme a besoin de X à cause de son audit SOC2"
+- Un commentaire enregistrant une décision : "Nous avons décidé d'adopter l'approche B parce que l'approche A exigerait de toucher au service de facturation"
+- Une issue parent avec un titre d'initiative : "Préparation Enterprise T3" ou "Réduire les échecs de paiement"
+- Un PRD ou une spec attachés
+- Des labels comme `customer:acme`, `incident-followup`, `compliance`, `perf-regression`
 
-## Common pitfalls
+## Pièges courants
 
-- **Scope drift.** The ticket the PR references may have been closed and reopened with a different scope. Read the whole history.
-- **Mechanical templates.** Some teams require "Why" sections but fill them with boilerplate. Generic text ("improve user experience") is probably not a real answer.
-- **Stale tickets.** Old tickets often reflect a version of the plan that changed. Check dates and cross-reference with the code's ship date.
-- **Closed-as-duplicate chains.** Follow the duplicate-of relationships back to the canonical ticket.
-- **Private workspace content.** If you can't access an issue, note that as a gap rather than guessing.
+- **Dérive de portée.** Le ticket référencé par la PR peut avoir été fermé puis rouvert avec une portée différente. Lis tout l'historique.
+- **Templates mécaniques.** Certaines équipes imposent des sections "Why" remplies de boilerplate. Le texte générique ("improve user experience") n'est probablement pas une vraie réponse.
+- **Tickets périmés.** Les vieux tickets reflètent souvent une version du plan qui a changé. Vérifie les dates et croise avec la date de livraison du code.
+- **Chaînes closed-as-duplicate.** Suis les relations duplicate-of jusqu'au ticket canonique.
+- **Contenu workspace privé.** Si tu ne peux pas accéder à une issue, note-le comme écart au lieu de deviner.
 
-## What to return
+## Quoi retourner
 
-For each relevant ticket:
-- Ticket ID and title
-- The problem/motivation quoted from the description or comments (not paraphrased. The synthesizer needs the exact text to cite)
-- Labels, parent issue, project
-- Author, created date, closed date
-- Link to the ticket if available
+Pour chaque ticket pertinent :
+- ID et titre du ticket
+- Problème/motivation cité depuis la description ou les commentaires (pas paraphrasé. Le synthétiseur a besoin du texte exact pour citer)
+- Labels, issue parent, projet
+- Auteur, date de création, date de fermeture
+- Lien vers le ticket si disponible

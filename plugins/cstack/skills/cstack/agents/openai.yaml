@@ -1,6 +1,6 @@
 interface:
   display_name: "cstack"
-  short_description: "Route work by risk and verify the result"
-  default_prompt: "Use $cstack:cstack for this task."
+  short_description: "Route le travail et vérifie le résultat"
+  default_prompt: "Utilise $cstack:cstack pour cette tâche."
 policy:
   allow_implicit_invocation: false

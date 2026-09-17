@@ -1,15 +1,15 @@
-# Experience First
+# L'expérience d'abord
 
-Read this reference when an active cstack workflow routes here or the user names this principle. Follow the [Codex runtime contract](../codex-runtime.md) for scope and permissions.
+Lisez cette référence lorsqu'un processus cstack actif vous route ici ou lorsque l'utilisateur nomme ce principe. Suivez le [contrat d'exécution Codex](../codex-runtime.md) pour le périmètre et les permissions.
 
-When implementation convenience conflicts with user delight, choose delight.
+Lorsque la commodité d'implémentation entre en conflit avec le plaisir utilisateur, choisissez le plaisir.
 
-- Every feature, control, and option must be justified
-- Ship less, ship better (polished experience with three features beats rough one with ten)
-- Prototype before committing (design decisions are cheaper in throwaway HTML than production code)
-- Get the details right (transitions, alignment, spacing, feedback, error states)
-- Tighten the core loop (every feature should serve the central workflow or get out of the way)
+- Chaque fonctionnalité, contrôle et option doit être justifié
+- Livrer moins, livrer mieux (une expérience polie avec trois fonctionnalités bat une expérience rugueuse avec dix)
+- Prototyper avant de s'engager (les décisions de conception coûtent moins cher en HTML jetable qu'en code de production)
+- Soigner les détails (transitions, alignement, espacement, feedback, états d'erreur)
+- Resserrer la boucle centrale (chaque fonctionnalité doit servir le processus central ou s'écarter)
 
-The user is whoever consumes the work. For a UI that is the end user. For a library or an internal API it is the colleague who imports it. The engineer who maintains the code next is a user too. Weigh their experience the same way, and explain impact from their perspective.
+L'utilisateur est la personne qui consomme le travail. Pour une UI, c'est l'utilisateur final. Pour une bibliothèque ou une API interne, c'est le collègue qui l'importe. L'ingénieur qui maintient ensuite le code est aussi un utilisateur. Pesez son expérience de la même façon et expliquez l'impact depuis sa perspective.
 
-Foundations should serve the experience. Foundational thinking governs the *sequence* of work. This principle governs the *target*.
+Les fondations doivent servir l'expérience. La pensée fondationnelle gouverne la *séquence* du travail. Ce principe gouverne la *cible*.

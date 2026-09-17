@@ -1,51 +1,51 @@
 ---
 name: blast-radius
-description: "Find what a change could break somewhere else before it ships, beyond the diff, and prove the one fact it's safe because of by running real code instead of writing it up. Use for $cstack:blast-radius, 'blast radius of X', 'what could this break', or reviewing a small diff you don't trust."
+description: "Trouve ce qu'un changement pourrait casser ailleurs avant livraison, au-delà du diff, et prouve par du vrai code le fait qui le rend sûr. Utiliser pour $cstack:blast-radius, 'rayon d’impact de X', 'qu’est-ce que cela pourrait casser', ou la revue d'un petit diff douteux."
 ---
 
-# Blast radius
+# Rayon d'impact
 
-Runtime: [`../cstack/references/codex-runtime.md`](../cstack/references/codex-runtime.md).
+Contrat d’exécution : [`../cstack/references/codex-runtime.md`](../cstack/references/codex-runtime.md).
 
-Find what a change breaks somewhere else, before it ships. Use for "blast radius of X", "what could this break", or reviewing a small diff you don't trust yet.
+Trouve ce qu'un changement casse ailleurs avant qu'il parte en livraison. Utilise pour "rayon d’impact de X", "qu’est-ce que cela pourrait casser", ou la revue d'un petit diff auquel tu ne fais pas encore confiance.
 
-Companion to `how` and `why`. `how` tells you what the code does. `why` tells you why it's shaped that way. Blast radius tells you what it breaks somewhere else.
+Compagnon de `how` et `why`. `how` te dit ce que fait le code. `why` te dit pourquoi il a cette forme. Le rayon d'impact te dit ce qu'il casse ailleurs.
 
-Listing the callers is not the job. The agent can grep those in a second. The job is the breakage grep won't show you.
+Lister les appelants n'est pas le travail. L'agent peut les chercher avec grep en une seconde. Le travail, c'est la casse que grep ne te montrera pas.
 
-## Don't trust your own writeup
+## Ne fais pas confiance à ton propre compte rendu
 
-A blast-radius writeup that sounds right is worthless. It reads as convincing whether or not it's true. So don't hand back the writeup. Find the one or two facts the whole thing depends on and prove them by running code.
+Un compte rendu de rayon d'impact qui sonne juste ne vaut rien. Il paraît convaincant qu'il soit vrai ou non. Ne rends donc pas seulement le compte rendu. Trouve les un ou deux faits dont tout dépend et prouve-les en exécutant du code.
 
-### How sure are you
+### A quel point es-tu sur
 
-For each fact the change's safety depends on, get it as far down this list as is cheap, and say where it stopped.
+Pour chaque fait dont dépend la sécurité du changement, descends aussi bas que possible dans cette liste à faible coût, puis dis ou tu t'es arrête.
 
-1. You said so. Worthless on its own.
-2. You pointed at the line. A real `file:line`, or the library's own source.
-3. You showed the bad case can't happen. You walked the failure step by step and it doesn't reach.
-4. You ran it. A script or test that calls the real code and fails loud if you're wrong.
-5. You reproduced it in the running app.
+1. Tu l'as dit. Sans plus, ça ne vaut rien.
+2. Tu as pointe la ligne. Un vrai `file:line`, ou la source propre de la bibliothèque.
+3. Tu as montre que le mauvais cas ne peut pas arriver. Tu as suivi l'échec étape par étape et il n'atteint pas ce point.
+4. Tu l'as exécute. Un script ou test appelle le vrai code et échoue clairement si tu te trompes.
+5. Tu l'as reproduit dans l'application en cours d'exécution.
 
-Any safety fact you can't get to step 4, say so. Don't write it up as settled. Step 4 is usually one small script that imports the same library the app ships and calls the exact function you're worried about.
+Tout fait de sécurité que tu ne peux pas amener à l'étape 4 doit être declare comme tel. Ne le présente pas comme établi. L'étape 4 est habituellement un petit script qui importe la même bibliothèque que celle livree par l'app et appelle exactement la fonction qui t'inquiete.
 
-## Steps
+## Etapes
 
-1. Read the change. The diff, the symbols it adds, changes, and deletes, and what it now does differently, including the part the diff doesn't spell out. Use `why` step 2 to pull the PR and commits.
-2. Find the one fact it's safe because of. Most changes that look risky are safe because of a single fact, like "this call only drops already-dead cache entries and does nothing else". Find that fact. If it holds, most risky cases are cleared at once. Spend your time here, not on a long list of maybes.
-3. Look where grep stops. Read the source of the library you call, and check its pinned version and any local patch. Work out when things run: microtasks, unmount and teardown, Solid versus React. Follow what a symbol search misses: the JSON an API returns, a DB column, a wire format, another language reading the same bytes, a feature flag, code three hops downstream.
-4. Be honest about each risk. Give it a real chance of happening and a real cost if it does. Keep the risks you confirmed. List the ones you checked and cleared separately. Same rules as `why`. Cite a real `file:line`, a search that finds nothing is still an answer, and never make up a caller or an API.
-5. Prove the one fact. Write a script or test that runs the real code, run it, and paste what happened. If you can't prove it cheaply, mark it unproven. Don't overstate.
-6. For a big or wide change, run it through `$cstack:arena`. Ask independent reviewers the same question and merge the answers. Verified model diversity can add coverage but is not required.
+1. Lis le changement. Le diff, les symboles qu'il ajoute, modifie et supprime, et ce qu'il fait maintenant différemment, y compris la partie que le diff n’explicite pas. Utilise l'étape 2 de `why` pour récupérer la PR et les commits.
+2. Trouve le fait unique qui le rend sûr. La plupart des changements qui ont l'air risqués sont sûrs grâce à un seul fait, par exemple "cet appel supprime seulement des entrées de cache déjà mortes et ne fait rien d'autre". Trouve ce fait. S'il tient, la plupart des cas risqués sont écartés d'un coup. Passe ton temps ici, pas sur une longue liste de peut-être.
+3. Regarde là où grep s'arrête. Lis la source de la bibliothèque que tu appelles, puis vérifie sa version épinglée et tout patch local. Comprends quand les choses s'exécutent : microtâches, unmount et teardown, Solid versus React. Suis ce qu'une recherche de symbole manque : le JSON renvoyé par une API, une colonne DB, un format réseau, un autre langage qui lit les mêmes octets, un feature flag, du code trois sauts plus loin.
+4. Sois honnête sur chaque risque. Donne-lui une vraie probabilité d'arriver et un vrai coût si ça arrive. Garde les risques confirmés. Liste séparément ceux que tu as vérifiés et écartés. Mêmes règles que `why`. Cite un vrai `file:line`; une recherche qui ne trouve rien est quand même une réponse, et n'invente jamais un appelant ou une API.
+5. Prouve le fait unique. Écris un script ou un test qui exécute le vrai code, lance-le, puis colle ce qui s'est passe. Si tu ne peux pas le prouver à faible coût, marque-le non prouvé. N'exagere pas.
+6. Pour un changement gros ou large, passe-le dans `$cstack:arena`. Pose la même question à des relecteurs indépendants et fusionne les réponses. Une diversite de modèles vérifiée peut ajouter de la couverture, mais elle n'est pas requise.
 
-## What to hand back
+## Ce qu'il faut rendre
 
-- **What it does.** What changed, including the part that isn't obvious.
-- **The one fact it's safe because of.** State it, say which step you got it to, and show the proof. If you couldn't prove it, write unproven.
-- **Risks.** Only the real ones. Each names how it breaks, the `file:line`, how likely and how bad, and how to check. Paste the proof for the ones that matter.
-- **Cleared.** What you checked and why it's fine.
-- **Before you merge.** The cheapest test or repro that catches the real bug, including the script you wrote.
+- **Ce qu'il fait.** Ce qui a changé, y compris la partie qui n'est pas évidente.
+- **Le fait unique qui le rend sûr.** Énonce-le, dis jusqu'à quelle étape tu l'as amené, et montre la preuve. Si tu n'as pas pu le prouver, écris non prouvé.
+- **Risques.** Seulement les vrais. Chacun nommé comment ça casse, le `file:line`, sa probabilité, sa gravité et comment vérifier. Colle la preuve pour ceux qui comptent.
+- **Ecartes.** Ce que tu as vérifie et pourquoi c'est correct.
+- **Avant de merger.** Le test ou la repro la moins chère qui attrape le vrai bug, y compris le script que tu as écrit.
 
-Write it through `unslop`, cite real code, and strip anything private before it goes anywhere public.
+Passe-le par `unslop`, cite du vrai code et retire tout élément privé avant que ça parte dans un endroit public.
 
-**Reply:** the writeup above, with the one safety fact either proven or marked unproven. Every claim carries its evidence or its label in the same sentence. Measured, inferred, or guess. A prediction or an unseen cause is a guess. Never hand the human a check you could run.
+**Réponse :** le compte rendu ci-dessus, avec le fait de sécurité unique prouvé ou marqué non prouvé. Chaque affirmation porte sa preuve ou son étiquette dans la même phrase. Mesure, inférence ou supposition. Une prédiction ou une cause non observée est une supposition. Ne donne jamais à l'humain une vérification que tu pourrais exécuter.

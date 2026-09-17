@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
-"""Preview and apply cstack's fixed project setup files."""
+"""Prévisualiser et appliquer les fichiers fixes de configuration projet cstack."""
 
 from __future__ import annotations
 
-import argparse
 import base64
 import hashlib
 import importlib.util
@@ -26,12 +25,12 @@ OBSERVED_PATHS = ("AGENTS.md", "CLAUDE.md", "docs/agents/cstack.md", "docs/agent
 TRACKER_MODES = {"keep", "local", "github"}
 TRACKER_KEYS = {"mode", "owner", "repo"}
 
-# Counts are policy text for the setup preview, not automatic dispatch.
+# Les comptes sont du texte de politique pour la prévisualisation de configuration, pas de la répartition automatique.
 WORKFLOWS = {
-    "clarify": {"count_rule": "0 by default; one explorer per delegated independent fact", "roles": ["how explorer"]},
-    "domain": {"count_rule": "0 by default; optional fact delegation", "roles": ["how explorer", "documentation", "judgment and prose"]},
-    "horizon": {"count_rule": "variable research children; optional 1 synthesis (judgment and prose)", "roles": ["how explorer", "judgment and prose"]},
-    "audit-architecture": {"count_rule": "at most 1 initial explorer", "roles": ["how explorer"]},
+    "clarify": {"count_rule": "0 par défaut; un explorateur par fait indépendant délégué", "roles": ["how explorer"]},
+    "domain": {"count_rule": "0 par défaut; délégation factuelle optionnelle", "roles": ["how explorer", "documentation", "judgment and prose"]},
+    "horizon": {"count_rule": "enfants de recherche variables; 1 synthèse optionnelle (judgment and prose)", "roles": ["how explorer", "judgment and prose"]},
+    "audit-architecture": {"count_rule": "au plus 1 explorateur initial", "roles": ["how explorer"]},
 }
 
 
@@ -42,16 +41,16 @@ class ProjectError(ValueError):
 class InterruptedApply(Exception):
     def __init__(self, applied: list[str], skipped: list[str]) -> None:
         self.applied, self.skipped = applied, skipped
-        super().__init__("apply interrupted; the accepted plan is resumable")
+        super().__init__("application interrompue; le plan accepté peut reprendre")
 
 
 def _models():
     path = Path(__file__).with_name("models.py")
     spec = importlib.util.spec_from_file_location("cstack_setup_models", path)
     if spec is None or spec.loader is None:
-        raise ProjectError("cannot load the existing models.py helper")
+        raise ProjectError("impossible de charger le script d’aide models.py existant")
     module = importlib.util.module_from_spec(spec)
-    # Read the trusted helper without writing bytecode into the installed bundle.
+    # Lire le script d’aide de confiance sans écrire de bytecode dans le paquet installé.
     previous = sys.dont_write_bytecode
     try:
         sys.dont_write_bytecode = True
@@ -77,33 +76,33 @@ def _unb64(value: Any) -> bytes | None:
     if value is None:
         return None
     if not isinstance(value, str):
-        raise ProjectError("snapshot content must be base64 text or null")
+        raise ProjectError("le contenu de l’instantané doit être du texte base64 ou null")
     try:
         return base64.b64decode(value.encode("ascii"), validate=True)
     except (ValueError, UnicodeError) as error:
-        raise ProjectError("snapshot content is not valid base64") from error
+        raise ProjectError("le contenu de l’instantané n’est pas du base64 valide") from error
 
 
 def _path(workspace: Path, relative: str, *, write: bool = False) -> Path:
     allowed = TARGET_PATHS if write else ALLOWED_PATHS
     if relative not in allowed or Path(relative).is_absolute() or ".." in Path(relative).parts:
-        raise ProjectError(f"path is outside the project setup allowlist: {relative}")
+        raise ProjectError(f"le chemin est hors de la liste d’autorisation de configuration projet: {relative}")
     return workspace / relative
 
 
 def _workspace(path: Path) -> Path:
-    """Accept only an existing directory whose ancestors stay in scope."""
+    """Accepter seulement un dossier existant dont les ancêtres restent dans le périmètre."""
     supplied = Path(path)
     absolute = Path(os.path.abspath(supplied))
     if supplied.is_symlink() or not supplied.exists() or not supplied.is_dir():
-        raise ProjectError(f"workspace must be an existing regular directory: {path}")
+        raise ProjectError(f"l’espace de travail doit être un dossier régulier existant: {path}")
     current = Path(absolute.anchor)
     for part in absolute.parts[1:]:
         current /= part
         if current.is_symlink():
-            raise ProjectError(f"workspace ancestor is a symlink: {current}")
+            raise ProjectError(f"un ancêtre de l’espace de travail est un lien symbolique: {current}")
         if current != absolute and not current.is_dir():
-            raise ProjectError(f"workspace ancestor is not a directory: {current}")
+            raise ProjectError(f"un ancêtre de l’espace de travail n’est pas un dossier: {current}")
     return absolute
 
 
@@ -111,18 +110,18 @@ def _check(path: Path, workspace: Path) -> None:
     try:
         relative = path.relative_to(workspace)
     except ValueError as error:
-        raise ProjectError(f"path escapes workspace: {path}") from error
+        raise ProjectError(f"le chemin sort de l’espace de travail: {path}") from error
     current = workspace
     for part in relative.parts:
         current /= part
         if not current.exists() and not current.is_symlink():
             break
         if current.is_symlink():
-            raise ProjectError(f"symlinked project path is not writable: {current}")
+            raise ProjectError(f"le chemin projet en lien symbolique n’est pas inscriptible: {current}")
         if current != path and not current.is_dir():
-            raise ProjectError(f"project parent is not a directory: {current}")
+            raise ProjectError(f"le parent projet n’est pas un dossier: {current}")
     if (path.exists() or path.is_symlink()) and not path.is_file():
-        raise ProjectError(f"project target is not a regular file: {path}")
+        raise ProjectError(f"la cible projet n’est pas un fichier régulier: {path}")
 
 
 def _read(workspace: Path, relative: str) -> bytes | None:
@@ -139,10 +138,10 @@ def _snapshots(records: dict[str, Any]) -> dict[str, bytes | None]:
     result: dict[str, bytes | None] = {}
     for relative, record in records.items():
         if relative not in ALLOWED_PATHS or not isinstance(record, dict) or set(record) != {"content_b64", "exists", "sha256"}:
-            raise ProjectError(f"invalid observed snapshot record: {relative}")
+            raise ProjectError(f"enregistrement d’instantané observé invalide: {relative}")
         data = _unb64(record["content_b64"])
         if not isinstance(record["exists"], bool) or record["exists"] != (data is not None) or record["sha256"] != (None if data is None else _sha(data)):
-            raise ProjectError(f"snapshot hash or existence does not match: {relative}")
+            raise ProjectError(f"hash ou existence de l’instantané non concordant: {relative}")
         result[relative] = data
     return result
 
@@ -151,16 +150,16 @@ def _tracker(raw: Any) -> dict[str, str]:
     if raw is None:
         return {"mode": "keep"}
     if not isinstance(raw, dict) or set(raw) - TRACKER_KEYS or "mode" not in raw:
-        raise ProjectError("tracker must contain only mode, owner, and repo")
+        raise ProjectError("le suivi doit contenir seulement mode, owner et repo")
     mode = raw["mode"]
     if mode not in TRACKER_MODES:
-        raise ProjectError("tracker mode must be keep, local, or github")
+        raise ProjectError("le mode de suivi doit être keep, local ou github")
     if mode != "github" and set(raw) != {"mode"}:
-        raise ProjectError(f"tracker keys are not valid for mode {mode}")
+        raise ProjectError(f"les clés de suivi ne sont pas valides pour le mode {mode}")
     if mode == "github":
         pattern = re.compile(r"^[A-Za-z0-9_.-]+$")
         if not all(isinstance(raw.get(key), str) and pattern.fullmatch(raw[key]) for key in ("owner", "repo")):
-            raise ProjectError("github tracker owner and repo are invalid")
+            raise ProjectError("owner et repo du suivi github sont invalides")
         return {"mode": mode, "owner": raw["owner"], "repo": raw["repo"]}
     return {"mode": mode}
 
@@ -169,24 +168,24 @@ def _options(raw: Any, models: Any, catalog: dict[str, list[str]] | None) -> dic
     if raw is None:
         raw = {}
     if not isinstance(raw, dict) or set(raw) - {"model_choices", "tracker"}:
-        raise ProjectError("options may contain only model_choices and tracker")
+        raise ProjectError("options peut contenir seulement model_choices et tracker")
     choices = raw.get("model_choices", {})
     if not isinstance(choices, dict):
-        raise ProjectError("model_choices must be an object")
+        raise ProjectError("model_choices doit être un objet")
     try:
         models.validate(choices)
         if choices:
             if catalog is None:
-                raise ProjectError("a live catalog is required for explicit model choices")
+                raise ProjectError("un catalogue actuel est requis pour les choix de modèle explicites")
             models.validate(choices, catalog, check_available=True)
     except (TypeError, ValueError) as error:
-        raise ProjectError(f"invalid model_choices: {error}") from error
+        raise ProjectError(f"model_choices invalide: {error}") from error
     return {"model_choices": choices, "tracker": _tracker(raw.get("tracker"))}
 
 
 def _managed(payload: bytes) -> bytes:
     if START in payload or END in payload:
-        raise ProjectError("generated content cannot contain cstack managed markers")
+        raise ProjectError("le contenu généré ne peut pas contenir les marqueurs gérés cstack")
     return START + b"\n" + payload.rstrip(b"\r\n") + b"\n" + END
 
 
@@ -197,11 +196,11 @@ def _merge(old: bytes | None, payload: bytes, *, owned: bool) -> bytes:
     starts, ends = old.count(START), old.count(END)
     if starts or ends:
         if starts != 1 or ends != 1 or old.index(START) > old.index(END):
-            raise ProjectError("managed markers are malformed or duplicated")
+            raise ProjectError("les marqueurs gérés sont mal formés ou dupliqués")
         start, end = old.index(START), old.index(END) + len(END)
         return old[:start] + block + old[end:]
     if owned and old.strip():
-        raise ProjectError("refusing to overwrite an unmanaged generated document")
+        raise ProjectError("refus d’écraser un document généré non géré")
     if owned:
         return block + b"\n"
     separator = b"" if not old or old.endswith((b"\n", b"\r")) else b"\n"
@@ -209,39 +208,39 @@ def _merge(old: bytes | None, payload: bytes, *, owned: bool) -> bytes:
 
 
 def _agent_payload(snapshots: dict[str, bytes | None]) -> bytes:
-    lines = ["## cstack", "", "Read [docs/agents/cstack.md](docs/agents/cstack.md) only after the user explicitly invokes a cstack skill."]
+    lines = ["## cstack", "", "Lire [docs/agents/cstack.md](docs/agents/cstack.md) seulement après invocation explicite d’une skill cstack par l’utilisateur."]
     if snapshots.get("CLAUDE.md") and snapshots["CLAUDE.md"].strip():
-        lines += ["", "Read [CLAUDE.md](CLAUDE.md) for existing project rules when they apply. Do not copy them here."]
+        lines += ["", "Lire [CLAUDE.md](CLAUDE.md) pour les règles projet existantes quand elles s’appliquent. Ne pas les copier ici."]
     return ("\n".join(lines) + "\n").encode()
 
 
 def _workflow_payload(tracker: dict[str, str]) -> bytes:
-    rows = ["# cstack project guidance", "", "Read this file only after the user explicitly invokes a cstack skill.", "", "## Workflows", "", "`$cstack:cstack` owns automatic preparation and execution routing; use the commands below for a focused preparation request.", "", "| Workflow | Invocation | Agent count rule | Reused role keys |", "| --- | --- | --- | --- |"]
+    rows = ["# Guide projet cstack", "", "Lire ce fichier seulement après invocation explicite d’une skill cstack par l’utilisateur.", "", "## Flux de travail", "", "`$cstack:cstack` possède la préparation automatique et le routage d’exécution; utiliser les commandes ci-dessous pour une demande de préparation ciblée.", "", "| Flux de travail | Invocation | Règle de nombre d’agents | Clés de rôles réutilisées |", "| --- | --- | --- | --- |"]
     for name, value in WORKFLOWS.items():
         rows.append(f"| `{name}` | `$cstack:{name}` | {value['count_rule']} | {', '.join(f'`{role}`' for role in value['roles'])} |")
-    rows += ["", "## Domain records", "", "Use the project's existing CONTEXT.md and ADR conventions when present. Setup does not create blank CONTEXT.md or ADR files.", "", "## Local state", "", "Use `.cstack/horizon` for Horizon state. Keep `.cstack/models.json` as the source for model and reasoning-effort choices. Setup performs no global setup, push, label, or remote action.", "", "## Role boundary", "", "Use `hardest tasks` only for explicit complex architecture. Horizon synthesis uses `judgment and prose`.", "", "## Tracker mode", "", f"The configured tracker mode is `{tracker['mode']}`."]
+    rows += ["", "## Enregistrements de domaine", "", "Utiliser le CONTEXT.md existant du projet et les conventions ADR quand ils existent. La configuration ne crée pas de CONTEXT.md ou de fichiers ADR vides.", "", "## État local", "", "Utiliser `.cstack/horizon` pour l’état Horizon. Garder `.cstack/models.json` comme source des choix de modèles et d’effort de raisonnement. La configuration n’effectue aucune configuration globale, aucun envoi distant (`push`), aucune étiquette et aucune action distante.", "", "## Limite des rôles", "", "Utiliser `hardest tasks` seulement pour l’architecture complexe explicite. La synthèse Horizon utilise `judgment and prose`.", "", "## Mode de suivi", "", f"Le mode de suivi configuré est `{tracker['mode']}`."]
     if tracker["mode"] == "github":
-        rows.append(f"Remote reference: `https://github.com/{tracker['owner']}/{tracker['repo']}`. cstack performs no remote action during setup.")
+        rows.append(f"Référence distante: `https://github.com/{tracker['owner']}/{tracker['repo']}`. cstack n’effectue aucune action distante pendant la configuration.")
     return ("\n".join(rows) + "\n").encode()
 
 
 def _tracker_payload(tracker: dict[str, str]) -> bytes:
-    rows = ["# Issue tracker", "", f"Tracker mode: `{tracker['mode']}`."]
+    rows = ["# Suivi des tickets", "", f"Mode de suivi: `{tracker['mode']}`."]
     if tracker["mode"] == "local":
         rows += [
-            "Use `.cstack/horizon/<slug>/map.md` for the map, `.cstack/horizon/<slug>/tickets/<id>-<slug>.md` for tickets, and `.cstack/horizon/<slug>/research/<id>.md` for research.",
-            "Use statuses `ready`, `claimed`, `waiting`, `resolved`, and `out-of-scope`. Keep `owner` stable, use valid IDs in `blocked_by`, and make a ticket eligible only when its dependencies are `resolved`.",
-            "Keep one parent writer. Child artifacts stay in their own files. Record the answer before setting a ticket to `resolved`, then add the map gist.",
-            "See `$cstack:horizon` templates for the detailed record shapes. Setup creates no labels or remote state.",
+            "Utiliser `.cstack/horizon/<slug>/map.md` pour la carte, `.cstack/horizon/<slug>/tickets/<id>-<slug>.md` pour les tickets et `.cstack/horizon/<slug>/research/<id>.md` pour la recherche.",
+            "Utiliser les statuts `ready`, `claimed`, `waiting`, `resolved` et `out-of-scope`. Garder `owner` stable, utiliser des IDs valides dans `blocked_by` et rendre un ticket éligible seulement quand ses dépendances sont `resolved`.",
+            "Garder un seul rédacteur parent. Les artefacts enfants restent dans leurs propres fichiers. Enregistrer la réponse avant de mettre un ticket à `resolved`, puis ajouter le résumé de carte.",
+            "Voir les modèles de documents `$cstack:horizon` pour les formes d’enregistrement détaillées. La configuration ne crée aucune étiquette ni aucun état distant.",
         ]
     elif tracker["mode"] == "github":
         rows += [
-            f"Use the selected repository `https://github.com/{tracker['owner']}/{tracker['repo']}` only.",
-            "Before work, discover the actual authenticated `gh` or native connector schema. Map the horizon map to one parent issue and child issues.",
-            "Use native blocking links when available. Otherwise put `Blocked by` in the issue body. Keep claims on a stable assignee. Record the answer in a comment and close only with explicit authorization. Setup performs no API action.",
+            f"Utiliser seulement le dépôt sélectionné `https://github.com/{tracker['owner']}/{tracker['repo']}`.",
+            "Avant le travail, découvrir le schéma réel du `gh` authentifié ou du connecteur natif. Mapper la carte Horizon vers une issue parente et des issues enfants.",
+            "Utiliser les liens de blocage natifs quand ils existent. Sinon mettre `Blocked by` dans le corps de l’issue. Garder les attributions sur un responsable stable. Enregistrer la réponse dans un commentaire et fermer seulement avec autorisation explicite. La configuration n’effectue aucune action API.",
         ]
     else:
-        rows.append("Use the existing tracker documentation. Setup does not create a blank tracker file.")
+        rows.append("Utiliser la documentation de suivi existante. La configuration ne crée pas de fichier de suivi vide.")
     return ("\n".join(rows) + "\n").encode()
 
 
@@ -252,7 +251,7 @@ def _models_content(old: bytes | None, choices: dict[str, Any], models: Any) -> 
         config = {} if old is None else json.loads(old)
         models.validate(config)
     except (TypeError, ValueError, json.JSONDecodeError) as error:
-        raise ProjectError(f"existing models.json is invalid: {error}") from error
+        raise ProjectError(f"models.json existant invalide: {error}") from error
     config.update(choices)
     models.validate(config)
     return (json.dumps(config, indent=2, ensure_ascii=False) + "\n").encode()
@@ -272,7 +271,7 @@ def _entry(relative: str, old: bytes | None, new: bytes) -> dict[str, Any]:
     try:
         text = new.decode()
     except UnicodeDecodeError as error:
-        raise ProjectError(f"generated file is not UTF-8: {relative}") from error
+        raise ProjectError(f"le fichier généré n’est pas en UTF-8: {relative}") from error
     return {"action": "create" if old is None else ("unchanged" if old == new else "update"), "current_sha256": None if old is None else _sha(old), "new_content": text, "new_sha256": _sha(new), "original_content_b64": _b64(old), "path": relative}
 
 
@@ -309,24 +308,24 @@ def _plan(workspace: Path, raw_options: Any, catalog: dict[str, list[str]] | Non
 def _shape(plan: Any) -> dict[str, Any]:
     required = {"catalog_sha256", "files", "model_choices", "observed", "options", "plan_sha256", "status", "version", "workflows"}
     if not isinstance(plan, dict) or set(plan) != required or plan["version"] != PLAN_VERSION or plan["status"] != "preview":
-        raise ProjectError("plan has unknown or missing fields")
+        raise ProjectError("le plan contient des champs inconnus ou manquants")
     body = dict(plan)
     fingerprint = body.pop("plan_sha256")
     if not isinstance(fingerprint, str) or _sha(_canonical(body)) != fingerprint:
-        raise ProjectError("plan fingerprint does not match its contents")
+        raise ProjectError("l’empreinte du plan ne correspond pas à son contenu")
     paths: set[str] = set()
     for entry in plan["files"]:
         fields = {"action", "current_sha256", "new_content", "new_sha256", "original_content_b64", "path"}
         if not isinstance(entry, dict) or set(entry) != fields or entry["path"] in paths:
-            raise ProjectError("plan file entry is invalid or repeated")
+            raise ProjectError("une entrée de fichier du plan est invalide ou répétée")
         paths.add(entry["path"])
         if entry["path"] not in TARGET_PATHS or entry["action"] not in {"create", "update", "unchanged"}:
-            raise ProjectError(f"plan path or action is invalid: {entry['path']}")
+            raise ProjectError(f"chemin ou action de plan invalide: {entry['path']}")
         old = _unb64(entry["original_content_b64"])
         if entry["current_sha256"] != (None if old is None else _sha(old)) or not isinstance(entry["new_content"], str):
-            raise ProjectError(f"plan old snapshot is invalid: {entry['path']}")
+            raise ProjectError(f"ancien instantané du plan invalide: {entry['path']}")
         if entry["new_sha256"] != _sha(entry["new_content"].encode()):
-            raise ProjectError(f"plan new content hash is invalid: {entry['path']}")
+            raise ProjectError(f"hash du nouveau contenu du plan invalide: {entry['path']}")
     _snapshots(plan["observed"])
     return plan
 
@@ -336,7 +335,7 @@ def _compare(expected: dict[str, Any], supplied: dict[str, Any]) -> None:
     left.pop("plan_sha256", None)
     right.pop("plan_sha256", None)
     if left != right:
-        raise ProjectError("accepted plan does not match recomputed options and snapshots")
+        raise ProjectError("le plan accepté ne correspond pas aux options et instantanés recalculés")
 
 
 def _check_state(workspace: Path, plan: dict[str, Any]) -> None:
@@ -346,13 +345,13 @@ def _check_state(workspace: Path, plan: dict[str, Any]) -> None:
         current_hash, old_hash = None if current is None else _sha(current), None if old is None else _sha(old)
         if relative in planned:
             if current_hash not in {old_hash, planned[relative]["new_sha256"]}:
-                raise ProjectError(f"file changed since preview: {relative}")
+                raise ProjectError(f"fichier modifié depuis la prévisualisation: {relative}")
         elif current_hash != old_hash:
-            raise ProjectError(f"observed project file changed since preview: {relative}")
+            raise ProjectError(f"fichier projet observé modifié depuis la prévisualisation: {relative}")
     for entry in plan["files"]:
         current = _read(workspace, entry["path"])
         if (None if current is None else _sha(current)) not in {entry["current_sha256"], entry["new_sha256"]}:
-            raise ProjectError(f"file changed since preview: {entry['path']}")
+            raise ProjectError(f"fichier modifié depuis la prévisualisation: {entry['path']}")
 
 
 def _missing_ancestors(path: Path) -> list[Path]:
@@ -412,14 +411,14 @@ def apply_plan(workspace: Path, supplied_plan: Any, raw_options: Any, catalog: d
     workspace = _workspace(workspace)
     plan = _shape(supplied_plan)
     if expected_plan_sha256 is not None and expected_plan_sha256 != plan["plan_sha256"]:
-        raise ProjectError("accepted plan fingerprint differs from --expected-plan-sha256")
+        raise ProjectError("l’empreinte du plan accepté diffère de --expected-plan-sha256")
     models = _models()
     options = _options(raw_options, models, catalog)
     if options != plan["options"] or options["model_choices"] != plan["model_choices"]:
-        raise ProjectError("apply options differ from the accepted preview")
+        raise ProjectError("les options d’application diffèrent de la prévisualisation acceptée")
     catalog_sha = None if catalog is None else _sha(_canonical(catalog))
     if plan["catalog_sha256"] != catalog_sha:
-        raise ProjectError("catalog differs from the accepted preview")
+        raise ProjectError("le catalogue diffère de la prévisualisation acceptée")
     snapshots = _snapshots(plan["observed"])
     expected = _payload(options, snapshots, models)
     expected["files"].sort(key=lambda entry: TARGET_PATHS.index(entry["path"]))
@@ -435,7 +434,7 @@ def apply_plan(workspace: Path, supplied_plan: Any, raw_options: Any, catalog: d
         if current_hash == entry["new_sha256"]:
             continue
         if current_hash != entry["current_sha256"]:
-            raise ProjectError(f"file changed before staging: {entry['path']}")
+            raise ProjectError(f"fichier modifié avant la préparation: {entry['path']}")
         changes.append(entry)
     if not changes:
         return {"status": "noop", "changed": [], "plan_sha256": plan["plan_sha256"]}
@@ -456,7 +455,7 @@ def apply_plan(workspace: Path, supplied_plan: Any, raw_options: Any, catalog: d
             if current_hash == entry["new_sha256"]:
                 continue
             if current_hash != entry["current_sha256"]:
-                raise ProjectError(f"file changed during staging: {entry['path']}")
+                raise ProjectError(f"fichier modifié pendant la préparation: {entry['path']}")
             os.replace(temp, _path(workspace, entry["path"], write=True))
             replaced.append((entry, old))
         return {"status": "applied", "changed": [entry["path"] for entry, _ in replaced], "plan_sha256": plan["plan_sha256"]}
@@ -481,28 +480,32 @@ def _json(path: Path) -> Any:
     try:
         return json.loads(path.read_text(encoding="utf-8"))
     except (OSError, UnicodeDecodeError, json.JSONDecodeError) as error:
-        raise ProjectError(f"cannot read JSON {path}: {error}") from error
+        raise ProjectError(f"impossible de lire le JSON {path}: {error}") from error
 
 
 def _catalog(path: Path | None, raw_options: Any) -> dict[str, list[str]] | None:
     if path is None:
         if isinstance(raw_options, dict) and raw_options.get("model_choices"):
-            raise ProjectError("--catalog is required for explicit model choices")
+            raise ProjectError("--catalog est requis pour les choix de modèle explicites")
         return None
     try:
         return _models().read_catalog(path)
     except (OSError, ValueError, json.JSONDecodeError) as error:
-        raise ProjectError(f"invalid model catalog: {error}") from error
+        raise ProjectError(f"catalogue de modèles invalide: {error}") from error
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description=__doc__)
+    parser_class = _models().FrenchArgumentParser
+    parser = parser_class(description=__doc__, add_help=False)
+    parser.add_argument("-h", "--help", action="help", help="afficher ce message d’aide et quitter")
     parser.add_argument("--workspace", type=Path, default=Path.cwd())
     parser.add_argument("--catalog", type=Path)
-    commands = parser.add_subparsers(dest="command", required=True)
-    preview = commands.add_parser("preview")
+    commands = parser.add_subparsers(dest="command", required=True, title="commandes", parser_class=parser_class)
+    preview = commands.add_parser("preview", add_help=False)
+    preview.add_argument("-h", "--help", action="help", help="afficher ce message d’aide et quitter")
     preview.add_argument("--options", type=Path, required=True)
-    apply = commands.add_parser("apply")
+    apply = commands.add_parser("apply", add_help=False)
+    apply.add_argument("-h", "--help", action="help", help="afficher ce message d’aide et quitter")
     apply.add_argument("--plan", type=Path, required=True)
     apply.add_argument("--options", type=Path, required=True)
     apply.add_argument("--expected-plan-sha256", required=True)

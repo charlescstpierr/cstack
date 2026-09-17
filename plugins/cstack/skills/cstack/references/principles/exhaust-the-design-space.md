@@ -1,17 +1,17 @@
-# Exhaust the Design Space
+# Épuiser l'espace de conception
 
-Read this reference when an active cstack workflow routes here or the user names this principle. Follow the [Codex runtime contract](../codex-runtime.md) for scope and permissions.
+Lisez cette référence lorsqu'un processus cstack actif vous route ici ou lorsque l'utilisateur nomme ce principe. Suivez le [contrat d'exécution Codex](../codex-runtime.md) pour le périmètre et les permissions.
 
-When a novel interaction or architectural decision has no established precedent, explore several concrete alternatives before implementation. Building the wrong thing costs more than exploring three options.
+Lorsqu'une interaction nouvelle ou une décision architecturale n'a pas de précédent établi, explorez plusieurs alternatives concrètes avant l'implémentation. Construire la mauvaise chose coûte plus cher qu'explorer trois options.
 
-**The rule.** When the right answer is not obvious, build 2-3 competing prototypes or sketches. Compare them side by side. Only then commit. Design it twice is this rule by another name. A second flavor of the first shape does not count.
+**La règle.** Quand la bonne réponse n'est pas évidente, construisez 2 ou 3 prototypes ou croquis concurrents. Comparez-les côte à côte. Commitez seulement ensuite. « Le concevoir deux fois » est un autre nom pour cette règle. Une deuxième saveur de la première forme ne compte pas.
 
-**When it applies:**
-- Novel UI interactions (no prior art in the codebase)
-- Architectural choices with multiple viable approaches
-- Product design decisions where user experience depends on feel, not logic
+**Quand cela s'applique :**
+- Interactions UI nouvelles (aucun précédent dans la base de code)
+- Choix architecturaux avec plusieurs approches viables
+- Décisions de conception produit où l'expérience utilisateur dépend du ressenti, pas de la logique
 
-**When it doesn't:**
-- Mechanical implementation where the pattern is established
-- Bug fixes or refactors with a clear target state
-- Changes where constraints dictate a single viable approach
+**Quand cela ne s'applique pas :**
+- Implémentation mécanique où le motif est établi
+- Corrections d'anomalies ou refactorisations avec un état cible clair
+- Changements où les contraintes imposent une seule approche viable
