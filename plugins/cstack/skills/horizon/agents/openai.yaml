@@ -1,6 +1,6 @@
 interface:
   display_name: "horizon"
   short_description: "Planifier grands objectifs et unités d'implémentation"
-  default_prompt: "Utilise $cstack:horizon pour cette tâche."
+  default_prompt: "Utilise $cstack:horizon pour cette tâche. Affecte un sous-agent natif de recherche à chaque ticket de recherche prêt."
 policy:
   allow_implicit_invocation: false

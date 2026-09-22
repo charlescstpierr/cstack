@@ -1,6 +1,6 @@
 interface:
   display_name: "why"
   short_description: "Retracer décisions de conception, code et historique"
-  default_prompt: "Utilise $cstack:why pour cette tâche."
+  default_prompt: "Utilise $cstack:why pour cette tâche. Délègue l'enquête à des sous-agents natifs en parallèle."
 policy:
   allow_implicit_invocation: false

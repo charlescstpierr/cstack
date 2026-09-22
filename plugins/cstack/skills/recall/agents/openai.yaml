@@ -1,6 +1,6 @@
 interface:
   display_name: "recall"
   short_description: "Reconstruire le travail récent avec preuves"
-  default_prompt: "Utilise $cstack:recall pour cette tâche."
+  default_prompt: "Utilise $cstack:recall pour cette tâche. Quand le corpus le justifie, délègue les recherches d'historique à des sous-agents natifs en parallèle."
 policy:
   allow_implicit_invocation: false

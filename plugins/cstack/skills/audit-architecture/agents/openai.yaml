@@ -1,6 +1,6 @@
 interface:
   display_name: "audit-architecture"
   short_description: "Auditer l'architecture sans changer le code"
-  default_prompt: "Utilise $cstack:audit-architecture pour cette tâche."
+  default_prompt: "Utilise $cstack:audit-architecture pour cette tâche. Utilise au plus un explorateur borné comme sous-agent natif."
 policy:
   allow_implicit_invocation: false

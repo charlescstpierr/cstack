@@ -8,6 +8,7 @@ Ces compétences restent utilisables seules pour préparer une tâche. `$cstack:
 
 | Compétence | Résultat | Délégation initiale |
 | --- | --- | --- |
+| [`$cstack:how`](../../skills/how/SKILL.md) | Modèle du flux d'exécution, des couches et de la propriété du sous-système. | Deux à quatre explorateurs parallèles puis un synthétiseur ; passe unique sur exception nommée. |
 | [`$cstack:clarify`](../../skills/clarify/SKILL.md) | Décisions clarifiées, recommandations et contraintes établies à partir du projet. | Aucune par défaut ; faits indépendants si utile. |
 | [`$cstack:domain`](../../skills/domain/SKILL.md) | Vocabulaire précis et décisions importantes selon les conventions existantes. | Aucune par défaut. |
 | [`$cstack:horizon`](../../skills/horizon/SKILL.md) | Carte des décisions ouvertes, de leurs dépendances et des inconnues d'un objectif de plusieurs sessions. | Un enfant par recherche prête, sans délégation imbriquée. |
@@ -55,6 +56,6 @@ Les trois réviseurs par défaut portent les axes Standards, Spec et contradicto
 
 ## Choisir le niveau de conception
 
-Une petite modification finie peut recevoir seulement `$cstack:interrogate`. Un changement de frontière ou de propriété mérite `$cstack:architect`, puis éventuellement `$cstack:arena`. Une matrice de vérifications mérite `$cstack:swarm`. Une décision coûteuse à inverser mérite une critique avant livraison.
+Une petite modification finie peut recevoir seulement `$cstack:interrogate`. Un changement de frontière ou de propriété mérite `$cstack:architect`, puis éventuellement `$cstack:arena`. Une matrice de vérifications mérite `$cstack:swarm`. Une décision coûteuse à inverser mérite une critique avant livraison. L'ancrage reste ventilé même pour une petite modification : c'est l'écriture, pas la lecture, que le point de contrôle de débit restreint.
 
 Suivant : [construire et nettoyer le changement](./05-build-and-clean.md).

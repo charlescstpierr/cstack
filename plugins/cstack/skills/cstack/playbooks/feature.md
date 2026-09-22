@@ -4,7 +4,7 @@ Suivez [le contrat d’exécution Codex](../references/codex-runtime.md).
 
 **Tu possèdes la conception. Planifie, relis, vérifie.** Délègue l’implémentation. Reste en tête.
 
-1. Lis et applique `../../how/SKILL.md` sur le sous-système touché.
+1. Lis et applique `../../how/SKILL.md` sur le sous-système touché. L’ancrage `how` ventile par défaut 2 à 4 explorateurs parallèles, dans la limite de la concurrence native ; la passe unique exige un test nommé de son Étape 1.
 2. Lis et applique `../../architect/SKILL.md` pour l’exploration de conception. Limite le nombre de exécutants de conception simultanés à la capacité native et mets le reste en file. Garde `architect skipped: <reason>` quand l’étape ne mérite pas son coût.
 3. Écris le point de contrôle de débit comme quatre todos. Une dimension qui ne s’applique vraiment pas (fichier unique, pas de ventilation) garde son item avec `n/a: <reason>` au lieu d’être supprimée :
    - **Premières étapes bloquantes.** Les barrières passent avant la ventilation.

@@ -1,6 +1,6 @@
 interface:
   display_name: "no-comments"
   short_description: "Revoir les commentaires et encoder les contraintes"
-  default_prompt: "Utilise $cstack:no-comments pour cette tâche."
+  default_prompt: "Utilise $cstack:no-comments pour cette tâche. Confie la revue des commentaires à un sous-agent natif qui ne les a pas écrits."
 policy:
   allow_implicit_invocation: false

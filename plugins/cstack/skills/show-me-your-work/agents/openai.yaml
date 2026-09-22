@@ -1,6 +1,6 @@
 interface:
   display_name: "show-me-your-work"
   short_description: "Consigner décisions et preuves d'un long travail"
-  default_prompt: "Utilise $cstack:show-me-your-work pour cette tâche."
+  default_prompt: "Utilise $cstack:show-me-your-work pour cette tâche. Confie la revue de la trace à un sous-agent natif indépendant."
 policy:
   allow_implicit_invocation: false

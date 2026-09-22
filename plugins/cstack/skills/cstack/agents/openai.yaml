@@ -1,6 +1,6 @@
 interface:
   display_name: "cstack"
   short_description: "Route le travail et vérifie le résultat"
-  default_prompt: "Utilise $cstack:cstack pour cette tâche."
+  default_prompt: "Utilise $cstack:cstack pour cette tâche. Délègue le travail indépendant à des sous-agents natifs en parallèle."
 policy:
   allow_implicit_invocation: false

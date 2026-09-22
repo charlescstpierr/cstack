@@ -1,6 +1,6 @@
 interface:
   display_name: "teach"
   short_description: "Expliquer code et décisions avec exemples"
-  default_prompt: "Utilise $cstack:teach pour cette tâche."
+  default_prompt: "Utilise $cstack:teach pour cette tâche. Quand la question couvre un sous-système, délègue les passes how et why à des sous-agents natifs en parallèle."
 policy:
   allow_implicit_invocation: false
