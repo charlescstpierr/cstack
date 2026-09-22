@@ -40,6 +40,7 @@ interface RunRequest {
   readonly brief_file: string;
   readonly context_files?: readonly string[];
   readonly skills?: readonly string[];
+  readonly skill_references?: readonly string[];
   readonly cwd: string;
   readonly output_dir: string;
   readonly permissions: PermissionProfile;
@@ -378,7 +379,7 @@ function parseRequestJson(raw: string): RunRequest {
   if (!isRecord(parsed)) {
     throw new UsageError("request: objet attendu");
   }
-  rejectExtraKeys(parsed, ["selection", "brief_file", "context_files", "skills", "cwd", "output_dir", "permissions", "timeout_ms"], "request");
+  rejectExtraKeys(parsed, ["selection", "brief_file", "context_files", "skills", "skill_references", "cwd", "output_dir", "permissions", "timeout_ms"], "request");
   if (!isRecord(parsed.selection)) {
     throw new UsageError("selection: objet attendu");
   }
@@ -391,6 +392,10 @@ function parseRequestJson(raw: string): RunRequest {
   if (skills !== undefined && (!Array.isArray(skills) || !skills.every((item) => typeof item === "string"))) {
     throw new UsageError("skills: liste de noms de skills attendue");
   }
+  const skillReferences = parsed.skill_references;
+  if (skillReferences !== undefined && (!Array.isArray(skillReferences) || !skillReferences.every((item) => typeof item === "string"))) {
+    throw new UsageError("skill_references: liste de chemins attendue");
+  }
   if (parsed.selection.reasoning_effort !== undefined && parsed.selection.model === undefined) throw new UsageError("reasoning_effort exige model");
   if (parsed.selection.model === "inherit-parent") throw new UsageError("inherit-parent est réservé au dispatch natif");
   return {
@@ -402,6 +407,7 @@ function parseRequestJson(raw: string): RunRequest {
     brief_file: stringField(parsed, "brief_file"),
     context_files: contextFiles,
     skills,
+    skill_references: skillReferences,
     cwd: stringField(parsed, "cwd"),
     output_dir: stringField(parsed, "output_dir"),
     permissions: parsePermissions(parsed.permissions),
@@ -801,7 +807,7 @@ async function runRuntime(request: RunRequest): Promise<RunResult> {
   const finish = async (result: RunResult): Promise<RunResult> => {
     const enriched = {
       ...result,
-      skills: { names: request.skills ?? [], sha256: skillBundle?.sha256 ?? null, files: skillBundle?.files ?? [] },
+      skills: { names: request.skills ?? [], references: request.skill_references ?? [], sha256: skillBundle?.sha256 ?? null, files: skillBundle?.files ?? [] },
       context: {
         sha256: contextSha256,
         files: contextFiles,
@@ -822,7 +828,7 @@ async function runRuntime(request: RunRequest): Promise<RunResult> {
     }
     outputDir = await createFreshOutputDirectory(request.output_dir);
     if (process.platform === "win32") throw new UnsupportedError("groupes de processus Windows non pris en charge ; utiliser un hôte POSIX");
-    skillBundle = await loadWorkerSkills({ names: request.skills ?? [], pluginRoot: process.env.CSTACK_PLUGIN_ROOT ?? resolve(import.meta.dir, "../../../..") });
+    skillBundle = await loadWorkerSkills({ names: request.skills ?? [], skillReferences: request.skill_references ?? [], pluginRoot: process.env.CSTACK_PLUGIN_ROOT ?? resolve(import.meta.dir, "../../../..") });
     await writeFile(join(outputDir, "skills-snapshot.json"), JSON.stringify(skillBundle, null, 2));
     const context = await loadWorkerContext({ briefFile: briefPath, contextFiles: request.context_files ?? [] });
     contextSha256 = context.sha256;
@@ -969,7 +975,7 @@ export async function main(argv: readonly string[], io: Io = { stdout: (value) =
   try {
     const [command, ...rest] = argv;
     if ((command === "--help" || command === "-h") && rest.length === 0) {
-      io.stdout("runtime.ts probe <codex-cli|claude-code|cursor-agent|grok>\nruntime.ts run --request <chemin JSON absolu>\nChamps : selection, brief_file, context_files?, skills?, cwd, output_dir, permissions, timeout_ms?\n");
+      io.stdout("runtime.ts probe <codex-cli|claude-code|cursor-agent|grok>\nruntime.ts run --request <chemin JSON absolu>\nChamps : selection, brief_file, context_files?, skills?, skill_references?, cwd, output_dir, permissions, timeout_ms?\n");
       return 0;
     }
     if (command === "probe") {

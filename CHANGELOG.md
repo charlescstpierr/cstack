@@ -4,6 +4,9 @@ Les versions suivent SemVer. Le format suit [Keep a Changelog](https://keepachan
 
 ## À publier
 
+- Les bundles workers suivent les références Markdown locales des skills et proposent `skill_references` pour les sources spécialisées. Les 29 skills livrés sont testés ; les liens d’exemple en blocs de code et les skills voisins ne sont pas activés.
+- Arena et Swarm conservent le nombre total demandé de candidats/tranches lorsque la concurrence impose plusieurs vagues.
+
 - Workers CLI facultatifs `codex-cli`, `claude-code`, `cursor-agent` et `grok` dans les rôles et panels existants. Conservation du dispatch natif par défaut, des briefs, de l’inbox et du ledger ; authentification laissée aux CLI officiels.
 - Bundle de skills CStack commun à tous les CLI et contexte partagé explicite, borné et empreinté. Le parent relaie les résultats vérifiés et les erreurs aux tâches dépendantes.
 - Runner borné avec découverte des capacités, sortie structurée, statuts de processus séparés des verdicts de travail et tests de processus sans credentials. Aucun serveur ni SDK fournisseur ajouté.

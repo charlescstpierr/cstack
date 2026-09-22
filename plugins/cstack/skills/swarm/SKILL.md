@@ -24,7 +24,7 @@ Suis un élément par phase dans la tâche courante avant de lancer quoi que ce 
 
 1. Énonce le prédicat de terminé et l'artefact ou rapport que le swarm doit rendre.
 2. Choisis la forme. Partitionne en tranches, fais courir N workers sur des briefs identiques, ou melange les deux. Pour une course ou forme mixte, declare `first pass`, `rank all` ou `best-of` avant le lancement.
-3. Fixe N depuis l'utilisateur ou dérive-le de la forme. Sans N donné, pars d'au moins deux tranches dès que la forme en admet deux ; un seul worker exige une raison nommée. Plafonne N à la concurrence native disponible dans la session courante et tiens compte de l'emplacement parent.
+3. Fixe N depuis l'utilisateur ou dérive-le de la forme. Sans N donné, pars d'au moins deux tranches dès que la forme en admet deux ; un seul worker exige une raison nommée. Conserve N comme nombre total de tranches. Plafonne seulement la fenêtre d’exécution à la capacité disponible et tiens compte de l’emplacement parent pour les sous-agents natifs ; les workers excédentaires passent dans les vagues suivantes.
 4. Utilise d'abord le rôle spécialisé ou la sélection complète fournie par l'appelant. Sinon, résous `swarm workers` sous le contrat d’exécution. Préserve le modèle et l'effort de raisonnement au dispatch et signale les surcharges ou capacités non prises en charge sans substitution. Pour une course de modèles, nomme les surcharges vérifiées dès le début.
 5. Donne à chaque worker sa propre sortie inscriptible quand il écrit.
 

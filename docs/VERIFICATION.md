@@ -21,6 +21,20 @@ Grok et Cursor restent hors des essais connectés à la demande de l’utilisate
 
 Le partage de contexte et de skills utilise des snapshots explicites par tâche. Il ne lit pas les sessions privées, ne partage pas de credentials et ne crée pas de chat commun en temps réel. Les nouvelles tentatives reçoivent les décisions et preuves actualisées du parent. Les verdicts du ledger restent indépendants des statuts worker.
 
+## Complément de parité des workflows, 22 septembre 2026
+
+Les [preuves complémentaires](evidence/workflow-parity.json) prolongent la campagne précédente, depuis `77f77b9`. Les scénarios invoquent les sources locales ; le plugin installé n’a pas été remplacé. Les empreintes antérieures restent historiques.
+
+- **Skills communs** : la fermeture des références charge les contrats, principes et playbooks liés dans la racine de confiance. `skill_references` ajoute les sources spécialisées choisies par le coordinateur. Les 29 skills livrés construisent un bundle valide ; les exemples Markdown en blocs de code, les sorties de racine et l’activation implicite d’un skill voisin sont contrôlés. Une revue indépendante approuve le changement.
+- **Arena** : deux rédacteurs réels Codex/Claude dans des worktrees distincts, même brief et même bundle `tdd`, puis juge Codex indépendant et synthèse. Les assertions sur ordre, première valeur, identité des objets, absence de mutation et entrée vide passent aussi dans une vérification fraîche du parent.
+- **Swarm** : trois tranches réellement terminées avec une fenêtre de deux processus et un seul processus par runtime. Le journal atteste la vague Codex/Claude puis la troisième tranche Codex. Même bundle `how` et faits communs ; chaque réponse contient les marqueurs attendus. Les sources restent inchangées. Ce scénario est une exploration en lecture seule.
+- **Architect** : le panel spécialisé de deux CLI remplace bien le panel Arena de trois entrées. Les candidats proposent deux formes distinctes, exception et résultat typé, avec le même contexte et le même bundle de skill/références. Le juge indépendant compare les dossiers gelés, puis le coordinateur produit la conception synthétisée. Seuls des documents sont produits, sans implémentation du parseur.
+- **Orchestrate** : un reçu Claude réel rejoint une unité et l’inbox. Le ledger reste vide avant vérification indépendante. La vidange est unique ; le parent vérifie le fichier réel, enregistre son verdict au SHA exact puis relit l’état depuis de nouveaux processus. Un autre SHA retourne `NOT-VERIFIED` avec code 2. L’identifiant PR est une fixture locale synthétique : aucune création ni fusion GitHub n’est revendiquée.
+
+Contrôles après correction : 55 tests Python passants et un ignoré ; 7 tests Bun racine ; 129 tests des helpers. Validation des 29 skills et des 158 fichiers amont, validation du plugin, types stricts, syntaxe Bash et `git diff --check` passent.
+
+Le problème Bash de Claude a aussi été reproduit sans modèle dans le helper officiel `apply-seccomp` : l’hôte refuse l’écriture `setgroups` dans le namespace utilisateur restreint par AppArmor. Aucune politique système ni sandbox n’a été désactivé. La boucle livrée conserve les outils de fichiers Claude et l’exécution de VERIFY par le parent, avec retour des erreurs au worker.
+
 ## État 0.4.0
 
 Cette section décrit une campagne datée, pas l'état courant de HEAD. Mesures du 12 septembre 2026, arbre commité de la branche `feat/pstack-parity-deslop`, Python 3.9.6, Bun 1.4.2. Plugin `0.4.0`. Version amont épinglée de pstack `0.15.2`, commit `889ec4b68fa5aab0e867dad71ec3fdf386ae48f3`.

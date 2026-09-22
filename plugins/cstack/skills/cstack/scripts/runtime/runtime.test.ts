@@ -127,6 +127,41 @@ JSON
     }
   });
 
+  it("transmet les références de skills explicites au bundle", async () => {
+    const h = await harness();
+    const capture = join(h.root, "prompt.txt");
+    try {
+      await fake(h.bin, "codex", `
+if [[ "$1" == "--version" ]]; then echo "codex fake"; exit 0; fi
+if [[ "$1" == "exec" && "$2" == "--help" ]]; then echo "--config --cd --sandbox --json --output-schema --output-last-message --model --ignore-user-config"; exit 0; fi
+last=""
+while [[ "$#" -gt 0 ]]; do
+  if [[ "$1" == "--output-last-message" ]]; then shift; last="$1"; fi
+  shift || true
+done
+cat > "${capture}"
+cat > "$last" <<'JSON'
+{"status":"PASS","summary":"skills ok","checks":[],"findings":[]}
+JSON
+`);
+      const code = await run([
+        "run",
+        "--request",
+        await request(h, "codex-cli", {
+          skills: ["why"],
+          skill_references: ["why/references/sources/code-archaeology.md"],
+        }),
+      ], h);
+      expect(code).toBe(0);
+      const result = parsedStdout(h) as { skills: { references: string[]; files: { path: string }[] } };
+      expect(result.skills.references).toEqual(["why/references/sources/code-archaeology.md"]);
+      expect(result.skills.files.map((file) => file.path)).toContain("skills/why/references/sources/code-archaeology.md");
+      expect(await readFile(capture, "utf8")).toContain("code-archaeology.md");
+    } finally {
+      await rm(h.root, { recursive: true, force: true });
+    }
+  });
+
   it("ne passe pas par un shell avec le brief", async () => {
     const h = await harness();
     try {
