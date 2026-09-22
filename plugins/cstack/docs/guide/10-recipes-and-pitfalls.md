@@ -72,7 +72,7 @@ Si un acteur unique persiste, vérifiez dans l'ordre :
 2. Votre configuration Codex autorise-t-elle les agents, et sa limite de threads simultanés dépasse-t-elle un ?
 3. Votre version de CLI est-elle récente ? Les essais du dépôt ont observé des sous-agents terminés en `0.153.4`.
 
-Un sous-agent ne peut pas en lancer un autre. Une ventilation imbriquée est donc toujours sérialisée.
+Les délégués de cstack ne lancent pas de descendants sauf si leur parent leur délègue explicitement cette décision. Déléguer une compétence entière coûte donc sa propre ventilation, indépendamment de ce que la plateforme autoriserait. Ventilez les tranches plutôt que les compétences qui ventilent.
 
 ## Les pièges
 

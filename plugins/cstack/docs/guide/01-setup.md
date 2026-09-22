@@ -56,7 +56,7 @@ La configuration propose aussi un aperçu des fichiers du projet avant applicati
 
 Pour Horizon, la configuration reprend le document de suivi `docs/agents/issue-tracker.md` s'il existe, ou présente le choix entre les fichiers locaux et GitHub. Un choix GitHub enregistre le dépôt ciblé sans créer d'issue, de label ou de dépendance distante. Les termes et ADRs suivent les conventions du projet ; la configuration ne crée pas de glossaire vide.
 
-L'aperçu indique les rôles réutilisés et la règle de nombre d'agents : `clarify` et `domain` n'en ajoutent aucun par défaut ; `how` ventile deux à quatre explorateurs puis un synthétiseur, la passe unique étant une exception nommée ; l'audit d'architecture utilise au plus un explorateur initial ; Horizon utilise un enfant par recherche indépendante prête, en vagues si nécessaire. Un besoin de synthèse ou de conception complexe conserve son rôle configuré. Le modèle de la session principale reste inchangé.
+L'aperçu indique les rôles réutilisés et la règle de nombre d'agents : `clarify` et `domain` n'en ajoutent aucun par défaut ; l'audit d'architecture utilise au plus un explorateur initial ; Horizon utilise un enfant par recherche indépendante prête, en vagues si nécessaire. Un besoin de synthèse ou de conception complexe conserve son rôle configuré. Le modèle de la session principale reste inchangé.
 
 Une demande de configuration des modèles seulement conserve ce périmètre. Une demande d'aperçu, d'annulation, de lecture seule ou en mode Plan ne modifie pas les fichiers du projet.
 

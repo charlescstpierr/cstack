@@ -100,6 +100,6 @@ La vraie contrainte est ailleurs. Mesuré : dans `docs/evidence/0.3.0.json`, sur
 
 Les `default_prompt` des compétences qui délèguent portent cette demande pour cette raison ; ne la retire pas en les reformulant, et ajoute-la quand tu rends une compétence déléguante. Quand un utilisateur signale qu’un seul acteur travaille, vérifie d’abord cette demande, puis la configuration d’agents de l’hôte et sa limite de threads simultanés, avant de conclure à un défaut de routage.
 
-Un délégué ne ventile pas à son tour. Une compétence qui ventile doit donc s’exécuter dans la session qui possède la ventilation ; la déléguer entière coûte sa propre ventilation. Ventile les tranches, pas les compétences qui ventilent.
+Un délégué ne lance pas de descendants sauf si son parent lui délègue explicitement cette décision ; c’est la règle de `agents/cstack-agent.md`, pas une limite de plateforme. Une compétence qui ventile doit donc s’exécuter dans la session qui possède la ventilation ; la déléguer entière coûte sa propre ventilation. Ventile les tranches, pas les compétences qui ventilent.
 
 Voir la [documentation officielle des sous-agents](https://learn.chatgpt.com/docs/agent-configuration/subagents) et le [contrat de packaging de plugin](https://developers.openai.com/plugins/build/plugins).
