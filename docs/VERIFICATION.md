@@ -30,6 +30,12 @@ L'Étape 1 de `how` exige désormais d'écrire les angles avant de choisir le ch
 
 Le scénario `readonly_explanation_*` conserve zéro enfant attendu. Son prompt interdit explicitement la délégation ; il vérifie maintenant le test « délégation exclue » plutôt que l'ancien chemin simple par défaut. Aucun scénario de comportement n'a été exécuté pour cette révision ; le harnais natif exige un modèle Codex réel et vit hors intégration continue.
 
+Une relecture des preuves de `docs/evidence/0.3.0.json` établit un fait qui n'avait pas été relevé. Sur les treize scénarios, les quatre qui ont lancé des enfants sont exactement les quatre dont la demande utilisateur réclamait la délégation : `interrogate` deux fois avec « Utilise le panel de réviseurs configuré », `horizon` avec « Affecte un sous-agent natif de recherche à chaque ticket de recherche prêt », et `audit-architecture` avec « Utilise au plus un explorateur borné ». Les neuf autres l'interdisaient explicitement ou n'en parlaient pas, et valent zéro enfant. Aucune mesure enregistrée ne montre le texte d'une compétence déclenchant seul une délégation.
+
+Cette corrélation est mesurée, pas inférée ; son mécanisme, lui, est inféré d'une consigne d'outil de l'hôte qui prime sur le texte de compétence. Les `default_prompt` des compétences qui délèguent portent désormais cette demande, et trois d'entre eux reprennent mot pour mot les formulations ci-dessus. L'effet de ce changement n'est pas mesuré : il faut un essai natif où la demande vient du prompt par défaut et non du corps de la consigne.
+
+Le trou de couverture reste ouvert. Les deux seules exécutions de `how` enregistrées interdisent la délégation par construction, donc aucun scénario existant ne peut détecter une régression de ventilation de `how`.
+
 Les empreintes de `how/SKILL.md` enregistrées dans les preuves antérieures ne correspondent plus à cet arbre. C'est attendu : ces manifestes portent `scope: historical` et décrivent leur commit tamponné.
 
 Cette révision ne revendique aucun gain mesuré de qualité, de durée ni de tokens. Elle change un défaut de routage et son étiquetage.

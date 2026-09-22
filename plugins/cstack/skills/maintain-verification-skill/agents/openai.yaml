@@ -1,6 +1,6 @@
 interface:
   display_name: "maintain-verification-skill"
   short_description: "Garder les vérifications exactes et exécutables"
-  default_prompt: "Utilise $cstack:maintain-verification-skill pour cette tâche."
+  default_prompt: "Utilise $cstack:maintain-verification-skill pour cette tâche. Délègue les passes par fonctionnalité à des sous-agents natifs en parallèle."
 policy:
   allow_implicit_invocation: false

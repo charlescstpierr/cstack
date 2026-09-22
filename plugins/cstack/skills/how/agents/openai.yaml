@@ -1,6 +1,6 @@
 interface:
   display_name: "how"
   short_description: "Expliquer flux de code, limites et propriété"
-  default_prompt: "Utilise $cstack:how pour cette tâche."
+  default_prompt: "Utilise $cstack:how pour cette tâche. Délègue l'exploration à des sous-agents natifs en parallèle."
 policy:
   allow_implicit_invocation: false
