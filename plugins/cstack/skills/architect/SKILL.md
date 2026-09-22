@@ -21,9 +21,9 @@ Suis un élément par phase dans la tâche courante avant de commencer.
 
 ## Phase A : Ancrer le problème
 
-Construis un vrai modèle mental de chaque système touché par le nouveau code. Exécute la compétence **how** sur les sous-systèmes pertinents.
+Construis un vrai modèle mental de chaque système touché par le nouveau code. Exécute la compétence **how** sur les sous-systèmes pertinents. Deux sous-systèmes disjoints s'ancrent en parallèle, et chaque ancrage ventile ses propres explorateurs par défaut.
 
-Nommer un fichier n'est pas ancrer le problème. Produis le modèle tracé prescrit par `how`. Si la conception redéfinit la propriété ou les couches, exécute aussi la compétence **why** sur la forme existante afin que la justification devienne une contrainte, pas une supposition.
+Nommer un fichier n'est pas ancrer le problème. Produis le modèle tracé prescrit par `how`. Si la conception redéfinit la propriété ou les couches, exécute aussi la compétence **why** sur la forme existante afin que la justification devienne une contrainte, pas une supposition. Un ancrage réduit à une passe unique nomme le test de l'Étape 1 de `how` qui l'autorise.
 
 Saute la Phase A seulement quand le travail est réellement nouveau et qu'aucun système environnant n'est à intégrer.
 
