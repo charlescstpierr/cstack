@@ -1158,6 +1158,10 @@
     {
       "path": "plugins/cstack/skills/cstack/scripts/worker-skills.test.ts",
       "reason": "Bundle textuel de skills CStack commun à tous les workers CLI, sans installation dans les autres clients."
+    },
+    {
+      "path": "plugins/cstack/docs/guide/11-cli-workers.md",
+      "reason": "Guide pratique original des workers CLI, des skills communs et du contexte partagé."
     }
   ]
 }
