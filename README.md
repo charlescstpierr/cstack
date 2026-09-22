@@ -66,6 +66,15 @@ La configuration peut aussi préparer les conventions du projet : un bloc cstack
 
 Une demande de revue ou l'activation du mode n'autorise pas à envoyer un message, ouvrir une PR, fusionner ou publier. cstack suit l'autorisation donnée pour la tâche concrète.
 
+## Positionnement
+
+cstack est la voie Codex et la mécanique de livraison Git/GitHub : piles de PR,
+suivi de PR outillé, orchestration multi-worktree. Il ne fournit pas de
+politique de confiance exécutoire et ne cible aucun autre hôte que Codex. Pour
+ces deux besoins, AZDone occupe le créneau voisin, sur Claude Code, Cursor et
+Codex. Le [positionnement](docs/POSITIONNEMENT.md) fixe la frontière, la règle
+de choix entre les deux et les conditions de cohabitation dans un même projet.
+
 ## Développement
 
 Les commandes suivent l'ordre du processus `.github/workflows/validate.yml`. Installer les assistants avant tout `tsc`. Revenir à la racine avant le `tsc` du dépôt.
