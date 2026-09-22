@@ -5,7 +5,7 @@ Suivez [le contrat d’exécution Codex](../references/codex-runtime.md).
 **Tu possèdes l’histoire de mesure. Planifie, relis, vérifie les chiffres.** Relie chaque correctif à une mesure, ne lis pas la source à la place de mesurer.
 
 1. Capture une trace de référence avec le navigateur, simulateur, profileur ou outil terminal natif disponible pour la cible.
-2. Lance `how` pour ancrer les hypothèses. Ne prétends pas connaître un plafond de perf sans l’avoir d’abord exécuté.
+2. Lance `how` pour ancrer les hypothèses, avec sa ventilation d’explorateurs par défaut. Ne prétends pas connaître un plafond de perf sans l’avoir d’abord exécuté.
    La plupart des correctifs viennent de huit familles de stratégies. Utilise-les comme générateurs d’hypothèses, pas comme checklist. Une famille mérite une tentative seulement quand la trace montre le signal qu’elle nomme.
    - **Élimination.** Avant d’optimiser le chemin chaud, demande s’il doit exister : calcul que personne ne consomme, feature barrière toujours off pour cet utilisateur, sync qui miroir redondamment l’état, chemin legacy gardé « au cas où ». La trace montre ce qui est lent, jamais ce qui est supprimable ; cette famille a donc besoin de la passe `how`, pas du profiler.
    - **Diviser pour régner.** Le coût dominant varie avec la taille d’entrée. Divise le travail pour que chaque morceau touche moins (chunk, shard, réduire l’espace de recherche) ou pour que des morceaux indépendants s’exécutent en parallèle.
