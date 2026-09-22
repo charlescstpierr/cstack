@@ -16,7 +16,7 @@ Suivez [le contrat d’exécution Codex](../references/codex-runtime.md).
 6. Rebase en petits commits ordonnés. Empile les suivis.
    Utilise la référence du principe [Séquencer le travail en unités vérifiables](../references/principles/sequence-verifiable-units.md), en construisant, vérifiant et committant chaque petite unité avant la suivante.
 7. Si la conception est contestée, `interrogate` avant livraison.
-8. Lance **Ouvrir une PR** seulement quand l’utilisateur a autorisé la création de PR.
+8. Lance **Ouvrir une PR** selon la portée de livraison du contrat d’exécution.
 
 Le travail couplé au code va à un seul propriétaire avec le point de reprise inline. Ne ventile que les artéfacts indépendants, comme des audits, investigations inter-sous-systèmes ou expériences concurrentes. Réécris le point de reprise aux frontières de phase. Donne au travail de suivi un brief complet au lieu de dépendre d’un contexte perdu.
 

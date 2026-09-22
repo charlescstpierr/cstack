@@ -12,7 +12,7 @@ Sois scientifique. Chaque ligne livrée remonte à une preuve exécution. Un dou
 4. Vérifie sur la même surface. La repro originale passe maintenant. « Inconclusive » ou une mauvaise surface n’est pas une réussite. Signale-le. Les tests unitaires montrent le comportement de branche, pas l’absence de bug.
 5. Stage les commits pour que la repro échouante atterrisse dans l’historique git avant le correctif. Lis et applique `../../tdd/SKILL.md` pour la cadence failing-test-first quand le bug possède un chemin de test local bon marché. Saute-la quand le test serait coûteux, très intégration ou flou.
    C’est la référence canonique du principe [Séquencer le travail en unités vérifiables](../references/principles/sequence-verifiable-units.md), le test échouant d’abord et le correctif au-dessus. Lance `../../deslop/SKILL.md` sur le diff avant chaque commit. Garde `deslop skipped: <reason>` quand une étape ne peut vraiment pas s’exécuter.
-6. Lance **Ouvrir une PR** seulement quand l’utilisateur a autorisé la création de PR.
+6. Lance **Ouvrir une PR** selon la portée de livraison du contrat d’exécution.
 
 L’investigation ventile `how` + `why` comme sous-agents parallèles. Un délégué ne lance pas de descendants sans décision explicite du parent : quand `how` part comme enfant, il tient son ancrage en une passe. Pour garder la ventilation d’explorateurs de `how`, exécute son ancrage dans cette session et ne ventile que `why`. Choisis l’une des deux formes et nomme-la ; un seul acteur d’ancrage exige une raison nommée.
 

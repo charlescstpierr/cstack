@@ -2,7 +2,7 @@
 
 Suivez [le contrat d’exécution Codex](../references/codex-runtime.md).
 
-**Tu possèdes la PR qui sort. Nettoie le diff, obtiens un verdict indépendant, puis ouvre-la seulement avec l’accord de l’utilisateur.** Lance ce playbook seulement quand l’utilisateur a autorisé la création de PR. Préparer des commits ou terminer un autre playbook n’accorde pas cette autorité.
+**Tu possèdes la PR qui sort. Nettoie le diff, obtiens un verdict indépendant, puis ouvre-la selon la portée de livraison du contrat d’exécution.** Préparer des commits ou terminer une compétence spécialisée sélectionnée directement n’accorde pas cette autorité.
 
 1. **Worktree.** Utilise un worktree git propre basé sur la branche de base prévue. Donne aux rédacteurs parallèles des worktrees et branches séparés. Préserve les changements utilisateur non liés. Ne reset pas et ne jette pas un arbre sale pour faire de la place.
 2. **Deslop.** Lance `../../deslop/SKILL.md` sur le diff avant chaque commit. Garde `deslop skipped: <reason>` quand une étape ne peut vraiment pas s’exécuter.

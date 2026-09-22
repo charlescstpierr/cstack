@@ -30,11 +30,11 @@ $cstack:maintain-verification-skill audite la carte des fonctionnalités et corr
 
 Une tâche de modification de code ou de documentation inclut par défaut les commits Git locaux. Après chaque unité cohérente vérifiée, cstack inspecte le diff et crée un commit sans redemander confirmation. Le bilan donne les SHA réels et explique les éventuelles modifications restantes. Les changements préexistants ou appartenant à une autre tâche restent intacts.
 
-Une demande explicite de ne pas committer, le mode Plan et la lecture seule sont respectés. Hors dépôt Git ou si un contrôle, un hook ou le commit échoue, cstack signale le blocage et conserve le travail. Le push, la PR et le merge suivent les autorisations de la tâche.
+Une demande explicite de ne pas committer, le mode Plan et la lecture seule sont respectés. Hors dépôt Git ou si un contrôle, un hook ou le commit échoue, cstack signale le blocage et conserve le travail. Pour `$cstack:cstack`, les tâches d’implémentation suivent la portée de livraison du [contrat d’exécution](../../skills/cstack/references/codex-runtime.md#activation-et-routage). Le merge reste une action séparée.
 
 ## Ouvrir une PR
 
-Préparez un diff court, des commits ordonnés et les preuves. Git et `gh` sont les chemins de référence quand ils sont installés. La création d'une PR, l'envoi d'un message ou la publication restent des actions explicites autorisées pour la tâche.
+Préparez un diff court, des commits ordonnés et les preuves. Git et `gh` sont les chemins de référence quand ils sont installés. Avec `$cstack:cstack`, la PR suit la portée de livraison du contrat d’exécution. L'envoi d'un message, la publication, le merge et le déploiement restent des actions séparées.
 
 ## Amener la PR à un état révisable
 

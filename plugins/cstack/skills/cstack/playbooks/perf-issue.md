@@ -19,7 +19,7 @@ Suivez [le contrat d’exécution Codex](../references/codex-runtime.md).
    Applique la référence du principe [Séquencer le travail en unités vérifiables](../references/principles/sequence-verifiable-units.md), en vérifiant chaque tentative avant d’essayer la suivante.
 4. Parse et compare les artéfacts (JSON vers sqlite, diff). « Inconclusive » ou une mauvaise surface n’est pas une réussite. Signale-le.
 5. Cite la mesure dans la PR.
-6. Lance **Ouvrir une PR** seulement quand l’utilisateur a autorisé la création de PR.
+6. Lance **Ouvrir une PR** selon la portée de livraison du contrat d’exécution.
 
 Pour une amélioration soutenue contre une métrique plutôt qu’un correctif ponctuel, utilise le playbook Hillclimb (`hillclimb.md`).
 

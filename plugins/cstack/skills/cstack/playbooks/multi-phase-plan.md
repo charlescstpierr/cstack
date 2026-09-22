@@ -61,7 +61,7 @@ Les tests seuls ne vérifient pas une PR. Chaque PR exige des preuves unitaires,
 ### Traiter chaque PR
 
 - [ ] Utiliser seulement git et `gh`.
-- [ ] Créer une PR ready avec `gh pr create --base <base-branch>` seulement avec autorisation. Un enfant de pile cible sa branche parent.
+- [ ] Créer une PR ready avec `gh pr create --base <base-branch>` selon la portée de livraison du contrat d’exécution. Un enfant de pile cible sa branche parent.
 - [ ] Lancer les contrôles ciblés, lint et typecheck du dépôt avant le push visible côté PR.
 - [ ] Lancer `<plugin-root>/skills/deslop/SKILL.md` sur le diff avant chaque commit. Garder `deslop skipped: <reason>` quand une étape ne peut vraiment pas s’exécuter.
 - [ ] Lire et appliquer `<plugin-root>/skills/no-comments/SKILL.md` avant revue. Cette étape est obligatoire. Elle n’est pas seulement pour une demande explicite.

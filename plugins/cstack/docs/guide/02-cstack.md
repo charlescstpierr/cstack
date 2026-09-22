@@ -36,7 +36,7 @@ Les guides d'exécution vivent dans [le répertoire cstack](../../skills/cstack/
 | Pause sûre | [pause-safely.md](../../skills/cstack/playbooks/pause-safely.md) | Laisser le travail local dans un état reprenable. |
 | Plan multi-phase | [multi-phase-plan.md](../../skills/cstack/playbooks/multi-phase-plan.md) | Plan qui traverse des phases ou des PR. |
 | Nettoyage de worktrees | [worktree-cleanup.md](../../skills/cstack/playbooks/worktree-cleanup.md) | Nettoyer les worktrees temporaires après une livraison fusionnée. |
-| Ouverture d'une PR | [opening-a-pr.md](../../skills/cstack/playbooks/opening-a-pr.md) | Créer une PR, seulement après autorisation. |
+| Ouverture d'une PR | [opening-a-pr.md](../../skills/cstack/playbooks/opening-a-pr.md) | Livraison révisable selon le contrat d'exécution. |
 
 Pour une tâche simple et définie, Codex lit les fichiers concernés, fait le travail et vérifie le résultat directement. Les étapes d'exploration, de conception, de coordination, de clarification et de planification longue s'ajoutent selon la complexité réelle, pas seulement le nombre de fichiers. Les [principes](./08-principles.md) sont des références à consulter au moment utile, pas une liste à charger intégralement.
 
