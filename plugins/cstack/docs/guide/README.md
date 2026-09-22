@@ -14,6 +14,7 @@ Voici le parcours :
 8. [Piloter avec les principes](./08-principles.md). Utiliser les 23 principes au bon moment.
 9. [Adapter cstack](./09-make-it-yours.md). Créer une compétence ciblée et l'évaluer.
 10. [Recettes et pièges](./10-recipes-and-pitfalls.md). Copier des demandes courtes et éviter les erreurs fréquentes.
+11. [Utiliser Codex et Claude ensemble](./11-cli-workers.md). Configurer les CLI, partager les skills et vérifier les résultats.
 
 Si vous ne retenez qu'une chose, demandez un résultat et sa preuve :
 

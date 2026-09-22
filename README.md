@@ -1,6 +1,6 @@
 # cstack
 
-Les processus de [pstack](https://github.com/cursor/plugins/tree/889ec4b68fa5aab0e867dad71ec3fdf386ae48f3/pstack), adaptés à **Codex App et CLI**. Investigation, architecture, implémentation, revue et vérification, avec les sous-agents natifs de Codex. Version amont épinglée `0.15.2`, commit `889ec4b68fa5aab0e867dad71ec3fdf386ae48f3`.
+Les processus de [pstack](https://github.com/cursor/plugins/tree/889ec4b68fa5aab0e867dad71ec3fdf386ae48f3/pstack), adaptés à **Codex App et CLI**. Investigation, architecture, implémentation, revue et vérification, avec les sous-agents natifs de Codex ou des workers exécutés par les CLI officiels. Version amont épinglée `0.15.2`, commit `889ec4b68fa5aab0e867dad71ec3fdf386ae48f3`.
 
 cstack s'active dans une tâche avec `$cstack:cstack`. L'installation seule ne modifie pas le comportement de Codex dans vos projets. Aucun moteur d'orchestration supplémentaire n'est nécessaire.
 
@@ -16,6 +16,15 @@ codex plugin add cstack@cstack
 ```
 
 Ouvrez une **nouvelle tâche** dans Codex App ou une nouvelle session CLI après l'installation. Le CLI doit utiliser le même profil Codex que l'application pour partager cette installation. Dans une autre installation ou sur une autre machine, ajoutez le dépôt depuis les sources de plugins disponibles et authentifiez l'accès au dépôt privé.
+
+Pour mettre à jour une installation provenant de ce dépôt :
+
+```sh
+codex plugin marketplace upgrade cstack
+codex plugin add cstack@cstack
+```
+
+Ouvrez ensuite une nouvelle conversation pour charger les compétences mises à jour. La version du manifeste peut rester identique ; le contenu installé doit correspondre à la révision souhaitée.
 
 Pour tester une copie locale :
 
@@ -57,6 +66,14 @@ codex exec '$cstack:cstack Examine cette modification sans changer les fichiers.
 Les sous-agents héritent du modèle de la session par défaut. `$cstack:setup-cstack` affiche six recommandations de modèle et d'effort à accepter, personnaliser ou remplacer par l'héritage ; vous pouvez aussi annuler. Les choix existants restent préservés sauf sélection explicite. Les paires sont vérifiées dans le catalogue courant et enregistrées dans `.cstack/models.json`, sans modifier la session principale ni la configuration globale. Voir le [tableau de recommandations](plugins/cstack/docs/guide/01-setup.md#configurer-cstack). Un choix indisponible ou un effort non configurable par l'hôte est signalé, sans substitution silencieuse.
 
 La configuration peut aussi préparer les conventions du projet : un bloc cstack dans `AGENTS.md`, un guide local et le suivi de tickets choisi. Elle montre les changements avant application et conserve les instructions extérieures au bloc. Elle ne modifie pas `CLAUDE.md`, n'active pas cstack automatiquement et ne crée aucun ticket distant. La configuration des modèles seule reste disponible.
+
+## Utiliser Codex et Claude ensemble
+
+Le coordinateur reste dans Codex. Les workflows Arena, Swarm, Interrogate et Architect peuvent répartir leurs workers entre Codex CLI et Claude Code. Orchestrate conserve ses unités, son inbox et son ledger. Chaque CLI utilise son propre login officiel ; CStack ne lit ni ne copie ses credentials.
+
+Suivez le [guide des workers CLI](plugins/cstack/docs/guide/11-cli-workers.md) pour configurer un panel mixte. Les agents reçoivent les mêmes sources de skills CStack, avec les références sélectionnées et des snapshots explicites du contexte. Le coordinateur transmet les résultats vérifiés aux tâches suivantes ; les sessions privées des CLI ne sont pas partagées.
+
+Codex et Claude ont des essais connectés documentés. Grok et Cursor restent hors validation connectée ; Cursor est limité à la lecture seule. Avec Claude, les tests sont exécutés par le coordinateur. Voir les [preuves et limites](docs/VERIFICATION.md).
 
 ## Prérequis et limites
 

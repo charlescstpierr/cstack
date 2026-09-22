@@ -4,6 +4,9 @@ Les versions suivent SemVer. Le format suit [Keep a Changelog](https://keepachan
 
 ## À publier
 
+- Le setup inventorie les CLI présents et leurs statuts officiels de connexion avant de proposer les runtimes. Il permet d’ajouter Claude Code aux panels existants ou de remplacer des rôles choisis, en préservant les autres réglages.
+- Guide pratique Codex/Claude, partage des skills et du contexte, limites vérifiées et commandes de mise à jour du plugin.
+
 - Les bundles workers suivent les références Markdown locales des skills et proposent `skill_references` pour les sources spécialisées. Les 29 skills livrés sont testés ; les liens d’exemple en blocs de code et les skills voisins ne sont pas activés.
 - Arena et Swarm conservent le nombre total demandé de candidats/tranches lorsque la concurrence impose plusieurs vagues.
 

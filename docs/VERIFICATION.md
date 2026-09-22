@@ -39,6 +39,14 @@ Le problème Bash de Claude a aussi été reproduit sans modèle dans le helper 
 
 La suite complète a été relancée sur `cc22453` : 191 tests passants, un ignoré, types et validations du paquet passants. Deux nouveaux appels connectés via le lanceur officiel CStack ont terminé avec Codex et Claude. Ils ont reçu les mêmes snapshots de contexte et de skills, retrouvé les marqueurs attendus et laissé le projet intact. Les empreintes des preuves Arena, Swarm, Architect et Orchestrate précédentes ont été revérifiées ; le test fonctionnel Arena a été réexécuté. Les [reçus avant fusion](evidence/pre-merge-validation.json) consignent cette campagne. Cela ne remplace pas les limites et la distinction avec le plugin installé décrites plus haut.
 
+## Setup et inventaire des runtimes, 22 septembre 2026
+
+Deux nouvelles sessions Codex ont appliqué le skill setup depuis les sources dans un projet isolé. La première a ajouté Claude aux panels Arena, Architect et Interrogate, puis remplacé `swarm workers`. Une seconde application conserve les mêmes octets, sans doublon ; les autres rôles et les fichiers AGENTS/CLAUDE sont préservés.
+
+La seconde session a exécuté l’inventaire en mode aperçu : sondes des quatre runtimes et commandes officielles de statut disponibles. Elle a proposé les choix à partir de la machine et du projet, sans modifier la configuration. Codex et Claude étaient présents et déclaraient une connexion ; Grok était absent du PATH. Cursor était présent, mais sa sonde échouait et ses indications d’authentification étaient contradictoires ; le rapport l’a marqué non confirmé. Aucun de ces statuts ne prouve une génération ou un quota disponible. Les [preuves du setup](evidence/setup-runtime-discovery.json) conservent les résultats et empreintes.
+
+La suite existante passe avec 191 tests et un cas ignoré. Le validateur de skills, les liens documentaires, l’exemple JSON contre le resolver, les types et le chargement des 29 bundles passent. Une revue indépendante a approuvé le parcours et la documentation ; aucune fonction de runtime n’a été changée.
+
 ## État 0.4.0
 
 Cette section décrit une campagne datée, pas l'état courant de HEAD. Mesures du 12 septembre 2026, arbre commité de la branche `feat/pstack-parity-deslop`, Python 3.9.6, Bun 1.4.2. Plugin `0.4.0`. Version amont épinglée de pstack `0.15.2`, commit `889ec4b68fa5aab0e867dad71ec3fdf386ae48f3`.

@@ -1,0 +1,64 @@
+{
+  "date": "2026-09-22T15:48:21.730904+00:00",
+  "scope": "native Codex source-skill trials in isolated project, no provider generation during setup",
+  "update": {
+    "status": "PASS",
+    "changed_files": [
+      ".cstack/.gitignore",
+      ".cstack/models.json"
+    ],
+    "second_apply_bytes_identical": true,
+    "sha256": "64507ec745b4dd37b2d719937b6256443fd93462d9c08f6f07f491ed0653e77a",
+    "saved": {
+      "arena runners": [
+        "inherit-parent",
+        "inherit-parent",
+        {
+          "runtime": "claude-code"
+        }
+      ],
+      "architect runners": [
+        "inherit-parent",
+        "inherit-parent",
+        {
+          "runtime": "claude-code"
+        }
+      ],
+      "interrogate reviewers": [
+        "inherit-parent",
+        {
+          "runtime": "claude-code"
+        }
+      ],
+      "swarm workers": {
+        "runtime": "claude-code"
+      },
+      "documentation": "inherit-parent",
+      "arena cross-judge pool": [
+        "inherit-parent"
+      ]
+    },
+    "ignored": ".cstack/models.json",
+    "AGENTS_CLAUDE_unchanged": true,
+    "requested_evidence_location_unwritable_by_session_policy": true
+  },
+  "discovery": {
+    "all_four_runtime_probes_observed": true,
+    "project_configuration_sha256_unchanged": "64507ec745b4dd37b2d719937b6256443fd93462d9c08f6f07f491ed0653e77a",
+    "codex": "installed; official status connected",
+    "claude": "installed; official status connected",
+    "cursor": "installed; probe failure and contradictory auth evidence reported",
+    "grok": "absent from PATH",
+    "final_report_sha256": "5de7db0b3c031a0670ad777f106428e079491eb88cbfaf029ec5795bd55c8cae"
+  },
+  "sources": [
+    {
+      "path": "plugins/cstack/skills/setup-cstack/SKILL.md",
+      "sha256": "05e4183e6ffc900a8f3af7c9f52692f47f1a92e329a96b4d52eebe011adecc0a"
+    },
+    {
+      "path": "plugins/cstack/docs/guide/11-cli-workers.md",
+      "sha256": "4e4b3a00fc0bb2ed168c511755ab9e84d1dfb4f06b118f5e761031840becfad3"
+    }
+  ]
+}

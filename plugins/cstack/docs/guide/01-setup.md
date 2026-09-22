@@ -1,6 +1,6 @@
 # Configurer cstack
 
-cstack est un plugin Codex pour organiser un travail de code autour d'un objectif vérifiable. Le cœur fonctionne avec les outils natifs de Codex et des sous-agents natifs. Il n'ajoute pas de moteur d'orchestration séparé.
+cstack est un plugin Codex pour organiser un travail de code autour d'un objectif vérifiable. Le cœur fonctionne avec les outils natifs de Codex et des sous-agents natifs, ou des workers CLI explicitement sélectionnés. Il n'ajoute pas de moteur d'orchestration séparé.
 
 ## Installer le plugin
 
@@ -21,6 +21,17 @@ L'activation est limitée à cette tâche. Une installation ne rend pas les inst
 
 Le contrat d'exécution partagé décrit les outils, les permissions et l'état local : [exécution Codex](../../skills/cstack/references/codex-runtime.md).
 
+## Mettre à jour le plugin
+
+Pour une installation depuis le dépôt GitHub configuré :
+
+```sh
+codex plugin marketplace upgrade cstack
+codex plugin add cstack@cstack
+```
+
+Ouvrez une nouvelle conversation App ou une nouvelle session CLI. Une conversation déjà ouverte ne prouve pas le chargement des nouveaux fichiers.
+
 ## Configurer cstack
 
 Pour inspecter ou préparer la configuration locale, invoquez [`$cstack:setup-cstack`](../../skills/setup-cstack/SKILL.md) :
@@ -29,7 +40,9 @@ Pour inspecter ou préparer la configuration locale, invoquez [`$cstack:setup-cs
 $cstack:setup-cstack
 ```
 
-La configuration affiche les réglages existants et ces recommandations, avec leur disponibilité vérifiée dans le catalogue courant :
+Le setup inspecte d’abord les CLI présents sur la machine, leurs versions et leurs capacités. Il consulte leur statut de connexion officiel quand il est disponible, sans lire les credentials ni lancer de génération. Il compare cet inventaire aux rôles du projet pour proposer de conserver, ajouter ou remplacer les choix concernés. Une connexion inconnue ou un CLI absent reste signalé.
+
+Pour les sous-agents natifs, la configuration affiche les réglages existants et ces recommandations, avec leur disponibilité vérifiée dans le catalogue courant :
 
 | Travail | Modèle | Effort |
 | --- | --- | --- |
@@ -44,7 +57,7 @@ La configuration vérifie aussi que l'outil de délégation peut transmettre le 
 
 Choisissez d'accepter les recommandations disponibles, de personnaliser les rôles, d'hériter de la session ou d'annuler. Seuls les rôles sélectionnés changent ; annuler ne crée ni ne modifie de fichier. Sans choix, les sous-agents héritent du modèle et de l'effort de la session. Un cache ancien ne prouve pas qu'un modèle est disponible.
 
-Les choix sont enregistrés dans `.cstack/models.json` sous forme d'objets `model` et `reasoning_effort`. Les anciennes chaînes de modèle et les listes de comités restent compatibles. Un ancien modèle sans effort conserve les règles d'effort de l'hôte. Les rôles absents `simple edits` et `documentation` reprennent respectivement `feature, refactoring` et `judgment and prose`.
+Les choix natifs sont enregistrés dans `.cstack/models.json` sous forme d'objets `model` et `reasoning_effort`. Les workers externes ajoutent `runtime` ; voir le [guide Codex et Claude](./11-cli-workers.md). Les anciennes chaînes de modèle et les listes de comités restent compatibles. Un ancien modèle sans effort conserve les règles d'effort de l'hôte. Les rôles absents `simple edits` et `documentation` reprennent respectivement `feature, refactoring` et `judgment and prose`.
 
 La configuration concerne les délégations suivantes, pas le modèle de la session principale. Elle ne nécessite ni clé API ni changement global. Si l'outil natif ne permet pas de transmettre l'effort choisi, cstack signale cette limite et demande un choix supporté ou l'héritage. Il ne remplace pas le réglage par une instruction dans l’invite.
 
