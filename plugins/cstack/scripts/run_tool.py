@@ -201,7 +201,10 @@ def main():
             bunfig.write_text("")
         bunfig = bunfig.resolve()
         if runtime == "bun" and all((staged / name).is_file() for name in ("bootstrap.ts", "package.json", "bun.lock")):
-            environment = os.environ | {"CSTACK_BOOTSTRAP_ONLY": "1"}
+            environment = os.environ | {
+                "CSTACK_BOOTSTRAP_ONLY": "1",
+                "CSTACK_PLUGIN_ROOT": str(Path(__file__).resolve().parent.parent),
+            }
             setup = run_tracked(
                 bun_command(
                     bunfig,
@@ -224,7 +227,8 @@ def main():
             command = bun_command(bunfig, str(staged_entry), *sys.argv[2:])
         else:
             command = [runtime, str(staged_entry), *sys.argv[2:]]
-        raise SystemExit(exit_status(run_tracked(command)))
+        child_environment = os.environ | {"CSTACK_PLUGIN_ROOT": str(Path(__file__).resolve().parent.parent)}
+        raise SystemExit(exit_status(run_tracked(command, env=child_environment)))
     finally:
         signal.signal(signal.SIGINT, previous_int)
         signal.signal(signal.SIGTERM, previous_term)

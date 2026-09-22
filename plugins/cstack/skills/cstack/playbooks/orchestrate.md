@@ -20,6 +20,8 @@ Trois règles portent le programme :
 
 Limite la fenêtre roulante à la capacité des sous-agents natifs et lance le travail supplémentaire par vagues. Un emplacement manquant sérialise cette unité comme passe séparée au périmètre redéfini dans cette session, étiquetée `single-agent`, et le rapport nomme l’indépendance manquante. Les modèles héritent par défaut. Applique seulement une surcharge disponible depuis `.cstack/models.json` pour le travail correspondant de chaque unité. Si un modèle explicite est indisponible, arrête cette sélection et rapporte-le.
 
+Une sélection de worker ou vérificateur avec `runtime` suit le [dispatch CLI](../references/runtime-workers.md), sans changer le store ni les rôles. Il transmet les mêmes skills CStack pertinents et les snapshots de contexte utiles à chaque worker. Le coordinateur publie un pointeur `inbox` vers le reçu après la fin du processus, puis vérifie le rapport. Un reçu d’exécution ne crée jamais à lui seul une ligne de ledger. Le repli single-agent ci-dessus ne remplace pas un runtime choisi.
+
 #### Disposition de l’état
 
 Crée `.cstack/orchestrate/<project-slug>/` dans le workspace cible. Chaque fichier a un rédacteur. Les propriétaires publient les faits et les lecteurs les agrègent. Résous la racine du plugin, puis lance le helper comme `bash <plugin-root>/scripts/run-tool.sh orch/orch.ts <command>`. Le lanceur met en scène les sources verrouillées sous `.cstack/tools/`.
@@ -96,7 +98,7 @@ Externalise chaque unité terminée immédiatement. Un propriétaire enregistre 
 
 #### Vitalité et récupération
 
-- Inspecte l’état des agents natifs avec les outils de coordination disponibles. Ne redémarre pas un agent idle seulement pour demander un statut.
+- Inspecte l’état des agents natifs avec les outils de coordination disponibles. Pour un worker CLI, utilise le handle du processus lancé dans cette session et son reçu ; un PID ou une ancienne session enregistrés ne prouvent pas sa vitalité. Ne redémarre pas un agent idle seulement pour demander un statut.
 - Réconcilie la vitalité depuis `units.tsv`, le ledger, les refs git, l’état de PR GitHub et le statut des tâches natives. Les timestamps de conversation seuls ne sont pas une preuve.
 - Réessaie l’épuisement de ressources avec un périmètre plus petit. Réessaie une panne réseau une fois. Pour une panne d’outil, utilise une autre méthode native disponible. Après deux retries échoués, abandonne l’unité et replanifie.
 - Réconcilie un résultat tardif contre la frontière et le ledger courants avant de l’accepter.

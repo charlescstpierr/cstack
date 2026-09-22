@@ -7,6 +7,8 @@ description: "Lance N candidats en parallèle sur la même tâche, choisit une b
 
 Contrat d’exécution : [`../cstack/references/codex-runtime.md`](../cstack/references/codex-runtime.md).
 
+Pour chaque sélection avec `runtime`, applique le [dispatch CLI](../cstack/references/runtime-workers.md) à la place du lancement natif. Conserve la taille et l’ordre du panel, le rôle spécialisé et les étapes de vérification. Les replis single-agent de ce document concernent seulement les sélections natives ; une position CLI bloquée n’est jamais remplacée silencieusement par Codex.
+
 Déploie N tentatives parallèles sur la même tâche. Lis chaque candidat de bout en bout. Choisis le plus solide comme base. Greffe-y les meilleures idées des autres. Vérifie le résultat synthétisé.
 
 ## Démarrage
@@ -31,7 +33,7 @@ Les N candidats recevront le même prompt; le prompt est donc le contrat.
 
 ## Phase B : Déployer
 
-Lance les N sous-agents natifs en parallèle, chacun avec la tâche, le chemin vers le contexte partagé, son propre chemin de sortie et les consignes pour produire à la fois l'artefact et un court raisonnement. Donne à chaque agent rédacteur la propriété exclusive de son chemin de sortie. La concurrence native limite le nombre d'exécutions simultanées. Mets les candidats restants en file pour des vagues ultérieures. Si aucun emplacement de sous-agent n'est disponible, exécute chaque candidat dans la même session comme passe distincte et explicitement recadrée, étiquette le résultat `single-agent`, puis signale l'indépendance manquante. Le manque de capacité ne supprime jamais un candidat.
+Lance les N workers en parallèle, selon leur sélection native ou CLI, chacun avec la tâche, le chemin vers le contexte partagé, son propre chemin de sortie et les consignes pour produire à la fois l'artefact et un court raisonnement. Donne à chaque agent rédacteur la propriété exclusive de son chemin de sortie. La concurrence native limite le nombre d'exécutions simultanées. Mets les candidats restants en file pour des vagues ultérieures. Si aucun emplacement de sous-agent n'est disponible, exécute chaque candidat dans la même session comme passe distincte et explicitement recadrée, étiquette le résultat `single-agent`, puis signale l'indépendance manquante. Le manque de capacité ne supprime jamais un candidat.
 
 Chaque raisonnement nomme les alternatives envisagées par le candidat et ce qu'il a rejeté.
 
@@ -39,7 +41,7 @@ Si un candidat ne produit rien, continue avec N-1 et note l'abandon dans le regi
 
 ## Phase C : Juger croisé
 
-Une fois tous les candidats de la phase B terminés, lance un sous-agent natif de revue seule comme juge. Il hérite par défaut du modèle parent. Si `.cstack/models.json` définit `arena cross-judge pool`, suis le contrat d’exécution et ne remplace pas silencieusement une surcharge explicite indisponible. Le juge voit la grille et les candidats par étiquette de chemin, note chaque critère et recommande une base avec son raisonnement. Il peut tourner pendant la lecture du parent en phase D. Ne le lance pas pendant que les candidats écrivent encore. Si aucun emplacement de sous-agent n'est disponible, fais la passe du juge dans cette session après une relecture propre de chaque candidat, étiquette-la `single-agent review`, puis signale l'indépendance manquante. La comparaison ne disparaît jamais.
+Une fois tous les candidats de la phase B terminés, lance un worker de revue seule comme juge, selon sa sélection native ou CLI. Il hérite par défaut du modèle parent. Si `.cstack/models.json` définit `arena cross-judge pool`, suis le contrat d’exécution et ne remplace pas silencieusement une surcharge explicite indisponible. Le juge voit la grille et les candidats par étiquette de chemin, note chaque critère et recommande une base avec son raisonnement. Il peut tourner pendant la lecture du parent en phase D. Ne le lance pas pendant que les candidats écrivent encore. Si aucun emplacement de sous-agent n'est disponible, fais la passe du juge dans cette session après une relecture propre de chaque candidat, étiquette-la `single-agent review`, puis signale l'indépendance manquante. La comparaison ne disparaît jamais.
 
 ## Phase D : Choisir une base
 

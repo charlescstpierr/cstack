@@ -119,13 +119,13 @@ Ensuite, suis [Commits locaux](references/codex-runtime.md#commits-locaux) pour 
 - Lis `../unslop/SKILL.md` pour chaque artéfact en prose et chaque réponse.
 - Lis `../technical-writing/SKILL.md` pour la documentation, les plans, le texte de PR et le texte de commit.
 
-### Utiliser les sous-agents natifs délibérément
+### Utiliser les workers délibérément
 
-Suis [le contrat d’exécution](references/codex-runtime.md). Utilise les sous-agents natifs pour du travail indépendant qui améliore la vitesse, les preuves ou la séparation de revue. Donne à chaque sous-agent natif une tâche bornée, une propriété de fichiers, des critères d’acceptation et les instructions de `references/agents/cstack-agent.md`. Le parent possède l’intégration et la vérification.
+Suis [le contrat d’exécution](references/codex-runtime.md), notamment son dispatch des workers. Le chemin natif reste le défaut ; les sélections CLI suivent [les workers CLI](references/runtime-workers.md). Utilise les workers pour du travail indépendant qui améliore la vitesse, les preuves ou la séparation de revue. Donne à chaque sous-agent natif une tâche bornée, une propriété de fichiers, des critères d’acceptation et les instructions de `references/agents/cstack-agent.md`. Le parent possède l’intégration et la vérification. Pour les workers CLI, prépare le bundle de skills commun avec le champ `skills` et les faits/rapports de pairs avec `context_files` ; le parent relaie les erreurs de vérification aux tentatives suivantes.
 
 Pour couvrir des zones indépendantes, lis et applique `../swarm/SKILL.md`. Pour des implémentations ou conceptions concurrentes, lis et applique `../arena/SKILL.md`. Ne parallélise que le travail indépendant. Un seul acteur écrit une branche ou un fichier partagé à la fois.
 
-Limite les panels à la capacité native. Un panel sans entrée `.cstack/models.json` utilise par défaut trois tentatives indépendantes en modèle hérité. Un pool cross-judge utilise par défaut un judge en modèle hérité. Lance les tentatives excédentaires par vagues. Si un playbook demande plus de voies que le travail ne justifie, préserve chaque scénario distinct et marque les voies redondantes `n/a` avec une raison.
+Limite les panels à la capacité disponible ; pour les CLI, applique les plafonds du contrat des workers CLI. Un panel sans entrée `.cstack/models.json` utilise par défaut trois tentatives indépendantes en modèle hérité. Un pool cross-judge utilise par défaut un judge en modèle hérité. Lance les tentatives excédentaires par vagues. Si un playbook demande plus de voies que le travail ne justifie, préserve chaque scénario distinct et marque les voies redondantes `n/a` avec une raison.
 
 Suis le chemin d’héritage direct du contrat d’exécution quand rien n’est configuré ; sinon, résous le rôle du délégué avec son helper de confiance et préserve à la fois `model` et `reasoning_effort` jusqu’au dispatch natif final. Les paramètres manquants héritent. Rapporte les sélections ou capacités de dispatch non prises en charge sans substituer silencieusement ni abandonner l’effort.
 

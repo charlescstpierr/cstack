@@ -95,6 +95,7 @@ class RunToolTest(unittest.TestCase):
                 "cache": (stage / "cache").exists(),
                 "no_env_file": no_env_file,
                 "config": config,
+                "plugin_root": os.environ.get("CSTACK_PLUGIN_ROOT"),
             }))
             """))
         bun.chmod(0o755)
@@ -392,6 +393,12 @@ class RunToolTest(unittest.TestCase):
         self.assertTrue(data["config"].endswith("bunfig.toml"))
         self.assertIn(".cstack/tools", data["config"].replace("\\", "/"))
         self.assertNotEqual(data["config"], str(self.cwd / "bunfig.toml"))
+
+    def test_child_receives_trusted_plugin_root_from_launcher(self):
+        (self.source / "tool.ts").write_text("trusted")
+        env = self.env | {"CSTACK_PLUGIN_ROOT": "/tmp/not-trusted"}
+        data = json.loads(self.run_tool("tool.ts", env=env).stdout)
+        self.assertEqual(data["plugin_root"], str(self.plugin))
 
 
 if __name__ == "__main__":

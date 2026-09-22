@@ -1,6 +1,6 @@
 # Développement de cstack
 
-cstack est un plugin autonome pour Codex App et CLI. Utilisez les outils et sous-agents natifs de Codex. N'ajoutez pas de moteur d'orchestration séparé et ne figez pas de noms de modèles pour l'exécution. Les recommandations optionnelles de la configuration peuvent nommer des modèles seulement après validation dans le catalogue vivant des modèles et des efforts de raisonnement, avant sélection.
+cstack est un plugin autonome pour Codex App et CLI. Le coordinateur utilise les outils natifs de Codex. Les workers héritent du runtime natif, sauf sélection explicite d’un CLI officiel dans `.cstack/models.json`. N'ajoutez pas de moteur d'orchestration séparé et ne figez pas de noms de modèles pour l'exécution. Les recommandations optionnelles de la configuration peuvent nommer des modèles seulement après validation dans le catalogue vivant des modèles et des efforts de raisonnement, avant sélection.
 
 Préservez la licence MIT amont et enregistrez la provenance. Les compétences sont invoquées explicitement ; l'installation du plugin ne doit pas activer ses instructions dans des tâches sans rapport. Respectez le périmètre de l'utilisateur, les instructions du projet, le mode Plan de Codex et les permissions.
 

@@ -11,11 +11,13 @@ description: >-
 
 Runtime : [`../cstack/references/codex-runtime.md`](../cstack/references/codex-runtime.md).
 
-Lance exactement le nombre configuré de reviewers natifs indépendants pour relire adversarialement des changements de code. Chaque reviewer reçoit le même instantané de portée, les mêmes preuves d'exigences approuvées, le même prompt et la même rubrique, avec un axe principal assigné. Le signal adversarial vient des passes indépendantes et, quand des surcharges de modèles vérifiées sont disponibles, de la diversité des modèles. N'ajoute pas de reviewers au-delà du panneau configuré.
+Pour chaque sélection avec `runtime`, applique le [dispatch CLI](../cstack/references/runtime-workers.md) à la place du lancement natif. Conserve la taille et l’ordre du panel, le rôle spécialisé et les étapes de vérification. Les replis single-agent de ce document concernent seulement les sélections natives ; une position CLI bloquée n’est jamais remplacée silencieusement par Codex.
+
+Lance exactement le nombre configuré de reviewers indépendants pour relire adversarialement des changements de code. Chaque reviewer reçoit le même instantané de portée, les mêmes preuves d'exigences approuvées, le même prompt et la même rubrique, avec un axe principal assigné. Le signal adversarial vient des passes indépendantes et, quand des surcharges de modèles vérifiées sont disponibles, de la diversité des modèles. N'ajoute pas de reviewers au-delà du panneau configuré.
 
 Le livrable est un verdict synthétisé. N'applique PAS automatiquement les changements.
 
-Suis le chemin d'héritage direct du contrat runtime quand rien n'est configuré; sinon résous chaque rôle nommé avec son helper et transmets à chaque spawn natif la sélection complète, effort de raisonnement compris. Signale les lacunes de capacité de l'hôte au lieu de supprimer un champ sélectionné.
+Suis le chemin d'héritage direct du contrat runtime quand rien n'est configuré; sinon résous chaque rôle nommé avec son helper et transmets à chaque dispatch la sélection complète, effort de raisonnement compris. Signale les lacunes de capacité de l'hôte au lieu de supprimer un champ sélectionné.
 
 ## Étape 1, Déterminer la portée
 

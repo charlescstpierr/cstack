@@ -2,6 +2,25 @@
 
 Ce fichier distingue l'état courant des campagnes datées. Les nombres d'une section datée restent ceux de cette campagne. Ils ne décrivent pas le catalogue 0.4.0.
 
+## Workers CLI, 22 septembre 2026
+
+Campagne locale sur la branche `feat/multi-runtime-workers`, base `2d9caf8591f08135e2d87904a160a6054c3b508e`. Les [reçus et empreintes](evidence/multi-runtime.json) distinguent les essais connectés des simulations. L’amont pstack comparé est la version 0.15.2 déjà épinglée, commit `889ec4b68fa5aab0e867dad71ec3fdf386ae48f3` ; aucune parité avec les agents cloud ou l’interface Cursor n’est revendiquée.
+
+- Codex CLI 0.155.1 et Claude Code 2.1.273 ont réellement corrigé le même défaut dans deux worktrees isolés. Le parent a exécuté les assertions et relu les diffs ; seul le fichier autorisé a changé.
+- Les deux workers ont reçu le même contexte avec les rapports des pairs, puis appliqué le même bundle `interrogate`. Les empreintes de contexte et de skills correspondent dans les reçus, et les réponses utilisent le marqueur commun et les résultats de l’autre runtime.
+- Le profil lecture seule a refusé une écriture Codex. Claude ne disposait d’aucun outil d’écriture ; aucun fichier de sonde n’a été créé.
+- Une annulation réelle via le lanceur termine les deux groupes de processus en environ 0,52 seconde et produit `CANCELLED`, pas `PASS`.
+- Un coordinateur Codex neuf a lu la compétence Interrogate source, résolu un panel mixte, créé les briefs et lancé les deux CLI. Les reviewers ont identifié le défaut de frontière à 18 ans ; le coordinateur a synthétisé le consensus et conservé les sources inchangées.
+- Le rapport Codex et un contrôle rouge exécuté par le parent ont ensuite été transmis à Claude avec le skill `tdd`. Claude a corrigé `>` en `>=` ; la vérification indépendante des âges 17, 18 et 19 passe. Cela couvre le retour d’erreur et la correction entre runtimes, sans inventer un test exécuté par Claude.
+
+L’essai Bash sandboxé de Claude a échoué sur cet hôte avec une erreur de namespace `apply-seccomp` avant exécution. Aucun bypass n’a été ajouté : le profil livré utilise les outils de fichiers, et le parent exécute VERIFY puis transmet ses résultats. Cet essai échoué est conservé localement, hors des succès ci-dessus. Le premier essai du harnais app-server a également rejeté une option CLI non supportée ; l’essai retenu utilise `codex exec`.
+
+Contrôles finaux : 56 tests Python, dont 55 passants et un cas non applicable au lecteur TOML de Python 3.14 ; 7 tests Bun racine et 122 tests Bun des helpers passants. Les types stricts de watch-pr, du runner et de la racine passent, ainsi que le validateur de paquet, celui du plugin, les validations des compétences modifiées, `bash -n` et `git diff --check`. Les empreintes des sources finales sont dans le fichier de preuves. Les dernières gardes de parsing, Unicode et chemins ont des tests de régression avec de vrais sous-processus simulés.
+
+Grok et Cursor restent hors des essais connectés à la demande de l’utilisateur. Leurs adapters ont des tests déterministes, pas une preuve d’accès par abonnement. Cursor est limité à la lecture seule. Le champ `provider_observed` reste `unknown` ; les versions des binaires et les logins officiels ne sont pas une attestation indépendante du backend d’inférence.
+
+Le partage de contexte et de skills utilise des snapshots explicites par tâche. Il ne lit pas les sessions privées, ne partage pas de credentials et ne crée pas de chat commun en temps réel. Les nouvelles tentatives reçoivent les décisions et preuves actualisées du parent. Les verdicts du ledger restent indépendants des statuts worker.
+
 ## État 0.4.0
 
 Cette section décrit une campagne datée, pas l'état courant de HEAD. Mesures du 12 septembre 2026, arbre commité de la branche `feat/pstack-parity-deslop`, Python 3.9.6, Bun 1.4.2. Plugin `0.4.0`. Version amont épinglée de pstack `0.15.2`, commit `889ec4b68fa5aab0e867dad71ec3fdf386ae48f3`.

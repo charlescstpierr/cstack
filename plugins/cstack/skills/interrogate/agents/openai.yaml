@@ -1,6 +1,6 @@
 interface:
   display_name: "interrogate"
   short_description: "Contester un changement par revues indépendantes"
-  default_prompt: "Utilise $cstack:interrogate pour cette tâche. Utilise le panel de réviseurs configuré comme sous-agents natifs."
+  default_prompt: "Utilise $cstack:interrogate pour cette tâche. Utilise le panel de réviseurs configuré dans leurs runtimes configurés, natifs ou CLI."
 policy:
   allow_implicit_invocation: false

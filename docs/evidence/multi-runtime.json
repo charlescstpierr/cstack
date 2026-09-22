@@ -1,0 +1,214 @@
+{
+  "date": "2026-09-22",
+  "scope": "local-development",
+  "base_commit": "2d9caf8591f08135e2d87904a160a6054c3b508e",
+  "upstream_pstack_commit": "889ec4b68fa5aab0e867dad71ec3fdf386ae48f3",
+  "cases": [
+    {
+      "id": "codex-cli-write-1",
+      "runtime": "codex-cli",
+      "execution_status": "COMPLETED",
+      "worker_status": "PASS",
+      "runtime_version": "codex-cli 0.155.1",
+      "context_sha256": "d217b93be57421e657b16407fa81fcf3b43cdb63f0854dc9c100f08fe5f438c9",
+      "skills_sha256": null,
+      "receipt_sha256": "8663c1d7b8e73590a1a9f3f15a6b41fce95ec8a57f49ab7b3d18ce057761d877",
+      "receipt_path": ".cstack/tasks/multi-runtime/live/codex-cli-write-1/result.json"
+    },
+    {
+      "id": "claude-code-write-1",
+      "runtime": "claude-code",
+      "execution_status": "COMPLETED",
+      "worker_status": "PASS",
+      "runtime_version": "2.1.273 (Claude Code)",
+      "context_sha256": "d217b93be57421e657b16407fa81fcf3b43cdb63f0854dc9c100f08fe5f438c9",
+      "skills_sha256": null,
+      "receipt_sha256": "b059c4b8f649036e6b535f97033bb007b9919fe9c4801873bc004a8d1c831cfe",
+      "receipt_path": ".cstack/tasks/multi-runtime/live/claude-code-write-1/result.json"
+    },
+    {
+      "id": "codex-cli-context-2",
+      "runtime": "codex-cli",
+      "execution_status": "COMPLETED",
+      "worker_status": "PASS",
+      "runtime_version": "codex-cli 0.155.1",
+      "context_sha256": "1258c5361b65fe3f9859ca084f8efc5a66b4da5cb971061c85ac397be26f953c",
+      "skills_sha256": null,
+      "receipt_sha256": "71eef42ceb724dac4c7a2cde98cf8803e7a988e2a432d2e10a543d6d588643d3",
+      "receipt_path": ".cstack/tasks/multi-runtime/live/codex-cli-context-2/result.json"
+    },
+    {
+      "id": "claude-code-context-2",
+      "runtime": "claude-code",
+      "execution_status": "COMPLETED",
+      "worker_status": "PASS",
+      "runtime_version": "2.1.273 (Claude Code)",
+      "context_sha256": "1258c5361b65fe3f9859ca084f8efc5a66b4da5cb971061c85ac397be26f953c",
+      "skills_sha256": null,
+      "receipt_sha256": "a0dc435d57076adbb0ce967728c9a8e19d7c3f8ef6df45a0af60d55e6e5b7b46",
+      "receipt_path": ".cstack/tasks/multi-runtime/live/claude-code-context-2/result.json"
+    },
+    {
+      "id": "codex-cli-skills-4",
+      "runtime": "codex-cli",
+      "execution_status": "COMPLETED",
+      "worker_status": "PASS",
+      "runtime_version": "codex-cli 0.155.1",
+      "context_sha256": "bbb39062eb3c39222c69accfd7a246fc16f60d6e6acb61afe62619e31ac9dcb9",
+      "skills_sha256": "67369c208b0e1060e9f4f6d891fa51caa4a82962b273562502f895d5f48f475a",
+      "receipt_sha256": "aa55a0e4ba64b4f22bbbedfb06a91c6e35008451915bb1b29c7c540f764c960b",
+      "receipt_path": ".cstack/tasks/multi-runtime/live/codex-cli-skills-4/result.json"
+    },
+    {
+      "id": "claude-code-skills-4",
+      "runtime": "claude-code",
+      "execution_status": "COMPLETED",
+      "worker_status": "PASS",
+      "runtime_version": "2.1.273 (Claude Code)",
+      "context_sha256": "bbb39062eb3c39222c69accfd7a246fc16f60d6e6acb61afe62619e31ac9dcb9",
+      "skills_sha256": "67369c208b0e1060e9f4f6d891fa51caa4a82962b273562502f895d5f48f475a",
+      "receipt_sha256": "96ae8a0712cc494eb61b2327e9890b6a7b8649540ee38e5c45ba2eb932eef8cc",
+      "receipt_path": ".cstack/tasks/multi-runtime/live/claude-code-skills-4/result.json"
+    },
+    {
+      "id": "codex-cli-cancel-5",
+      "runtime": "codex-cli",
+      "execution_status": "CANCELLED",
+      "worker_status": "BLOCKED",
+      "runtime_version": "codex-cli 0.155.1",
+      "context_sha256": "8139bd691d6ac55cd470cf546eea397d04f2815a7dffac826975ebee6dc6b255",
+      "skills_sha256": "609f6d7e01e094999590cb2ef91143638458610c05add4a1a8b76b0f36b6a34b",
+      "receipt_sha256": "e52ed98d3e4709be53751836c3c550d98b2131a134355e4ebfe2d53fa26be7fe",
+      "receipt_path": ".cstack/tasks/multi-runtime/live/codex-cli-cancel-5/result.json"
+    },
+    {
+      "id": "claude-code-cancel-5",
+      "runtime": "claude-code",
+      "execution_status": "CANCELLED",
+      "worker_status": "BLOCKED",
+      "runtime_version": "2.1.273 (Claude Code)",
+      "context_sha256": "8139bd691d6ac55cd470cf546eea397d04f2815a7dffac826975ebee6dc6b255",
+      "skills_sha256": "609f6d7e01e094999590cb2ef91143638458610c05add4a1a8b76b0f36b6a34b",
+      "receipt_sha256": "4d85f60a07920923f2a01494d0f246724de5d5a23a4be02140b05c8571acb627",
+      "receipt_path": ".cstack/tasks/multi-runtime/live/claude-code-cancel-5/result.json"
+    },
+    {
+      "id": "claude-feedback-6",
+      "runtime": "claude-code",
+      "execution_status": "COMPLETED",
+      "worker_status": "PASS",
+      "runtime_version": "2.1.273 (Claude Code)",
+      "context_sha256": "45d1af3460c7566e53823f59c9d03648e5a5e25f186ef338a56d1bf4a502dc97",
+      "skills_sha256": "de1579723d846f862c5dd05407f2c1b0ae2c6424b528d116e1f10f15edb84134",
+      "receipt_sha256": "9f606bd76491fbbffe7b1697670d750b575e9e1a4cfb454bf59c9e5562ffa34d",
+      "receipt_path": ".cstack/tasks/multi-runtime/live/claude-feedback-6/result.json"
+    },
+    {
+      "id": "interrogate-skill-dispatch-1",
+      "runtime": "codex-cli",
+      "execution_status": "COMPLETED",
+      "worker_status": "ISSUES",
+      "runtime_version": "codex-cli 0.155.1",
+      "skills_sha256": "67369c208b0e1060e9f4f6d891fa51caa4a82962b273562502f895d5f48f475a",
+      "receipt_sha256": "5f0f53faff564145902257700885c8aebf961a83cac84907c995c8008e41c5c9",
+      "receipt_path": ".cstack/tasks/multi-runtime/skill-flow/.cstack/review-interrogate/attempt-1/result.json"
+    },
+    {
+      "id": "interrogate-skill-dispatch-2",
+      "runtime": "claude-code",
+      "execution_status": "COMPLETED",
+      "worker_status": "ISSUES",
+      "runtime_version": "2.1.273 (Claude Code)",
+      "skills_sha256": "67369c208b0e1060e9f4f6d891fa51caa4a82962b273562502f895d5f48f475a",
+      "receipt_sha256": "fc0ea7f8755eaad05c9f0cedcbe662760788ae7d48a81fb568dbef909f17006e",
+      "receipt_path": ".cstack/tasks/multi-runtime/skill-flow/.cstack/review-interrogate/attempt-2/result.json"
+    }
+  ],
+  "independent_checks": [
+    {
+      "runtime": "codex-cli",
+      "verifier": "parent (non-author)",
+      "command": "python3 -B verify.py",
+      "exit_code": 0,
+      "stdout": "PASS: all values and empty input\n",
+      "calculator_sha256": "3251dbf18617cd67c47707cb9bd1611dbac212ff0ee9814a75b8ce1f34b85aad"
+    },
+    {
+      "runtime": "claude-code",
+      "verifier": "parent (non-author)",
+      "command": "python3 -B verify.py",
+      "exit_code": 0,
+      "stdout": "PASS: all values and empty input\n",
+      "calculator_sha256": "3251dbf18617cd67c47707cb9bd1611dbac212ff0ee9814a75b8ce1f34b85aad"
+    }
+  ],
+  "feedback_red_to_green": {
+    "red_exit_code": 1,
+    "green": {
+      "command": "python3 -B verify.py",
+      "exit_code": 0,
+      "stdout": "PASS: age boundary 17, 18, 19\n",
+      "modified_tracked_paths": [
+        "app.py"
+      ]
+    }
+  },
+  "cancel": [
+    {
+      "runtime": "codex-cli",
+      "status": "CANCELLED",
+      "duration_to_stop": 0.526,
+      "process_group_released": true,
+      "receipt": ".cstack/tasks/multi-runtime/live/codex-cli-cancel-5/result.json"
+    },
+    {
+      "runtime": "claude-code",
+      "status": "CANCELLED",
+      "duration_to_stop": 0.52,
+      "process_group_released": true,
+      "receipt": ".cstack/tasks/multi-runtime/live/claude-code-cancel-5/result.json"
+    }
+  ],
+  "limits": [
+    "Grok and Cursor connected runs excluded by user; deterministic adapter tests only.",
+    "Claude Bash sandbox failed on this host; shipped Claude profile intentionally exposes file tools only. Parent VERIFY and feedback round completed.",
+    "Native app-server trial rejected unsupported ignore-user-config option; final workflow proof uses real codex exec coordinator.",
+    "Receipts do not attest the actual inference provider; provider_observed remains unknown.",
+    "No CLI session resume, cloud persistence, or native Codex sidebar integration is claimed."
+  ],
+  "deterministic_validation": {
+    "python": {
+      "ran": 56,
+      "passed": 55,
+      "skipped": 1,
+      "skip_reason": "Fallback sans lecteur TOML non applicable avec Python 3.14"
+    },
+    "bun_root": {
+      "passed": 7
+    },
+    "bun_helpers": {
+      "passed": 122
+    },
+    "typechecks": [
+      "watch-pr strict",
+      "runtime + context + skills strict",
+      "root tsconfig"
+    ],
+    "other": [
+      "repository validator: 29 skills / 158 upstream files",
+      "plugin validator",
+      "six modified SKILL validators",
+      "bash -n",
+      "git diff --check"
+    ]
+  },
+  "final_source_sha256": {
+    "plugins/cstack/skills/cstack/scripts/runtime/runtime.ts": "700c05e5bb8a5903de6159c4123d8795ba1140bfc7213e4d9b933e4b7ea4be5e",
+    "plugins/cstack/skills/cstack/scripts/runtime/runtime.test.ts": "92dc05c0b6c9b0b3fbc70c4fb1af751a0fd7fd07d175d3fbb70d6bc7f0631108",
+    "plugins/cstack/skills/cstack/scripts/worker-context.ts": "16f5dff1485fdf3fa38a94be238dbc8ac4d04e7b1862d02b8934b02c3e834ecd",
+    "plugins/cstack/skills/cstack/scripts/worker-skills.ts": "95c99c2a608ce0e80effcb1ddd2dbdc03b9c88174a199ff0949ad446c2213c27",
+    "plugins/cstack/skills/setup-cstack/scripts/models.py": "cea517ca35aed274ad999c1dbea2187f9b1a00ff1efa31bf0fa6611b2c4b1f56",
+    "plugins/cstack/skills/setup-cstack/scripts/project.py": "0280d7963dea8d55ee31bb49b37b83845e3c231b67e179bb878869e582fb7411",
+    "plugins/cstack/scripts/run_tool.py": "e34264a9c0ce54110967be3da4196109c4e2c6884da4103ee22c79a43754f131"
+  }
+}

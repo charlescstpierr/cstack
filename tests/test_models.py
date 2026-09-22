@@ -14,6 +14,13 @@ models = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(models)
 CATALOG = {"gpt-5.6-luna": ["low", "medium", "high", "xhigh", "max"],
            "gpt-6-astra": ["low", "medium", "high", "xhigh", "max", "ultra"]}
+RUNTIME_CATALOG = {"runtimes": {
+    "codex-native": CATALOG,
+    "codex-cli": {"gpt-6-astra": ["low"], "shared-slug": ["high"]},
+    "claude-code": {"shared-slug": ["sonnet"], "claude-opus": ["think"]},
+    "cursor-agent": {"cursor-agent-default": []},
+    "grok": {"grok-code": []},
+}}
 
 
 class ModelSetupTests(unittest.TestCase):
@@ -77,6 +84,13 @@ class ModelSetupTests(unittest.TestCase):
                 {"bug-fix": {"model": "gpt-6-astra", "reasoning_effort": "imaginary"}},
                 {"bug-fix": {"model": "inherit-parent", "reasoning_effort": "low"}},
                 {"bug-fix": {"model": "gpt-6-astra", "reasoning_effort": "low", "extra": True}},
+                {"bug-fix": {"runtime": "codex-native"}},
+                {"bug-fix": {"runtime": "claude"}},
+                {"bug-fix": {"runtime": "cursor"}},
+                {"bug-fix": {"runtime": "claude-code", "model": None}},
+                {"bug-fix": {"runtime": "claude-code", "model": None, "reasoning_effort": "think"}},
+                {"bug-fix": {"runtime": "claude-code", "model": "claude-opus", "reasoning_effort": None}},
+                {"bug-fix": {"runtime": "claude-code", "reasoning_effort": "think"}},
                 {"bug-fix": "unavailable-model"}, {"bug-fix": " "},
             ]
             for choices in invalid:
@@ -107,11 +121,46 @@ class ModelSetupTests(unittest.TestCase):
                 {"slug": name, "visibility": "list", "supported_reasoning_levels": [{"effort": level} for level in levels]}
                 for name, levels in CATALOG.items()]}))
             self.assertEqual(models.read_catalog(path), CATALOG)
+            path.write_text(json.dumps(RUNTIME_CATALOG))
+            self.assertEqual(models.read_catalog(path), RUNTIME_CATALOG)
         preview = models.preview({}, "unused", None)
         self.assertTrue(all(group["unavailable"] for group in preview["recommendations"].values()))
         with self.assertRaises(ValueError):
             models.resolve({"bug-fix": "gpt-6-astra"}, "bug-fix", None)
         self.assertEqual(models.resolve({"bug-fix": "inherit-parent"}, "bug-fix", None), [{}])
+
+    def test_runtime_selections_are_preserved_and_scoped_to_their_catalog(self):
+        runtime_only = {"bug-fix": {"runtime": "claude-code"}}
+        models.validate(runtime_only, None, check_available=True)
+        self.assertEqual(models.resolve(runtime_only, "bug-fix", None),
+                         [{"runtime": "claude-code"}])
+        explicit = {"bug-fix": {"runtime": "claude-code", "model": "shared-slug", "reasoning_effort": "sonnet"}}
+        self.assertEqual(models.resolve(explicit, "bug-fix", RUNTIME_CATALOG),
+                         [{"runtime": "claude-code", "model": "shared-slug", "reasoning_effort": "sonnet"}])
+        with self.assertRaises(ValueError):
+            models.resolve(explicit, "bug-fix", {"shared-slug": ["sonnet"]})
+        with self.assertRaises(ValueError):
+            models.resolve({"bug-fix": {"runtime": "claude-code", "model": "shared-slug", "reasoning_effort": "high"}},
+                           "bug-fix", RUNTIME_CATALOG)
+        with self.assertRaises(ValueError):
+            models.resolve({"bug-fix": {"runtime": "claude-code", "model": "gpt-6-astra"}},
+                           "bug-fix", RUNTIME_CATALOG)
+
+    def test_mixed_panel_keeps_legacy_native_and_runtime_entries(self):
+        config = {"interrogate reviewers": [
+            "inherit-parent",
+            {"model": "gpt-6-astra", "reasoning_effort": "low"},
+            {"runtime": "grok"},
+            {"runtime": "claude-code", "model": "claude-opus", "reasoning_effort": "think"},
+            {"runtime": "cursor-agent"},
+        ]}
+        self.assertEqual(models.resolve(config, "interrogate reviewers", RUNTIME_CATALOG), [
+            {},
+            {"model": "gpt-6-astra", "reasoning_effort": "low"},
+            {"runtime": "grok"},
+            {"runtime": "claude-code", "model": "claude-opus", "reasoning_effort": "think"},
+            {"runtime": "cursor-agent"},
+        ])
 
     def test_symlinked_state_does_not_write_outside_workspace(self):
         with tempfile.TemporaryDirectory() as directory:

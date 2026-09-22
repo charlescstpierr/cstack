@@ -24,6 +24,10 @@ CATALOG = {
     "gpt-5.6-luna": ["low", "medium", "high", "xhigh", "max"],
     "gpt-6-astra": ["low", "medium", "high", "xhigh", "max", "ultra"],
 }
+RUNTIME_CATALOG = {"runtimes": {
+    "codex-native": CATALOG,
+    "claude-code": {"shared-slug": ["sonnet"]},
+}}
 
 
 class ProjectSetupTests(unittest.TestCase):
@@ -77,6 +81,11 @@ class ProjectSetupTests(unittest.TestCase):
             {"slug": name, "visibility": "list", "supported_reasoning_levels": [{"effort": effort} for effort in levels]}
             for name, levels in CATALOG.items()
         ]}), encoding="utf-8")
+        return path
+
+    def _runtime_catalog(self) -> Path:
+        path = self.root / "runtime-catalog.json"
+        path.write_text(json.dumps(RUNTIME_CATALOG), encoding="utf-8")
         return path
 
     def _cli(self, command: str, *extra: str, options: Path | None = None, catalog: Path | None = None) -> subprocess.CompletedProcess[str]:
@@ -267,6 +276,32 @@ class ProjectSetupTests(unittest.TestCase):
         invalid = self._cli("preview", options=self._options({"model_choices": {"no-such-role": "inherit-parent"}}), catalog=self._catalog())
         self.assertNotEqual(invalid.returncode, 0)
         self.assertEqual(json.loads(models_path.read_text()), saved)
+
+    def test_runtime_model_choices_preview_and_apply_without_secret_or_catalog_shortcut(self) -> None:
+        state = self.root / ".cstack"
+        state.mkdir()
+        models_path = state / "models.json"
+        options, plan = self._preview({"model_choices": {"bug-fix": {"runtime": "claude-code"}}})
+        self.assertIn(".cstack/models.json", {entry["path"] for entry in plan["files"]})
+        result = self._apply(options, plan)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(json.loads(models_path.read_text())["bug-fix"], {"runtime": "claude-code"})
+
+        explicit = {"model_choices": {"documentation": {
+            "runtime": "claude-code",
+            "model": "shared-slug",
+            "reasoning_effort": "sonnet",
+        }}}
+        rejected_without_catalog = self._cli("preview", options=self._options(explicit))
+        self.assertNotEqual(rejected_without_catalog.returncode, 0)
+        rejected_flat_catalog = self._cli("preview", options=self._options(explicit), catalog=self._catalog())
+        self.assertNotEqual(rejected_flat_catalog.returncode, 0)
+        options, plan = self._preview(explicit, catalog=self._runtime_catalog())
+        result = self._apply(options, plan, catalog=self._runtime_catalog())
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        saved = json.loads(models_path.read_text())
+        self.assertEqual(saved["bug-fix"], {"runtime": "claude-code"})
+        self.assertEqual(saved["documentation"], explicit["model_choices"]["documentation"])
 
     def test_write_error_rolls_back_and_interruption_can_resume_same_plan(self) -> None:
         options, plan = self._preview()

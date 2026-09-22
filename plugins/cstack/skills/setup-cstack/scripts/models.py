@@ -32,6 +32,8 @@ PANELS = {"arena runners": 3, "arena cross-judge pool": 1,
 ROLES = {role for _, _, roles in GROUPS.values() for role in roles}
 LEGACY_FALLBACKS = {"simple edits": "feature, refactoring",
                     "documentation": "judgment and prose"}
+RUNTIMES = {"codex-cli", "claude-code", "cursor-agent", "grok"}
+CODEX_NATIVE = "codex-native"
 
 
 class FrenchArgumentParser(argparse.ArgumentParser):
@@ -93,7 +95,40 @@ def selection(value):
                 and model != "inherit-parent" and isinstance(effort, str)
                 and effort and effort.strip() == effort):
             return dict(value)
-    raise ValueError("chaîne de modèle, inherit-parent ou {model, reasoning_effort} attendu")
+    if isinstance(value, dict) and set(value) in (
+        {"runtime"}, {"runtime", "model"}, {"runtime", "model", "reasoning_effort"}
+    ):
+        runtime = value["runtime"]
+        if not isinstance(runtime, str) or runtime not in RUNTIMES:
+            raise ValueError(f"runtime attendu parmi {', '.join(sorted(RUNTIMES))}")
+        if "model" not in value:
+            return {"runtime": runtime}
+        model = value["model"]
+        if not (isinstance(model, str) and model and model.strip() == model
+                and model != "inherit-parent"):
+            raise ValueError("model explicite attendu pour un runtime externe")
+        if "reasoning_effort" not in value:
+            return {"runtime": runtime, "model": model}
+        effort = value["reasoning_effort"]
+        if not (isinstance(effort, str) and effort and effort.strip() == effort):
+            raise ValueError("reasoning_effort non vide attendu")
+        return {"runtime": runtime, "model": model, "reasoning_effort": effort}
+    if isinstance(value, dict) and "reasoning_effort" in value and "model" not in value:
+        raise ValueError("reasoning_effort exige model explicite")
+    raise ValueError("chaîne de modèle, inherit-parent, {model, reasoning_effort} ou {runtime, model?, reasoning_effort?} attendu")
+
+
+def runtime_catalog(catalog, runtime):
+    if catalog is None:
+        return None
+    if isinstance(catalog, dict) and "runtimes" in catalog:
+        runtimes = catalog["runtimes"]
+        if isinstance(runtimes, dict):
+            return runtimes.get(runtime)
+        return None
+    if runtime == CODEX_NATIVE:
+        return catalog
+    return None
 
 
 def validate(config, catalog=None, check_available=False):
@@ -105,13 +140,15 @@ def validate(config, catalog=None, check_available=False):
         for entry in selections(role, value):
             try:
                 chosen = selection(entry)
-                if check_available and chosen:
+                if check_available and chosen and "model" in chosen:
+                    runtime = chosen.get("runtime", CODEX_NATIVE)
+                    scoped = runtime_catalog(catalog, runtime)
                     model = chosen["model"]
-                    if catalog is None or model not in catalog:
-                        raise ValueError(f"modèle indisponible ou non vérifié: {model}")
+                    if scoped is None or model not in scoped:
+                        raise ValueError(f"modèle indisponible ou non vérifié pour {runtime}: {model}")
                     effort = chosen.get("reasoning_effort")
-                    if effort is not None and effort not in catalog[model]:
-                        raise ValueError(f"effort de raisonnement non pris en charge: {model} / {effort}")
+                    if effort is not None and effort not in scoped[model]:
+                        raise ValueError(f"effort de raisonnement non pris en charge: {runtime} / {model} / {effort}")
             except ValueError as error:
                 raise ValueError(f"{role}: {error}") from error
 
@@ -124,6 +161,16 @@ def read_catalog(path):
     if isinstance(data, dict) and "models" in data:
         data = {row["slug"]: [level["effort"] for level in row["supported_reasoning_levels"]]
                 for row in data["models"] if row.get("visibility", "list") == "list"}
+    if isinstance(data, dict) and set(data) == {"runtimes"}:
+        runtimes = data["runtimes"]
+        if (isinstance(runtimes, dict) and set(runtimes) <= {CODEX_NATIVE, *RUNTIMES}
+                and all(isinstance(name, str) and isinstance(mapping, dict)
+                        and all(isinstance(model, str) and isinstance(levels, list)
+                                and all(isinstance(level, str) for level in levels)
+                                for model, levels in mapping.items())
+                        for name, mapping in runtimes.items())):
+            return data
+        raise ValueError("le catalogue runtimes doit mapper chaque runtime pris en charge vers ses modèles et efforts")
     if not isinstance(data, dict) or not all(
         isinstance(name, str) and isinstance(levels, list)
         and all(isinstance(level, str) for level in levels)

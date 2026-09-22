@@ -7,7 +7,9 @@ description: "Déploie N workers parallèles, récupère leurs résultats et ren
 
 Contrat d'exécution : [`../cstack/references/codex-runtime.md`](../cstack/references/codex-runtime.md).
 
-Déploie N sous-agents natifs parallèles. Ils peuvent couvrir des tranches séparées, courir sur le même brief, ou melanger les deux. Le parent attend, agrége et rend un rapport unique.
+Pour chaque sélection avec `runtime`, applique le [dispatch CLI](../cstack/references/runtime-workers.md) à la place du lancement natif. Conserve la taille et l’ordre du panel, le rôle spécialisé et les étapes de vérification. Les replis single-agent de ce document concernent seulement les sélections natives ; une position CLI bloquée n’est jamais remplacée silencieusement par Codex.
+
+Déploie N workers parallèles. Ils peuvent couvrir des tranches séparées, courir sur le même brief, ou melanger les deux. Le parent attend, agrége et rend un rapport unique.
 
 ## Démarrage
 
@@ -28,7 +30,7 @@ Suis un élément par phase dans la tâche courante avant de lancer quoi que ce 
 
 ## Phase B : Déployer
 
-Lance les N sous-agents natifs en parallèle. Chaque brief doit assigner une portée bornée et une propriété exclusive des fichiers quand le worker écrit. Utilise des portées en lecture seule pour l'investigation et la revue. La concurrence native limite le nombre d'exécutions simultanées. Mets les workers restants en file pour des vagues ultérieures. Si aucun emplacement de sous-agent n'est disponible, exécute chaque brief de worker dans la même session comme passe séparée et explicitement recadrée, étiquette le résultat `single-agent`, puis signale l'indépendance manquante. Le manque de capacité ne supprime jamais une tranche requise.
+Lance les N workers en parallèle, selon leur sélection native ou CLI. Chaque brief doit assigner une portée bornée et une propriété exclusive des fichiers quand le worker écrit. Utilise des portées en lecture seule pour l'investigation et la revue. La concurrence native limite le nombre d'exécutions simultanées. Mets les workers restants en file pour des vagues ultérieures. Si aucun emplacement de sous-agent n'est disponible, exécute chaque brief de worker dans la même session comme passe séparée et explicitement recadrée, étiquette le résultat `single-agent`, puis signale l'indépendance manquante. Le manque de capacité ne supprime jamais une tranche requise.
 
 Chaque brief tient seul. Inclus l'objectif, la portée, la tranche où le bras de course exact, comment vérifier, et quoi rapporter. Les rapports utilisent `PASS`, `ISSUES` ou `BLOCKED` avec preuves.
 
