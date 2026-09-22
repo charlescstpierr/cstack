@@ -164,7 +164,7 @@ def _tracker(raw: Any) -> dict[str, str]:
     return {"mode": mode}
 
 
-def _options(raw: Any, models: Any, catalog: dict[str, list[str]] | None) -> dict[str, Any]:
+def _options(raw: Any, models: Any, catalog: dict[str, Any] | None) -> dict[str, Any]:
     if raw is None:
         raw = {}
     if not isinstance(raw, dict) or set(raw) - {"model_choices", "tracker"}:
@@ -175,8 +175,6 @@ def _options(raw: Any, models: Any, catalog: dict[str, list[str]] | None) -> dic
     try:
         models.validate(choices)
         if choices:
-            if catalog is None:
-                raise ProjectError("un catalogue actuel est requis pour les choix de modèle explicites")
             models.validate(choices, catalog, check_available=True)
     except (TypeError, ValueError) as error:
         raise ProjectError(f"model_choices invalide: {error}") from error
@@ -293,7 +291,7 @@ def _payload(options: dict[str, Any], snapshots: dict[str, bytes | None], models
     return {"files": files, "observed": {path: _record(snapshots[path]) for path in OBSERVED_PATHS}}
 
 
-def _plan(workspace: Path, raw_options: Any, catalog: dict[str, list[str]] | None) -> dict[str, Any]:
+def _plan(workspace: Path, raw_options: Any, catalog: dict[str, Any] | None) -> dict[str, Any]:
     workspace = _workspace(workspace)
     models = _models()
     options = _options(raw_options, models, catalog)
@@ -407,7 +405,7 @@ def _restore(path: Path, old: bytes | None, new_hash: str) -> bool:
         return False
 
 
-def apply_plan(workspace: Path, supplied_plan: Any, raw_options: Any, catalog: dict[str, list[str]] | None, expected_plan_sha256: str | None = None) -> dict[str, Any]:
+def apply_plan(workspace: Path, supplied_plan: Any, raw_options: Any, catalog: dict[str, Any] | None, expected_plan_sha256: str | None = None) -> dict[str, Any]:
     workspace = _workspace(workspace)
     plan = _shape(supplied_plan)
     if expected_plan_sha256 is not None and expected_plan_sha256 != plan["plan_sha256"]:
@@ -483,10 +481,8 @@ def _json(path: Path) -> Any:
         raise ProjectError(f"impossible de lire le JSON {path}: {error}") from error
 
 
-def _catalog(path: Path | None, raw_options: Any) -> dict[str, list[str]] | None:
+def _catalog(path: Path | None, raw_options: Any) -> dict[str, Any] | None:
     if path is None:
-        if isinstance(raw_options, dict) and raw_options.get("model_choices"):
-            raise ProjectError("--catalog est requis pour les choix de modèle explicites")
         return None
     try:
         return _models().read_catalog(path)

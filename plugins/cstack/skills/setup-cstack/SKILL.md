@@ -54,6 +54,14 @@ python3 <absolute-plugin>/skills/setup-cstack/scripts/models.py --workspace <wor
 
 Sa sortie `show` fournit les choix exacts groupe-vers-rôle et les tailles de panel. Construis la carte de rôles sélectionnés seulement depuis les choix acceptés. Garde `.cstack/` non suivi sans remplacer les règles ignore existantes, puis relis et valide le résultat. Le modèle de la session parente reste inchange.
 
+## Runtimes facultatifs
+
+Les anciennes sélections et recommandations restent natives Codex. Pour un worker externe demandé, utilise le [contrat des workers CLI](../cstack/references/runtime-workers.md) : `codex-cli`, `claude-code` ou `grok`. Les panels peuvent mélanger ces sélections et l’héritage natif. Le coordinateur prépare les commandes et rend une synthèse unique ; l’utilisateur ne pilote pas chaque CLI manuellement.
+
+Une entrée `{ "runtime": "claude-code" }` utilise le défaut du CLI et ne nécessite aucun catalogue. Elle ne prouve pas que le CLI est installé, connecté ou disponible. Une entrée avec `model` exige une confirmation dans le catalogue de ce runtime ; `reasoning_effort` exige aussi `model`. N’utilise pas les recommandations OpenAI ni son catalogue pour valider Claude ou Grok. Le helper accepte le catalogue historique natif et la forme `{"runtimes":{"codex-native":{},"codex-cli":{},"claude-code":{},"cursor-agent":{},"grok":{}}}`, chaque objet associant des slugs confirmés à leurs efforts.
+
+Applique seulement les choix de runtime acceptés, via les mêmes commandes `show`, `preview` et `apply`. Ne change pas la configuration globale, ne copie aucun credential et ne lance ni login ni génération pendant le setup. La présence d’une commande officielle de login ne prouve pas les droits d’abonnement Grok Build.
+
 ## Recommandations
 
 Ces choix sont facultatifs et valides contre le catalogue live avant sélection :

@@ -1126,6 +1126,38 @@
     {
       "path": "plugins/cstack/sources/matt-pocock.json",
       "reason": "Registre de provenance des adaptations de Matt Pocock."
+    },
+    {
+      "path": "plugins/cstack/skills/cstack/references/runtime-workers.md",
+      "reason": "Contrat original de dispatch CLI, permissions et reçus des workers multi-runtime."
+    },
+    {
+      "path": "plugins/cstack/skills/cstack/scripts/runtime/runtime.ts",
+      "reason": "Lanceur original de workers CLI officiels sans accès aux credentials."
+    },
+    {
+      "path": "plugins/cstack/skills/cstack/scripts/runtime/runtime.test.ts",
+      "reason": "Vérification des vrais sous-processus simulés, erreurs et permissions du lanceur CLI."
+    },
+    {
+      "path": "plugins/cstack/skills/cstack/scripts/runtime/tsconfig.json",
+      "reason": "Vérification stricte des types du lanceur CLI et de ses tests."
+    },
+    {
+      "path": "plugins/cstack/skills/cstack/scripts/worker-context.ts",
+      "reason": "Contexte explicite des workers, snapshots vérifiables et tests de confinement."
+    },
+    {
+      "path": "plugins/cstack/skills/cstack/scripts/worker-context.test.ts",
+      "reason": "Contexte explicite des workers, snapshots vérifiables et tests de confinement."
+    },
+    {
+      "path": "plugins/cstack/skills/cstack/scripts/worker-skills.ts",
+      "reason": "Bundle textuel de skills CStack commun à tous les workers CLI, sans installation dans les autres clients."
+    },
+    {
+      "path": "plugins/cstack/skills/cstack/scripts/worker-skills.test.ts",
+      "reason": "Bundle textuel de skills CStack commun à tous les workers CLI, sans installation dans les autres clients."
     }
   ]
 }

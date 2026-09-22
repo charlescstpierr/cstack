@@ -1,6 +1,6 @@
 interface:
   display_name: "arena"
   short_description: "Comparer des propositions et en faire une synthèse"
-  default_prompt: "Utilise $cstack:arena pour cette tâche. Lance les candidats comme sous-agents natifs en parallèle."
+  default_prompt: "Utilise $cstack:arena pour cette tâche. Lance les candidats dans leurs runtimes configurés, natifs ou CLI, en parallèle."
 policy:
   allow_implicit_invocation: false

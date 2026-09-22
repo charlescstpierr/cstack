@@ -16,6 +16,8 @@ Le plugin expose 29 compétences. Ses [23 principes](docs/guide/08-principles.md
 
 Le [guide](docs/guide/README.md) présente les commandes et les processus. Le [contrat d’exécution natif](skills/cstack/references/codex-runtime.md) décrit les sous-agents, l'état local, les scripts et les limites des intégrations. Les webhooks Grok Bot et le [pack Benny](automations/benny/README.md) ne sont pas fournis comme services natifs.
 
+Les [workers CLI facultatifs](skills/cstack/references/runtime-workers.md) permettent de mélanger Codex natif, Codex CLI, Claude Code, Cursor CLI et Grok Build dans les panels existants. Le coordinateur conserve les briefs, worktrees, rapports et revues ; les CLI gèrent eux-mêmes leur login, sans credentials dans CStack.
+
 Les assistants TypeScript utilisent Bun et leurs dépendances verrouillées. Leur installation nécessite le registre de paquets ou un cache Bun déjà rempli. Le lanceur bash/Python 3.9 crée une copie temporaire distincte sous `.cstack/tools/` pour chaque invocation, puis la nettoie. Les opérations GitHub nécessitent `git` et `gh` authentifié. Aucun cache de plugin ni réglage global n'est modifié.
 
 Installation et sources : [charlescstpierr/cstack](https://github.com/charlescstpierr/cstack). Le dépôt est privé.

@@ -1,0 +1,171 @@
+{
+  "date": "2026-09-22",
+  "scope": "local-development",
+  "base_commit": "77f77b985ef9270f56d5dfd1a8c5a1ede33c5633",
+  "cases": [
+    {
+      "workflow": "arena",
+      "path": ".cstack/tasks/parity-completion/arena-project/.cstack/tasks/unique-by-id-arena/judge-receipt/result.json",
+      "sha256": "14bc64938f09f403a1d884e772dee8cb39d649eed62dda46b7be43c7d01ac808",
+      "runtime": "codex-cli",
+      "execution_status": "COMPLETED",
+      "worker_status": "PASS",
+      "runtime_version": "codex-cli 0.155.1",
+      "context_sha256": "ddb9a0e1d6fef5bf7f1e9f7eb982a787b9b50fa1f7eeeecad47c818986533bbe",
+      "skills_sha256": "de1579723d846f862c5dd05407f2c1b0ae2c6424b528d116e1f10f15edb84134"
+    },
+    {
+      "workflow": "arena",
+      "path": ".cstack/tasks/parity-completion/arena-project/.cstack/tasks/unique-by-id-arena/receipt-1/result.json",
+      "sha256": "5bd5fc43a82c3aae82c25605989fc9f958d66bbf774c4c3f46c51a1ce8b374fd",
+      "runtime": "codex-cli",
+      "execution_status": "COMPLETED",
+      "worker_status": "PASS",
+      "runtime_version": "codex-cli 0.155.1",
+      "context_sha256": "84f6c90e67ec333003a962c6489b926f1d8f6f988ca07ff78d7f5eac370d4a28",
+      "skills_sha256": "de1579723d846f862c5dd05407f2c1b0ae2c6424b528d116e1f10f15edb84134"
+    },
+    {
+      "workflow": "arena",
+      "path": ".cstack/tasks/parity-completion/arena-project/.cstack/tasks/unique-by-id-arena/receipt-2/result.json",
+      "sha256": "4cc7703e896ed46703f46497b5ce327dff56e347f5d14595e4a748eb41e6cc7c",
+      "runtime": "claude-code",
+      "execution_status": "COMPLETED",
+      "worker_status": "PASS",
+      "runtime_version": "2.1.273 (Claude Code)",
+      "context_sha256": "84f6c90e67ec333003a962c6489b926f1d8f6f988ca07ff78d7f5eac370d4a28",
+      "skills_sha256": "de1579723d846f862c5dd05407f2c1b0ae2c6424b528d116e1f10f15edb84134"
+    },
+    {
+      "workflow": "swarm",
+      "path": ".cstack/tasks/parity-completion/swarm-project/.cstack/swarm-inventory/alpha-attempt/result.json",
+      "sha256": "c4b6d725573afbff00c3f8b7ad9a54be87177a5303627c0fb994043e3c78288a",
+      "runtime": "codex-cli",
+      "execution_status": "COMPLETED",
+      "worker_status": "PASS",
+      "runtime_version": "codex-cli 0.155.1",
+      "context_sha256": "74ef93bb9a848750825320922a55988ac220fafb3ab0bb723ef54e0178a4c022",
+      "skills_sha256": "43477fd92d940f1468b6836c8cd7e1a52414893362ba3704cc6de3d49e09ea35"
+    },
+    {
+      "workflow": "swarm",
+      "path": ".cstack/tasks/parity-completion/swarm-project/.cstack/swarm-inventory/beta-attempt/result.json",
+      "sha256": "d2b268392ef33f7fa3dd558baeca2084ef8e5a28cc52b88593e04450e7dc3378",
+      "runtime": "claude-code",
+      "execution_status": "COMPLETED",
+      "worker_status": "PASS",
+      "runtime_version": "2.1.273 (Claude Code)",
+      "context_sha256": "6926b430c4b68f3bd4bc9b9397ca9d5130ea6c7608d25e219f43e2b5f6a72602",
+      "skills_sha256": "43477fd92d940f1468b6836c8cd7e1a52414893362ba3704cc6de3d49e09ea35"
+    },
+    {
+      "workflow": "swarm",
+      "path": ".cstack/tasks/parity-completion/swarm-project/.cstack/swarm-inventory/gamma-attempt/result.json",
+      "sha256": "3d33f8e413de2aa5d08fd8903d5f0303e3fcc1ba811a8401777acac3b641dc24",
+      "runtime": "codex-cli",
+      "execution_status": "COMPLETED",
+      "worker_status": "PASS",
+      "runtime_version": "codex-cli 0.155.1",
+      "context_sha256": "0ef6c05922861b61093606f60c592cb4719ad8b786263364e94a4fb416aa7cd0",
+      "skills_sha256": "43477fd92d940f1468b6836c8cd7e1a52414893362ba3704cc6de3d49e09ea35"
+    },
+    {
+      "workflow": "architect",
+      "path": ".cstack/tasks/parity-completion/architect-project/.cstack/architect-port/attempt-a/result.json",
+      "sha256": "ee91de3489b46fc0f7f67bf93e074fadfeabeb2a322d08bfed1ed6116560b69a",
+      "runtime": "codex-cli",
+      "execution_status": "COMPLETED",
+      "worker_status": "PASS",
+      "runtime_version": "codex-cli 0.155.1",
+      "context_sha256": "8ab511c0bddb3033c06b8c9471da4ffdf0482958a79b197202bb29301addc535",
+      "skills_sha256": "75c04dc2f8bcbb044ec0db9a8b2439b34023e22f83295ea0507cf63889ea2816"
+    },
+    {
+      "workflow": "architect",
+      "path": ".cstack/tasks/parity-completion/architect-project/.cstack/architect-port/attempt-b/result.json",
+      "sha256": "f2cad453d3a1e9d82ad89bfb0b3070ec49ed5bcc74fe857edf99857b00a25604",
+      "runtime": "claude-code",
+      "execution_status": "COMPLETED",
+      "worker_status": "PASS",
+      "runtime_version": "2.1.273 (Claude Code)",
+      "context_sha256": "8ab511c0bddb3033c06b8c9471da4ffdf0482958a79b197202bb29301addc535",
+      "skills_sha256": "75c04dc2f8bcbb044ec0db9a8b2439b34023e22f83295ea0507cf63889ea2816"
+    },
+    {
+      "workflow": "architect",
+      "path": ".cstack/tasks/parity-completion/architect-project/.cstack/architect-port/attempt-judge/result.json",
+      "sha256": "379bdbfd26bf7f661ef229ae4edd420de5b3fb622dbd710d8bfa0f6f13d2d9d3",
+      "runtime": "codex-cli",
+      "execution_status": "COMPLETED",
+      "worker_status": "PASS",
+      "runtime_version": "codex-cli 0.155.1",
+      "context_sha256": "3302fdce41218b47dec582094684dc8726f42a69afc56f0a5f509fd785fcd0d3",
+      "skills_sha256": "df286428e68487c6a7657e60fc530bae9ca41d8318a0acaee5825ac428d6b0bd"
+    }
+  ],
+  "artifacts": [
+    {
+      "path": ".cstack/tasks/parity-completion/arena-final.txt",
+      "sha256": "2ed06c4a070cdd239dbe7c7a0c5436136f077102d97a254bf7ea34a7c1e7e3ee"
+    },
+    {
+      "path": ".cstack/tasks/parity-completion/swarm-final.txt",
+      "sha256": "439efd29978672481a572655717e8a692e73d08e96a862ba8f6d84f570ed06eb"
+    },
+    {
+      "path": ".cstack/tasks/parity-completion/architect-final.txt",
+      "sha256": "d89722fd12964edeb2aa21570a4dcfd84dc51123c854487a13185aa5ccfb352d"
+    },
+    {
+      "path": ".cstack/tasks/parity-completion/orchestrate-proof.json",
+      "sha256": "27121eb2113a335adf4132d93e4971eb1d992e4f7f233f6c93079ecaf290eaea"
+    },
+    {
+      "path": ".cstack/tasks/parity-completion/ledger-parent-check-2.json",
+      "sha256": "1686196023aca766f5d6f98dec53c6374350a510634540215b3e2b1eaf182714"
+    },
+    {
+      "path": ".cstack/tasks/parity-completion/swarm-project/.cstack/swarm-inventory/waves.jsonl",
+      "sha256": "b78e4abb5e5f51d6dae17c153eb0b184c104c4e26c67cdcd719ace484f9ff234"
+    },
+    {
+      "path": ".cstack/tasks/parity-completion/swarm-project/.cstack/swarm-inventory/verification.json",
+      "sha256": "6795ec43a578309c32d16474748e7f03f653b2eba4647c99ed46752634a92ac7"
+    }
+  ],
+  "source_hashes_at_collection": [
+    {
+      "path": "plugins/cstack/skills/cstack/scripts/worker-skills.ts",
+      "sha256": "c5b29e158d5cd47b337d9db739c1bfd20de983798026e2984ac5006a1f06b602"
+    },
+    {
+      "path": "plugins/cstack/skills/cstack/scripts/runtime/runtime.ts",
+      "sha256": "d5b94d6ea737c00d640ec05848174a897c4350d5d79251b89c233d519caa8a40"
+    },
+    {
+      "path": "plugins/cstack/skills/arena/SKILL.md",
+      "sha256": "dbd565847e3ae594404aa62ff112520e7a31c37f765d70c8d227de2b2837aa5d"
+    },
+    {
+      "path": "plugins/cstack/skills/swarm/SKILL.md",
+      "sha256": "34e6565385bad2c1fc7691b92d4fca1e00ae20fd06f20812d3174ee7841cd560"
+    }
+  ],
+  "validation": {
+    "python_pass": 55,
+    "python_skipped": 1,
+    "bun_root_pass": 7,
+    "bun_helper_pass": 129,
+    "shipped_skill_bundles": 29
+  },
+  "limits": [
+    "Local raw receipts are ignored task artifacts; this manifest preserves their hashes.",
+    "Arena preceded the reference-closure fix; each receipt preserves its actual skill snapshot hash.",
+    "Orchestrate proves local inbox/unit/ledger persistence with a synthetic PR ID, not a GitHub merge.",
+    "Swarm fixture is read-only; Arena proves writer worktrees.",
+    "Architect is a design-only scenario, not an implemented port parser.",
+    "Claude has file tools; VERIFY commands run independently in the parent.",
+    "Grok and Cursor connected validation remains deferred by user request.",
+    "Installed plugin was not replaced; scenarios invoke the local source."
+  ]
+}
