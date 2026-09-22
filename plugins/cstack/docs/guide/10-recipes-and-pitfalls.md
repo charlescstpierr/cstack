@@ -68,7 +68,7 @@ $cstack:cstack Corrige ce bug. Délègue le travail indépendant à des sous-age
 
 Si un acteur unique persiste, vérifiez dans l'ordre :
 
-1. La réponse porte-t-elle l'étiquette `single-agent` et signale-t-elle l'indépendance manquante ? C'est le repli prévu quand l'hôte n'expose aucun emplacement. Son absence indique autre chose.
+1. La réponse porte-t-elle l'étiquette `single-agent` et signale-t-elle l'indépendance manquante ? C'est le repli prévu, et il couvre deux cas : votre demande excluait la délégation, ou l'hôte n'exposait aucun emplacement. La raison nommée à côté de l'étiquette dit lequel. Son absence indique autre chose.
 2. Votre configuration Codex autorise-t-elle les agents, et sa limite de threads simultanés dépasse-t-elle un ?
 3. Votre version de CLI est-elle récente ? Les essais du dépôt ont observé des sous-agents terminés en `0.153.4`.
 

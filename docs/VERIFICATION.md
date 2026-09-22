@@ -24,18 +24,6 @@ Les preuves JSON sous `docs/evidence/` portent `scope: historical`. Leurs emprei
 
 Environnement de ces campagnes : Linux, Codex CLI 0.153.4, Bun 1.4.0, Python 3.13. Dates les 9, 10 et 11 septembre 2026.
 
-### Ventilation d'ancrage par défaut
-
-L'Étape 1 de `how` exige désormais d'écrire les angles avant de choisir le chemin. Deux angles aux listes de fichiers disjointes envoient la question vers les explorateurs parallèles. La passe unique est une exception qui nomme son test : cible unique, fichiers indissociables ou délégation exclue.
-
-Le scénario `readonly_explanation_*` conserve zéro enfant attendu. Son prompt interdit explicitement la délégation ; il vérifie maintenant le test « délégation exclue » plutôt que l'ancien chemin simple par défaut. Aucun scénario de comportement n'a été exécuté pour cette révision ; le harnais natif exige un modèle Codex réel et vit hors intégration continue.
-
-Une relecture des preuves de `docs/evidence/0.3.0.json` établit un fait qui n'avait pas été relevé. Sur les treize scénarios, les quatre qui ont lancé des enfants sont exactement les quatre dont la demande utilisateur réclamait la délégation : `interrogate` deux fois avec « Utilise le panel de réviseurs configuré », `horizon` avec « Affecte un sous-agent natif de recherche à chaque ticket de recherche prêt », et `audit-architecture` avec « Utilise au plus un explorateur borné ». Les neuf autres l'interdisaient explicitement ou n'en parlaient pas, et valent zéro enfant. Aucune mesure enregistrée ne montre le texte d'une compétence déclenchant seul une délégation.
-
-Cette corrélation est mesurée, pas inférée ; son mécanisme, lui, est inféré d'une consigne d'outil de l'hôte qui prime sur le texte de compétence. Les `default_prompt` des compétences qui délèguent portent désormais cette demande, et trois d'entre eux reprennent mot pour mot les formulations ci-dessus. L'effet de ce changement n'est pas mesuré : il faut un essai natif où la demande vient du prompt par défaut et non du corps de la consigne.
-
-Le trou de couverture reste ouvert. Les deux seules exécutions de `how` enregistrées interdisent la délégation par construction, donc aucun scénario existant ne peut détecter une régression de ventilation de `how`.
-
 Les empreintes de `how/SKILL.md` enregistrées dans les preuves antérieures ne correspondent plus à cet arbre. C'est attendu : ces manifestes portent `scope: historical` et décrivent leur commit tamponné.
 
 Cette révision ne revendique aucun gain mesuré de qualité, de durée ni de tokens. Elle change un défaut de routage et son étiquetage.
@@ -132,6 +120,22 @@ Une comparaison indépendante, sans identité des variantes, n’a relevé aucun
 Les neuf créations d’enfants transmettent `gpt-5.6-luna` et `max`, et leurs terminaisons sont enregistrées. Leur fermeture éphémère empêche ensuite `thread/read` : ce résultat prouve les champs transmis et les travaux terminés, pas une mesure indépendante du modèle effectif de chaque enfant. Le test natif de la configuration précède la dernière garde contre une édition concurrente ; cette garde est couverte par son test de régression et la suite Python complète.
 
 Les premiers essais invalidés par le banc (questions nulles, héritage du mauvais dépôt Git, lecture d’un enfant déjà fermé) et les interruptions à 300 secondes sont conservés localement, mais exclus de ces 13 résultats. Les essais longs retenus utilisent une limite explicite de 900 secondes par tour. Ces scénarios synthétiques ne garantissent pas l’absence de toute régression et ne démontrent aucun gain général de tokens. Les traces brutes et le journal de décisions restent sous `.cstack/tasks/horizon-project-setup/` ; le JSON publié contient leurs empreintes.
+
+## Révision en attente, non mesurée
+
+Cette section ne relève d'aucune campagne. Aucun essai natif n'a été exécuté pour la révision décrite ; son environnement et ses dates ne sont donc pas ceux épinglés plus haut.
+
+### Ventilation d'ancrage et demande de délégation
+
+L'Étape 1 de `how` exige désormais d'écrire les angles avant de choisir le chemin. Deux angles aux listes de fichiers disjointes envoient la question vers les explorateurs parallèles. La passe unique est une exception qui nomme son test : cible unique, fichiers indissociables ou délégation exclue.
+
+Le scénario `readonly_explanation_*` conserve zéro enfant attendu. Son prompt interdit explicitement la délégation ; il vérifie maintenant le test « délégation exclue » plutôt que l'ancien chemin simple par défaut. Aucun scénario de comportement n'a été exécuté pour cette révision ; le harnais natif exige un modèle Codex réel et vit hors intégration continue.
+
+Une relecture des preuves de `docs/evidence/0.3.0.json` établit un fait qui n'avait pas été relevé. Sur les treize scénarios, les quatre qui ont lancé des enfants sont exactement les quatre dont la demande utilisateur réclamait la délégation : `interrogate` deux fois avec « Utilise le panel de réviseurs configuré », `horizon` avec « Affecte un sous-agent natif de recherche à chaque ticket de recherche prêt », et `audit-architecture` avec « Utilise au plus un explorateur borné ». Les neuf autres l'interdisaient explicitement ou n'en parlaient pas, et valent zéro enfant. Aucune mesure enregistrée ne montre le texte d'une compétence déclenchant seul une délégation.
+
+Cette corrélation est mesurée, pas inférée ; son mécanisme, lui, est inféré d'une consigne d'outil de l'hôte qui prime sur le texte de compétence. Les `default_prompt` des compétences qui délèguent portent désormais cette demande, et trois d'entre eux reprennent le noyau des formulations ci-dessus, en y ajoutant la nature native du délégué. L'effet de ce changement n'est pas mesuré : il faut un essai natif où la demande vient du prompt par défaut et non du corps de la consigne.
+
+Le trou de couverture reste ouvert. Les deux seules exécutions de `how` enregistrées interdisent la délégation par construction, donc aucun scénario existant ne peut détecter une régression de ventilation de `how`.
 
 ## Historique des versions précédentes
 

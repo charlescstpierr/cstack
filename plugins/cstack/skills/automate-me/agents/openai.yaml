@@ -1,6 +1,6 @@
 interface:
   display_name: "automate-me"
   short_description: "Créer un mode personnel depuis les habitudes"
-  default_prompt: "Utilise $cstack:automate-me pour cette tâche."
+  default_prompt: "Utilise $cstack:automate-me pour cette tâche. Délègue les tranches d'historique à des sous-agents natifs en parallèle."
 policy:
   allow_implicit_invocation: false

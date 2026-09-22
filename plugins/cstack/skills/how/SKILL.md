@@ -25,7 +25,7 @@ Si la portée est ambiguë, indique ton interprétation et explore. L'utilisateu
 
 Écris les angles avant de choisir le chemin. Un angle est une tranche du sous-système avec sa propre liste de fichiers à lire. Vise 2 à 4 angles.
 
-Deux angles ou plus dont les listes de fichiers ne se recouvrent pas : va à l'Étape 2a. C'est le chemin par défaut. Une portée large, une zone inconnue ou une première lecture produisent plusieurs angles ; elles ne justifient pas la passe unique.
+Deux angles ou plus : va à l'Étape 2a. C'est le chemin par défaut. Un recouvrement partiel entre leurs listes de fichiers ne change rien ; retire le fichier commun de toutes les tranches sauf une et garde les angles. Une portée large, une zone inconnue ou une première lecture produisent plusieurs angles ; elles ne justifient pas la passe unique.
 
 Un seul angle : va à l'Étape 2b. Cette sortie exige un des trois tests ci-dessous. Nomme dans ta réponse celui qui s'applique, sous la forme `single-pass: <test>`.
 
@@ -43,7 +43,9 @@ Chaque explorer reçoit le prompt dans `references/explorer-prompt.md` avec son 
 
 ## Étape 2b. Expliquer en une passe (exception nommée)
 
-Lance un subagent natif en lecture seule qui explore et explique en une passe. Quand le test `Délégation exclue` s'applique, exécute cette passe dans la session courante, étiquette le résultat `single-agent` et signale l'indépendance manquante. Il hérite du modèle parent par défaut. Si `.cstack/models.json` définit `how explainer`, suis le contrat runtime et ne substitue pas silencieusement une surcharge explicite indisponible.
+Quand le test `Délégation exclue` t'a envoyé ici, exécute cette passe dans la session courante, étiquette le résultat `single-agent` et signale l'indépendance manquante. Ne lance aucun subagent dans ce cas.
+
+Sinon, lance un subagent natif en lecture seule qui explore et explique en une passe. Il hérite du modèle parent par défaut. Si `.cstack/models.json` définit `how explainer`, suis le contrat runtime et ne substitue pas silencieusement une surcharge explicite indisponible.
 
 Construis son prompt depuis `references/explainer-prompt.md` sans la section des résultats d'explorers. Va à l'Étape 4.
 

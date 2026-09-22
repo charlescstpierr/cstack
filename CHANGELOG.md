@@ -4,7 +4,7 @@ Les versions suivent SemVer. Le format suit [Keep a Changelog](https://keepachan
 
 ## À publier
 
-- Les compétences qui délèguent portent la demande de délégation dans leur `default_prompt`. Codex exige cette demande dans le tour de l’utilisateur ; une instruction de SKILL.md ne suffit pas à faire partir un sous-agent. Les preuves de `docs/evidence/0.3.0.json` le montrent sur treize scénarios. Trois prompts reprennent mot pour mot les formulations mesurées à enfants non nuls. Le contrat d’exécution et le guide décrivent la contrainte réelle et son dépannage.
+- Les compétences qui délèguent portent la demande de délégation dans leur `default_prompt`. Codex exige cette demande dans le tour de l’utilisateur ; une instruction de SKILL.md ne suffit pas à faire partir un sous-agent. Les preuves de `docs/evidence/0.3.0.json` le montrent sur treize scénarios. Trois prompts reprennent le noyau des formulations mesurées à enfants non nuls. Le contrat d’exécution et le guide décrivent la contrainte réelle et son dépannage.
 
 - `how` ventile par défaut. Son Étape 1 exige d’écrire les angles d’exploration avant de choisir le chemin : deux angles aux fichiers disjoints lancent les explorateurs parallèles. La passe unique devient une exception qui nomme son test — cible unique, fichiers indissociables ou délégation exclue — et l’étiquette `single-pass: <test>`. Les guides d’exécution d’ancrage, `architect` et `swarm` suivent le même défaut.
 
