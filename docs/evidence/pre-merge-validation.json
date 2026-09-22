@@ -1,0 +1,43 @@
+{
+  "date": "2026-09-22",
+  "tested_commit": "cc22453dd81299368dd60adaf879f372dca6e338",
+  "scope": "local-source; connected read-only smoke, not installed-plugin validation",
+  "cases": [
+    {
+      "runtime": "codex-cli",
+      "receipt_path": ".cstack/tasks/pre-merge-validation/codex-cli/result.json",
+      "receipt_sha256": "ff8bb892c64e4c8b37d96cce424d1f0b8b0a87384d4e3f8d5bdad45c016d107a",
+      "version": "codex-cli 0.155.1",
+      "duration_ms": 21630,
+      "context_sha256": "74ef93bb9a848750825320922a55988ac220fafb3ab0bb723ef54e0178a4c022",
+      "skills_sha256": "fddfcab7dff90878c4538d804822974615db225ba0b62699270e0e297efe079d",
+      "execution_status": "COMPLETED",
+      "worker_status": "PASS"
+    },
+    {
+      "runtime": "claude-code",
+      "receipt_path": ".cstack/tasks/pre-merge-validation/claude-code/result.json",
+      "receipt_sha256": "c7893ea5e96312a6d25aabcf1e0f7269663a0a30673fd5d111c26fd97eb77dda",
+      "version": "2.1.273 (Claude Code)",
+      "duration_ms": 16311,
+      "context_sha256": "74ef93bb9a848750825320922a55988ac220fafb3ab0bb723ef54e0178a4c022",
+      "skills_sha256": "fddfcab7dff90878c4538d804822974615db225ba0b62699270e0e297efe079d",
+      "execution_status": "COMPLETED",
+      "worker_status": "PASS"
+    }
+  ],
+  "checks": {
+    "same_context": true,
+    "same_skills": true,
+    "expected_markers_present": true,
+    "source_unchanged": true,
+    "prior_workflow_artifact_hashes_verified": true,
+    "python_pass": 55,
+    "python_skip": 1,
+    "bun_root_pass": 7,
+    "bun_helpers_pass": 129,
+    "typecheck": "PASS",
+    "package_validation": "PASS",
+    "shell_syntax": "PASS"
+  }
+}

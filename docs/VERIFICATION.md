@@ -35,6 +35,10 @@ Contrôles après correction : 55 tests Python passants et un ignoré ; 7 tests 
 
 Le problème Bash de Claude a aussi été reproduit sans modèle dans le helper officiel `apply-seccomp` : l’hôte refuse l’écriture `setgroups` dans le namespace utilisateur restreint par AppArmor. Aucune politique système ni sandbox n’a été désactivé. La boucle livrée conserve les outils de fichiers Claude et l’exécution de VERIFY par le parent, avec retour des erreurs au worker.
 
+## Contrôle avant fusion, 22 septembre 2026
+
+La suite complète a été relancée sur `cc22453` : 191 tests passants, un ignoré, types et validations du paquet passants. Deux nouveaux appels connectés via le lanceur officiel CStack ont terminé avec Codex et Claude. Ils ont reçu les mêmes snapshots de contexte et de skills, retrouvé les marqueurs attendus et laissé le projet intact. Les empreintes des preuves Arena, Swarm, Architect et Orchestrate précédentes ont été revérifiées ; le test fonctionnel Arena a été réexécuté. Les [reçus avant fusion](evidence/pre-merge-validation.json) consignent cette campagne. Cela ne remplace pas les limites et la distinction avec le plugin installé décrites plus haut.
+
 ## État 0.4.0
 
 Cette section décrit une campagne datée, pas l'état courant de HEAD. Mesures du 12 septembre 2026, arbre commité de la branche `feat/pstack-parity-deslop`, Python 3.9.6, Bun 1.4.2. Plugin `0.4.0`. Version amont épinglée de pstack `0.15.2`, commit `889ec4b68fa5aab0e867dad71ec3fdf386ae48f3`.
