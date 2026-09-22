@@ -137,6 +137,27 @@ Cette corrélation est mesurée, pas inférée ; son mécanisme, lui, est infér
 
 Le trou de couverture reste ouvert. Les deux seules exécutions de `how` enregistrées interdisent la délégation par construction, donc aucun scénario existant ne peut détecter une régression de ventilation de `how`.
 
+### Essai A/B de l'Étape 1, hors Codex
+
+Le routage de l'Étape 1 est une décision de modèle, pas une capacité d'hôte. Il a donc été mesuré sans Codex, en donnant le seul texte de la compétence à un modèle d'usage général et en lui demandant quel chemin il prend. Le modèle sous test n'est pas celui de Codex : la mesure porte sur l'effet du texte, sa généralisation à Codex reste inférée. Chaque essai est indépendant, à consigne identique, variantes en aveugle.
+
+Deux projets jetables ont servi de banc : quatre fichiers de quinze lignes, puis quinze fichiers de cent quatre-vingt-neuf lignes répartis en sept modules.
+
+| Banc et question | Texte antérieur | Texte livré | Texte resserré |
+| --- | --- | --- | --- |
+| Petit banc, champ traversant | 0/3 ventilent | 1/3 | non mesuré |
+| Petit banc, fonction nommée | 0/2 | 0/2 | non mesuré |
+| Petit banc, architecture entière | 1/1 | 1/1 | non mesuré |
+| Grand banc, remontée d'erreur | **4/4** | **1/4** | **4/4** |
+| Grand banc, fonction nommée | non mesuré | non mesuré | 0/2 |
+| Grand banc, fonction nommée à réponse transversale | 0/3 | 0/3 | non mesuré |
+
+Le texte livré en 0.4.0 **régresse** sur le cas qui compte : une remontée d'erreur traversant quatre modules partait en quatre explorateurs sur quatre essais avec le texte antérieur, et sur un seul essai sur quatre avec le texte livré. Trois des quatre essais invoquent le test « Fichiers indissociables » pour décrire une chaîne d'appels de cinq fichiers, ce que ce test n'était pas censé couvrir. Une sortie trop facile placée exactement sur les questions transversales annule le défaut ventilé.
+
+Le test resserré exige que les fichiers tiennent dans un seul module et exclut explicitement les chaînes d'appels inter-modules ; l'énoncé du chemin par défaut nomme les flux transversaux. Il rétablit quatre essais sur quatre sans toucher au contrôle étroit, qui reste en passe unique avec sa raison nommée sur deux essais sur deux.
+
+Ces essais ne mesurent ni durée, ni jetons, ni qualité d'explication. Ils mesurent un choix de chemin.
+
 ## Historique des versions précédentes
 
 ### Base upstream

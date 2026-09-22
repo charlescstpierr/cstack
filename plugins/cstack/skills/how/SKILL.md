@@ -25,12 +25,12 @@ Si la portée est ambiguë, indique ton interprétation et explore. L'utilisateu
 
 Écris les angles avant de choisir le chemin. Un angle est une tranche du sous-système avec sa propre liste de fichiers à lire. Vise 2 à 4 angles.
 
-Deux angles ou plus : va à l'Étape 2a. C'est le chemin par défaut. Un recouvrement partiel entre leurs listes de fichiers ne change rien ; retire le fichier commun de toutes les tranches sauf une et garde les angles. Une portée large, une zone inconnue ou une première lecture produisent plusieurs angles ; elles ne justifient pas la passe unique.
+Deux angles ou plus : va à l'Étape 2a. C'est le chemin par défaut. Un recouvrement partiel entre leurs listes de fichiers ne change rien ; retire le fichier commun de toutes les tranches sauf une et garde les angles. Une portée large, une zone inconnue ou une première lecture produisent plusieurs angles ; elles ne justifient pas la passe unique. Un flux qui traverse plusieurs modules, une remontée d'erreur ou toute fonctionnalité transversale produisent toujours plusieurs angles : découpe-les par module.
 
 Un seul angle : va à l'Étape 2b. Cette sortie exige un des trois tests ci-dessous. Nomme dans ta réponse celui qui s'applique, sous la forme `single-pass: <test>`.
 
 - **Cible unique.** La question nomme une seule fonction, un seul type ou un seul fichier, et tu peux citer ce chemin avant d'explorer.
-- **Fichiers indissociables.** Toute seconde tranche relirait les mêmes fichiers que la première.
+- **Fichiers indissociables.** Les fichiers à lire tiennent dans un seul module et aucune seconde tranche n'aurait de fichier à elle. Une chaîne d'appels qui traverse plusieurs modules ne satisfait jamais ce test.
 - **Délégation exclue.** La demande de l'utilisateur, le mode courant ou les permissions de la session interdisent les sous-agents.
 
 Aucun test satisfait : va à l'Étape 2a. Une impression de simplicité n'est pas un test.
