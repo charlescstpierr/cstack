@@ -19,28 +19,35 @@ Suis le chemin d'héritage direct du contrat runtime quand rien n'est configuré
 
 Un subagent manquant sérialise une étape. Il ne la retire jamais. Quand aucun slot de subagent n'est disponible, exécute la passe explorer, explainer ou synthesizer dans la même session comme passe séparée et explicitement recadrée, étiquette le résultat `single-agent`, et signale l'indépendance manquante.
 
-## Étape 1. Évaluer la complexité
+## Étape 1. Poser les angles
 
 Si la portée est ambiguë, indique ton interprétation et explore. L'utilisateur peut rediriger.
 
-- **Simple** (un seul module, un petit utilitaire, une question étroite comme "comment fonctionne la fonction X") : pas d'explorers. Un explainer explore et explique en une seule passe. Va à l'Étape 2b.
-- **Complexe** (un sous-système couvrant plusieurs fichiers ou services, une fonctionnalité transversale, une vue architecturale complète) : lance d'abord des explorers parallèles, puis transmets à l'explainer. Va à l'Étape 2a.
+Écris les angles avant de choisir le chemin. Un angle est une tranche du sous-système avec sa propre liste de fichiers à lire. Vise 2 à 4 angles.
 
-En cas de doute, prends le chemin simple.
+Deux angles ou plus dont les listes de fichiers ne se recouvrent pas : va à l'Étape 2a. C'est le chemin par défaut. Une portée large, une zone inconnue ou une première lecture produisent plusieurs angles ; elles ne justifient pas la passe unique.
 
-## Étape 2a. Explorer (questions complexes seulement)
+Un seul angle : va à l'Étape 2b. Cette sortie exige un des trois tests ci-dessous. Nomme dans ta réponse celui qui s'applique, sous la forme `single-pass: <test>`.
 
-Décompose la question en 2 à 4 angles d'exploration, chacun étant une tranche distincte du sous-système. Lance des subagents natifs en lecture seule en parallèle. Ils héritent du modèle parent par défaut. Si `.cstack/models.json` définit `how explorer`, suis le contrat runtime et ne substitue pas silencieusement une surcharge explicite indisponible.
+- **Cible unique.** La question nomme une seule fonction, un seul type ou un seul fichier, et tu peux citer ce chemin avant d'explorer.
+- **Fichiers indissociables.** Toute seconde tranche relirait les mêmes fichiers que la première.
+- **Délégation exclue.** La demande de l'utilisateur, le mode courant ou les permissions de la session interdisent les sous-agents.
+
+Aucun test satisfait : va à l'Étape 2a. Une impression de simplicité n'est pas un test.
+
+## Étape 2a. Explorer en parallèle (chemin par défaut)
+
+Décompose la question en 2 à 4 angles d'exploration, chacun étant une tranche distincte du sous-système. Lance des subagents natifs en lecture seule en parallèle. Ils héritent du modèle parent par défaut. Si `.cstack/models.json` définit `how explorer`, suis le contrat runtime et ne substitue pas silencieusement une surcharge explicite indisponible. Ne dépasse pas 4 explorers, reste dans la limite de la concurrence native et mets l'excédent en file. Les explorers ne lancent pas de descendants et retournent des findings structurés, pas des dumps de fichiers.
 
 Chaque explorer reçoit le prompt dans `references/explorer-prompt.md` avec son angle rempli. Va ensuite à l'Étape 3.
 
-## Étape 2b. Expliquer directement (questions simples)
+## Étape 2b. Expliquer en une passe (exception nommée)
 
-Lance un subagent natif en lecture seule qui explore et explique en une passe. Il hérite du modèle parent par défaut. Si `.cstack/models.json` définit `how explainer`, suis le contrat runtime et ne substitue pas silencieusement une surcharge explicite indisponible.
+Lance un subagent natif en lecture seule qui explore et explique en une passe. Quand le test `Délégation exclue` s'applique, exécute cette passe dans la session courante, étiquette le résultat `single-agent` et signale l'indépendance manquante. Il hérite du modèle parent par défaut. Si `.cstack/models.json` définit `how explainer`, suis le contrat runtime et ne substitue pas silencieusement une surcharge explicite indisponible.
 
 Construis son prompt depuis `references/explainer-prompt.md` sans la section des résultats d'explorers. Va à l'Étape 4.
 
-## Étape 3. Synthétiser (questions complexes seulement)
+## Étape 3. Synthétiser (après l'Étape 2a)
 
 Une fois tous les explorers revenus, lance un subagent natif en lecture seule pour synthétiser leurs résultats en une seule explication. Il hérite du modèle parent par défaut. Si `.cstack/models.json` définit `how explainer`, suis le contrat runtime et ne substitue pas silencieusement une surcharge explicite indisponible.
 
