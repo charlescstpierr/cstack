@@ -4,6 +4,8 @@ Les versions suivent SemVer. Le format suit [Keep a Changelog](https://keepachan
 
 ## À publier
 
+- `how` ventile par défaut. Son Étape 1 exige d’écrire les angles d’exploration avant de choisir le chemin : deux angles aux fichiers disjoints lancent les explorateurs parallèles. La passe unique devient une exception qui nomme son test — cible unique, fichiers indissociables ou délégation exclue — et l’étiquette `single-pass: <test>`. Les guides d’exécution d’ancrage, `architect` et `swarm` suivent le même défaut.
+
 - `watch-pr` distingue les branches homonymes de dépôts différents : un fork ne peut plus remplacer le vrai parent et produire un faux verdict `READY`. Les identités absentes et les parents ambigus bloquent la découverte.
 - Un handle d’orchestration dépossédé refuse les nouvelles opérations nécessitant le verrou. La limite de `--force` sur une opération déjà engagée reste documentée.
 - Le redémarrage direct de bootstrap conserve les options Bun, notamment `--no-env-file` et `--config`, ainsi que les arguments utilisateur.

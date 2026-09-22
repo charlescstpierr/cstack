@@ -24,6 +24,16 @@ Les preuves JSON sous `docs/evidence/` portent `scope: historical`. Leurs emprei
 
 Environnement de ces campagnes : Linux, Codex CLI 0.153.4, Bun 1.4.0, Python 3.13. Dates les 9, 10 et 11 septembre 2026.
 
+### Ventilation d'ancrage par défaut
+
+L'Étape 1 de `how` exige désormais d'écrire les angles avant de choisir le chemin. Deux angles aux listes de fichiers disjointes envoient la question vers les explorateurs parallèles. La passe unique est une exception qui nomme son test : cible unique, fichiers indissociables ou délégation exclue.
+
+Le scénario `readonly_explanation_*` conserve zéro enfant attendu. Son prompt interdit explicitement la délégation ; il vérifie maintenant le test « délégation exclue » plutôt que l'ancien chemin simple par défaut. Aucun scénario de comportement n'a été exécuté pour cette révision ; le harnais natif exige un modèle Codex réel et vit hors intégration continue.
+
+Les empreintes de `how/SKILL.md` enregistrées dans les preuves antérieures ne correspondent plus à cet arbre. C'est attendu : ces manifestes portent `scope: historical` et décrivent leur commit tamponné.
+
+Cette révision ne revendique aucun gain mesuré de qualité, de durée ni de tokens. Elle change un défaut de routage et son étiquetage.
+
 ### Nettoyage après livraison
 
 Le guide d'exécution de nettoyage reprend les contrôles de propriété, d'usage et de préservation de [pstack](https://github.com/cursor/plugins/blob/889ec4b68fa5aab0e867dad71ec3fdf386ae48f3/pstack/skills/poteto-mode/playbooks/worktree-cleanup.md). Le coordinateur l'appelle après une livraison autorisée, fusionnée et vérifiée. Les worktrees admissibles sont retirés sans confirmation supplémentaire et sans suppression forcée ; les branches, références de récupération et preuves sont conservées.

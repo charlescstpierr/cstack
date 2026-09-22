@@ -40,7 +40,7 @@ $cstack:setup-cstack
 
 Le mode reste actif dans la tâche jusqu'à une demande de désactivation, par exemple « arrête cstack ». Les compétences spécialisées restent utilisables à la demande. Le mode Plan, les instructions du projet et les autorisations Codex restent prioritaires.
 
-Le catalogue contient 29 compétences. Les 23 principes sont des [références internes](plugins/cstack/docs/guide/08-principles.md), consultées seulement lorsqu'elles sont utiles au travail ou que vous nommez un principe. Leurs anciennes commandes individuelles disparaissent du sélecteur. Par exemple, utilisez `$cstack:cstack applique le principe « Discipline aux frontières » à cette validation`. Les tâches simples s'exécutent directement ; une exploration, une comparaison d'architectures ou des sous-agents s'ajoutent quand le travail le justifie.
+Le catalogue contient 29 compétences. Les 23 principes sont des [références internes](plugins/cstack/docs/guide/08-principles.md), consultées seulement lorsqu'elles sont utiles au travail ou que vous nommez un principe. Leurs anciennes commandes individuelles disparaissent du sélecteur. Par exemple, utilisez `$cstack:cstack applique le principe « Discipline aux frontières » à cette validation`. Une question d'architecture ou de flux de code part par défaut en exploration parallèle puis synthèse ; une question qui nomme une seule fonction ou un seul fichier reste sur une passe unique, et la réponse indique laquelle.
 
 Trois nettoyages, trois cibles. `$cstack:deslop` retire le poids d'un diff de code avant commit. `$cstack:unslop` nettoie la prose. `$cstack:no-comments` confie les commentaires à un relecteur qui ne les a pas écrits.
 

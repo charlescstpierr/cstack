@@ -8,7 +8,7 @@ Dans le sélecteur, cherchez `$cstack` et choisissez **cstack**. Pour une comman
 
 Activez `$cstack:cstack` dans une tâche pour choisir un processus d'investigation, d'implémentation, de revue ou de livraison vérifiée. Le mode reste limité à cette tâche et se désactive sur demande. L'installation seule n'active aucune compétence.
 
-Le plugin expose 29 compétences. Ses [23 principes](docs/guide/08-principles.md) sont des références consultées au besoin, sans commandes individuelles dans le sélecteur. Pour en demander un, nommez-le dans votre demande à `$cstack:cstack`. Les tâches simples s'exécutent directement ; les processus d'exploration, de conception et de délégation restent disponibles quand ils apportent une information ou une vérification utile.
+Le plugin expose 29 compétences. Ses [23 principes](docs/guide/08-principles.md) sont des références consultées au besoin, sans commandes individuelles dans le sélecteur. Pour en demander un, nommez-le dans votre demande à `$cstack:cstack`. L'ancrage d'une question de code part en exploration parallèle par défaut, puis en synthèse ; une cible unique nommée reste sur une passe unique.
 
 `$cstack:deslop` nettoie un diff de code avant commit. `$cstack:unslop` nettoie la prose. `$cstack:no-comments` confie les commentaires à un relecteur qui ne les a pas écrits. `deslop` est original à cstack. pstack livrait `/deslop` dans `cursor-team-kit`, sans source portable.
 
