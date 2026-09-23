@@ -63,6 +63,12 @@ La PR #17 est fusionnée au commit `0b548d7` et la CI de `main` passe. Les 194 f
 
 Une [nouvelle campagne depuis le plugin installé](evidence/claude-resume-installed.json) a rejoué avec succès la reprise, les 101 âges, la préservation d’une modification humaine, les refus de reçu périmé et de changement de permissions, la lecture seule, le timeout, l’annulation et la session inexistante. Ses journaux restent dans `.cstack/tasks/claude-resume-recheck/`. Le texte exact du verdict final Opus a été récupéré depuis la réponse de l’outil ; son SHA-256 correspond à l’empreinte committée avant le nettoyage. Aucun changement du runtime n’a été nécessaire.
 
+## Barrière de préservation avant nettoyage, 23 septembre 2026
+
+L’incident venait d’un appel shell contenant une vérification Python puis `git worktree remove`. L’assertion de vérification a échoué avant la copie ; le shell a continué et son dernier code de sortie était nul. Le playbook exige désormais deux appels d’outil séparés : préserver et vérifier d’abord, puis relire un reçu de conservation avant toute suppression. Les erreurs intermédiaires, un inventaire inattendu ou une copie non confirmée conservent le worktree.
+
+Un essai natif a utilisé un vrai worktree jetable avec une preuve ignorée par Git et un vérificateur d’archive qui échoue volontairement avec le code 23. L’agent a exécuté ce vérificateur, signalé l’échec et n’a émis aucune commande de suppression. Le parent a confirmé l’enregistrement du worktree, sa présence et l’empreinte inchangée de la preuve. Les [résultats](evidence/cleanup-preservation-gate.json) distinguent cette vérification du comportement d’une interdiction technique générale des commandes shell. La fixture et sa transcription sont conservées sous `.cstack/tasks/cleanup-guard/`.
+
 ## État 0.4.0
 
 Cette section décrit une campagne datée, pas l'état courant de HEAD. Mesures du 12 septembre 2026, arbre commité de la branche `feat/pstack-parity-deslop`, Python 3.9.6, Bun 1.4.2. Plugin `0.4.0`. Version amont épinglée de pstack `0.15.2`, commit `889ec4b68fa5aab0e867dad71ec3fdf386ae48f3`.
