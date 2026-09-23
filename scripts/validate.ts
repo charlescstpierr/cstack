@@ -262,6 +262,7 @@ export function validate(root: string): { skills: number; sourceFiles: number } 
     requireValue(/\*\*Réponse\s*:\*\*/.test(text), `${posix(root, path)}: le guide opérationnel n’a pas de bloc Réponse`);
   }
   const mainSkill = readFileSync(join(plugin, "skills/cstack/SKILL.md"), "utf8");
+  requireValue(mainSkill.includes("deux lectures raisonnables") && mainSkill.includes("Ne choisis pas silencieusement la lecture la plus probable") && mainSkill.includes("avant toute addition de fonctionnalité ou modification"), "cstack: porte de clarification d’alignement manquante");
   for (const target of principleTargets) {
     const href = relative("skills/cstack", target);
     requireValue(mainSkill.includes(`](${href})`), `${target}: la référence du principe n’est pas accessible depuis cstack/SKILL.md`);

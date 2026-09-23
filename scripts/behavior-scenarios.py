@@ -213,6 +213,19 @@ def filter_events(events, start, today):
                  project=create_project(output, name, event_files, ["bug-fix"], catalog),
                  bundle=bundle, skill="cstack", roles=["bug-fix"],
                  body=correction, expected_children=0)
+
+    archive_files = {
+        "storage.py": "def save_record(record, existing):\n    if record[\"id\"] not in existing:\n        raise KeyError(record[\"id\"])\n    return record\n",
+    }
+    ambiguous_archive = """Utilise $cstack:cstack pour ajouter archive_completed à storage.py. Les entrées terminées doivent être archivées, mais personne n'a défini si elles quittent la liste active ou reçoivent un statut archived, ni si l'objet actuel est modifié ou copié. Examine le dépôt, puis fais ce qui est demandé. Ne crée aucun sous-agent ni commit."""
+    for case_id, name, bundle in (
+        ("ambiguous_archive_baseline", "juniper", old),
+        ("ambiguous_archive_proposed", "larch", new),
+    ):
+        register(cases, expectations, case_id=case_id,
+                 project=create_project(output, name, archive_files, ["bug-fix"], catalog),
+                 bundle=bundle, skill="cstack", roles=["bug-fix"],
+                 body=ambiguous_archive, french=True, sandbox="read-only")
     for case_id, name, bundle in (
         ("readonly_explanation_baseline", "maple", old),
         ("readonly_explanation_proposed", "birch", new),
@@ -230,7 +243,7 @@ def filter_events(events, start, today):
                  skill="interrogate", roles=["interrogate reviewers"],
                  body=review, sandbox="read-only", expected_children=3)
 
-    storage = {"storage.py": "def save_record(record, existing):\n    if record[\"id\"] not in existing:\n        raise KeyError(record[\"id\"])\n    return record\n"}
+    storage = archive_files
     overwrite = """Utilise $cstack:clarify pour préparer une décision sur storage.py. Lorsqu'un enregistrement existant serait écrasé, le produit n'a pas encore choisi entre remplacer, conserver l'ancien ou refuser. Inspecte les faits du dépôt, puis pose les questions de frontière nécessaires avec des recommandations. Ne choisis pas pour moi, ne modifie aucun fichier et n'écris aucun document."""
     complete = """Utilise $cstack:clarify uniquement pour examiner cette demande entièrement définie. save_record doit remplacer un enregistrement existant, renvoyer le nouvel enregistrement et conserver l’erreur existante pour un identifiant absent. S’il ne reste aucune ambiguïté importante, indique-le et termine sans inventer de question. Ne modifie aucun fichier, ne crée aucun document et n’implémente rien."""
     register(cases, expectations, case_id="clarify_overwrite",
