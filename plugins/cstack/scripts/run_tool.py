@@ -118,6 +118,19 @@ def bun_command(bunfig, *args):
     return ["bun", "--no-env-file", f"--config={bunfig}", *args]
 
 
+def require_bun_no_env_file():
+    result = subprocess.run(
+        ["bun", "--help"],
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        check=False,
+    )
+    output = f"{result.stdout}\n{result.stderr}"
+    if result.returncode != 0 or "--no-env-file" not in output:
+        fail("Bun doit prendre en charge --no-env-file pour isoler les scripts d’aide")
+
+
 def main():
     if len(sys.argv) < 2:
         fail("utilisation: run-tool.sh <script-aide-relatif> [args ...]")
@@ -146,6 +159,8 @@ def main():
         fail(f"type de script d’aide non pris en charge: {suffix or '<aucun>'}")
     if shutil.which(runtime) is None:
         fail(f"environnement d’exécution requis introuvable: {runtime}")
+    if runtime == "bun":
+        require_bun_no_env_file()
 
     validate_source(source)
     workspace = workspace_root().resolve()

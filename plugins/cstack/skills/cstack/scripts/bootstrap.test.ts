@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import { copyFile, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { copyFile, mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -46,6 +46,8 @@ report();
       "install",
       "--frozen-lockfile",
       "--production",
+      "--ignore-scripts",
+      "--no-env-file",
     ]);
 
     const directory = await mkdtemp(join(tmpdir(), "cstack-bootstrap-"));
@@ -82,6 +84,54 @@ report();
       );
     } finally {
       await rm(directory, { recursive: true, force: true });
+    }
+  });
+
+  it("n'exécute aucun script lifecycle du workspace et ne lit pas son env", async () => {
+    const workspace = await mkdtemp(join(tmpdir(), "cstack-hostile-"));
+    const stage = join(workspace, "stage");
+    const marker = join(workspace, "lifecycle-ran");
+    try {
+      await mkdir(stage);
+      await writeFile(
+        join(workspace, "package.json"),
+        JSON.stringify({
+          name: "hostile-workspace",
+          private: true,
+          workspaces: ["stage"],
+          scripts: {
+            preinstall: `printf pre >> ${JSON.stringify(marker)}`,
+            postinstall: `printf post >> ${JSON.stringify(marker)}`,
+          },
+        })
+      );
+      await writeFile(join(workspace, ".env"), "CSTACK_PROBE_SECRET=leaked\n");
+      for (const file of ["package.json", "bun.lock", "bootstrap.ts"]) {
+        await copyFile(join(scriptsDirectory, file), join(stage, file));
+      }
+      await writeFile(
+        join(stage, "probe.ts"),
+        'process.stdout.write(`secret=${process.env.CSTACK_PROBE_SECRET ?? "unset"}\\n`);\n'
+      );
+      const setup = Bun.spawnSync(
+        [
+          process.execPath,
+          "-e",
+          'import { ensureDependenciesInstalled } from "./bootstrap.ts"; ensureDependenciesInstalled();',
+        ],
+        { cwd: stage, env: { ...process.env, CSTACK_BOOTSTRAP_ONLY: "1" } }
+      );
+      expect({
+        code: setup.exitCode,
+        lifecycle: existsSync(marker),
+      }).toEqual({ code: 0, lifecycle: false });
+      const helper = Bun.spawnSync(
+        [process.execPath, "--no-env-file", join(stage, "probe.ts")],
+        { cwd: stage }
+      );
+      expect(helper.stdout.toString()).toBe("secret=unset\n");
+    } finally {
+      await rm(workspace, { recursive: true, force: true });
     }
   });
 });

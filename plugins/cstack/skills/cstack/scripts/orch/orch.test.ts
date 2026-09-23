@@ -782,6 +782,7 @@ try {
             },
           ],
           lowestUnmerged: 11,
+          closedGap: 13,
         });
         expect(
           (
@@ -868,6 +869,19 @@ try {
         );
         expect(await store.frontier.set({ repo: stack.repo })).toMatchObject({
           lowestUnmerged: 11,
+          closedGap: 13,
+        });
+
+        await writeFile(
+          outputPath,
+          JSON.stringify([
+            row(10, "MERGED", "stack/merged", "main", stack.mergedSha),
+            row(11, "OPEN", "stack/open", "stack/merged", stack.openSha),
+          ])
+        );
+        expect(await store.frontier.set({ repo: stack.repo })).toMatchObject({
+          lowestUnmerged: 11,
+          closedGap: null,
         });
 
         await writeFile(
@@ -1027,6 +1041,11 @@ exec "$REAL_GIT" "$@"
     await expect(store.frontier.show()).rejects.toThrow(
       "frontier.json a une forme invalide"
     );
+    await writeFile(join(directory, "frontier.json"), '{"generation":1,"prs":[],"lowestUnmerged":null}\n');
+    expect(await store.frontier.show()).toMatchObject({
+      generation: 1,
+      closedGap: null,
+    });
 
     await writeFile(join(directory, "inbox", "bad.tsv"), "too\tshort\n");
     await expect(store.inbox.peek()).rejects.toThrow(
