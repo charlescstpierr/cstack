@@ -1,13 +1,13 @@
 ---
 name: clarify
-description: "Utiliser quand $cstack:clarify est sélectionne explicitement ou route pendant une tâche cstack explicite afin de résoudre les ambiguïtés matérielles d'exigences avec les faits du dépôt et des tours de décision sur la frontière."
+description: "Utiliser quand $cstack:clarify est sélectionne explicitement ou route pendant une tâche cstack explicite afin de résoudre les ambiguïtés d'alignement ou d'exigences avec les faits du dépôt et des tours de décision sur la frontière."
 ---
 
 # Clarifier
 
 Contrat d’exécution : [`../cstack/references/codex-runtime.md`](../cstack/references/codex-runtime.md).
 
-Utilise cette skill quand l'utilisateur sélectionne explicitement `$cstack:clarify`, ou quand le coordinateur cstack actif ou ses skills de préparation routent ici. Ne l'active pas hors d'une tâche cstack ou demande de préparation explicitement sélectionnée. Utilise-la quand une exigence non résolue pourrait changer la portée, le comportement, la responsabilité ou l'acceptation. Si la demande est déjà claire, dis-le et retourne au flux de travail de l'appelant.
+Utilise cette skill quand l'utilisateur sélectionne explicitement `$cstack:clarify`, ou quand le coordinateur cstack actif ou ses skills de préparation routent ici. Ne l'active pas hors d'une tâche cstack ou demande de préparation explicitement sélectionnée. Une trace d'ambiguïté suffit : utilise-la s'il reste deux lectures raisonnables du résultat, du périmètre, du comportement ou de l'acceptation après avoir établi les faits. Si tu ne peux pas dire ce que tu livreras sans choisir une hypothèse à la place de l'utilisateur, route ici. Une demande courte ou un terme familier ne justifie pas à lui seul une question quand le dépôt et la conversation donnent une seule lecture ; si un fait ou une courte expérience tranche l'incertitude, fais-le et retourne au flux de travail de l'appelant.
 
 ## Trouver les faits avant de demander
 
