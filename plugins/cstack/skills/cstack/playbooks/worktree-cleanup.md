@@ -4,6 +4,15 @@ Suivez [le contrat d’exécution Codex](../references/codex-runtime.md).
 
 **Le coordinateur possède le nettoyage.** Réutilise les barrières d’audit, d’usage et de préservation de pstack. Terminer un agent ou fermer une PR ne prouve pas que son worktree est jetable.
 
+## Séparer la préservation de la suppression
+
+Cette barrière s’applique aux deux modes ci-dessous.
+
+- Exécute l’inventaire, la copie et sa vérification dans un premier appel d’outil sans commande de suppression. Attends sa fin et lis son résultat réel. Un code final nul ne suffit pas si la sortie contient une erreur intermédiaire, une assertion échouée ou une copie partielle.
+- Pour chaque worktree admissible, écris dans le workspace survivant un reçu de préservation avec le chemin et le HEAD source, les fichiers à conserver, leurs destinations et leurs SHA-256 vérifiés. Sans artefact à copier, consigne l’inventaire qui établit cette absence. Une liste de fichiers inattendue, même des caches Python, bloque cette tentative de nettoyage tant qu’elle n’est pas réconciliée.
+- Lance la suppression dans un second appel d’outil, seulement après succès explicite du premier et relecture du reçu. Cet appel revérifie les sources et copies contre le reçu avant de lancer `git worktree remove`, dans un programme qui arrête l’exécution à la première erreur. Si le HEAD, l’inventaire ou une empreinte a changé, conserve le worktree.
+- Ne place jamais la copie/vérification initiale et `git worktree remove` dans le même appel d’outil, même avec `&&` ou `set -e`. Ne planifie pas leur exécution en parallèle. Un échec, une sortie tronquée ou un résultat ambigu interdit le second appel. Rapporte le nettoyage comme non terminé ; le merge réussi reste indépendant.
+
 ## Après une livraison terminée
 
 Lance ce mode automatiquement après qu’une livraison autorisée a réellement fusionné et que sa vérification est complète. Le nettoyage sûr des worktrees temporaires créés pour cette tâche fait partie de la livraison ; ne demande pas d’autre confirmation. Honore une demande explicite de les garder. Un plan, une demande en lecture seule, une pause, une PR ouverte, un merge queued ou une PR fermée mais non fusionnée ne déclenchent pas la suppression.
