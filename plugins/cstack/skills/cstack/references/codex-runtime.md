@@ -29,10 +29,36 @@ Utilise les vrais outils exposés dans la session courante. Les noms d’outils 
 - Lis/cherche avec les outils natifs de système de fichiers ou `rg` ; lance les commandes avec l’outil shell natif.
 - Pour des tranches indépendantes utiles, utilise les outils natifs Codex de lancement, message, attente et interruption. Envoie un prompt borné, les fichiers possédés, le prompt d’agent cstack et les contrôles d’acceptation. Un agent custom nommé n’est pas requis : utilise un agent générique natif disponible avec ces instructions. Les prompts d’agent sont `agents/cstack-agent.md` et `agents/comment-reviewer.md`, relativement à ce document.
 - Laisse le parent intégrer les résultats et vérifier les vrais diffs. Les implémentations indépendantes utilisent des worktrees ou chemins de sortie séparés ; ne fais pas écrire les mêmes fichiers par des agents concurrents. Utilise la limite de concurrence de la session courante et mets l’excédent en file.
-- Une capacité manquante sérialise une étape. Elle n’en retire jamais une. Sans capacité de sous-agent disponible, lance l’étape dans la même session comme passe séparée explicitement re-cadrée, étiquette le résultat comme passe single-agent et rapporte l’indépendance manquante. L’absence de capacité n’autorise jamais à sauter l’ancrage, la conception, la revue, la comparaison, le nettoyage ou la vérification. Ne décris pas une auto-revue comme revue indépendante et ne revendique pas une exécution parallèle.
-- Avant qu’un diff soit présenté comme prêt pour PR, prêt au merge ou vérifié, son verdict vient d’un acteur qui ne l’a pas écrit. Un parent qui relit le diff d’un délégué satisfait cela. Un parent qui a écrit le code a besoin d’un reviewer séparé. Quand la session n’expose pas de second acteur, lance une passe de revue séparée après relecture propre du diff, étiquette-la single-agent review et nomme l’indépendance manquante dans le rapport. Réutilise un verdict terminé seulement pour le même périmètre et un patch inchangé.
+- Une capacité manquante suit [Orchestration requise](#orchestration-requise). Elle n’en retire jamais une. Quand l'étape n'exige pas d'indépendance réelle et que la session courante possède l'orchestration, lance-la dans cette session comme passe séparée explicitement recadrée, étiquette le résultat comme passe single-agent et rapporte l’indépendance manquante. L’absence de capacité n’autorise jamais à sauter l’ancrage, la conception, la revue, la comparaison, le nettoyage ou la vérification. Ne décris pas une auto-revue comme revue indépendante et ne revendique pas une exécution parallèle.
+- Avant qu’un diff soit présenté comme prêt pour PR, prêt au merge ou vérifié, son verdict vient d’un acteur qui ne l’a pas écrit. Un parent qui relit le diff d’un délégué satisfait cela. Un parent qui a écrit le code a besoin d’un reviewer séparé. Si ce reviewer est requis mais indisponible dans la session courante, applique [Orchestration requise](#orchestration-requise) avec `route: Review`. Réutilise un verdict terminé seulement pour le même périmètre et un patch inchangé.
 - Une assignation en lecture seule reste en lecture seule même quand l’outil permettrait une mutation. L’accès MCP ne dépend pas de la définition d’un champ fictif `readonly: false`.
 - Utilise l’entrée utilisateur structurée quand elle est disponible pour les décisions produit manquantes ; sinon, une question concise. Les faits découvrables sont le travail de l’agent. Réutilise l’autorisation déjà donnée pour la tâche concrète.
+
+## Orchestration requise
+
+Avant d'exécuter ou de déléguer le travail qui en dépend, le coordinateur lit et applique le parcours d'orchestration requis. Deux zones de couverture indépendantes ou plus passent par Swarm. Plusieurs solutions valides concurrentes passent par Arena. Si les emplacements sont temporairement occupés, le coordinateur attend leur libération et lance chaque position dans un acteur distinct, par vagues si nécessaire. Cette exécution séquentielle peut satisfaire l'indépendance ; elle ne consiste pas à rejouer les positions dans une même session.
+
+Un délégué qui reçoit une tranche déjà cadrée de candidat, de couverture, de revue ou de vérification exécute cette tranche normalement et ne recrée pas Arena ou Swarm. Un délégué qui découvre qu'une orchestration requise est encore en amont, et qui n'a pas reçu l'autorité explicite de la lancer, retourne `BLOCKED` avant d'exécuter le code ou la revue dépendante. Le rapport nomme `route: Arena|Swarm|Review`, les tranches ou candidats requis, les chemins d'artefacts proposés et les critères d'acceptation. Ce retour transmet les faits et critères, sans choisir de solution gagnante. Le coordinateur qui le reçoit lance la route demandée puis distribue des tranches bornées ; il ne renvoie pas la même orchestration à une feuille incapable de la lancer.
+
+Une restriction locale de descendants conserve le retour `BLOCKED` au parent. À la racine sans parent, l'absence constatée d'outil de lancement natif ou un plafond déclaré de zéro permet des passes personnelles séparées avec l'étiquette `single-agent` et le statut `ISSUES`, en nommant l'indépendance manquante. Des places occupées ne sont pas une absence d'outil. Ce repli ne remplace jamais une sélection explicite de modèle ou de runtime refusée, qui reste bloquée.
+
+Une interdiction explicite de délégation pour la demande entière, fixée par l'utilisateur ou une consigne supérieure, prime sur ce parcours : exécute le travail autorisé seul, étiquette `single-agent` et utilise `ISSUES` dans un rapport structuré en nommant l'indépendance manquante. Dans ces deux cas dégradés, l'ouverture d'une PR reste possible dans la portée de livraison autorisée, avec cette limite dans sa description ; ne prétends pas à une revue indépendante ni à un verdict de merge fondé sur elle. Cette exception ne couvre ni une feuille sans descendants ni des emplacements temporairement occupés.
+
+Pour ce retour de blocage, le rapport structuré décrit le workflow demandé au complet, pas la sous-étape de préparation. N'écris pas "préparation terminée" quand le travail demandé reste bloqué. Utilise seulement les champs du schéma worker :
+
+```json
+{
+  "status": "BLOCKED",
+  "summary": "Workflow demandé bloqué: orchestration requise non lancée.",
+  "checks": [],
+  "findings": [
+    "route: Arena|Swarm|Review",
+    "scopes: <tranches ou candidats requis>",
+    "artifact outputs: <chemins proposés>",
+    "acceptance: <critères pour débloquer le workflow>"
+  ]
+}
+```
 
 ## Dispatch des workers
 
@@ -112,6 +138,6 @@ La vraie contrainte est ailleurs. Mesuré : dans `docs/evidence/0.3.0.json`, sur
 
 Les `default_prompt` des compétences qui délèguent portent cette demande pour cette raison ; ne la retire pas en les reformulant, et ajoute-la quand tu rends une compétence déléguante. Quand un utilisateur signale qu’un seul acteur travaille, vérifie d’abord cette demande, puis la configuration d’agents de l’hôte et sa limite de threads simultanés, avant de conclure à un défaut de routage.
 
-Un délégué ne lance pas de descendants sauf si son parent lui délègue explicitement cette décision ; c’est la règle de `agents/cstack-agent.md`, pas une limite de plateforme. Une compétence qui ventile doit donc s’exécuter dans la session qui possède la ventilation ; la déléguer entière coûte sa propre ventilation. Ventile les tranches, pas les compétences qui ventilent.
+Un délégué ne lance pas de descendants sauf si son parent lui délègue explicitement cette décision ; c’est la règle de `agents/cstack-agent.md`, pas une limite de plateforme. Une compétence qui ventile doit donc s’exécuter dans la session qui possède la ventilation ; la déléguer entière coûte sa propre ventilation. Ventile les tranches, pas les compétences qui ventilent. Quand cette règle rencontre une orchestration requise, applique [Orchestration requise](#orchestration-requise).
 
 Voir la [documentation officielle des sous-agents](https://learn.chatgpt.com/docs/agent-configuration/subagents) et le [contrat de packaging de plugin](https://developers.openai.com/plugins/build/plugins).

@@ -302,23 +302,24 @@ printf '{"status":"PASS","summary":"ok","checks":[],"findings":[]}'
     const capture = join(h.root, "cursor-args.txt");
     process.env.CSTACK_RUNTIME_ARG_CAPTURE = capture;
     try {
+      await writeFile(h.brief, "Discuss --force and --yolo as text, without enabling them.\n");
       await fake(h.bin, "cursor-agent", `
 if [[ "$1" == "--version" ]]; then echo "cursor fake"; exit 0; fi
 if [[ "$1" == "--help" ]]; then echo "--print --output-format --mode --sandbox --workspace --model --force --yolo"; exit 0; fi
-printf '%s\\n' "$@" > "$CSTACK_RUNTIME_ARG_CAPTURE"
+printf '%s\\0' "$@" > "$CSTACK_RUNTIME_ARG_CAPTURE"
 printf '{"status":"PASS","summary":"cursor ok","checks":[],"findings":[]}'
 `);
       const code = await run(["run", "--request", await request(h, "cursor-agent")], h);
-      const args = await readFile(capture, "utf8");
+      const args = (await readFile(capture, "utf8")).split("\0").slice(0, -1);
       expect(code).toBe(0);
       expect(parsedStdout(h)).toMatchObject({
         provider_requested: "cursor",
         execution: { status: "COMPLETED" },
       });
-      expect(args).toContain("--mode\nask");
-      expect(args).toContain("--sandbox\nenabled");
+      expect(args.slice(0, 7)).toEqual(["--print", "--output-format", "json", "--mode", "ask", "--sandbox", "enabled"]);
       expect(args).not.toContain("--force");
       expect(args).not.toContain("--yolo");
+      expect(args.at(-1)).toContain("--force");
     } finally {
       await rm(h.root, { recursive: true, force: true });
     }
@@ -371,6 +372,31 @@ cat "$(dirname "$0")/response.json"
 `);
     expect(await run(["run", "--request", await request(h, "claude-code")], h)).toBe(status === "COMPLETED" ? 0 : 2);
     expect(parsedStdout(h)).toMatchObject({ execution: { status } });
+    expect(JSON.parse(await readFile(join(h.output, "result.json"), "utf8"))).toEqual(parsedStdout(h));
+  } finally {
+    await rm(h.root, { recursive: true, force: true });
+  }
+});
+
+it("préserve le handoff BLOCKED documenté après une exécution réussie", async () => {
+  const h = await harness();
+  try {
+    const contract = await readFile(join(import.meta.dir, "../../references/codex-runtime.md"), "utf8");
+    const section = contract.split("## Orchestration requise")[1];
+    const template = section?.match(/```json\n([\s\S]*?)\n```/)?.[1];
+    if (!template) throw new Error("Handoff JSON absent du contrat");
+    await writeFile(join(h.bin, "response.json"), template);
+    await fake(h.bin, "claude", `
+if [[ "$1" == "--version" ]]; then echo "claude fake"; exit 0; fi
+if [[ "$1" == "--help" ]]; then echo "${claudeHelp}"; exit 0; fi
+cat >/dev/null
+cat "$(dirname "$0")/response.json"
+`);
+    expect(await run(["run", "--request", await request(h, "claude-code")], h)).toBe(0);
+    expect(parsedStdout(h)).toMatchObject({
+      execution: { status: "COMPLETED" },
+      worker: { status: "BLOCKED", checks: [] },
+    });
     expect(JSON.parse(await readFile(join(h.output, "result.json"), "utf8"))).toEqual(parsedStdout(h));
   } finally {
     await rm(h.root, { recursive: true, force: true });

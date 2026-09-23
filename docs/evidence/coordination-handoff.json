@@ -1,0 +1,276 @@
+{
+  "date": "2026-09-23",
+  "scope": "Coordinator ownership and pending-orchestration handoff; no change to model defaults",
+  "base_commit": "14dddd7ddb3cad9ac9a2b1ff4fa62a34a166a93c",
+  "root_trials": {
+    "coverage": {
+      "status": "PASS",
+      "started_children": {
+        "01a0cba1-662e-7e01-93ba-ac4832647f49": "/root/identity",
+        "01a0cba1-94ac-7623-bb0b-42b47133f608": "/root/amounts",
+        "01a0cba2-f70d-7181-a4a4-d434d1fd5a25": "/root/synthesis"
+      },
+      "child_metadata": {
+        "01a0cba1-662e-7e01-93ba-ac4832647f49": {
+          "model": "gpt-6-astra",
+          "effort": "high",
+          "provider": "jev"
+        },
+        "01a0cba1-94ac-7623-bb0b-42b47133f608": {
+          "model": "gpt-6-astra",
+          "effort": "high",
+          "provider": "jev"
+        },
+        "01a0cba2-f70d-7181-a4a4-d434d1fd5a25": {
+          "model": "gpt-6-astra",
+          "effort": "high",
+          "provider": "jev"
+        }
+      },
+      "source_files_unchanged": true,
+      "raw_sha256": "2fdcfec8b314644384993ca8a240e83d8a33d2730f480a7c4dc5d5a898b0a6c8",
+      "artifact": ".cstack/tasks/larch/coverage-run/coverage/raw.jsonl",
+      "limit": "One scenario; all inherited Astra high. This proves separate actors, not model diversity."
+    },
+    "design": {
+      "status": "PASS",
+      "started_children": {
+        "01a0cba5-4682-75f2-b519-7c03d323e093": "/root/design_candidate",
+        "01a0cba5-69d2-7660-8fcf-6f17743be516": "/root/design_candidate_b",
+        "01a0cba5-8ddf-7a41-9828-a6a060ada426": "/root/design_candidate_c",
+        "01a0cba6-4b78-7e51-aecc-ea5b3adf4b60": "/root/cross_judge"
+      },
+      "child_metadata": {
+        "01a0cba5-4682-75f2-b519-7c03d323e093": {
+          "model": "gpt-6-astra",
+          "effort": "high",
+          "provider": "jev"
+        },
+        "01a0cba5-69d2-7660-8fcf-6f17743be516": {
+          "model": "gpt-6-astra",
+          "effort": "high",
+          "provider": "jev"
+        },
+        "01a0cba5-8ddf-7a41-9828-a6a060ada426": {
+          "model": "gpt-6-astra",
+          "effort": "high",
+          "provider": "jev"
+        },
+        "01a0cba6-4b78-7e51-aecc-ea5b3adf4b60": {
+          "model": "gpt-6-astra",
+          "effort": "high",
+          "provider": "jev"
+        }
+      },
+      "source_files_unchanged": true,
+      "raw_sha256": "ea9f495f2bf0cff37708422c510e57bc96198cec8e9ba53dab9af0f7c5e16899",
+      "artifact": ".cstack/tasks/larch/design-run/design/raw.jsonl",
+      "limit": "One scenario; all inherited Astra high. This proves separate actors, not model diversity."
+    }
+  },
+  "leaf_trials": {
+    "before_exact_template": {
+      "Swarm": {
+        "status": "FAIL_SCHEMA",
+        "observed": "Correct route and slices, but omitted BLOCKED status"
+      },
+      "Arena": {
+        "status": "FAIL_SCHEMA",
+        "observed": "Correct route and candidates, but omitted BLOCKED status"
+      }
+    },
+    "after_exact_template": {
+      "Swarm": {
+        "status": "BLOCKED",
+        "route": "Swarm",
+        "checks": "read-only preparation",
+        "outputs": "separate identity/amounts reports proposed",
+        "acceptance": "separate bounded coverage then parent synthesis"
+      },
+      "Arena": {
+        "status": "BLOCKED",
+        "route": "Arena",
+        "checks": "read-only preparation",
+        "outputs": "candidate dict-only and dict+order proposals",
+        "acceptance": "last row per id, first-id order, evaluate correctness and simplicity",
+        "limit": "Leaf also supplied a preparatory preference; no independent-panel verdict claimed"
+      }
+    },
+    "limits": [
+      "One trial per role per instruction revision; no general reliability rate.",
+      "Native leaf model execution metadata not exposed in this conversation; only requested executor role is known."
+    ]
+  },
+  "controls": {
+    "assigned_slice": "PASS: implemented without recursive orchestration, behavior independently asserted",
+    "mechanical": "PASS: exact grammar edit, no descendants",
+    "scope": "two distinct fresh leaf sessions with actual corrected source",
+    "no_agents": "PASS: explicit whole-task no-agents request performed solo, status ISSUES, no independent verdict claimed",
+    "final_handoff": "PASS: final template produced BLOCKED route Arena with checks empty",
+    "root_without_launch": {
+      "status": "ISSUES",
+      "runtime": "claude-code",
+      "observed_model": "claude-sonnet-5",
+      "tools": [
+        "Read",
+        "Glob",
+        "Grep"
+      ],
+      "evidence": "root-readonly-result.json",
+      "limit": "Direct CLI behavioral control, not a runtime-wrapper schema assertion. No native spawn or Bash tool exposed."
+    },
+    "native_disable_attempt": {
+      "status": "INCONCLUSIVE",
+      "reason": "features.multi_agent=false still exposed collaboration tools and the session spawned children; not counted as no-capability evidence."
+    }
+  },
+  "validation": {
+    "python_pass": 55,
+    "python_skipped": 1,
+    "bun_root_pass": 7,
+    "bun_helper_pass": 130,
+    "typechecks": "PASS",
+    "repository_validator": "PASS",
+    "shell_syntax": "PASS",
+    "diff_check": "PASS",
+    "initial_helper_failure": "Cursor safety assertion matched --force inside prompt text; fixed argument capture to NUL-delimited argv with explicit prompt boundary regression.",
+    "bun_helper_fail": 0,
+    "handoff_schema": "PASS: exact documented JSON parsed by runtime helper, execution COMPLETED preserves worker BLOCKED"
+  },
+  "source_hashes": {
+    "plugins/cstack/skills/arena/SKILL.md": "f191579d61263664f7f10c2b6f192ad67e6aae7f258382e1191fc72617f0d3b4",
+    "plugins/cstack/skills/cstack/SKILL.md": "bf02f94dbbbf514d07d094ebf7e913c647aedea71df6db72fc31e81b7809e898",
+    "plugins/cstack/skills/cstack/playbooks/autopilot-full.md": "a095a6a3560f130eaaa3b4b18fe9b64ac7685797edbc7ecf0b7c08e263c9319a",
+    "plugins/cstack/skills/cstack/playbooks/autopilot-stack.md": "1c0642437de9ad234a258796849a238220cba525a6b93df1e7f9e701daa15e2a",
+    "plugins/cstack/skills/cstack/playbooks/bug-fix.md": "e1a65b672df99c5a001a8897adf4d2d0156c81e0f22635c845a83194371212db",
+    "plugins/cstack/skills/cstack/playbooks/eval.md": "a4b16f2a28b15e937b049882269b104bdfef139fc39a7684d81992d68ad6bcd1",
+    "plugins/cstack/skills/cstack/playbooks/feature.md": "4ba72040918836621a26fdea651aee77c274b1c231977293f90f1b426ebe7080",
+    "plugins/cstack/skills/cstack/playbooks/hillclimb.md": "d2d7a06cb065d9e5a41d574c11197b3520c6159d9cb33572c255d3a928d6e70e",
+    "plugins/cstack/skills/cstack/playbooks/multi-phase-plan.md": "e85201de5b0d0b268d4ae157670de0ac15f9e69e7283356093d5fb49afbe2a0d",
+    "plugins/cstack/skills/cstack/playbooks/opening-a-pr.md": "85bd7ebce29745317521ee2fdf5874ded67639555d5355e19862f75ce4c563b0",
+    "plugins/cstack/skills/cstack/playbooks/orchestrate.md": "7a66c56be3fbed4ec1d5388624e0446204c57ed31d03b5bbdecc885501b4f56d",
+    "plugins/cstack/skills/cstack/playbooks/perf-issue.md": "2343b03cd738f44b31262f5f1eb7733bc17a28571096685009eba7f5d3d36857",
+    "plugins/cstack/skills/cstack/playbooks/refactoring.md": "68fafa8f5d557cffa0c25f90b884766be301f2df775a3d53714a784ea24f5ecf",
+    "plugins/cstack/skills/cstack/playbooks/shipping.md": "021e11fb0f32bf863b658453bb97c0eecc4d429ba35f8f0d5fd78bb6d233c008",
+    "plugins/cstack/skills/cstack/references/agents/cstack-agent.md": "2366ad27d4bf84038ee1425b27db7057d066387ac5812b3c5efe468b5cb9535f",
+    "plugins/cstack/skills/cstack/references/codex-runtime.md": "16c4eaa2deada1805bcf3962df122a43b084d92710db4a95e8ae58fef7db5235",
+    "plugins/cstack/skills/cstack/scripts/runtime/runtime.test.ts": "80e5eb538ed2482f7021940e5af03403776829079b3ea926174361d54cc61831",
+    "plugins/cstack/skills/how/SKILL.md": "f0f1121a0535b095205fd98dd99ea21ca6584a738747a8153ea346b18f27279f",
+    "plugins/cstack/skills/interrogate/SKILL.md": "886534057bc90327214d12c48d253a7708546011c715b0fbf10892919f0c03c2",
+    "plugins/cstack/skills/no-comments/SKILL.md": "18fbb63bdbd2a9c06359fd3d5f52bab7d368bcccad51acf58ca80fe19ab2a56c",
+    "plugins/cstack/skills/swarm/SKILL.md": "f045ddeb48ee1941efd0ddbe7f6460268ef2e9c09ed36577a428c9a236040d3f"
+  },
+  "limits": [
+    "Counts come from actual started events; harness convenience child list also included a parent interaction in coverage and was not used for counts.",
+    "Bounded observations, not a reliability rate or full pstack parity.",
+    "Root coverage exercised the role rule before final handoff JSON example was added; later template edits do not change root dispatch behavior.",
+    "No production merge or cleanup executed. Native provider metadata says jev; no underlying-provider claim inferred.",
+    "Final root trials reran coordinator behavior at parent effort low; individual resolved child efforts are recorded rather than assumed."
+  ],
+  "review_fixes": [
+    "Restore explicit mandatory Arena clause in feature",
+    "Route before executing as well as delegating",
+    "Explicit global no-agents exception: single-agent ISSUES, disclosed PR scope",
+    "Parent consumes handoff instead of redelegating same orchestration",
+    "Assigned slice exemption explicit in common worker instructions",
+    "Runtime integration test for exact BLOCKED template",
+    "Root without native launch capability may finish disclosed single-agent work with ISSUES",
+    "Temporarily occupied slots use distinct actors in waves, not solo replay",
+    "Autopilot ready PR creation follows behavior proof and independent verdict",
+    "All direct review/coverage consumers route missing capacity through the shared rule; explicit unavailable judge never falls back in eval"
+  ],
+  "reviews": {
+    "opus": "Root capacity APPROVE; earlier autopilot caveats corrected and reviewed by Astra",
+    "astra": "APPROVE: final source and evidence, gpt-6-astra ultra requested",
+    "astra_report": ".cstack/tasks/larch/astra-final-review.md",
+    "source_limit": "Model defaults unchanged; no general pstack parity claim"
+  },
+  "final_root_trials": {
+    "coverage": {
+      "status": "PASS",
+      "actors": {
+        "01a0cbbf-0179-72f1-937f-05ef980ef8df": {
+          "path": "/root/amounts",
+          "event": 167
+        },
+        "01a0cbbf-22ed-7b63-8447-c9d03814520e": {
+          "path": "/root/identity",
+          "event": 182
+        },
+        "01a0cbc0-04d2-7b63-bf5c-d202aecf756e": {
+          "path": "/root/synthesis",
+          "event": 1140
+        }
+      },
+      "model_metadata": {
+        "01a0cbbf-0179-72f1-937f-05ef980ef8df": {
+          "model": "gpt-6-astra",
+          "effort": "low",
+          "provider": "jev"
+        },
+        "01a0cbbf-22ed-7b63-8447-c9d03814520e": {
+          "model": "gpt-6-astra",
+          "effort": "low",
+          "provider": "jev"
+        },
+        "01a0cbc0-04d2-7b63-bf5c-d202aecf756e": {
+          "model": "gpt-6-astra",
+          "effort": "low",
+          "provider": "jev"
+        }
+      },
+      "parent_requested_effort": "low",
+      "source_files_unchanged": true,
+      "raw_sha256": "cbe205b6de2494cf2c4037ce6364adc74eba44b1884312fe46dc531b34a61e83",
+      "path": ".cstack/tasks/larch/coverage-final/coverage/raw.jsonl"
+    },
+    "design": {
+      "status": "PASS",
+      "actors": {
+        "01a0cbc1-9e6c-74c0-a85c-27570d37c657": {
+          "path": "/root/design_a",
+          "event": 175
+        },
+        "01a0cbc1-bfbf-7e33-a964-50b236a9651c": {
+          "path": "/root/design_b",
+          "event": 191
+        },
+        "01a0cbc1-e76c-7800-b85c-1b8d1d8d7b40": {
+          "path": "/root/design_c",
+          "event": 286
+        },
+        "01a0cbc2-69b6-7b72-b741-77b9ed7a8c15": {
+          "path": "/root/judge",
+          "event": 1306
+        }
+      },
+      "model_metadata": {
+        "01a0cbc1-9e6c-74c0-a85c-27570d37c657": {
+          "model": "gpt-6-astra",
+          "effort": "low",
+          "provider": "jev"
+        },
+        "01a0cbc1-bfbf-7e33-a964-50b236a9651c": {
+          "model": "gpt-6-astra",
+          "effort": "low",
+          "provider": "jev"
+        },
+        "01a0cbc1-e76c-7800-b85c-1b8d1d8d7b40": {
+          "model": "gpt-6-astra",
+          "effort": "low",
+          "provider": "jev"
+        },
+        "01a0cbc2-69b6-7b72-b741-77b9ed7a8c15": {
+          "model": "gpt-6-astra",
+          "effort": "low",
+          "provider": "jev"
+        }
+      },
+      "parent_requested_effort": "low",
+      "source_files_unchanged": true,
+      "raw_sha256": "0f4617b11576f4f52e4964b5e9028c4429f7e5251032c0e9206d79affb08d332",
+      "path": ".cstack/tasks/larch/design-final/design/raw.jsonl",
+      "judge_after_candidates_completed": true
+    }
+  }
+}

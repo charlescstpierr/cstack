@@ -25,7 +25,7 @@ La préparation ne remplace pas l’ancrage, la conception, la revue ni la véri
 
 ### Exécuter le playbook correspondant
 
-Lis le playbook correspondant en entier et copie ses étapes dans le plan courant avant les étapes propres à la tâche. Garde toute étape sautée avec `skip: <reason>`. Moins d’appels ne justifient pas de supprimer l’ancrage, la conception, la revue indépendante, le nettoyage ou la vérification du comportement réel. Une capacité manquante sérialise une étape et étiquette le résultat comme passe single-agent ; elle ne supprime jamais l’étape. Voir [le contrat d’exécution](references/codex-runtime.md#outils-et-delegation).
+Lis le playbook correspondant en entier et copie ses étapes dans le plan courant avant les étapes propres à la tâche. Garde toute étape sautée avec `skip: <reason>`. Moins d’appels ne justifient pas de supprimer l’ancrage, la conception, la revue indépendante, le nettoyage ou la vérification du comportement réel. Une capacité manquante suit [Orchestration requise](references/codex-runtime.md#orchestration-requise) ; elle ne supprime jamais l’étape.
 
 Pour tout changement multi-étapes non trivial, écris le point de contrôle de débit de `playbooks/feature.md` sous forme de quatre todos avant de ventiler : premières étapes bloquantes, flux de travail indépendants, état mutable partagé et plus petite décomposition sûre. Une dimension qui ne s’applique pas garde son item avec `n/a: <reason>`.
 
@@ -72,7 +72,7 @@ Si `docs/agents/cstack.md` existe, consulte ses conventions de projet pendant qu
 - Quand l’utilisateur demande qu’on lui enseigne un sous-système plutôt qu’un correctif, lis et applique `../teach/SKILL.md`. Il exécute les passes `how` et `why` et retourne une leçon au lieu d’un diff.
 - Avant d’écrire du code avec état ou branches, nomme la forme de données et lis [Modéliser le domaine](references/principles/model-the-domain.md).
 - Avant que le code traverse une nouvelle frontière de fonction ou de module, lis `../architect/SKILL.md`.
-- Pour une conception disputée, lis et applique `../interrogate/SKILL.md`. Lance ses relecteurs comme sous-agents natifs quand la session les expose. Sinon, exécute la comparaison séquentiellement dans la même session, étiquette le verdict single-agent et note l’indépendance de modèle manquante. Ne remplace pas la comparaison par une opinion de premier plan.
+- Pour une conception disputée, lis et applique `../interrogate/SKILL.md`. Lance ses relecteurs comme sous-agents natifs quand la session les expose. Sinon, applique [Orchestration requise](references/codex-runtime.md#orchestration-requise) avec `route: Review`. Ne remplace pas la comparaison par une opinion de premier plan.
 - Quand le changement touche `.ts` ou `.tsx`, lis `../typescript-best-practices/SKILL.md` avant d’écrire les types.
 - Pour une grande migration ou un flux de travail sans correspondance, lis `../figure-it-out/SKILL.md`.
 - Quand l’utilisateur demande une réflexion sur le déroulement du travail, ou qu’une phase se termine dans une exécution de taille programme, lis et applique `../reflect/SKILL.md`.
@@ -124,7 +124,7 @@ Ensuite, suis [Commits locaux](references/codex-runtime.md#commits-locaux) pour 
 
 Suis [le contrat d’exécution](references/codex-runtime.md), notamment son dispatch des workers. Le chemin natif reste le défaut ; les sélections CLI suivent [les workers CLI](references/runtime-workers.md). Utilise les workers pour du travail indépendant qui améliore la vitesse, les preuves ou la séparation de revue. Donne à chaque sous-agent natif une tâche bornée, une propriété de fichiers, des critères d’acceptation et les instructions de `references/agents/cstack-agent.md`. Le parent possède l’intégration et la vérification. Pour les workers CLI, prépare le bundle de skills commun avec le champ `skills` et les faits/rapports de pairs avec `context_files` ; le parent relaie les erreurs de vérification aux tentatives suivantes.
 
-Pour couvrir des zones indépendantes, lis et applique `../swarm/SKILL.md`. Pour des implémentations ou conceptions concurrentes, lis et applique `../arena/SKILL.md`. Ne parallélise que le travail indépendant. Un seul acteur écrit une branche ou un fichier partagé à la fois.
+Avant d’exécuter ou de déléguer le travail qui en dépend, lis et applique [Orchestration requise](references/codex-runtime.md#orchestration-requise) : les zones de couverture indépendantes vont à [Swarm](../swarm/SKILL.md), les solutions concurrentes vont à [Arena](../arena/SKILL.md). Ne parallélise que le travail indépendant. Un seul acteur écrit une branche ou un fichier partagé à la fois.
 
 Limite les panels à la capacité disponible ; pour les CLI, applique les plafonds du contrat des workers CLI. Un panel sans entrée `.cstack/models.json` utilise par défaut trois tentatives indépendantes en modèle hérité. Un pool cross-judge utilise par défaut un judge en modèle hérité. Lance les tentatives excédentaires par vagues. Si un playbook demande plus de voies que le travail ne justifie, préserve chaque scénario distinct et marque les voies redondantes `n/a` avec une raison.
 
@@ -132,7 +132,7 @@ Suis le chemin d’héritage direct du contrat d’exécution quand rien n’est
 
 Utilise `simple edits` pour les petits changements d’implémentation bornés et `documentation` pour les délégués limités à la documentation. La revue ou le jugement générique utilise `judgment and prose`. Utilise `hardest tasks` seulement pour une architecture explicitement complexe, pas pour des bugs ou algorithmes difficiles. Les autres implémentations utilisent `feature, refactoring` ; le débogage utilise `bug-fix`, `perf-issue` ou `hillclimb` selon le cas. Les investigateurs, synthétiseurs et panels spécialisés utilisent leurs rôles de configuration nommés. Passe le rôle sélectionné à Swarm pour que son défaut générique `swarm workers` ne puisse pas le remplacer.
 
-Avant de présenter un changement de code comme prêt pour création de PR ou merge, obtiens un verdict d’un acteur qui ne l’a pas écrit. Un parent qui relit le diff d’un délégué satisfait cela ; un parent qui a écrit le code a besoin d’un reviewer séparé. Quand la session n’expose pas de second acteur, lance une passe de revue séparée après relecture propre du diff, étiquette-la single-agent review et nomme l’indépendance manquante. Réutilise un verdict terminé seulement pour le même périmètre et un patch inchangé. N’appelle jamais une auto-revue indépendante, et ne laisse jamais l’absence de reviewer supprimer l’étape.
+Avant de présenter un changement de code comme prêt pour création de PR ou merge, obtiens un verdict d’un acteur qui ne l’a pas écrit. Un parent qui relit le diff d’un délégué satisfait cela ; un parent qui a écrit le code a besoin d’un reviewer séparé. Quand ce reviewer est requis mais indisponible, applique [Orchestration requise](references/codex-runtime.md#orchestration-requise) avec `route: Review`. Réutilise un verdict terminé seulement pour le même périmètre et un patch inchangé. N’appelle jamais une auto-revue indépendante, et ne laisse jamais l’absence de reviewer supprimer l’étape.
 
 ### Garder l’état local
 
