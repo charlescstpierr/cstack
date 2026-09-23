@@ -38,6 +38,8 @@ test("le paquet charge 29 skills et rejette les distributions dangereuses ou inc
       ["plugins/cstack/skills/cstack/SKILL.md", (text: string) => `${text}\n[Ressource manquante](references/does-not-exist.md)\n`, /lien cassé ou situé hors du périmètre/],
       ["plugins/cstack/skills/cstack/SKILL.md", (text: string) => `${text}\nVoir \`../missing-file.md\`.\n`, /chemin du plugin introuvable/],
       ["plugins/cstack/skills/cstack/SKILL.md", (text: string) => `${text}\n[Titre manquant](references/codex-runtime.md#not-a-real-heading)\n`, /titre manquant pour le fragment/],
+      ["plugins/cstack/skills/cstack/SKILL.md", (text: string) => text.replace("deux lectures raisonnables", "une seule lecture raisonnable"), /porte de clarification d’alignement manquante/],
+      ["plugins/cstack/skills/cstack/SKILL.md", (text: string) => text.replace("avant toute addition de fonctionnalité ou modification", "après toute addition de fonctionnalité ou modification"), /porte de clarification d’alignement manquante/],
       ["plugins/cstack/skills/cstack/playbooks/feature.md", (text: string) => text.replace(/^### /, "## "), /le guide opérationnel doit commencer par un titre ###/],
       ["plugins/cstack/skills/cstack/playbooks/feature.md", (text: string) => text.replace(/^Suivez \[le contrat d.+codex-runtime\.md\).*$/m, "Ignorer le contrat."), /le guide opérationnel n’a pas de ligne de contrat d’exécution/],
       ["plugins/cstack/skills/cstack/playbooks/feature.md", (text: string) => text.replace(/\*\*Réponse\s*:\*\*/, "**Résultat :**"), /le guide opérationnel n’a pas de bloc Réponse/],
