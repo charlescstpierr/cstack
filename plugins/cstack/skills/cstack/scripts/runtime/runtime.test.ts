@@ -1006,3 +1006,223 @@ printf '{"session_id":"%s","structured_output":{"status":"PASS","summary":"ok","
     await rm(h.root, { recursive: true, force: true });
   }
 });
+
+it("épingle l'acceptance exacte tout en laissant le contexte évoluer", async () => {
+  const h = await harness();
+  const context = join(h.root, "context.md");
+  const generationCount = join(h.root, "generations");
+  const promptDir = join(h.root, "prompts");
+  const acceptance = `  Vérifier ✅\n$(touch ${touched})\n  `;
+  try {
+    await Bun.$`mkdir -p ${promptDir}`.quiet();
+    await writeFile(context, "Context revision A.\n");
+    await fake(h.bin, "claude", `
+if [[ "$1" == "--version" ]]; then echo "claude fake"; exit 0; fi
+if [[ "$1" == "--help" ]]; then echo "${claudeResumeHelp}"; exit 0; fi
+resume=""
+while [[ "$#" -gt 0 ]]; do
+  if [[ "$1" == "--resume" ]]; then shift; resume="$1"; fi
+  shift || true
+done
+count=0
+if [[ -f "${generationCount}" ]]; then count=$(cat "${generationCount}"); fi
+count=$((count + 1))
+printf '%s' "$count" > "${generationCount}"
+cat > "${promptDir}/prompt-$count.txt"
+sid="${claudeSession}"
+if [[ -n "$resume" ]]; then sid="$resume"; fi
+printf '{"session_id":"%s","structured_output":{"status":"PASS","summary":"ok","checks":[],"findings":[]}}' "$sid"
+`);
+    const firstRequest = await request(h, "claude-code", { context_files: [context], acceptance });
+    expect(await run(["run", "--request", firstRequest], h)).toBe(0);
+    const first = JSON.parse(await readFile(join(h.output, "result.json"), "utf8"));
+    expect(first.provenance.acceptance).toBe(acceptance);
+    expect(await readFile(join(promptDir, "prompt-1.txt"), "utf8")).toContain(acceptance);
+
+    await writeFile(h.brief, "GOAL\nBrief revision B.\n");
+    await writeFile(context, "Context revision B.\n");
+    const previous = join(h.output, "result.json");
+    h.stdout.length = 0;
+    expect(await run(["run", "--request", await request(h, "claude-code", {
+      context_files: [context],
+      acceptance,
+      output_dir: join(h.root, "resume-1"),
+      resume_from: previous,
+    })], h)).toBe(0);
+    const resumedPrompt = await readFile(join(promptDir, "prompt-2.txt"), "utf8");
+    expect(resumedPrompt).toContain(`${acceptance}\n\nTASK BRIEF AND SHARED CONTEXT\n`);
+    expect(resumedPrompt.indexOf("return only the requested JSON report.")).toBeLessThan(resumedPrompt.indexOf("PINNED ACCEPTANCE"));
+    expect(resumedPrompt).toContain("Brief revision B.");
+    expect(resumedPrompt).toContain("Context revision B.");
+    expect(resumedPrompt).toContain("RESUMED CSTACK TASK");
+    expect(await readFile(generationCount, "utf8")).toBe("2");
+    expect(existsSync(touched)).toBe(false);
+
+    const resumed = join(h.root, "resume-1", "result.json");
+    const state = join(h.output, "resume-state.json");
+    const stateBefore = await readFile(state, "utf8");
+    h.stdout.length = 0;
+    expect(await run(["run", "--request", await request(h, "claude-code", {
+      context_files: [context],
+      acceptance: "changed acceptance",
+      output_dir: join(h.root, "changed"),
+      resume_from: resumed,
+    })], h)).toBe(2);
+    expect(parsedStdout(h)).toMatchObject({ execution: { status: "RESUME_FAILED" } });
+    expect(await readFile(state, "utf8")).toBe(stateBefore);
+    expect(await readFile(generationCount, "utf8")).toBe("2");
+
+    h.stdout.length = 0;
+    expect(await run(["run", "--request", await request(h, "claude-code", {
+      context_files: [context],
+      acceptance,
+      output_dir: join(h.root, "resume-2"),
+      resume_from: resumed,
+    })], h)).toBe(0);
+    expect(await readFile(generationCount, "utf8")).toBe("3");
+  } finally {
+    await rm(h.root, { recursive: true, force: true });
+  }
+});
+
+it("refuse l'ajout et la suppression de l'acceptance sans empoisonner la tête", async () => {
+  const h = await harness();
+  const generationCount = join(h.root, "generations");
+  try {
+    await fake(h.bin, "claude", `
+if [[ "$1" == "--version" ]]; then echo "claude fake"; exit 0; fi
+if [[ "$1" == "--help" ]]; then echo "${claudeResumeHelp}"; exit 0; fi
+resume=""
+while [[ "$#" -gt 0 ]]; do
+  if [[ "$1" == "--resume" ]]; then shift; resume="$1"; fi
+  shift || true
+done
+echo run >> "${generationCount}"
+sid="${claudeSession}"
+if [[ -n "$resume" ]]; then sid="$resume"; fi
+cat >/dev/null
+printf '{"session_id":"%s","structured_output":{"status":"PASS","summary":"ok","checks":[],"findings":[]}}' "$sid"
+`);
+    expect(await run(["run", "--request", await request(h, "claude-code")], h)).toBe(0);
+    const legacy = join(h.output, "result.json");
+    const legacyReceipt = JSON.parse(await readFile(legacy, "utf8"));
+    expect(Object.prototype.hasOwnProperty.call(legacyReceipt.provenance, "acceptance")).toBe(false);
+    expect(await readFile(join(h.output, "worker-prompt.txt"), "utf8")).not.toContain("PINNED ACCEPTANCE");
+    const legacyState = join(h.output, "resume-state.json");
+    const legacyStateBefore = await readFile(legacyState, "utf8");
+    h.stdout.length = 0;
+    expect(await run(["run", "--request", await request(h, "claude-code", {
+      acceptance: "added mid-lineage",
+      output_dir: join(h.root, "added"),
+      resume_from: legacy,
+    })], h)).toBe(2);
+    expect(parsedStdout(h)).toMatchObject({ execution: { status: "RESUME_FAILED" } });
+    expect(await readFile(legacyState, "utf8")).toBe(legacyStateBefore);
+    expect((await readFile(generationCount, "utf8")).trim().split("\n")).toHaveLength(1);
+
+    h.stdout.length = 0;
+    expect(await run(["run", "--request", await request(h, "claude-code", {
+      output_dir: join(h.root, "legacy-retry"),
+      resume_from: legacy,
+    })], h)).toBe(0);
+    expect((await readFile(generationCount, "utf8")).trim().split("\n")).toHaveLength(2);
+
+    const acceptedOutput = join(h.root, "accepted");
+    const acceptance = "Acceptance A";
+    expect(await run(["run", "--request", await request(h, "claude-code", {
+      acceptance,
+      output_dir: acceptedOutput,
+    })], h)).toBe(0);
+    const accepted = join(acceptedOutput, "result.json");
+    const acceptedState = join(acceptedOutput, "resume-state.json");
+    const acceptedStateBefore = await readFile(acceptedState, "utf8");
+    h.stdout.length = 0;
+    expect(await run(["run", "--request", await request(h, "claude-code", {
+      output_dir: join(h.root, "dropped"),
+      resume_from: accepted,
+    })], h)).toBe(2);
+    expect(parsedStdout(h)).toMatchObject({ execution: { status: "RESUME_FAILED" } });
+    expect(await readFile(acceptedState, "utf8")).toBe(acceptedStateBefore);
+    expect((await readFile(generationCount, "utf8")).trim().split("\n")).toHaveLength(3);
+
+    h.stdout.length = 0;
+    expect(await run(["run", "--request", await request(h, "claude-code", {
+      acceptance,
+      output_dir: join(h.root, "accepted-retry"),
+      resume_from: accepted,
+    })], h)).toBe(0);
+    expect((await readFile(generationCount, "utf8")).trim().split("\n")).toHaveLength(4);
+  } finally {
+    await rm(h.root, { recursive: true, force: true });
+  }
+});
+
+it("valide les limites UTF-8 et les reçus acceptance malformés", async () => {
+  const h = await harness();
+  const generationCount = join(h.root, "generations");
+  try {
+    const invalid = [
+      ["empty", ""],
+      ["nul", "before\0after"],
+      ["overflow", "a".repeat(4093) + "😀"],
+      ["number", 12],
+      ["null", null],
+      ["surrogate", "\ud800"],
+    ] as const;
+    for (const [name, acceptance] of invalid) {
+      h.stdout.length = 0;
+      h.stderr.length = 0;
+      expect(await run(["run", "--request", await request(h, "grok", {
+        acceptance,
+        output_dir: join(h.root, `invalid-${name}`),
+      })], h)).toBe(64);
+      expect(h.stdout).toEqual([]);
+      expect(h.stderr.join("")).toContain("acceptance");
+    }
+
+    await fake(h.bin, "grok", `
+if [[ "$1" == "--version" ]]; then echo "grok fake"; exit 0; fi
+if [[ "$1" == "--help" ]]; then echo "--prompt-file --cwd --output-format --json-schema --sandbox --permission-mode --tools --allow --deny --no-subagents --model --reasoning-effort"; exit 0; fi
+printf '{"status":"PASS","summary":"ok","checks":[],"findings":[]}'
+`);
+    const exact = "a".repeat(4092) + "😀";
+    expect(new TextEncoder().encode(exact).byteLength).toBe(4096);
+    expect(await run(["run", "--request", await request(h, "grok", {
+      acceptance: exact,
+      output_dir: join(h.root, "exact"),
+    })], h)).toBe(0);
+    const exactResult = JSON.parse(await readFile(join(h.root, "exact", "result.json"), "utf8"));
+    expect(exactResult.provenance.acceptance).toBe(exact);
+    expect(await readFile(join(h.root, "exact", "worker-prompt.txt"), "utf8")).toContain(exact);
+
+    await fake(h.bin, "claude", `
+if [[ "$1" == "--version" ]]; then echo "claude fake"; exit 0; fi
+if [[ "$1" == "--help" ]]; then echo "${claudeResumeHelp}"; exit 0; fi
+echo run >> "${generationCount}"
+cat >/dev/null
+printf '{"session_id":"${claudeSession}","structured_output":{"status":"PASS","summary":"ok","checks":[],"findings":[]}}'
+`);
+    const claudeExact = join(h.root, "claude-exact");
+    expect(await run(["run", "--request", await request(h, "claude-code", {
+      acceptance: exact,
+      output_dir: claudeExact,
+    })], h)).toBe(0);
+    const accepted = join(claudeExact, "result.json");
+    const receipt = JSON.parse(await readFile(accepted, "utf8"));
+    receipt.provenance.acceptance = 12;
+    await writeFile(accepted, JSON.stringify(receipt));
+    const state = join(claudeExact, "resume-state.json");
+    const stateBefore = await readFile(state, "utf8");
+    h.stdout.length = 0;
+    expect(await run(["run", "--request", await request(h, "claude-code", {
+      acceptance: exact,
+      output_dir: join(h.root, "malformed-receipt"),
+      resume_from: accepted,
+    })], h)).toBe(2);
+    expect(parsedStdout(h)).toMatchObject({ execution: { status: "RESUME_FAILED" } });
+    expect(await readFile(state, "utf8")).toBe(stateBefore);
+    expect(await readFile(generationCount, "utf8")).toBe("run\n");
+  } finally {
+    await rm(h.root, { recursive: true, force: true });
+  }
+});
