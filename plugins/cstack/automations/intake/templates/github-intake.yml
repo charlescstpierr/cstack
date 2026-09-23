@@ -40,6 +40,8 @@ jobs:
       issue_number: ${{ steps.publish.outputs.issue_number }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
       - name: Resolve issue number
         id: issue
         run: |
@@ -81,11 +83,11 @@ jobs:
           ISSUE="${{ steps.issue.outputs.number }}"
           gh issue view "$ISSUE" --json number,title,body,author,labels,url,comments,state \
             > .cstack/intake/source-issue.json
-          gh issue list --limit 1000 --state all --json number,title,body,author,labels,url,comments,state,createdAt,updatedAt,closedAt \
+          gh api --paginate "/repos/$GITHUB_REPOSITORY/issues?state=all&per_page=100" | jq -s 'add | map(select(.pull_request | not) | {number,title,body,author:.user,labels,url:.html_url,comments,state,createdAt:.created_at,updatedAt:.updated_at,closedAt:.closed_at})' \
             > .cstack/intake/tracker-issues-all.json
-          gh pr list --limit 1000 --state all --json number,title,body,author,labels,url,state,isDraft,baseRefName,headRefName,headRefOid,mergeCommit,commits,createdAt,updatedAt,closedAt,mergedAt \
+          gh api --paginate "/repos/$GITHUB_REPOSITORY/pulls?state=all&per_page=100" | jq -s 'add | map({number,title,body,author:.user,labels:[],url:.html_url,state,isDraft:.draft,baseRefName:.base.ref,headRefName:.head.ref,headRefOid:.head.sha,mergeCommit:.merge_commit_sha,commits:.commits_url,createdAt:.created_at,updatedAt:.updated_at,closedAt:.closed_at,mergedAt:.merged_at})' \
             > .cstack/intake/prs-all.json
-          git log --oneline --decorate -n 200 > .cstack/intake/commits.txt
+          git log --oneline --decorate > .cstack/intake/commits.txt
           jq -n \
             --arg repo "$GITHUB_REPOSITORY" \
             --argjson issue "${{ steps.issue.outputs.number }}" \
@@ -138,28 +140,30 @@ jobs:
       - name: Stage triage evidence
         run: |
           set -euo pipefail
-          mkdir -p .cstack/intake/durable-triage
-          cp .cstack/intake/triage-output.json .cstack/intake/durable-triage/
-          cp .cstack/intake/run-context.json .cstack/intake/durable-triage/
-          cp .cstack/intake/source-issue.json .cstack/intake/durable-triage/
-          cp .cstack/intake/tracker-issues-all.json .cstack/intake/durable-triage/
-          cp .cstack/intake/prs-all.json .cstack/intake/durable-triage/
-          cp .cstack/intake/commits.txt .cstack/intake/durable-triage/
+          mkdir -p intake-artifacts/triage
+          cp .cstack/intake/triage-output.json intake-artifacts/triage/
+          cp .cstack/intake/run-context.json intake-artifacts/triage/
+          cp .cstack/intake/source-issue.json intake-artifacts/triage/
+          cp .cstack/intake/tracker-issues-all.json intake-artifacts/triage/
+          cp .cstack/intake/prs-all.json intake-artifacts/triage/
+          cp .cstack/intake/commits.txt intake-artifacts/triage/
           jq -n \
             --arg run_url "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" \
             --arg run_attempt "${GITHUB_RUN_ATTEMPT:-1}" \
             '{workflow_run_url:$run_url, run_attempt:$run_attempt}' \
-            > .cstack/intake/durable-triage/manifest.json
+            > intake-artifacts/triage/manifest.json
       - name: Upload triage evidence
-        uses: actions/upload-artifact@v4
+        id: upload-triage
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: intake-triage-${{ steps.issue.outputs.number }}-${{ github.run_id }}-${{ github.run_attempt }}
-          path: .cstack/intake/durable-triage
+          path: intake-artifacts/triage
           if-no-files-found: error
           retention-days: 30
       - name: Post verdict comment
         env:
           GH_TOKEN: ${{ github.token }}
+          ARTIFACT_URL: ${{ steps.upload-triage.outputs.artifact-url }}
         run: |
           set -euo pipefail
           RESULT=.cstack/intake/triage-output.json
@@ -167,8 +171,12 @@ jobs:
           if [ -z "$BODY" ] || [ "$BODY" = "null" ]; then
             exit 0
           fi
+          if [ -z "${ARTIFACT_URL:-}" ]; then
+            echo "missing triage artifact URL" >&2
+            exit 1
+          fi
           ISSUE="${{ steps.issue.outputs.number }}"
-          printf '%s\n' "$BODY" | gh issue comment "$ISSUE" --body-file -
+          printf '%s\n\nEvidence artifact: %s\n' "$BODY" "$ARTIFACT_URL" | gh issue comment "$ISSUE" --body-file -
       - name: Write tracker labels
         env:
           GH_TOKEN: ${{ github.token }}
@@ -208,6 +216,8 @@ jobs:
       pull-requests: write
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
       - name: Require installed intake files
         run: |
           set -euo pipefail
@@ -243,11 +253,11 @@ jobs:
           ISSUE="${{ needs.triage.outputs.issue_number }}"
           gh issue view "$ISSUE" --json number,title,body,author,labels,url,comments,state \
             > .cstack/intake/source-issue.json
-          gh issue list --limit 1000 --state all --json number,title,body,author,labels,url,comments,state,createdAt,updatedAt,closedAt \
+          gh api --paginate "/repos/$GITHUB_REPOSITORY/issues?state=all&per_page=100" | jq -s 'add | map(select(.pull_request | not) | {number,title,body,author:.user,labels,url:.html_url,comments,state,createdAt:.created_at,updatedAt:.updated_at,closedAt:.closed_at})' \
             > .cstack/intake/tracker-issues-all.json
-          gh pr list --limit 1000 --state all --json number,title,body,author,labels,url,state,isDraft,baseRefName,headRefName,headRefOid,mergeCommit,commits,createdAt,updatedAt,closedAt,mergedAt \
+          gh api --paginate "/repos/$GITHUB_REPOSITORY/pulls?state=all&per_page=100" | jq -s 'add | map({number,title,body,author:.user,labels:[],url:.html_url,state,isDraft:.draft,baseRefName:.base.ref,headRefName:.head.ref,headRefOid:.head.sha,mergeCommit:.merge_commit_sha,commits:.commits_url,createdAt:.created_at,updatedAt:.updated_at,closedAt:.closed_at,mergedAt:.merged_at})' \
             > .cstack/intake/prs-all.json
-          git log --oneline --decorate -n 200 > .cstack/intake/commits.txt
+          git log --oneline --decorate > .cstack/intake/commits.txt
           jq -n \
             --arg repo "$GITHUB_REPOSITORY" \
             --arg marker "${{ needs.triage.outputs.marker }}" \
@@ -285,55 +295,80 @@ jobs:
           if [ "$OUTCOME" = "reproduced" ] && [ "$MODE" = "fix" ] && [ "$VERIFY" = "not_applicable" ] && [ -n "$PATCH" ] && [ "$PATCH" != "null" ]; then
             NEEDS_EVIDENCE=true
           fi
-          if [ "$NEEDS_EVIDENCE" != "true" ]; then
-            exit 0
-          fi
-          mkdir -p .cstack/intake/durable-reproduce/files
-          jq -r '.evidence_paths[]? | select(type == "string") | gsub("^\\s+|\\s+$"; "") | select(length > 0)' "$RESULT" \
-            > .cstack/intake/durable-reproduce/evidence-paths.txt
-          if ! test -s .cstack/intake/durable-reproduce/evidence-paths.txt; then
-            echo "source comment or draft proof requires evidence paths" >&2
-            exit 1
-          fi
-          cp "$RESULT" .cstack/intake/durable-reproduce/
-          cp .cstack/intake/run-context.json .cstack/intake/durable-reproduce/
-          cp .cstack/intake/source-issue.json .cstack/intake/durable-reproduce/
-          cp .cstack/intake/tracker-issues-all.json .cstack/intake/durable-reproduce/
-          cp .cstack/intake/prs-all.json .cstack/intake/durable-reproduce/
-          cp .cstack/intake/commits.txt .cstack/intake/durable-reproduce/
-          : > .cstack/intake/durable-reproduce/evidence-urls.txt
-          INDEX=0
-          while IFS= read -r evidence_path; do
-            case "$evidence_path" in
-              http://*|https://*)
-                printf '%s\n' "$evidence_path" >> .cstack/intake/durable-reproduce/evidence-urls.txt
-                ;;
-              *)
-                if ! test -f "$evidence_path"; then
-                  echo "evidence path is not a file: $evidence_path" >&2
-                  exit 1
-                fi
-                INDEX=$((INDEX + 1))
-                BASENAME=$(basename "$evidence_path")
-                cp "$evidence_path" ".cstack/intake/durable-reproduce/files/evidence-${INDEX}-${BASENAME}"
-                ;;
-            esac
-          done < .cstack/intake/durable-reproduce/evidence-paths.txt
+          mkdir -p intake-artifacts/reproduce/files
+          cp "$RESULT" intake-artifacts/reproduce/
+          cp .cstack/intake/run-context.json intake-artifacts/reproduce/
+          cp .cstack/intake/source-issue.json intake-artifacts/reproduce/
+          cp .cstack/intake/tracker-issues-all.json intake-artifacts/reproduce/
+          cp .cstack/intake/prs-all.json intake-artifacts/reproduce/
+          cp .cstack/intake/commits.txt intake-artifacts/reproduce/
           jq -n \
             --arg run_url "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" \
             --arg run_attempt "${GITHUB_RUN_ATTEMPT:-1}" \
             '{workflow_run_url:$run_url, run_attempt:$run_attempt}' \
-            > .cstack/intake/durable-reproduce/manifest.json
+            > intake-artifacts/reproduce/manifest.json
+          if [ "$NEEDS_EVIDENCE" != "true" ]; then
+            exit 0
+          fi
+          jq -r '.evidence_paths[]? | select(type == "string") | gsub("^\\s+|\\s+$"; "") | select(length > 0)' "$RESULT" \
+            > intake-artifacts/reproduce/evidence-paths.txt
+          if ! test -s intake-artifacts/reproduce/evidence-paths.txt; then
+            echo "source comment or draft proof requires evidence paths" >&2
+            exit 1
+          fi
+          ARTIFACT_ROOT=$(python3 - <<'PY'
+          import re
+          from pathlib import Path
+
+          text = Path(".github/cstack/intake/configuration.yaml").read_text(encoding="utf-8")
+          match = re.search(r"(?ms)^control:\n(?:^[ \t]+.*\n)*?^[ \t]+artifact_directory:[ \t]*[\"']?([^\"'\n#]+)", text)
+          if not match:
+              raise SystemExit("control.artifact_directory is missing")
+          print(Path(match.group(1).strip()).expanduser().resolve(strict=True))
+          PY
+          )
+          : > intake-artifacts/reproduce/evidence-urls.txt
+          INDEX=0
+          while IFS= read -r evidence_path; do
+            case "$evidence_path" in
+              http://*|https://*)
+                printf '%s\n' "$evidence_path" >> intake-artifacts/reproduce/evidence-urls.txt
+                ;;
+              *)
+                ARTIFACT_ROOT="$ARTIFACT_ROOT" EVIDENCE_PATH="$evidence_path" python3 - <<'PY'
+          import os
+          from pathlib import Path
+
+          root = Path(os.environ["ARTIFACT_ROOT"]).resolve(strict=True)
+          try:
+              path = Path(os.environ["EVIDENCE_PATH"]).expanduser().resolve(strict=True)
+          except FileNotFoundError:
+              raise SystemExit(f"evidence path is not a file: {os.environ['EVIDENCE_PATH']}")
+          if not path.is_file():
+              raise SystemExit(f"evidence path is not a file: {os.environ['EVIDENCE_PATH']}")
+          try:
+              path.relative_to(root)
+          except ValueError:
+              raise SystemExit("evidence path must stay inside control.artifact_directory")
+          PY
+                INDEX=$((INDEX + 1))
+                BASENAME=$(basename "$evidence_path")
+                cp "$evidence_path" "intake-artifacts/reproduce/files/evidence-${INDEX}-${BASENAME}"
+                ;;
+            esac
+          done < intake-artifacts/reproduce/evidence-paths.txt
       - name: Upload reproduce evidence
-        uses: actions/upload-artifact@v4
+        id: upload-reproduce
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: intake-reproduce-${{ needs.triage.outputs.issue_number }}-${{ github.run_id }}-${{ github.run_attempt }}
-          path: .cstack/intake/durable-reproduce
-          if-no-files-found: ignore
+          path: intake-artifacts/reproduce
+          if-no-files-found: error
           retention-days: 30
       - name: Post reproduce comment
         env:
           GH_TOKEN: ${{ github.token }}
+          ARTIFACT_URL: ${{ steps.upload-reproduce.outputs.artifact-url }}
         run: |
           set -euo pipefail
           RESULT=.cstack/intake/reproduce-output.json
@@ -343,11 +378,16 @@ jobs:
           if [ -z "$BODY" ] || [ "$BODY" = "null" ]; then
             exit 0
           fi
+          if [ -z "${ARTIFACT_URL:-}" ]; then
+            echo "missing reproduce artifact URL" >&2
+            exit 1
+          fi
           ISSUE="${{ needs.triage.outputs.issue_number }}"
-          printf '%s\n' "$BODY" | gh issue comment "$ISSUE" --body-file -
+          printf '%s\n\nEvidence artifact: %s\n' "$BODY" "$ARTIFACT_URL" | gh issue comment "$ISSUE" --body-file -
       - name: Open draft pull request
         env:
           GH_TOKEN: ${{ github.token }}
+          ARTIFACT_URL: ${{ steps.upload-reproduce.outputs.artifact-url }}
         run: |
           set -euo pipefail
           RESULT=.cstack/intake/reproduce-output.json
@@ -376,7 +416,11 @@ jobs:
             echo "draft pull request requires before-and-after evidence paths" >&2
             exit 1
           fi
-          test -f .cstack/intake/durable-reproduce/manifest.json
+          test -f intake-artifacts/reproduce/manifest.json
+          if [ -z "${ARTIFACT_URL:-}" ]; then
+            echo "missing reproduce artifact URL" >&2
+            exit 1
+          fi
           BRANCH="intake/issue-${ISSUE}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT:-1}"
           git checkout -b "$BRANCH"
           printf '%s\n' "$PATCH" > .cstack/intake/proposed.patch
@@ -385,4 +429,5 @@ jobs:
               -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
               commit -m "$MESSAGE"
           git push origin "$BRANCH"
-          gh pr create --draft --title "$TITLE" --body "$PRBODY"
+          printf '%s\n\nEvidence artifact: %s\n' "$PRBODY" "$ARTIFACT_URL" > .cstack/intake/pr-body.md
+          gh pr create --draft --title "$TITLE" --body-file .cstack/intake/pr-body.md

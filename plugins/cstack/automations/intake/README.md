@@ -41,8 +41,8 @@ Slack is not a wake. If the source is a Slack channel, register an MCP server wi
 
 One workflow file, one run per report.
 
-1. **triage** checks out the repository, fail-closes if the installed files are missing, requires `source.repository` to match `GITHUB_REPOSITORY`, snapshots the source issue, all-state issues, all-state pull requests, and recent commits, runs Codex in the read-only sandbox with the triage schema, uploads the triage evidence artifact, posts the single verdict comment from a `run:` step, and applies tracker labels only when the JSON says `create_tracker` is true for a bug or performance marker.
-2. **reproduce** uses `needs: triage` and runs only when that output marker is `[intake:bug]` or `[intake:performance]`. It snapshots the issue, all-state issues, all-state pull requests, and recent commits before Codex runs. After Codex returns, it uploads local proof files named in `evidence_paths` before it posts an optional source comment or opens a draft pull request. Retry branches include both `GITHUB_RUN_ID` and `GITHUB_RUN_ATTEMPT`.
+1. **triage** checks out the full repository history, fail-closes if the installed files are missing, requires `source.repository` to match `GITHUB_REPOSITORY`, snapshots the source issue, all-state issues, all-state pull requests, and full commit list, runs Codex in the read-only sandbox with the triage schema, uploads the triage evidence artifact, posts the single verdict comment from a `run:` step, and applies tracker labels only when the JSON says `create_tracker` is true for a bug or performance marker.
+2. **reproduce** uses `needs: triage` and runs only when that output marker is `[intake:bug]` or `[intake:performance]`. It snapshots the issue, all-state issues, all-state pull requests, and full commit list before Codex runs. After Codex returns, it uploads local proof files named in `evidence_paths` before it posts an optional source comment or opens a draft pull request. Retry branches include both `GITHUB_RUN_ID` and `GITHUB_RUN_ATTEMPT`.
 
 Codex never posts, never commits, never calls the network. The workflow is the coordinator and the only external writer.
 

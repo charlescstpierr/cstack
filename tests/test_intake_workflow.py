@@ -42,6 +42,7 @@ def run_workflow_script(
     payload: dict,
     *,
     shims: bool = False,
+    extra_env: dict[str, str] | None = None,
 ) -> subprocess.CompletedProcess[str]:
     payload_path.parent.mkdir(parents=True, exist_ok=True)
     payload_path.write_text(json.dumps(payload), encoding="utf-8")
@@ -53,13 +54,15 @@ def run_workflow_script(
     env["GITHUB_RUN_ATTEMPT"] = "2"
     env["GITHUB_REPOSITORY"] = "example-org/example-repo"
     env["GITHUB_SERVER_URL"] = "https://github.com"
+    if extra_env:
+        env.update(extra_env)
     if shims:
         shim_dir = payload_path.parents[2] / "bin"
         shim_dir.mkdir(exist_ok=True)
         for command in ("git", "gh"):
             target = shim_dir / command
             target.write_text(
-                f"#!/usr/bin/env sh\nprintf '%s\\n' \"$0 $*\" >> {payload_path.parents[2] / 'shim.log'}\nexit 0\n",
+                f"#!/usr/bin/env sh\nprintf '%s\\n' \"$0 $*\" >> {payload_path.parents[2] / 'shim.log'}\ncat >> {payload_path.parents[2] / 'shim.stdin'}\nif [ \"$(basename \"$0\")\" = gh ] && [ \"$1\" = api ]; then printf '[]\\n'; fi\nexit 0\n",
                 encoding="utf-8",
             )
             target.chmod(target.stat().st_mode | stat.S_IXUSR)
@@ -157,13 +160,15 @@ class IntakeWorkflowTests(unittest.TestCase):
                     self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
                     self.assertIn("requires before-and-after evidence paths", result.stderr)
 
-            (output.parent / "durable-reproduce").mkdir(exist_ok=True)
-            (output.parent / "durable-reproduce/manifest.json").write_text("{}", encoding="utf-8")
+            manifest = Path(directory) / "intake-artifacts/reproduce/manifest.json"
+            manifest.parent.mkdir(parents=True, exist_ok=True)
+            manifest.write_text("{}", encoding="utf-8")
             passed = run_workflow_script(
                 script,
                 output,
                 reproduce_payload(evidence=["/tmp/before.png", "/tmp/after.png"]),
                 shims=True,
+                extra_env={"ARTIFACT_URL": "https://github.com/example-org/example-repo/actions/runs/456/artifacts/789"},
             )
             self.assertEqual(passed.returncode, 0, passed.stdout + passed.stderr)
             shim_log = (Path(directory) / "shim.log").read_text(encoding="utf-8")
@@ -178,8 +183,13 @@ class IntakeWorkflowTests(unittest.TestCase):
             for name in ("run-context.json", "source-issue.json", "tracker-issues-all.json", "prs-all.json"):
                 (output.parent / name).write_text("{}", encoding="utf-8")
             (output.parent / "commits.txt").write_text("abc123 fix\n", encoding="utf-8")
-            before = root / "before.png"
-            after = root / "after.png"
+            artifact_dir = root / "artifacts"
+            artifact_dir.mkdir()
+            config = root / ".github/cstack/intake/configuration.yaml"
+            config.parent.mkdir(parents=True)
+            config.write_text(f'control:\n  artifact_directory: "{artifact_dir}"\n', encoding="utf-8")
+            before = artifact_dir / "before.png"
+            after = artifact_dir / "after.png"
             before.write_text("before", encoding="utf-8")
             after.write_text("after", encoding="utf-8")
 
@@ -192,7 +202,7 @@ class IntakeWorkflowTests(unittest.TestCase):
             )
 
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-            staged = output.parent / "durable-reproduce"
+            staged = root / "intake-artifacts/reproduce"
             self.assertTrue((staged / "manifest.json").is_file())
             self.assertTrue((staged / "files/evidence-1-before.png").is_file())
             self.assertTrue((staged / "files/evidence-2-after.png").is_file())
@@ -207,6 +217,11 @@ class IntakeWorkflowTests(unittest.TestCase):
             for name in ("run-context.json", "source-issue.json", "tracker-issues-all.json", "prs-all.json"):
                 (output.parent / name).write_text("{}", encoding="utf-8")
             (output.parent / "commits.txt").write_text("abc123 fix\n", encoding="utf-8")
+            artifact_dir = root / "artifacts"
+            artifact_dir.mkdir()
+            config = root / ".github/cstack/intake/configuration.yaml"
+            config.parent.mkdir(parents=True)
+            config.write_text(f'control:\n  artifact_directory: "{artifact_dir}"\n', encoding="utf-8")
 
             result = run_workflow_script(
                 script,
@@ -217,14 +232,79 @@ class IntakeWorkflowTests(unittest.TestCase):
             self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
             self.assertIn("evidence path is not a file", result.stderr)
 
+    def test_reproduce_evidence_staging_rejects_local_paths_outside_configured_artifact_directory(self) -> None:
+        script = workflow_script("Stage reproduce evidence")
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            output = root / ".cstack/intake/reproduce-output.json"
+            output.parent.mkdir(parents=True)
+            for name in ("run-context.json", "source-issue.json", "tracker-issues-all.json", "prs-all.json"):
+                (output.parent / name).write_text("{}", encoding="utf-8")
+            (output.parent / "commits.txt").write_text("abc123 fix\n", encoding="utf-8")
+            artifact_dir = root / "artifacts"
+            artifact_dir.mkdir()
+            config = root / ".github/cstack/intake/configuration.yaml"
+            config.parent.mkdir(parents=True)
+            config.write_text(f'control:\n  artifact_directory: "{artifact_dir}"\n', encoding="utf-8")
+            secret = root / "secret.txt"
+            secret.write_text("secret", encoding="utf-8")
+
+            result = run_workflow_script(script, output, reproduce_payload(evidence=[str(secret)]))
+
+            self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
+            self.assertIn("evidence path must stay inside control.artifact_directory", result.stderr)
+
+    def test_reproduce_evidence_staging_rejects_symlink_escape_from_configured_artifact_directory(self) -> None:
+        script = workflow_script("Stage reproduce evidence")
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            output = root / ".cstack/intake/reproduce-output.json"
+            output.parent.mkdir(parents=True)
+            for name in ("run-context.json", "source-issue.json", "tracker-issues-all.json", "prs-all.json"):
+                (output.parent / name).write_text("{}", encoding="utf-8")
+            (output.parent / "commits.txt").write_text("abc123 fix\n", encoding="utf-8")
+            artifact_dir = root / "artifacts"
+            artifact_dir.mkdir()
+            config = root / ".github/cstack/intake/configuration.yaml"
+            config.parent.mkdir(parents=True)
+            config.write_text(f'control:\n  artifact_directory: "{artifact_dir}"\n', encoding="utf-8")
+            secret = root / "secret.txt"
+            secret.write_text("secret", encoding="utf-8")
+            link = artifact_dir / "link.txt"
+            link.symlink_to(secret)
+
+            result = run_workflow_script(script, output, reproduce_payload(evidence=[str(link)]))
+
+            self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
+            self.assertIn("evidence path must stay inside control.artifact_directory", result.stderr)
+
     def test_workflow_snapshots_all_state_issue_pr_and_commit_signals(self) -> None:
         workflow = WORKFLOW.read_text(encoding="utf-8")
 
-        self.assertIn("gh issue list --limit 1000 --state all", workflow)
+        self.assertIn("gh api --paginate", workflow)
+        self.assertIn("jq -s 'add |", workflow)
+        self.assertIn("/repos/$GITHUB_REPOSITORY/issues?state=all", workflow)
         self.assertIn("> .cstack/intake/tracker-issues-all.json", workflow)
-        self.assertIn("gh pr list --limit 1000 --state all", workflow)
+        self.assertIn("/repos/$GITHUB_REPOSITORY/pulls?state=all", workflow)
         self.assertIn("> .cstack/intake/prs-all.json", workflow)
-        self.assertIn("git log --oneline --decorate -n 200 > .cstack/intake/commits.txt", workflow)
+        self.assertIn("git log --oneline --decorate > .cstack/intake/commits.txt", workflow)
+        self.assertNotIn("git log --oneline --decorate -n 200", workflow)
+
+    def test_workflow_fetches_full_checkout_and_uploads_nonhidden_staged_artifacts(self) -> None:
+        workflow = WORKFLOW.read_text(encoding="utf-8")
+
+        self.assertEqual(workflow.count("fetch-depth: 0"), 2)
+        self.assertNotIn("actions/upload-artifact@v4", workflow)
+        self.assertIn("actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02", workflow)
+        self.assertIn("name: Upload reproduce evidence", workflow)
+        self.assertIn("if-no-files-found: error", workflow)
+        self.assertIn("path: intake-artifacts/reproduce", workflow)
+
+    def test_published_comments_and_draft_pr_body_append_reproduce_artifact_url(self) -> None:
+        workflow = WORKFLOW.read_text(encoding="utf-8")
+
+        self.assertIn("ARTIFACT_URL: ${{ steps.upload-reproduce.outputs.artifact-url }}", workflow)
+        self.assertIn("Evidence artifact: %s", workflow)
 
     def test_snapshot_source_issue_requires_github_repository_slug_match(self) -> None:
         script = workflow_script("Snapshot source issue")

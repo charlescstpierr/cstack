@@ -22,7 +22,7 @@ GitHub Actions supplies the event. Freeze coordinates from the snapshot files. D
 - Issue snapshot: `.cstack/intake/source-issue.json`
 - All-state issue snapshot: `.cstack/intake/tracker-issues-all.json`
 - All-state pull request snapshot: `.cstack/intake/prs-all.json`
-- Recent commit snapshot: `.cstack/intake/commits.txt`
+- Full commit snapshot: `.cstack/intake/commits.txt`
 - Repository: `repository` in the run context
 - Issue number: `issue_number` in the run context
 
