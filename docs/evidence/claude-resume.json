@@ -141,8 +141,8 @@
     "No performance or quality superiority claimed.",
     "Missing-session test uses a synthetic CStack receipt with a random nonexistent UUID. No private CLI session file is touched.",
     "Connected cases use Claude Code only; resume requests to other runtimes are unsupported.",
-    "Raw local receipts and scripts remain under .cstack; hashes identify the preserved artifacts.",
-    "First tool-enabled Opus review timed out; approval is from a fresh source-supplied review and its official resumed follow-up."
+    "First tool-enabled Opus review timed out; approval is from a fresh source-supplied review and its official resumed follow-up.",
+    "Original raw task artifacts were accidentally removed during worktree cleanup. Their recorded hashes remain historical; a fresh post-install campaign is preserved separately."
   ],
   "independent_review": {
     "reviewer": "Claude Opus 5.5",
@@ -155,5 +155,7 @@
     "review_sha256": "70b196b6f56c2c0b598f73f1dc518296c93b18351d4f7174178b8318fb17f41b",
     "approved_runtime_sha256": "226ff1083785616df122ee87c3f3c3a07f873933e85c3a68410a0b41d1521ad9",
     "notes": "Final regression adjusted afterward to fail on result.json specifically; reviewed by parent, production runtime unchanged."
-  }
+  },
+  "historical_raw_receipts_available": false,
+  "post_install_recheck": "docs/evidence/claude-resume-installed.json"
 }

@@ -1,0 +1,99 @@
+{
+  "status": "PASS",
+  "version": "2.1.280 (Claude Code)",
+  "installed_runtime_sha256": "226ff1083785616df122ee87c3f3c3a07f873933e85c3a68410a0b41d1521ad9",
+  "test_script_sha256": "f7b827a7658b38d8325c36d758126e40080d32c20efefbd0f89aa28f70ae1448",
+  "cancellation_seconds": 0.546,
+  "checks": [
+    "same session",
+    "101 ages at each policy",
+    "human edit preserved",
+    "stale receipt refused",
+    "permission change refused",
+    "timeout invalidates lineage",
+    "readonly resume refuses writing",
+    "SIGTERM cancellation invalidates lineage",
+    "nonexistent UUID classified RESUME_FAILED"
+  ],
+  "cases": [
+    {
+      "name": "after-cancel",
+      "execution": "RESUME_FAILED",
+      "sha256": "34915bf4b41b6f261453552063d255e798e2dc6a1dd6c9b8d9cc4423a4b5f9f7",
+      "path": ".cstack/tasks/claude-resume-recheck/receipts/after-cancel/result.json"
+    },
+    {
+      "name": "after-timeout",
+      "execution": "RESUME_FAILED",
+      "sha256": "f34217280f6e1436de3b16782abf6a1bb149f40bbec217d24fc52ba117de2863",
+      "path": ".cstack/tasks/claude-resume-recheck/receipts/after-timeout/result.json"
+    },
+    {
+      "name": "cancel",
+      "execution": "CANCELLED",
+      "sha256": "07c95fd31d80a74a6e30b3d1c7e05feef71df367bb49a710121eb90cd5b61fd5",
+      "path": ".cstack/tasks/claude-resume-recheck/receipts/cancel/result.json"
+    },
+    {
+      "name": "first",
+      "execution": "COMPLETED",
+      "sha256": "431c9718292daa7278bed0585d3686914236a0f9af6f91bae35bdd6b478621ca",
+      "path": ".cstack/tasks/claude-resume-recheck/receipts/first/result.json"
+    },
+    {
+      "name": "missing",
+      "execution": "RESUME_FAILED",
+      "sha256": "1e00b606c4f8900c0c958ef1a8cfdfe167d5799e09099e15948563da4ba6f960",
+      "path": ".cstack/tasks/claude-resume-recheck/receipts/missing/result.json"
+    },
+    {
+      "name": "permission",
+      "execution": "RESUME_FAILED",
+      "sha256": "c2fc390f731ae5fc8a17efc9e8916e0e92e940a8398e978f508cea7909358191",
+      "path": ".cstack/tasks/claude-resume-recheck/receipts/permission/result.json"
+    },
+    {
+      "name": "readonly",
+      "execution": "COMPLETED",
+      "sha256": "252bdc1caa384897ab3acfc52c4b5873514023acf0bc6b4fcaeb3f2b1998e4e8",
+      "path": ".cstack/tasks/claude-resume-recheck/receipts/readonly/result.json"
+    },
+    {
+      "name": "readonly-resume",
+      "execution": "COMPLETED",
+      "sha256": "4ba9f0f2bcc3f76262fc050deca555c480ba3bd294c5a95f3616fe2ca22ffc17",
+      "path": ".cstack/tasks/claude-resume-recheck/receipts/readonly-resume/result.json"
+    },
+    {
+      "name": "second",
+      "execution": "COMPLETED",
+      "sha256": "dd6fb800488596ac6e13fae3ede0778ec39027b88255ed6e78ddfca3cbb50c61",
+      "path": ".cstack/tasks/claude-resume-recheck/receipts/second/result.json"
+    },
+    {
+      "name": "stale",
+      "execution": "RESUME_FAILED",
+      "sha256": "82d281625970e54fe1cc18144320950abd1234c8d55d22f43104e41e81e18b2b",
+      "path": ".cstack/tasks/claude-resume-recheck/receipts/stale/result.json"
+    },
+    {
+      "name": "timeout",
+      "execution": "TIMEOUT",
+      "sha256": "8416795408b1e64be0014e227a6c73010e52f8328bde753e7cf488de78ea9b89",
+      "path": ".cstack/tasks/claude-resume-recheck/receipts/timeout/result.json"
+    }
+  ],
+  "date": "2026-09-23",
+  "tested_commit": "0b548d7d06d31b6cc182b79f46d5875bfa11e9a1",
+  "review_recovery": {
+    "path": ".cstack/tasks/claude-resume-recheck/opus-final-review-recovered.md",
+    "sha256": "70b196b6f56c2c0b598f73f1dc518296c93b18351d4f7174178b8318fb17f41b",
+    "matches_original_committed_hash": true,
+    "method": "Exact text reconstructed from the tool response, then SHA-256 checked against original committed manifest."
+  },
+  "limits": [
+    "This new campaign does not restore the deleted original raw receipts.",
+    "The nonexistent-session case uses a synthetic CStack receipt with a random UUID.",
+    "No production source changed between the approved runtime and this installed check."
+  ]
+}
