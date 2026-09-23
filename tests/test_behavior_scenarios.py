@@ -35,16 +35,18 @@ class BehaviorScenarioGeneratorTests(unittest.TestCase):
             self.assertEqual(result, 0)
             cases = json.loads((output / "cases.json").read_text(encoding="utf-8"))
             expectations = json.loads((output / "expectations.json").read_text(encoding="utf-8"))["cases"]
-            self.assertEqual(len(cases), 24)
-            self.assertEqual(len(expectations), 24)
+            self.assertEqual(len(cases), 37)
+            self.assertEqual(len(expectations), 37)
             self.assertEqual(len({case["cwd"] for case in cases}), len(cases))
+            self.assertTrue(all(Path(case["bundle"]).is_dir() for case in cases))
 
             routing = {
                 case["id"]: case["routing"]
                 for case in expectations
                 if case["id"].startswith("routing_")
             }
-            self.assertEqual(routing, {
+            self.assertEqual(len(routing), 17)
+            for case_id, expected in {
                 "routing_one_word_user_string": {
                     "expected": ["skills/cstack/playbooks/bug-fix.md"],
                     "forbidden": [
@@ -70,7 +72,10 @@ class BehaviorScenarioGeneratorTests(unittest.TestCase):
                     "expected": ["skills/cstack/playbooks/runtime-forensics.md"],
                     "forbidden": ["skills/cstack/playbooks/trace-forensics.md"],
                 },
-            })
+            }.items():
+                self.assertEqual(routing[case_id], expected)
+            self.assertIn("skills/arena/SKILL.md", routing["routing_competing_feature_shapes"]["expected"])
+            self.assertIn("skills/cstack/playbooks/hillclimb.md", routing["routing_one_off_performance"]["forbidden"])
             for value in routing.values():
                 for route in value["expected"] + value["forbidden"]:
                     self.assertFalse(route.startswith("skills/principle-"))
