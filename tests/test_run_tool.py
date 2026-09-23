@@ -36,6 +36,11 @@ class RunToolTest(unittest.TestCase):
         bun.write_text("#!{}\n".format(sys.executable) + textwrap.dedent("""\
             import json, os, pathlib, signal, sys, time
             args = sys.argv[1:]
+            if args == ["--help"]:
+                print("Usage: bun [options]")
+                if not os.environ.get("FAKE_BUN_NO_ENV_FILE_MISSING"):
+                    print("  --no-env-file")
+                raise SystemExit()
             config = None
             no_env_file = False
             i = 0
@@ -232,6 +237,17 @@ class RunToolTest(unittest.TestCase):
         result = self.run_tool("tool.ts", check=False, env=self.env | {"PATH": str(path)})
         self.assertEqual(result.returncode, 2)
         self.assertIn("environnement d’exécution requis introuvable: bun", result.stderr)
+
+    def test_rejects_bun_without_no_env_file_support(self):
+        (self.source / "tool.ts").write_text("trusted")
+        result = self.run_tool(
+            "tool.ts",
+            check=False,
+            env=self.env | {"FAKE_BUN_NO_ENV_FILE_MISSING": "1"},
+        )
+        self.assertEqual(result.returncode, 2)
+        self.assertIn("--no-env-file", result.stderr)
+        self.assertFalse((self.cwd / ".cstack").exists())
 
     def test_rejects_unsafe_or_missing_entrypoints(self):
         (self.source / "ok.ts").write_text("")
