@@ -38,7 +38,9 @@ If status fails, stop. Tell the user to sign in on this machine. They can run `c
 
 Store the UI's own config (bind address, port, `--cd` root, sandbox, timeout, optional page token) in a file the HTTP server reads and does not serve. The browser never receives Codex credentials.
 
-If the user asked to expose the page past localhost, generate a random page token, inject it into the HTML the server renders, and require `Authorization: Bearer <page-token>` on POST. That token is not the Codex login.
+If the user asked to expose the page past localhost, generate a random page token and store only the hash or the raw value in the unserved server config. Refuse to start on a non-loopback bind when no page token is configured.
+
+Do not inject the page token into served HTML, inline JavaScript, query strings, or server-set browser storage. Render a token input instead. The browser may keep the token only after the user types it, then send `Authorization: Bearer <page-token>` on POST. A missing or wrong token returns 401 and does not spawn `codex`.
 
 ## The page
 
@@ -47,7 +49,7 @@ One HTML page. One button per action. Each click `fetch`es the local server:
 - method `POST`
 - `Content-Type: application/json`
 - body: one JSON object with the fields named in the prompt
-- the page token header only when you issued one
+- the page token header only after the user entered one
 
 Show idle, running, last reply, and last error. Do not send media bytes. Do not call `codex` from the browser.
 
@@ -63,7 +65,7 @@ On each POST:
 4. Spawn one `codex exec`. No retry.
 5. Wait until the process exits or until the timeout. A webhook used to ack in 8 seconds. This is a full Codex turn, so the timeout is in minutes. Default 120 seconds if the user did not set one. On timeout, kill the process group, append the request to the failure log, return 504.
 6. If the process exits non-zero, append the request, exit code, and a short stderr tail to the failure log. Return 502. Do not retry.
-7. On exit 0, read the file passed to `-o` and return HTTP 200 with that text as the reply. Delete or mark drained any failure-log entries the prompt told this run to consume.
+7. On exit 0, read the file passed to `-o` and return HTTP 200 with that text as the reply. Parse the JSONL stdout. If the run is the first turn for this UI thread, persist the `thread_id` from the `thread.started` event in an unserved state file before accepting a later follow-up. Delete or mark drained any failure-log entries the prompt told this run to consume.
 
 One in-flight run at a time. A second click while a run is live returns 409.
 
@@ -71,14 +73,17 @@ One in-flight run at a time. A second click while a run is live returns 409.
 
 The wake is this command, with paths the server owns. Every flag below exists on Codex 0.154.0 `codex exec --help`.
 
+Read the prompt file into a string, then pass that content to Codex. Do not pass the prompt file path as the prompt.
+
 ```sh
+PROMPT_TEXT=$(<"$PROMPT_FILE")
 codex exec \
   --json \
   -o "$OUT/last-message.txt" \
   -s read-only \
   --cd "$WORK" \
   --skip-git-repo-check \
-  "$PROMPT" \
+  "$PROMPT_TEXT" \
   </dev/null
 ```
 
@@ -89,19 +94,33 @@ Close the child's stdin. `codex exec` waits for stdin EOF on a non-TTY pipe even
 - `-s` / `--sandbox` is `read-only`, `workspace-write`, or `danger-full-access`. Use the value from the interview.
 - `--cd` / `-C` is the working root.
 - `--skip-git-repo-check` is required when that root is not a Git repository.
-- Prompt input is the positional `PROMPT`. If the prompt is large, pass `-`, write the prompt on stdin, then close stdin. Piped stdin plus a prompt argument appends stdin as extra context, so an open pipe blocks until EOF. There is no `--prompt-file` flag on `codex exec`.
+- Prompt input is the positional prompt text. If the prompt is large, pass `-`, write the prompt text on stdin, then close stdin. Piped stdin plus a prompt argument appends stdin as extra context, so an open pipe blocks until EOF. There is no `--prompt-file` flag on `codex exec`.
 - `--output-schema FILE` is optional. Use it when the page needs a JSON last message that matches a schema file the server owns.
 
 Do not add flags you have not confirmed on `codex exec --help`.
 
-Optional later turns, only if the user asked to continue a thread. These subcommands exist on the same binary:
+Optional later turns, only if the user asked to continue a thread. Use the exact `thread_id` that this server captured from the first run's JSONL. Do not use `resume --last`; another Codex run on the machine can become the newest session.
+
+If the user clicks a follow-up action and no session id is stored, return 409 and tell the page that no thread exists yet. Do not guess, do not scan private Codex sessions, and do not fall back to `--last`.
 
 ```sh
-codex exec resume --last --json -o "$OUT/last-message.txt" "$PROMPT" </dev/null
-codex exec fork <SESSION_ID> --json -o "$OUT/last-message.txt" "$PROMPT" </dev/null
+PROMPT_TEXT=$(<"$PROMPT_FILE")
+codex exec resume \
+  --json \
+  -o "$OUT/last-message.txt" \
+  "$SESSION_ID" \
+  "$PROMPT_TEXT" \
+  </dev/null
+
+codex exec fork \
+  --json \
+  -o "$OUT/last-message.txt" \
+  "$SESSION_ID" \
+  "$PROMPT_TEXT" \
+  </dev/null
 ```
 
-`resume` accepts `--last` when there is no id. They are not the first wake.
+`resume` accepts `--last` when there is no id. This UI must not use it.
 
 Connectors are MCP servers. They do not wake the bot. If the run needs one, the user registers it with `codex mcp add` and it lives under `[mcp_servers.<name>]` in `$CODEX_HOME/config.toml`. The local server does not speak MCP.
 
@@ -113,7 +132,7 @@ Before you tell the user the UI is live, POST once from this machine with a payl
 
 Do nothing extra until the user asks.
 
-Then rebind to `0.0.0.0`, keep the page token, and give them `http://<this-machine>:<port>/`. Use HTTP unless they asked for TLS. Do not install a tunnel, Tailscale, or a reverse proxy unless they asked for that by name. Do not claim the Codex CLI accepted the connection. It did not. The server did.
+Then rebind to `0.0.0.0`, require the page token on POST, and give them `http://<this-machine>:<port>/`. Give the token through a trusted channel, not in the served page. Use HTTP unless they asked for TLS. Do not install a tunnel, Tailscale, or a reverse proxy unless they asked for that by name. Do not claim the Codex CLI accepted the connection. It did not. The server did.
 
 ## Limits
 
