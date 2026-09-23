@@ -99,6 +99,10 @@ jobs:
             '[intake:bug]'|'[intake:performance]'|'[intake:other]') ;;
             *) echo "invalid marker: $MARKER" >&2; exit 1 ;;
           esac
+          if { [ "$MARKER" = "[intake:bug]" ] || [ "$MARKER" = "[intake:performance]" ]; } && { [ -z "$BODY" ] || [ "$BODY" = "null" ]; }; then
+            echo "bug/performance triage requires a verdict comment with the matching marker" >&2
+            exit 1
+          fi
           FOUND=$(printf '%s\n' "$BODY" | grep -oE '\[intake:(bug|performance|other)\]' || true)
           COUNT=$(printf '%s' "$FOUND" | grep -c . || true)
           if [ -n "$BODY" ] && [ "$COUNT" != "1" ]; then
@@ -241,6 +245,11 @@ jobs:
           fi
           if [ -z "$TITLE" ] || [ -z "$PRBODY" ] || [ -z "$MESSAGE" ]; then
             echo "missing pull request fields" >&2
+            exit 1
+          fi
+          EVIDENCE_COUNT=$(jq '[.evidence_paths[]? | select(type == "string" and length > 0)] | length' "$RESULT")
+          if [ "$EVIDENCE_COUNT" -lt 2 ]; then
+            echo "draft pull request requires before-and-after evidence paths" >&2
             exit 1
           fi
           BRANCH="intake/issue-${ISSUE}-${GITHUB_RUN_ID}"
