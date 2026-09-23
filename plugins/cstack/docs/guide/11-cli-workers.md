@@ -70,6 +70,14 @@ Les fichiers `context_files` contiennent les décisions, interfaces et rapports 
 
 Pour comparer deux candidats, le coordinateur vérifie les empreintes `skills.sha256` et `context.sha256` des reçus. Des axes de revue distincts peuvent avoir des briefs distincts ; leurs faits communs doivent rester cohérents.
 
+## Continuer une tâche avec le même worker Claude
+
+Pour corriger une tentative Claude terminée, le coordinateur peut reprendre sa conversation officielle. La requête du helper contient `resume_from`, le chemin du reçu précédent. Le worker garde son historique et reçoit les décisions et fichiers de contexte actuels. Le démarrage neuf reste le défaut ; la configuration des rôles dans `models.json` ne change pas.
+
+Le runner refuse les changements de tâche, worktree, permissions, modèle, effort, version CLI ou skills, les anciens reçus et deux reprises simultanées. Après une interruption, le coordinateur inspecte les fichiers avant de repartir dans une session neuve. Les reviewers et candidats indépendants gardent des sessions séparées.
+
+La reprise peut réduire le texte à transmettre. Elle ne garantit ni un résultat meilleur, ni une économie de quota ou de délai. Consultez le [contrat de reprise](../../skills/cstack/references/runtime-workers.md#reprise-et-limites) pour les préconditions et les erreurs.
+
 ## Lire les résultats et les limites
 
 Chaque tentative conserve `result.json`, les snapshots de skills et de contexte, ainsi que stdout et stderr dans le dossier de tâche. `execution.status` indique le résultat du processus ; `worker.status` est le verdict déclaré par le worker. Un worker `PASS` ne suffit pas à inscrire une vérification indépendante au ledger.

@@ -1,0 +1,161 @@
+{
+  "date": "2026-09-23",
+  "base_commit": "57ea2ed",
+  "runtime": "claude-code",
+  "version": "2.1.280",
+  "cases": [
+    {
+      "case": "after-cancel",
+      "execution_status": "RESUME_FAILED",
+      "worker_status": "BLOCKED",
+      "receipt_sha256": "b6b254761fb88cdbfcaef77250c80d30f8772c3af494c96798bb7b925c41c96c",
+      "local_receipt": ".cstack/tasks/claude-resume/live-reviewed/receipts/after-cancel/result.json"
+    },
+    {
+      "case": "after-timeout",
+      "execution_status": "RESUME_FAILED",
+      "worker_status": "BLOCKED",
+      "receipt_sha256": "9a3e41a32e5600dcacc16a228139db2c1247653f78f315897a64852148738f00",
+      "local_receipt": ".cstack/tasks/claude-resume/live-reviewed/receipts/after-timeout/result.json"
+    },
+    {
+      "case": "cancel",
+      "execution_status": "CANCELLED",
+      "worker_status": "BLOCKED",
+      "receipt_sha256": "6bbd148cd1be2d840c3b031d506d86238fb72f13e6d7f8fd2f0822a918d8ffa6",
+      "local_receipt": ".cstack/tasks/claude-resume/live-reviewed/receipts/cancel/result.json"
+    },
+    {
+      "case": "first",
+      "execution_status": "COMPLETED",
+      "worker_status": "PASS",
+      "receipt_sha256": "8034ce8bc4ba7e4386971f0c7266f084a86869420fdfbfe04e15fb1ddb2fcbbf",
+      "local_receipt": ".cstack/tasks/claude-resume/live-reviewed/receipts/first/result.json"
+    },
+    {
+      "case": "missing-session",
+      "execution_status": "RESUME_FAILED",
+      "worker_status": "BLOCKED",
+      "receipt_sha256": "65b212d62c88a30a20e973b2994b0fb708991520c6a92f664cc6049099dd42c1",
+      "local_receipt": ".cstack/tasks/claude-resume/live-reviewed/receipts/missing-session/result.json"
+    },
+    {
+      "case": "permission-change",
+      "execution_status": "RESUME_FAILED",
+      "worker_status": "BLOCKED",
+      "receipt_sha256": "683459814ba3c08381f6c19d48f30b2c323a85919f7cd6fc918d56722655ed85",
+      "local_receipt": ".cstack/tasks/claude-resume/live-reviewed/receipts/permission-change/result.json"
+    },
+    {
+      "case": "readonly-first",
+      "execution_status": "COMPLETED",
+      "worker_status": "PASS",
+      "receipt_sha256": "101f13c150c751a87d8df94f148dcff1d8c1849100f01959e7327af462417704",
+      "local_receipt": ".cstack/tasks/claude-resume/live-reviewed/receipts/readonly-first/result.json"
+    },
+    {
+      "case": "readonly-resumed",
+      "execution_status": "COMPLETED",
+      "worker_status": "BLOCKED",
+      "receipt_sha256": "fc4bc5ef6f5c3af770e8e72c4d0a50c2b703378269432c49c951875ee4e98c9a",
+      "local_receipt": ".cstack/tasks/claude-resume/live-reviewed/receipts/readonly-resumed/result.json"
+    },
+    {
+      "case": "second",
+      "execution_status": "COMPLETED",
+      "worker_status": "PASS",
+      "receipt_sha256": "a9609be0d7faf5e8e34e5b18407d6867b29d949f09d8c17308667ebea9292279",
+      "local_receipt": ".cstack/tasks/claude-resume/live-reviewed/receipts/second/result.json"
+    },
+    {
+      "case": "stale",
+      "execution_status": "RESUME_FAILED",
+      "worker_status": "BLOCKED",
+      "receipt_sha256": "f4efccc0145fe62047a064096db0b2302c5a5120e7756a8e5e3acb60cecc6806",
+      "local_receipt": ".cstack/tasks/claude-resume/live-reviewed/receipts/stale/result.json"
+    },
+    {
+      "case": "timeout",
+      "execution_status": "TIMEOUT",
+      "worker_status": "BLOCKED",
+      "receipt_sha256": "067b60c76d2923f57356fa986a8a6aec64c0bc82dc7fcb2d6d40db53fc1ff38c",
+      "local_receipt": ".cstack/tasks/claude-resume/live-reviewed/receipts/timeout/result.json"
+    }
+  ],
+  "checks": {
+    "readonly_resume_no_write": "PASS",
+    "fresh": "PASS",
+    "resume_same_session": "PASS",
+    "updated_threshold_101_ages": "PASS",
+    "external_edit_preserved": "PASS",
+    "stale_receipt_refused": "PASS",
+    "permission_change_refused": "PASS",
+    "timeout": "PASS",
+    "resume_after_timeout_refused": "PASS",
+    "runtime_version": "2.1.280 (Claude Code)",
+    "source_sha256": "226ff1083785616df122ee87c3f3c3a07f873933e85c3a68410a0b41d1521ad9"
+  },
+  "cancellation": {
+    "status": "PASS",
+    "signal": "SIGTERM",
+    "elapsed_s": 0.532,
+    "execution": "CANCELLED",
+    "old_receipt_refused": true
+  },
+  "missing_session": {
+    "fixture": "synthetic CStack receipt with random nonexistent UUID; no CLI private files read/changed",
+    "expected": "RESUME_FAILED",
+    "actual": "RESUME_FAILED",
+    "message": "reprise refusée par le CLI"
+  },
+  "validation": {
+    "python_pass": 55,
+    "python_skip": 1,
+    "bun_root_pass": 7,
+    "bun_helpers_pass": 146,
+    "types": "PASS"
+  },
+  "sources": [
+    {
+      "path": "plugins/cstack/skills/cstack/scripts/runtime/runtime.ts",
+      "sha256": "226ff1083785616df122ee87c3f3c3a07f873933e85c3a68410a0b41d1521ad9"
+    },
+    {
+      "path": "plugins/cstack/skills/cstack/scripts/runtime/runtime.test.ts",
+      "sha256": "b98bd55f1a40ae01e45536060a6b698c7eaf0b9e120d3100003ccde1e6f4ebda"
+    },
+    {
+      "path": ".cstack/tasks/claude-resume/live.py",
+      "sha256": "7963114d6afb07e84143e41f433350ba31517d2ad5bb45224afcaf89c1ec0502"
+    },
+    {
+      "path": ".cstack/tasks/claude-resume/cancel.py",
+      "sha256": "04fd7ebf98a42bac1653f44011702bff72b55f1f680dfb6358fa0e0f616e9e98"
+    },
+    {
+      "path": ".cstack/tasks/claude-resume/missing.py",
+      "sha256": "2d911e8b34725e4ecda1d070e8757225fadbcc4493e777fde67e26984f7f03a6"
+    }
+  ],
+  "limits": [
+    "No performance or quality superiority claimed.",
+    "Missing-session test uses a synthetic CStack receipt with a random nonexistent UUID. No private CLI session file is touched.",
+    "Connected cases use Claude Code only; resume requests to other runtimes are unsupported.",
+    "First tool-enabled Opus review timed out; approval is from a fresh source-supplied review and its official resumed follow-up.",
+    "Original raw task artifacts were accidentally removed during worktree cleanup. Their recorded hashes remain historical; a fresh post-install campaign is preserved separately."
+  ],
+  "independent_review": {
+    "reviewer": "Claude Opus 5.5",
+    "requested_model": "claude-opus-5-5",
+    "requested_effort": "xhigh",
+    "reported_models": [
+      "claude-opus-5-5"
+    ],
+    "verdict": "APPROVE",
+    "review_sha256": "70b196b6f56c2c0b598f73f1dc518296c93b18351d4f7174178b8318fb17f41b",
+    "approved_runtime_sha256": "226ff1083785616df122ee87c3f3c3a07f873933e85c3a68410a0b41d1521ad9",
+    "notes": "Final regression adjusted afterward to fail on result.json specifically; reviewed by parent, production runtime unchanged."
+  },
+  "historical_raw_receipts_available": false,
+  "post_install_recheck": "docs/evidence/claude-resume-installed.json"
+}
