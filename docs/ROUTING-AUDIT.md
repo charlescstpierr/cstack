@@ -142,3 +142,17 @@ Cette trace reste une preuve externe à comparer au bloc `routing`. Le travail r
 - Trancher les décisions ouvertes ci-dessus.
 - Étendre la couverture aux paires confusables non encore mesurées : `principle-subtract-before-you-add` contre `principle-outcome-oriented-execution`, et `playbooks/perf-issue.md` contre `playbooks/hillclimb.md`.
 - Mesurer le point de rupture de la redondance en inversant un groupe entier de principles voisins plutôt qu'un seul fichier.
+
+## Instrumentation expérimentale des routes
+
+Le générateur contient désormais 17 scénarios de routing parmi 32 scénarios au total. Le runner accepte `--repeats 5`, qui copie chaque projet dans un dossier distinct, et `--trace-routes --expectations <fichier>` sous Linux quand l'hôte autorise `ptrace`. Chaque résultat consigne les chemins réellement ouverts, les attentes présentes ou manquantes et les ouvertures interdites. Un accès au fichier ne prouve **pas** qu'un agent a compris ou appliqué la skill : un balayage de masse ou un bundle CLI transitif peut aussi l'ouvrir. Les autres champs du résultat conservent les dispatchs natifs, les commandes et les métadonnées de rôle; les skips, phases et verdicts de revue nécessitent encore une observation structurée supplémentaire.
+
+Exemple après génération de `cases.json` et `expectations.json` :
+
+```sh
+python3 scripts/verify-behavior.py --cases /tmp/cstack-cases/cases.json \
+  --expectations /tmp/cstack-cases/expectations.json --trace-routes --repeats 5 \
+  --output /tmp/cstack-routing-runs --case-id routing_competing_feature_shapes
+```
+
+La trace échoue explicitement si `strace` manque ou si `ptrace` est refusé. Aucun nouveau taux de rappel, précision, variance ou avantage de design n'est déduit des seuls tests unitaires du parseur. Les scénarios supplémentaires couvrent des contrastes utiles, mais le harnais ne réalise pas encore un A/B/C natif ni une comparaison Poteto sur la même plate-forme.

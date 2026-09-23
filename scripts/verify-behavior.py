@@ -13,6 +13,7 @@ import selectors
 import shutil
 import subprocess
 import sys
+import tempfile
 import time
 
 
@@ -417,6 +418,61 @@ def tree_hash(root, excluded):
     return {"sha256": digest.hexdigest(), "files": files, "bytes": total_bytes}
 
 
+OPENED_PATH = re.compile(r'openat2?\([^\n]*?, "((?:[^"\\]|\\.)+)"[^\n]*?\)\s+=\s+(\d+)')
+
+
+def observed_routes(trace_prefix, bundle):
+    """Record successful filesystem opens; an open alone does not prove semantic use."""
+    routes = set()
+    ambiguous = False
+    traces = sorted(trace_prefix.parent.glob(trace_prefix.name + ".*"))
+    for trace in traces:
+        for line in trace.read_text(errors="replace").splitlines():
+            match = OPENED_PATH.search(line)
+            if not match:
+                continue
+            try:
+                path = Path(json.loads('"' + match.group(1) + '"')).resolve()
+            except (json.JSONDecodeError, OSError):
+                ambiguous = True
+                continue
+            try:
+                relative = path.relative_to(bundle.resolve()).as_posix()
+            except ValueError:
+                continue
+            if relative.startswith("skills/") and (
+                relative.endswith("/SKILL.md")
+                or "/playbooks/" in relative
+                or "/principles/" in relative
+            ):
+                routes.add(relative)
+    return {"opened": sorted(routes), "ambiguous_path": ambiguous, "trace_files": len(traces),
+            "evidence": "successful filesystem open; bulk scans and transitive bundles may count"}
+
+
+def score_routes(observed, expectation):
+    gold = expectation.get("routing", {})
+    expected, forbidden = set(gold.get("expected", [])), set(gold.get("forbidden", []))
+    opened = set(observed["opened"])
+    return {"true_positive": sorted(expected & opened), "false_negative": sorted(expected - opened),
+            "false_positive": sorted(forbidden & opened),
+            "known_true_negative": sorted(forbidden - opened),
+            "unlabelled_opened": sorted(opened - expected - forbidden)}
+
+
+def require_route_trace():
+    if not shutil.which("strace"):
+        raise HarnessError("--trace-routes exige strace sous Linux")
+    with tempfile.TemporaryDirectory() as directory:
+        result = subprocess.run(
+            ["strace", "-o", str(Path(directory) / "probe"), sys.executable, "-c", "pass"],
+            capture_output=True, text=True, timeout=10, check=False,
+        )
+    if result.returncode:
+        raise HarnessError("--trace-routes exige l'autorisation ptrace de l'hôte: "
+                           + result.stderr.strip()[:300])
+
+
 def config_path():
     home = os.environ.get("CODEX_HOME")
     if home is None:
@@ -510,11 +566,15 @@ def read_cases(path):
         sandbox = row.get("sandbox", "workspace-write")
         if not isinstance(sandbox, str) or not sandbox:
             raise HarnessError(f"{case_id}: sandbox doit être une chaîne")
-        cases.append({"id": case_id, "cwd": cwd, "prompts": prompts, "sandbox": sandbox})
+        bundle = Path(row["bundle"]).expanduser().resolve() if row.get("bundle") else None
+        if bundle is not None and not (bundle / "skills" / "cstack" / "SKILL.md").is_file():
+            raise HarnessError(f"{case_id}: bundle de skills introuvable: {bundle}")
+        cases.append({"id": case_id, "cwd": cwd, "prompts": prompts, "sandbox": sandbox,
+                      "bundle": bundle})
     return cases
 
 
-def run_case(case, output, command, model, effort, timeout):
+def run_case(case, output, command, model, effort, timeout, trace_routes=False):
     case_dir = output / case["id"]
     case_dir.mkdir(parents=True, exist_ok=True)
     raw_path = case_dir / "raw.jsonl"
@@ -532,8 +592,11 @@ def run_case(case, output, command, model, effort, timeout):
     status = "completed"
     error = None
     parent_thread = None
+    trace_prefix = case_dir / "route-open"
+    actual_command = (["strace", "-ff", "-e", "trace=openat,openat2", "-s", "4096",
+                       "-o", str(trace_prefix), *command] if trace_routes else command)
     try:
-        server = AppServer(command, case["cwd"], raw_path, stderr_path)
+        server = AppServer(actual_command, case["cwd"], raw_path, stderr_path)
         server.request("initialize", {"clientInfo": {"name": "cstack-behavior-runner", "version": "0.1.0"}}, timeout, lambda message: update_state(message, state, parent_thread))
         server.notify("initialized")
         thread_params = {
@@ -595,14 +658,14 @@ def run_case(case, output, command, model, effort, timeout):
         if server is not None:
             server.close()
     after = tree_hash(case["cwd"], output)
-    return {
+    result = {
         "id": case["id"], "cwd": str(case["cwd"]), "sandbox": case["sandbox"],
         "input_prompts": case["prompts"], "status": status,
         "wall_seconds": round(time.monotonic() - started, 3),
         "before_project_hash": before, "after_project_hash": after,
         "project_hash_changed": before["sha256"] != after["sha256"],
         "hash_policy": {"excluded_directories": sorted(SKIP_DIRS), "included_cstack": True},
-        "actual_commands": state["actual_commands"], "app_server_command": command,
+        "actual_commands": state["actual_commands"], "app_server_command": actual_command,
         "questions": state["questions"], "native_child_thread_ids": state["child_ids"],
         "dispatch_metadata": state["dispatch_metadata"], "child_metadata": state.get("child_metadata", []),
         "metadata_gaps": state["metadata_gaps"],
@@ -610,6 +673,9 @@ def run_case(case, output, command, model, effort, timeout):
         "turns": state["turns"], "error": error,
         "raw_stream": str(raw_path.resolve()), "stderr": str(stderr_path.resolve()),
     }
+    if trace_routes:
+        result["route_observation"] = observed_routes(trace_prefix, case["bundle"])
+    return result
 
 
 def write_summary(output, results, selected_case_ids):
@@ -629,11 +695,29 @@ def main(argv=None):
     parser.add_argument("--case-id", action="append", dest="case_ids", help="exécute uniquement ce scénario ; option répétable")
     parser.add_argument("--model", help="modèle natif de remplacement facultatif")
     parser.add_argument("--effort", help="effort de raisonnement natif facultatif")
+    parser.add_argument("--trace-routes", action="store_true", help="trace les ouvertures des skills avec strace Linux")
+    parser.add_argument("--expectations", type=Path, help="expectations.json généré avec les scénarios")
+    parser.add_argument("--repeats", type=int, default=1, help="nombre de passages indépendants par cas (1 à 10)")
     parser.add_argument("--turn-timeout", type=float, default=DEFAULT_TURN_SECONDS, help="délai maximal par tour en secondes, maximum 900")
     args = parser.parse_args(argv)
     if args.turn_timeout <= 0 or args.turn_timeout > MAX_TURN_SECONDS:
         parser.error("--turn-timeout doit être supérieur à 0 et inférieur ou égal à 900 secondes")
+    if not 1 <= args.repeats <= 10:
+        parser.error("--repeats doit être compris entre 1 et 10")
+    if args.trace_routes:
+        require_route_trace()
     cases = read_cases(args.cases)
+    if args.trace_routes and any(case["bundle"] is None for case in cases):
+        raise HarnessError("--trace-routes exige des scénarios générés avec bundle explicite")
+    if args.expectations and not args.trace_routes:
+        raise HarnessError("--expectations exige --trace-routes")
+    expectations = {}
+    if args.expectations:
+        payload = json.loads(args.expectations.read_text())
+        expectations = {row["id"]: row for row in payload["cases"]}
+        missing = {case["id"] for case in cases} - set(expectations)
+        if missing:
+            raise HarnessError(f"attentes absentes pour: {', '.join(sorted(missing))}")
     if args.case_ids:
         wanted = set(args.case_ids)
         unknown = wanted - {case["id"] for case in cases}
@@ -651,14 +735,24 @@ def main(argv=None):
     results = []
     selected_case_ids = [case["id"] for case in cases]
     for case in cases:
-        print(f"[{case['id']}] démarrage", flush=True)
-        try:
-            result = run_case(case, output, command, args.model, args.effort, args.turn_timeout)
-        except Exception as error:
-            result = {"id": case["id"], "cwd": str(case["cwd"]), "status": "infra_error", "error": str(error)}
-        results.append(result)
-        print(f"[{case['id']}] {result['status']} ({result.get('wall_seconds', 0)}s)", flush=True)
-        write_summary(output, results, selected_case_ids)
+        for repeat in range(1, args.repeats + 1):
+            run = dict(case)
+            if args.repeats > 1:
+                run["id"] = f"{case['id']}__run_{repeat:02d}"
+                run["cwd"] = output / "isolated-projects" / run["id"]
+                shutil.copytree(case["cwd"], run["cwd"])
+            print(f"[{run['id']}] démarrage", flush=True)
+            try:
+                result = run_case(run, output, command, args.model, args.effort,
+                                  args.turn_timeout, args.trace_routes)
+                if (result["status"] == "completed" and args.trace_routes
+                        and result["route_observation"]["trace_files"] and case["id"] in expectations):
+                    result["route_score"] = score_routes(result["route_observation"], expectations[case["id"]])
+            except Exception as error:
+                result = {"id": run["id"], "cwd": str(run["cwd"]), "status": "infra_error", "error": str(error)}
+            results.append(result)
+            print(f"[{run['id']}] {result['status']} ({result.get('wall_seconds', 0)}s)", flush=True)
+            write_summary(output, results, selected_case_ids)
     write_summary(output, results, selected_case_ids)
     if any(result["status"] != "completed" for result in results):
         return 2 if any(result["status"] == "needs_input" for result in results) else 1

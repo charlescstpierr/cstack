@@ -32,6 +32,48 @@ def state():
 
 
 class BehaviorRunnerTests(unittest.TestCase):
+    def test_route_trace_scores_actual_opens_and_negative_routes(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory) / "resources" / "candidate"
+            prefix = Path(directory) / "route-open"
+            (Path(directory) / "route-open.101").write_text(
+                f'openat(AT_FDCWD, "{bundle}/skills/cstack/playbooks/feature.md", O_RDONLY) = 3\n'
+                f'openat(AT_FDCWD, "{bundle}/skills/how/SKILL.md", O_RDONLY) = 4\n'
+                f'openat(AT_FDCWD, "{bundle}/skills/arena/SKILL.md", O_RDONLY) = -1 ENOENT\n'
+            )
+            opened = verify_behavior.observed_routes(prefix, bundle)
+            score = verify_behavior.score_routes(opened, {"routing": {
+                "expected": ["skills/cstack/playbooks/feature.md", "skills/arena/SKILL.md"],
+                "forbidden": ["skills/how/SKILL.md", "skills/why/SKILL.md"],
+            }})
+        self.assertEqual(score["true_positive"], ["skills/cstack/playbooks/feature.md"])
+        self.assertEqual(score["false_negative"], ["skills/arena/SKILL.md"])
+        self.assertEqual(score["false_positive"], ["skills/how/SKILL.md"])
+        self.assertEqual(score["known_true_negative"], ["skills/why/SKILL.md"])
+
+    def test_repeats_copy_fixtures_and_preserve_original(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            project = root / "project"
+            project.mkdir()
+            (project / "source.txt").write_text("original")
+            cases = root / "cases.json"
+            cases.write_text(json.dumps([{"id": "one", "cwd": str(project), "prompt": "Lecture seule."}]))
+
+            def fake_run(case, output, command, model, effort, timeout, trace_routes=False):
+                (case["cwd"] / "source.txt").write_text("changed")
+                return {"id": case["id"], "status": "completed"}
+
+            with patch.object(verify_behavior, "build_command", return_value=["codex"]), \
+                 patch.object(verify_behavior, "run_case", side_effect=fake_run):
+                self.assertEqual(verify_behavior.main([
+                    "--cases", str(cases), "--output", str(root / "results"), "--repeats", "3"
+                ]), 0)
+            summary = json.loads((root / "results" / "summary.json").read_text())
+            self.assertEqual([case["id"] for case in summary["cases"]],
+                             ["one__run_01", "one__run_02", "one__run_03"])
+            self.assertEqual((project / "source.txt").read_text(), "original")
+
     def test_rejects_overlapping_or_nonempty_output_before_native_launch(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
