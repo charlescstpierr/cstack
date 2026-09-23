@@ -57,6 +57,12 @@ Le runner a aussi produit `TIMEOUT` puis refusé de reprendre la lignée. Une an
 
 Les tests déterministes couvrent les changements de provenance, reçus périmés, verrous concurrents, limite de huit reprises, JSON invalide, symlinks, ID retourné absent ou différent et distinction avec une erreur d’authentification. Les contrôles passent : 55 tests Python et un ignoré, 7 tests Bun racine, 146 tests des helpers, types stricts, paquet et syntaxe Bash. Les [reçus et empreintes](evidence/claude-resume.json) distinguent les appels connectés des fixtures synthétiques. Opus 5.5, demandé avec `xhigh`, a approuvé le code puis les corrections issues de sa revue. Son identité déclarée et l’empreinte du runtime approuvé sont enregistrées. La dernière précision du test d’erreur d’écriture a été relue par le parent ; le runtime approuvé est inchangé.
 
+## Vérification après installation et conservation des preuves
+
+La PR #17 est fusionnée au commit `0b548d7` et la CI de `main` passe. Les 194 fichiers du plugin installé correspondent aux sources suivies. Le nettoyage du worktree de livraison a supprimé par erreur les journaux bruts avant leur copie ; le manifeste initial conserve leurs empreintes historiques, sans prétendre que ces journaux sont encore disponibles.
+
+Une [nouvelle campagne depuis le plugin installé](evidence/claude-resume-installed.json) a rejoué avec succès la reprise, les 101 âges, la préservation d’une modification humaine, les refus de reçu périmé et de changement de permissions, la lecture seule, le timeout, l’annulation et la session inexistante. Ses journaux restent dans `.cstack/tasks/claude-resume-recheck/`. Le texte exact du verdict final Opus a été récupéré depuis la réponse de l’outil ; son SHA-256 correspond à l’empreinte committée avant le nettoyage. Aucun changement du runtime n’a été nécessaire.
+
 ## État 0.4.0
 
 Cette section décrit une campagne datée, pas l'état courant de HEAD. Mesures du 12 septembre 2026, arbre commité de la branche `feat/pstack-parity-deslop`, Python 3.9.6, Bun 1.4.2. Plugin `0.4.0`. Version amont épinglée de pstack `0.15.2`, commit `889ec4b68fa5aab0e867dad71ec3fdf386ae48f3`.
