@@ -119,6 +119,8 @@ def register(
     french: bool = False,
     sandbox: str = "workspace-write",
     expected_children: int = 0,
+    expected_routes: list[str] | None = None,
+    forbidden_routes: list[str] | None = None,
 ) -> None:
     if not (project / ".git").exists():
         seed_git(project)
@@ -133,7 +135,7 @@ def register(
     case["prompts" if bodies is not None else "prompt"] = prompts if bodies is not None else prompts[0]
     cases.append(case)
     skill_path = bundle / "skills" / skill / "SKILL.md"
-    expectations.append({
+    expectation: dict[str, Any] = {
         "id": case_id,
         "project_sha256": tree_hash(project),
         "source_sha256": {
@@ -142,7 +144,18 @@ def register(
         },
         "expected_children": expected_children,
         "role_metadata": model_config(roles),
-    })
+    }
+    if expected_routes is not None or forbidden_routes is not None:
+        expected = sorted(expected_routes or [])
+        forbidden = sorted(forbidden_routes or [])
+        overlap = set(expected) & set(forbidden)
+        if overlap:
+            raise ValueError(f"{case_id}: route présente dans expected et forbidden: {sorted(overlap)}")
+        for route in expected + forbidden:
+            if not (bundle / route).is_file():
+                raise ValueError(f"{case_id}: route absente du bundle: {route}")
+        expectation["routing"] = {"expected": expected, "forbidden": forbidden}
+    expectations.append(expectation)
 
 
 def interrogate_project(output: Path, name: str, catalog: Path | None) -> Path:
@@ -304,6 +317,53 @@ def filter_events(events, start, today):
              project=create_project(output, "rowan", audit_files, ["how explorer"], catalog),
              bundle=new, skill="audit-architecture", roles=["how explorer"],
              body=audit, french=True, sandbox="read-only", expected_children=1)
+
+    trivial = """Use $cstack:cstack. src/errors.py prints "could not proccess invoice" to users. The word should be "process". Correct it."""
+    register(cases, expectations, case_id="routing_one_word_user_string",
+             project=create_project(output, "linden", {
+                 "src/errors.py": 'def fail(code):\n    return f"Error: could not proccess invoice {code}"\n',
+             }, [], catalog),
+             bundle=new, skill="cstack", roles=[], body=trivial,
+             expected_routes=["skills/cstack/playbooks/bug-fix.md"],
+             forbidden_routes=[
+                 "skills/cstack/references/principles/laziness-protocol.md",
+                 "skills/how/SKILL.md",
+             ])
+
+    typed_boundary = """Use $cstack:cstack. Operators hand-edit config.yaml and the service reads it at startup. Give the configuration a typed shape and write the loader that produces it. Operators regularly ship a missing key, a quoted number where an integer belongs, or an endpoint with no scheme."""
+    register(cases, expectations, case_id="routing_typed_external_boundary",
+             project=create_project(output, "sorrel", {
+                 "config.yaml": "retries: 3\ntimeout_ms: 500\nendpoint: https://x.example\n",
+                 "src/config.py": "def load(path):\n    raise NotImplementedError\n",
+             }, [], catalog),
+             bundle=new, skill="cstack", roles=[], body=typed_boundary,
+             expected_routes=[
+                 "skills/cstack/references/principles/boundary-discipline.md",
+                 "skills/cstack/references/principles/foundational-thinking.md",
+                 "skills/cstack/references/principles/type-system-discipline.md",
+             ])
+
+    migration = """Use $cstack:cstack. src/auth.py still exposes legacy_auth(), and src/session.py and src/api.py both call it. verify() replaces it. Move every caller across and retire the old entry point."""
+    register(cases, expectations, case_id="routing_internal_api_replacement",
+             project=create_project(output, "hemlock", {
+                 "src/auth.py": 'def legacy_auth(token):\n    return bool(token)\n\n\ndef verify(token):\n    return bool(token)\n',
+                 "src/session.py": 'from .auth import legacy_auth\n\n\ndef open_session(token):\n    return legacy_auth(token)\n',
+                 "src/api.py": 'from .auth import legacy_auth\n\n\ndef handle(token):\n    return legacy_auth(token)\n',
+             }, [], catalog),
+             bundle=new, skill="cstack", roles=[], body=migration,
+             expected_routes=[
+                 "skills/cstack/playbooks/refactoring.md",
+                 "skills/cstack/references/principles/migrate-callers-then-delete-legacy-apis.md",
+             ])
+
+    live_process = """Use $cstack:cstack. The queue worker pegs one core and stops draining its queue after roughly an hour of uptime. It is running right now and reproduces on demand. No capture has been taken. Diagnose the cause."""
+    register(cases, expectations, case_id="routing_live_process_diagnosis",
+             project=create_project(output, "tamarack", {
+                 "src/worker.py": 'def drain(queue):\n    while True:\n        if not queue:\n            continue\n        queue.pop()\n',
+             }, [], catalog),
+             bundle=new, skill="cstack", roles=[], body=live_process,
+             expected_routes=["skills/cstack/playbooks/runtime-forensics.md"],
+             forbidden_routes=["skills/cstack/playbooks/trace-forensics.md"])
     return cases, expectations
 
 
