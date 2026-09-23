@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from "bun:test";
-import { chmod, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { chmod, mkdtemp, readFile, rm, symlink, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, relative } from "node:path";
@@ -70,10 +70,22 @@ function parsedStdout(h: Harness): unknown {
 afterEach(async () => {
   process.env.PATH = originalPath;
   delete process.env.CSTACK_RUNTIME_ARG_CAPTURE;
+  delete process.env.CSTACK_BAD_OUTPUT;
   await rm(touched, { force: true });
 });
 
 describe("runtime helper", () => {
+  it("documente resume_from dans l'aide", async () => {
+    const h = await harness();
+    try {
+      const code = await run(["--help"], h);
+      expect(code).toBe(0);
+      expect(h.stdout.join("")).toContain("resume_from?");
+    } finally {
+      await rm(h.root, { recursive: true, force: true });
+    }
+  });
+
   it("probe ne lance pas de login et accepte auth inconnue", async () => {
     const h = await harness();
     try {
@@ -350,6 +362,8 @@ echo should-not-run
 
 const report = { status: "PASS", summary: "peer received", checks: [], findings: [] };
 const claudeHelp = "--print --output-format --json-schema --permission-mode --permission-prompts --restricted --safe-mode --strict-mcp-config --mcp-config --add-dir --tools --settings --effort --model";
+const claudeResumeHelp = `${claudeHelp} --resume`;
+const claudeSession = "123e4567-e89b-12d3-a456-426614174000";
 
 it.each([
   ["structured output", { structured_output: report, session_id: "session-public-id" }, "COMPLETED"],
@@ -487,6 +501,482 @@ printf '{"status":"PASS","summary":"relative path","checks":[],"findings":[]}'
     expect(await run(["run", "--request", await request(h, "claude-code")], h)).toBe(0);
     expect(parsedStdout(h)).toMatchObject({ worker: { summary: "relative path" } });
   } finally {
+    await rm(h.root, { recursive: true, force: true });
+  }
+});
+
+it("reprend Claude avec --resume et un prompt sans texte de skills", async () => {
+  const h = await harness();
+  const args = join(h.root, "args.txt");
+  const prompt = join(h.root, "prompt.txt");
+  try {
+    await fake(h.bin, "claude", `
+if [[ "$1" == "--version" ]]; then echo "claude fake"; exit 0; fi
+if [[ "$1" == "--help" ]]; then echo "${claudeResumeHelp}"; exit 0; fi
+resume=""
+printf '%s\\n' "$@" > "${args}"
+while [[ "$#" -gt 0 ]]; do
+  if [[ "$1" == "--resume" ]]; then shift; resume="$1"; fi
+  shift || true
+done
+cat > "${prompt}"
+sid="${claudeSession}"
+if [[ -n "$resume" ]]; then sid="$resume"; fi
+printf '{"session_id":"%s","structured_output":{"status":"PASS","summary":"ok","checks":[],"findings":[]}}' "$sid"
+`);
+    expect(await run(["run", "--request", await request(h, "claude-code")], h)).toBe(0);
+    const previous = join(h.output, "result.json");
+    h.stdout.length = 0;
+    const nextOutput = join(h.root, "out-2");
+    expect(await run(["run", "--request", await request(h, "claude-code", { output_dir: nextOutput, resume_from: previous })], h)).toBe(0);
+    const result = parsedStdout(h);
+    expect(result).toMatchObject({
+      execution: { status: "COMPLETED", session_id: claudeSession },
+      provenance: { mode: "resume", resumed_from: previous, resume_count: 1 },
+    });
+    expect(await readFile(args, "utf8")).toContain(claudeSession);
+    const resumedPrompt = await readFile(prompt, "utf8");
+    expect(resumedPrompt).toContain("RESUMED CSTACK TASK");
+    expect(resumedPrompt).not.toContain("# cstack");
+  } finally {
+    await rm(h.root, { recursive: true, force: true });
+  }
+});
+
+it("refuse la reprise sur les runtimes non Claude", async () => {
+  const h = await harness();
+  try {
+    await fake(h.bin, "grok", `
+if [[ "$1" == "--version" ]]; then echo "grok fake"; exit 0; fi
+if [[ "$1" == "--help" ]]; then echo "--prompt-file --cwd --output-format --json-schema --sandbox --permission-mode --tools --allow --deny --no-subagents --model --reasoning-effort"; exit 0; fi
+printf '{"status":"PASS","summary":"ok","checks":[],"findings":[]}'
+`);
+    const receipt = join(h.root, "receipt.json");
+    await writeFile(receipt, "{}");
+    expect(await run(["run", "--request", await request(h, "grok", { resume_from: receipt })], h)).toBe(2);
+    expect(parsedStdout(h)).toMatchObject({ execution: { status: "UNSUPPORTED" } });
+  } finally {
+    await rm(h.root, { recursive: true, force: true });
+  }
+});
+
+it("refuse une reprise Claude si le contrat change", async () => {
+  const h = await harness();
+  try {
+    await fake(h.bin, "claude", `
+if [[ "$1" == "--version" ]]; then echo "claude fake"; exit 0; fi
+if [[ "$1" == "--help" ]]; then echo "${claudeResumeHelp}"; exit 0; fi
+cat >/dev/null
+printf '{"session_id":"${claudeSession}","structured_output":{"status":"PASS","summary":"ok","checks":[],"findings":[]}}'
+`);
+    expect(await run(["run", "--request", await request(h, "claude-code")], h)).toBe(0);
+    const previous = join(h.output, "result.json");
+    h.stdout.length = 0;
+    expect(await run(["run", "--request", await request(h, "claude-code", {
+      output_dir: join(h.root, "out-2"),
+      resume_from: previous,
+      permissions: "workspace-write",
+    })], h)).toBe(2);
+    expect(parsedStdout(h)).toMatchObject({ execution: { status: "RESUME_FAILED" } });
+  } finally {
+    await rm(h.root, { recursive: true, force: true });
+  }
+});
+
+it("refuse une reprise depuis un reçu périmé", async () => {
+  const h = await harness();
+  try {
+    await fake(h.bin, "claude", `
+if [[ "$1" == "--version" ]]; then echo "claude fake"; exit 0; fi
+if [[ "$1" == "--help" ]]; then echo "${claudeResumeHelp}"; exit 0; fi
+resume=""
+while [[ "$#" -gt 0 ]]; do
+  if [[ "$1" == "--resume" ]]; then shift; resume="$1"; fi
+  shift || true
+done
+cat >/dev/null
+sid="${claudeSession}"
+if [[ -n "$resume" ]]; then sid="$resume"; fi
+printf '{"session_id":"%s","structured_output":{"status":"PASS","summary":"ok","checks":[],"findings":[]}}' "$sid"
+`);
+    expect(await run(["run", "--request", await request(h, "claude-code")], h)).toBe(0);
+    const first = join(h.output, "result.json");
+    h.stdout.length = 0;
+    expect(await run(["run", "--request", await request(h, "claude-code", { output_dir: join(h.root, "out-2"), resume_from: first })], h)).toBe(0);
+    h.stdout.length = 0;
+    expect(await run(["run", "--request", await request(h, "claude-code", { output_dir: join(h.root, "out-3"), resume_from: first })], h)).toBe(2);
+    expect(parsedStdout(h)).toMatchObject({ execution: { status: "RESUME_FAILED" } });
+  } finally {
+    await rm(h.root, { recursive: true, force: true });
+  }
+});
+
+it("bloque deux reprises simultanées de la même session", async () => {
+  const h = await harness();
+  const started = join(h.root, "started");
+  try {
+    await fake(h.bin, "claude", `
+if [[ "$1" == "--version" ]]; then echo "claude fake"; exit 0; fi
+if [[ "$1" == "--help" ]]; then echo "${claudeResumeHelp}"; exit 0; fi
+resume=""
+while [[ "$#" -gt 0 ]]; do
+  if [[ "$1" == "--resume" ]]; then shift; resume="$1"; fi
+  shift || true
+done
+cat >/dev/null
+if [[ -n "$resume" ]]; then touch "${started}"; sleep 0.6; fi
+sid="${claudeSession}"
+if [[ -n "$resume" ]]; then sid="$resume"; fi
+printf '{"session_id":"%s","structured_output":{"status":"PASS","summary":"ok","checks":[],"findings":[]}}' "$sid"
+`);
+    expect(await run(["run", "--request", await request(h, "claude-code")], h)).toBe(0);
+    const previous = join(h.output, "result.json");
+    h.stdout.length = 0;
+    const first = run(["run", "--request", await request(h, "claude-code", { output_dir: join(h.root, "out-2"), resume_from: previous })], h);
+    const deadline = Date.now() + 1000;
+    while (!existsSync(started) && Date.now() < deadline) await new Promise((done) => setTimeout(done, 10));
+    const h2 = { ...h, output: join(h.root, "out-3"), stdout: [], stderr: [] };
+    expect(await run(["run", "--request", await request(h2, "claude-code", { resume_from: previous })], h2)).toBe(2);
+    expect(JSON.parse(h2.stdout.join(""))).toMatchObject({ execution: { status: "RESUME_FAILED" } });
+    expect(await first).toBe(0);
+  } finally {
+    await rm(h.root, { recursive: true, force: true });
+  }
+});
+
+it("rend la lignée non reprenable après timeout de reprise", async () => {
+  const h = await harness();
+  try {
+    await fake(h.bin, "claude", `
+if [[ "$1" == "--version" ]]; then echo "claude fake"; exit 0; fi
+if [[ "$1" == "--help" ]]; then echo "${claudeResumeHelp}"; exit 0; fi
+resume=""
+while [[ "$#" -gt 0 ]]; do
+  if [[ "$1" == "--resume" ]]; then shift; resume="$1"; fi
+  shift || true
+done
+cat >/dev/null
+if [[ -n "$resume" ]]; then sleep 1; fi
+printf '{"session_id":"${claudeSession}","structured_output":{"status":"PASS","summary":"ok","checks":[],"findings":[]}}'
+`);
+    expect(await run(["run", "--request", await request(h, "claude-code")], h)).toBe(0);
+    const previous = join(h.output, "result.json");
+    h.stdout.length = 0;
+    expect(await run(["run", "--request", await request(h, "claude-code", { output_dir: join(h.root, "out-2"), resume_from: previous, timeout_ms: 50 })], h)).toBe(2);
+    expect(parsedStdout(h)).toMatchObject({ execution: { status: "TIMEOUT" } });
+    h.stdout.length = 0;
+    expect(await run(["run", "--request", await request(h, "claude-code", { output_dir: join(h.root, "out-3"), resume_from: previous })], h)).toBe(2);
+    expect(parsedStdout(h)).toMatchObject({ execution: { status: "RESUME_FAILED" } });
+  } finally {
+    await rm(h.root, { recursive: true, force: true });
+  }
+});
+
+it.each([
+  ["missing id", '{"status":"PASS","summary":"ok","checks":[],"findings":[]}'],
+  ["changed id", '{"session_id":"123e4567-e89b-12d3-a456-426614174999","structured_output":{"status":"PASS","summary":"ok","checks":[],"findings":[]}}'],
+])("refuse une reprise avec session_id %s", async (_name, payload) => {
+  const h = await harness();
+  try {
+    await fake(h.bin, "claude", `
+if [[ "$1" == "--version" ]]; then echo "claude fake"; exit 0; fi
+if [[ "$1" == "--help" ]]; then echo "${claudeResumeHelp}"; exit 0; fi
+resume=""
+while [[ "$#" -gt 0 ]]; do
+  if [[ "$1" == "--resume" ]]; then shift; resume="$1"; fi
+  shift || true
+done
+cat >/dev/null
+if [[ -n "$resume" ]]; then printf '${payload}'; else printf '{"session_id":"${claudeSession}","structured_output":{"status":"PASS","summary":"ok","checks":[],"findings":[]}}'; fi
+`);
+    expect(await run(["run", "--request", await request(h, "claude-code")], h)).toBe(0);
+    const previous = join(h.output, "result.json");
+    h.stdout.length = 0;
+    expect(await run(["run", "--request", await request(h, "claude-code", { output_dir: join(h.root, "out-2"), resume_from: previous })], h)).toBe(2);
+    expect(parsedStdout(h)).toMatchObject({ execution: { status: "RESUME_FAILED" } });
+  } finally {
+    await rm(h.root, { recursive: true, force: true });
+  }
+});
+
+it("classe le message Claude réel de session introuvable comme RESUME_FAILED", async () => {
+  const h = await harness();
+  try {
+    await fake(h.bin, "claude", `
+if [[ "$1" == "--version" ]]; then echo "claude fake"; exit 0; fi
+if [[ "$1" == "--help" ]]; then echo "${claudeResumeHelp}"; exit 0; fi
+resume=""
+while [[ "$#" -gt 0 ]]; do
+  if [[ "$1" == "--resume" ]]; then shift; resume="$1"; fi
+  shift || true
+done
+cat >/dev/null
+if [[ -n "$resume" ]]; then echo "No conversation found with session ID: $resume" >&2; exit 1; fi
+printf '{"session_id":"${claudeSession}","structured_output":{"status":"PASS","summary":"ok","checks":[],"findings":[]}}'
+`);
+    expect(await run(["run", "--request", await request(h, "claude-code")], h)).toBe(0);
+    const previous = join(h.output, "result.json");
+    h.stdout.length = 0;
+    expect(await run(["run", "--request", await request(h, "claude-code", { output_dir: join(h.root, "out-2"), resume_from: previous })], h)).toBe(2);
+    expect(parsedStdout(h)).toMatchObject({ execution: { status: "RESUME_FAILED" } });
+  } finally {
+    await rm(h.root, { recursive: true, force: true });
+  }
+});
+
+it("classe une session reprise introuvable sans masquer l'auth réelle", async () => {
+  const h = await harness();
+  try {
+    await fake(h.bin, "claude", `
+if [[ "$1" == "--version" ]]; then echo "claude fake"; exit 0; fi
+if [[ "$1" == "--help" ]]; then echo "${claudeResumeHelp}"; exit 0; fi
+resume=""
+while [[ "$#" -gt 0 ]]; do
+  if [[ "$1" == "--resume" ]]; then shift; resume="$1"; fi
+  shift || true
+done
+cat >/dev/null
+if [[ -n "$resume" ]]; then echo "session not found" >&2; exit 1; fi
+printf '{"session_id":"${claudeSession}","structured_output":{"status":"PASS","summary":"ok","checks":[],"findings":[]}}'
+`);
+    expect(await run(["run", "--request", await request(h, "claude-code")], h)).toBe(0);
+    const previous = join(h.output, "result.json");
+    h.stdout.length = 0;
+    expect(await run(["run", "--request", await request(h, "claude-code", { output_dir: join(h.root, "out-2"), resume_from: previous })], h)).toBe(2);
+    expect(parsedStdout(h)).toMatchObject({ execution: { status: "RESUME_FAILED" } });
+    h.stdout.length = 0;
+    await writeFile(join(h.output, "resume-state.json"), JSON.stringify({ current_result: previous, session_id: claudeSession, status: "IDLE", resume_count: 0 }));
+    await fake(h.bin, "claude", `
+if [[ "$1" == "--version" ]]; then echo "claude fake"; exit 0; fi
+if [[ "$1" == "--help" ]]; then echo "${claudeResumeHelp}"; exit 0; fi
+cat >/dev/null
+echo '{"session_id":"${claudeSession}","error":"authentication failed"}' >&2
+exit 1
+`);
+    expect(await run(["run", "--request", await request(h, "claude-code", { output_dir: join(h.root, "out-3"), resume_from: previous })], h)).toBe(2);
+    expect(parsedStdout(h)).toMatchObject({ execution: { status: "AUTH_REQUIRED" } });
+  } finally {
+    await rm(h.root, { recursive: true, force: true });
+  }
+});
+
+it("refuse les changements de contrat sans génération et garde la tête reprenable", async () => {
+  const h = await harness();
+  const generationCount = join(h.root, "generations");
+  const otherCwd = join(h.root, "other-repo");
+  const otherTask = join(h.root, "other-task");
+  const otherBrief = join(otherTask, "brief.txt");
+  try {
+    await Bun.$`mkdir -p ${otherCwd} ${otherTask}`.quiet();
+    await writeFile(otherBrief, "GOAL\nOther task.\n");
+    await fake(h.bin, "claude", `
+if [[ "$1" == "--version" ]]; then echo "\${CSTACK_FAKE_CLAUDE_VERSION:-claude fake}"; exit 0; fi
+if [[ "$1" == "--help" ]]; then echo "${claudeResumeHelp}"; exit 0; fi
+resume=""
+while [[ "$#" -gt 0 ]]; do
+  if [[ "$1" == "--resume" ]]; then shift; resume="$1"; fi
+  shift || true
+done
+cat >/dev/null
+echo run >> "${generationCount}"
+sid="${claudeSession}"
+if [[ -n "$resume" ]]; then sid="$resume"; fi
+printf '{"session_id":"%s","structured_output":{"status":"PASS","summary":"ok","checks":[],"findings":[]}}' "$sid"
+`);
+    expect(await run(["run", "--request", await request(h, "claude-code")], h)).toBe(0);
+    const previous = join(h.output, "result.json");
+    const baseRuns = (await readFile(generationCount, "utf8")).trim().split("\n").length;
+    const cases = [
+      ["cwd", { cwd: otherCwd }],
+      ["task", { brief_file: otherBrief }],
+      ["selection", { selection: { runtime: "claude-code", model: "opus" } }],
+      ["effort", { selection: { runtime: "claude-code", model: "opus", reasoning_effort: "high" } }],
+      ["skills", { skills: ["why"] }],
+    ] as const;
+    for (const [name, extra] of cases) {
+      h.stdout.length = 0;
+      expect(await run(["run", "--request", await request(h, "claude-code", { ...extra, output_dir: join(h.root, `bad-${name}`), resume_from: previous })], h)).toBe(2);
+      expect(parsedStdout(h)).toMatchObject({ execution: { status: "RESUME_FAILED" } });
+      expect((await readFile(generationCount, "utf8")).trim().split("\n").length).toBe(baseRuns);
+    }
+    process.env.CSTACK_FAKE_CLAUDE_VERSION = "claude changed";
+    h.stdout.length = 0;
+    expect(await run(["run", "--request", await request(h, "claude-code", { output_dir: join(h.root, "bad-version"), resume_from: previous })], h)).toBe(2);
+    expect(parsedStdout(h)).toMatchObject({ execution: { status: "RESUME_FAILED" } });
+    expect((await readFile(generationCount, "utf8")).trim().split("\n").length).toBe(baseRuns);
+    process.env.CSTACK_FAKE_CLAUDE_VERSION = "claude fake";
+    const originalReceipt = await readFile(previous, "utf8");
+    const receipt = JSON.parse(originalReceipt);
+    receipt.provenance.resume_count = 8;
+    await writeFile(previous, JSON.stringify(receipt));
+    h.stdout.length = 0;
+    expect(await run(["run", "--request", await request(h, "claude-code", { output_dir: join(h.root, "bad-limit"), resume_from: previous })], h)).toBe(2);
+    expect(parsedStdout(h)).toMatchObject({ execution: { status: "RESUME_FAILED", message: "resume_from: limite de reprises atteinte" } });
+    expect((await readFile(generationCount, "utf8")).trim().split("\n").length).toBe(baseRuns);
+    await writeFile(previous, originalReceipt);
+    h.stdout.length = 0;
+    expect(await run(["run", "--request", await request(h, "claude-code", { output_dir: join(h.root, "good-resume"), resume_from: previous })], h)).toBe(0);
+    expect((await readFile(generationCount, "utf8")).trim().split("\n").length).toBe(baseRuns + 1);
+  } finally {
+    delete process.env.CSTACK_FAKE_CLAUDE_VERSION;
+    await rm(h.root, { recursive: true, force: true });
+  }
+});
+
+it("refuse reçus et états de reprise non fiables sans empoisonner la tête", async () => {
+  const h = await harness();
+  const generationCount = join(h.root, "generations");
+  try {
+    await fake(h.bin, "claude", `
+if [[ "$1" == "--version" ]]; then echo "claude fake"; exit 0; fi
+if [[ "$1" == "--help" ]]; then echo "${claudeResumeHelp}"; exit 0; fi
+resume=""
+while [[ "$#" -gt 0 ]]; do
+  if [[ "$1" == "--resume" ]]; then shift; resume="$1"; fi
+  shift || true
+done
+cat >/dev/null
+echo run >> "${generationCount}"
+sid="${claudeSession}"
+if [[ -n "$resume" ]]; then sid="$resume"; fi
+printf '{"session_id":"%s","structured_output":{"status":"PASS","summary":"ok","checks":[],"findings":[]}}' "$sid"
+`);
+    expect(await run(["run", "--request", await request(h, "claude-code")], h)).toBe(0);
+    const previous = join(h.output, "result.json");
+    const state = join(h.output, "resume-state.json");
+    const linkedReceipt = join(h.root, "linked-result.json");
+    await symlink(previous, linkedReceipt);
+    h.stdout.length = 0;
+    expect(await run(["run", "--request", await request(h, "claude-code", { output_dir: join(h.root, "bad-symlink"), resume_from: linkedReceipt })], h)).toBe(2);
+    expect(parsedStdout(h)).toMatchObject({ execution: { status: "RESUME_FAILED" } });
+    const validState = await readFile(state, "utf8");
+    await writeFile(state, "{");
+    h.stdout.length = 0;
+    expect(await run(["run", "--request", await request(h, "claude-code", { output_dir: join(h.root, "bad-state"), resume_from: previous })], h)).toBe(2);
+    expect(parsedStdout(h)).toMatchObject({ execution: { status: "RESUME_FAILED" } });
+    expect(existsSync(join(h.output, "resume.lock"))).toBe(false);
+    await writeFile(state, validState);
+    h.stdout.length = 0;
+    expect(await run(["run", "--request", await request(h, "claude-code", { output_dir: join(h.root, "good-resume-after-bad-state"), resume_from: previous })], h)).toBe(0);
+    expect((await readFile(generationCount, "utf8")).trim().split("\n").length).toBe(2);
+  } finally {
+    await rm(h.root, { recursive: true, force: true });
+  }
+});
+
+it("un --help sans --resume ne prend pas le verrou et permet de réessayer", async () => {
+  const h = await harness();
+  const generationCount = join(h.root, "generations");
+  try {
+    await fake(h.bin, "claude", `
+if [[ "$1" == "--version" ]]; then echo "claude fake"; exit 0; fi
+if [[ "$1" == "--help" ]]; then
+  if [[ "\${CSTACK_HELP_WITH_RESUME:-1}" == "1" ]]; then echo "${claudeResumeHelp}"; else echo "${claudeHelp}"; fi
+  exit 0
+fi
+resume=""
+while [[ "$#" -gt 0 ]]; do
+  if [[ "$1" == "--resume" ]]; then shift; resume="$1"; fi
+  shift || true
+done
+cat >/dev/null
+echo run >> "${generationCount}"
+sid="${claudeSession}"
+if [[ -n "$resume" ]]; then sid="$resume"; fi
+printf '{"session_id":"%s","structured_output":{"status":"PASS","summary":"ok","checks":[],"findings":[]}}' "$sid"
+`);
+    expect(await run(["run", "--request", await request(h, "claude-code")], h)).toBe(0);
+    const previous = join(h.output, "result.json");
+    process.env.CSTACK_HELP_WITH_RESUME = "0";
+    h.stdout.length = 0;
+    expect(await run(["run", "--request", await request(h, "claude-code", { output_dir: join(h.root, "bad-help"), resume_from: previous })], h)).toBe(2);
+    expect(parsedStdout(h)).toMatchObject({ execution: { status: "UNSUPPORTED" } });
+    expect(existsSync(join(h.output, "resume.lock"))).toBe(false);
+    expect((await readFile(generationCount, "utf8")).trim().split("\n").length).toBe(1);
+    process.env.CSTACK_HELP_WITH_RESUME = "1";
+    h.stdout.length = 0;
+    expect(await run(["run", "--request", await request(h, "claude-code", { output_dir: join(h.root, "good-after-help"), resume_from: previous })], h)).toBe(0);
+    expect((await readFile(generationCount, "utf8")).trim().split("\n").length).toBe(2);
+  } finally {
+    delete process.env.CSTACK_HELP_WITH_RESUME;
+    await rm(h.root, { recursive: true, force: true });
+  }
+});
+
+it("garde AUTH_REQUIRED prioritaire sur une erreur de session expirée", async () => {
+  const h = await harness();
+  try {
+    await fake(h.bin, "claude", `
+if [[ "$1" == "--version" ]]; then echo "claude fake"; exit 0; fi
+if [[ "$1" == "--help" ]]; then echo "${claudeResumeHelp}"; exit 0; fi
+resume=""
+while [[ "$#" -gt 0 ]]; do
+  if [[ "$1" == "--resume" ]]; then shift; resume="$1"; fi
+  shift || true
+done
+cat >/dev/null
+if [[ -n "$resume" ]]; then echo "session expired, please log in" >&2; exit 1; fi
+printf '{"session_id":"${claudeSession}","structured_output":{"status":"PASS","summary":"ok","checks":[],"findings":[]}}'
+`);
+    expect(await run(["run", "--request", await request(h, "claude-code")], h)).toBe(0);
+    const previous = join(h.output, "result.json");
+    h.stdout.length = 0;
+    expect(await run(["run", "--request", await request(h, "claude-code", { output_dir: join(h.root, "expired"), resume_from: previous })], h)).toBe(2);
+    expect(parsedStdout(h)).toMatchObject({ execution: { status: "AUTH_REQUIRED" } });
+  } finally {
+    await rm(h.root, { recursive: true, force: true });
+  }
+});
+
+it("classe un reçu resume_from manquant comme RESUME_FAILED", async () => {
+  const h = await harness();
+  try {
+    await fake(h.bin, "claude", `
+if [[ "$1" == "--version" ]]; then echo "claude fake"; exit 0; fi
+if [[ "$1" == "--help" ]]; then echo "${claudeResumeHelp}"; exit 0; fi
+echo should-not-run
+`);
+    const missing = join(h.root, "missing", "result.json");
+    expect(await run(["run", "--request", await request(h, "claude-code", { resume_from: missing })], h)).toBe(2);
+    expect(parsedStdout(h)).toMatchObject({ execution: { status: "RESUME_FAILED" } });
+  } finally {
+    await rm(h.root, { recursive: true, force: true });
+  }
+});
+
+it("libère le verrou si la finalisation du reçu échoue", async () => {
+  const h = await harness();
+  try {
+    await fake(h.bin, "claude", `
+if [[ "$1" == "--version" ]]; then echo "claude fake"; exit 0; fi
+if [[ "$1" == "--help" ]]; then echo "${claudeResumeHelp}"; exit 0; fi
+resume=""
+while [[ "$#" -gt 0 ]]; do
+  if [[ "$1" == "--resume" ]]; then shift; resume="$1"; fi
+  shift || true
+done
+cat >/dev/null
+if [[ -n "$resume" && -n "\${CSTACK_BAD_OUTPUT:-}" ]]; then mkdir -p "$CSTACK_BAD_OUTPUT/result.json"; fi
+sid="${claudeSession}"
+if [[ -n "$resume" ]]; then sid="$resume"; fi
+printf '{"session_id":"%s","structured_output":{"status":"PASS","summary":"ok","checks":[],"findings":[]}}' "$sid"
+`);
+    expect(await run(["run", "--request", await request(h, "claude-code")], h)).toBe(0);
+    const previous = join(h.output, "result.json");
+    const badOutput = join(h.root, "io-fails");
+    process.env.CSTACK_BAD_OUTPUT = badOutput;
+    h.stdout.length = 0;
+    h.stderr.length = 0;
+    expect(await run(["run", "--request", await request(h, "claude-code", { output_dir: badOutput, resume_from: previous })], h)).toBe(64);
+    expect(h.stderr.join("")).toContain("runtime:");
+    expect(existsSync(join(h.output, "resume.lock"))).toBe(false);
+    delete process.env.CSTACK_BAD_OUTPUT;
+    h.stdout.length = 0;
+    h.stderr.length = 0;
+    expect(await run(["run", "--request", await request(h, "claude-code", { output_dir: join(h.root, "after-io-fail"), resume_from: previous })], h)).toBe(2);
+    expect(parsedStdout(h)).toMatchObject({ execution: { status: "RESUME_FAILED" } });
+  } finally {
+    delete process.env.CSTACK_BAD_OUTPUT;
     await rm(h.root, { recursive: true, force: true });
   }
 });

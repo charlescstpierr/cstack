@@ -4,6 +4,8 @@ Les versions suivent SemVer. Le format suit [Keep a Changelog](https://keepachan
 
 ## À publier
 
+- Reprise facultative d’un worker Claude Code depuis son reçu précédent, avec contrôle de provenance, exclusion des reprises concurrentes et conservation des permissions. Le démarrage neuf reste le défaut ; les erreurs de reprise ne provoquent pas de relance cachée.
+
 - Le setup inventorie les CLI présents et leurs statuts officiels de connexion avant de proposer les runtimes. Il permet d’ajouter Claude Code aux panels existants ou de remplacer des rôles choisis, en préservant les autres réglages.
 - Guide pratique Codex/Claude, partage des skills et du contexte, limites vérifiées et commandes de mise à jour du plugin.
 
