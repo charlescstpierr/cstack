@@ -12,6 +12,7 @@ Les versions suivent SemVer. Le format suit [Keep a Changelog](https://keepachan
 - Frontière d'orchestration : `frontier.set` enregistre le premier PR fermé non fusionné dans `closedGap`, sans déplacer la frontière du plus bas PR ouvert.
 - Le vérificateur de plans multi-PR suit le gabarit courant français/anglais et teste directement le bloc réel borné à la capacité native.
 - Le validateur de paquet ne dépend plus d'une version de plugin codée en dur dans sa mutation de test.
+- Le runner CLI accepte un `acceptance` facultatif, borné à 4096 octets UTF-8, le conserve dans la provenance et refuse les reprises dont la présence ou la valeur diffère avant la génération.
 
 - Nettoyage : préservation des preuves et suppression du worktree dans deux appels d’outil distincts, avec reçu vérifié et conservation obligatoire en cas d’échec intermédiaire.
 

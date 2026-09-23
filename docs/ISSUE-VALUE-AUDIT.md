@@ -83,3 +83,11 @@ python3 -m unittest discover -s tests -p 'test_compare_checks.py'
 ```
 
 Le changement livre uniquement la comparaison passive. La collecte des observations, la conformité des références au head visé et la preuve de la cause restent à la charge du coordinateur. Les autres propositions de l’audit ne sont pas déclarées résolues par cette livraison.
+
+## Suite du ticket #35 : critères fixes dans une reprise CLI
+
+Une sonde du runtime avec un faux CLI Claude confirme que les faits du brief peuvent changer à la reprise. Ce comportement est nécessaire, mais il ne distingue pas les faits courants des critères de réussite. Le champ facultatif `acceptance` permet de séparer ces deux données : le runtime conserve son texte exact dans le reçu et refuse une reprise qui le change, le retire ou l’ajoute après la première tentative.
+
+Le contrôle précède la génération du worker. Les sondes de version et de capacités restent possibles. Les tests exécutent le vrai runtime avec un faux CLI et vérifient qu’un refus laisse la tête de session disponible pour une reprise conforme. Le brief et les fichiers de contexte peuvent toujours changer.
+
+Cette garantie suppose des reçus locaux fiables. Modifier le reçu précédent peut contourner la comparaison. Le texte ne s’exécute pas, n’accorde aucune permission et ne prouve pas que le modèle respecte les critères. La dérive sémantique du coordinateur ou des agents natifs reste hors de ce changement ; #35 n’est donc pas déclaré intégralement résolu.
