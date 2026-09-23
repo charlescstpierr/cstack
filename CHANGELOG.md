@@ -41,6 +41,17 @@ Les versions suivent SemVer. Le format suit [Keep a Changelog](https://keepachan
 - Correction de la double acquisition du verrou d’orchestration lors d’une reprise concurrente. Chaque acquisition possède désormais un marqueur unique ; un ancien détenteur ne peut plus libérer le verrou de son remplaçant, même dans le même processus.
 - Migration automatique des anciens fichiers PID, reprise après interruption et tests de concurrence déterministes.
 
+## [0.5.0] - 2026-09-23
+
+### Ajouté
+
+- Pack d'intake Codex sous `plugins/cstack/automations/intake/`, avec contrats de triage, de reproduction et d'ouverture de PR draft.
+
+### Corrigé
+
+- Les étapes d'intake échouent fermées sans commentaire de verdict valide ou sans deux chemins de preuve non vides avant une PR draft.
+- Les helpers sont préparés hors du workspace inspecté et imposent un `CSTACK_PLUGIN_ROOT` de confiance.
+
 ## [0.4.0] - 2026-09-12
 
 ### Ajouté
