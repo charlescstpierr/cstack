@@ -69,3 +69,17 @@ La [PR #43](https://github.com/charlescstpierr/cstack/pull/43) porte le harnais 
 ## Vérification de la base
 
 91 tests Python, dont un ignoré, 7 tests Bun racine et 148 tests Bun des helpers passent. Les vérifications de types, le validateur de paquet, la syntaxe shell et `git diff --check` passent dans le worktree isolé. Ces résultats prouvent l’état des contrôles existants, pas le bénéfice des propositions non implémentées.
+
+## Suite du ticket #29 : comparaison structurée
+
+L’essai initial saturé ci-dessus reste une limite réelle. Une seconde expérience utilise des mutations du vrai code de `models.py`, `project.py` et du retour typé de `worker-context.ts`, avec les contrôles existants. Elle a motivé le [comparateur optionnel](../plugins/cstack/skills/cstack/references/regression.md), qui distingue les différences observées et garde les inconnues non vertes. Il ne remplace ni le runner du projet ni la revue de livraison.
+
+Les [résultats et coûts locaux](evidence/regression-comparison.json) couvrent les captures réelles et les contrôles de refus. Une comparaison fonctionnelle, avec deux exécutions par côté, a pris 2,07 s collecte incluse sur des copies préparées; la comparaison seule a pris 0,08 s. Ce résultat ne mesure pas la préparation des environnements et ne démontre aucune supériorité générale sur un modèle. Le mécanisme sert aux comparaisons répétées de données structurées; il n’ajoute aucune étape aux tâches simples.
+
+Le test d’intégration rejoue les vrais helpers dans des copies temporaires, puis confirme qu’une base rouge peut contenir un échec persistant et une nouvelle régression distincte :
+
+```sh
+python3 -m unittest discover -s tests -p 'test_compare_checks.py'
+```
+
+Le changement livre uniquement la comparaison passive. La collecte des observations, la conformité des références au head visé et la preuve de la cause restent à la charge du coordinateur. Les autres propositions de l’audit ne sont pas déclarées résolues par cette livraison.

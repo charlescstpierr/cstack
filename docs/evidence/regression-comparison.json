@@ -1,0 +1,191 @@
+{
+  "source_base": "9d1d80fcb5defd81e32425dee7410cdad959d3fb",
+  "scope": "Real setup helper mutations and runtime typecheck; explicit data-boundary controls are not incidents.",
+  "mutations": {
+    "A": "models.resolve: remove LEGACY_FALLBACKS lookup",
+    "B": "project._ignore_content: force LF instead of preserving CRLF",
+    "C": "models.resolve: wrong default model under the same existing check",
+    "typecheck": "worker-context.ts: return prompt:42 instead of prompt"
+  },
+  "case_results": [
+    {
+      "case": "01",
+      "status": "regression",
+      "exit_code": 1,
+      "labels": {
+        "test_models.ModelSetupTests.test_customization_preserves_legacy_values_and_explicit_inheritance": "regression",
+        "test_project_setup.ProjectSetupTests.test_reapplying_the_same_plan_is_a_noop_and_gitignore_preserves_crlf": "no_difference_observed"
+      }
+    },
+    {
+      "case": "02",
+      "status": "regression",
+      "exit_code": 1,
+      "labels": {
+        "test_models.ModelSetupTests.test_customization_preserves_legacy_values_and_explicit_inheritance": "persistent_failure",
+        "test_project_setup.ProjectSetupTests.test_reapplying_the_same_plan_is_a_noop_and_gitignore_preserves_crlf": "regression"
+      }
+    },
+    {
+      "case": "03",
+      "status": "changes_observed",
+      "exit_code": 1,
+      "labels": {
+        "test_models.ModelSetupTests.test_customization_preserves_legacy_values_and_explicit_inheritance": "failure_changed",
+        "test_project_setup.ProjectSetupTests.test_reapplying_the_same_plan_is_a_noop_and_gitignore_preserves_crlf": "no_difference_observed"
+      }
+    },
+    {
+      "case": "04",
+      "status": "incomparable",
+      "exit_code": 1,
+      "labels": {
+        "test_models.ModelSetupTests.test_customization_preserves_legacy_values_and_explicit_inheritance": "incomparable",
+        "test_project_setup.ProjectSetupTests.test_reapplying_the_same_plan_is_a_noop_and_gitignore_preserves_crlf": "incomparable"
+      }
+    },
+    {
+      "case": "05",
+      "status": "incomparable",
+      "exit_code": 1,
+      "labels": {
+        "test_models.ModelSetupTests.test_customization_preserves_legacy_values_and_explicit_inheritance": "incomparable",
+        "test_project_setup.ProjectSetupTests.test_reapplying_the_same_plan_is_a_noop_and_gitignore_preserves_crlf": "incomparable"
+      }
+    },
+    {
+      "case": "06",
+      "status": "incomparable",
+      "exit_code": 1,
+      "labels": {
+        "test_models.ModelSetupTests.test_customization_preserves_legacy_values_and_explicit_inheritance": "definition_unknown",
+        "test_project_setup.ProjectSetupTests.test_reapplying_the_same_plan_is_a_noop_and_gitignore_preserves_crlf": "no_difference_observed"
+      }
+    },
+    {
+      "case": "07",
+      "status": "unstable",
+      "exit_code": 1,
+      "labels": {
+        "test_models.ModelSetupTests.test_customization_preserves_legacy_values_and_explicit_inheritance": "unstable",
+        "test_project_setup.ProjectSetupTests.test_reapplying_the_same_plan_is_a_noop_and_gitignore_preserves_crlf": "no_difference_observed"
+      }
+    },
+    {
+      "case": "08",
+      "status": "no_difference_observed",
+      "exit_code": 0,
+      "labels": {
+        "test_models.ModelSetupTests.test_customization_preserves_legacy_values_and_explicit_inheritance": "no_difference_observed",
+        "test_project_setup.ProjectSetupTests.test_reapplying_the_same_plan_is_a_noop_and_gitignore_preserves_crlf": "no_difference_observed"
+      }
+    },
+    {
+      "case": "09",
+      "status": "persistent_failure",
+      "exit_code": 1,
+      "labels": {
+        "test_models.ModelSetupTests.test_customization_preserves_legacy_values_and_explicit_inheritance": "persistent_failure",
+        "test_project_setup.ProjectSetupTests.test_reapplying_the_same_plan_is_a_noop_and_gitignore_preserves_crlf": "no_difference_observed"
+      }
+    },
+    {
+      "case": "10",
+      "status": "incomparable",
+      "exit_code": 1,
+      "labels": {
+        "test_models.ModelSetupTests.test_customization_preserves_legacy_values_and_explicit_inheritance": "no_difference_observed",
+        "test_project_setup.ProjectSetupTests.test_reapplying_the_same_plan_is_a_noop_and_gitignore_preserves_crlf": "removed_or_unobserved"
+      }
+    },
+    {
+      "case": "11",
+      "status": "changes_observed",
+      "exit_code": 1,
+      "labels": {
+        "test_models.ModelSetupTests.test_customization_preserves_legacy_values_and_explicit_inheritance": "definition_changed",
+        "test_project_setup.ProjectSetupTests.test_reapplying_the_same_plan_is_a_noop_and_gitignore_preserves_crlf": "no_difference_observed"
+      }
+    },
+    {
+      "case": "12",
+      "status": "incomparable",
+      "exit_code": 1,
+      "labels": {
+        "test_models.ModelSetupTests.test_customization_preserves_legacy_values_and_explicit_inheritance": "insufficient_observations",
+        "test_project_setup.ProjectSetupTests.test_reapplying_the_same_plan_is_a_noop_and_gitignore_preserves_crlf": "insufficient_observations"
+      }
+    }
+  ],
+  "additional_real_cases": [
+    {
+      "case": "added-check",
+      "status": "changes_observed",
+      "labels": {
+        "test_models.ModelSetupTests.test_apply_creates_cstack_gitignore_without_clobbering": "no_difference_observed",
+        "test_models.ModelSetupTests.test_customization_preserves_legacy_values_and_explicit_inheritance": "no_difference_observed",
+        "test_models.ModelSetupTests.test_documentation_inherits_external_runtime_default": "added_check",
+        "test_models.ModelSetupTests.test_invalid_choices_and_stale_preview_never_replace_existing_config": "no_difference_observed",
+        "test_models.ModelSetupTests.test_live_catalog_and_missing_availability": "no_difference_observed",
+        "test_models.ModelSetupTests.test_malformed_existing_config_is_not_repaired_silently": "no_difference_observed",
+        "test_models.ModelSetupTests.test_mixed_panel_keeps_legacy_native_and_runtime_entries": "no_difference_observed",
+        "test_models.ModelSetupTests.test_recommended_setup_resolves_exact_model_and_effort_for_every_role": "no_difference_observed",
+        "test_models.ModelSetupTests.test_runtime_selections_are_preserved_and_scoped_to_their_catalog": "no_difference_observed",
+        "test_models.ModelSetupTests.test_setup_presents_agent_models_before_inheritance": "no_difference_observed",
+        "test_models.ModelSetupTests.test_symlinked_state_does_not_write_outside_workspace": "no_difference_observed"
+      }
+    },
+    {
+      "case": "typecheck",
+      "status": "regression",
+      "labels": {
+        "runtime-typecheck": "regression"
+      }
+    }
+  ],
+  "pipeline_timings": [
+    {
+      "kind": "functional",
+      "collection_wall_seconds": 1.998115,
+      "comparison_wall_seconds": 0.075488,
+      "total_wall_seconds": 2.073602,
+      "status": "regression",
+      "exit_code": 1,
+      "scope": "two fresh executions per side; existing isolated copies/dependencies; includes subprocess startup and JSON emission/read; excludes checkout/dependency installation"
+    },
+    {
+      "kind": "new-check",
+      "collection_wall_seconds": 0.905712,
+      "comparison_wall_seconds": 0.104672,
+      "total_wall_seconds": 1.010383,
+      "status": "changes_observed",
+      "exit_code": 1,
+      "scope": "two fresh executions per side; existing isolated copies/dependencies; includes subprocess startup and JSON emission/read; excludes checkout/dependency installation"
+    },
+    {
+      "kind": "typecheck",
+      "collection_wall_seconds": 0.879322,
+      "comparison_wall_seconds": 0.084706,
+      "total_wall_seconds": 0.964028,
+      "status": "regression",
+      "exit_code": 1,
+      "scope": "two fresh executions per side; existing isolated copies/dependencies; includes subprocess startup and JSON emission/read; excludes checkout/dependency installation"
+    }
+  ],
+  "timing_limits": "Local observations on existing isolated copies and dependencies. Includes fresh subprocesses and JSON collection; excludes checkout/dependency installation. No general model quality or speed ranking.",
+  "bundle": {
+    "base_source_bytes": 155185,
+    "candidate_source_bytes": 159925,
+    "limit_bytes": 262144
+  },
+  "limitations": [
+    "The comparator validates reports, not their authenticity or the truth of collection.",
+    "Same-revision replay is permitted and identified; it cannot attest a new code change.",
+    "Native and CLI role-wide semantic goal drift is not addressed by this feature."
+  ],
+  "replay_subset": {
+    "command": "python3 -m unittest discover -s tests -p test_compare_checks.py",
+    "coverage": "Real source mutations A and A+B (cases 01-02), plus recorded input-boundary controls. Does not recreate mutation C, typecheck, added-check captures or recorded timings."
+  },
+  "recorded_comparator_sha256": "b82a8ba034b443463ec5c339b84203211690e29d818bf18cbe07edd6c2ccc722"
+}
