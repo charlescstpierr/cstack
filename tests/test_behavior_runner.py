@@ -41,7 +41,10 @@ class BehaviorRunnerTests(unittest.TestCase):
                 f'openat(AT_FDCWD, "{bundle}/skills/how/SKILL.md", O_RDONLY) = 4\n'
                 f'openat(AT_FDCWD, "{bundle}/skills/arena/SKILL.md", O_RDONLY) = -1 ENOENT\n'
             )
-            opened = verify_behavior.observed_routes(prefix, bundle)
+            opened = verify_behavior.observed_routes(prefix, bundle, [
+                f"cat {bundle}/skills/cstack/playbooks/feature.md",
+                f"sed -n '1,80p' {bundle}/skills/how/SKILL.md",
+            ], Path(directory))
             score = verify_behavior.score_routes(opened, {"routing": {
                 "expected": ["skills/cstack/playbooks/feature.md", "skills/arena/SKILL.md"],
                 "forbidden": ["skills/how/SKILL.md", "skills/why/SKILL.md"],
@@ -51,6 +54,27 @@ class BehaviorRunnerTests(unittest.TestCase):
         self.assertEqual(score["false_positive"], ["skills/how/SKILL.md"])
         self.assertEqual(score["known_true_negative"], ["skills/why/SKILL.md"])
 
+    def test_bulk_scan_is_unknown_not_a_loaded_capability(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory) / "resources" / "candidate"
+            prefix = Path(directory) / "route-open"
+            (Path(directory) / "route-open.101").write_text(
+                f'openat(AT_FDCWD, "{bundle}/skills/arena/SKILL.md", O_RDONLY) = 3\n'
+            )
+            opened = verify_behavior.observed_routes(
+                prefix, bundle, [f"rg arena {bundle}/skills"], Path(directory)
+            )
+            required = verify_behavior.score_routes(opened, {"routing": {
+                "expected": ["skills/arena/SKILL.md"], "forbidden": [],
+            }})
+            forbidden = verify_behavior.score_routes(opened, {"routing": {
+                "expected": [], "forbidden": ["skills/arena/SKILL.md"],
+            }})
+        self.assertEqual(opened["direct_reads"], [])
+        self.assertEqual(required["unknown_expected"], ["skills/arena/SKILL.md"])
+        self.assertEqual(forbidden["unknown_forbidden"], ["skills/arena/SKILL.md"])
+        self.assertEqual(required["true_positive"], [])
+        self.assertEqual(forbidden["false_positive"], [])
 
     def test_repeats_copy_fixtures_and_preserve_original(self):
         with tempfile.TemporaryDirectory() as directory:
