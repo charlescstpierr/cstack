@@ -118,7 +118,7 @@ def register(
     bodies: list[str] | None = None,
     french: bool = False,
     sandbox: str = "workspace-write",
-    expected_children: int = 0,
+    expected_children: int | None = 0,
     expected_routes: list[str] | None = None,
     forbidden_routes: list[str] | None = None,
 ) -> None:
@@ -142,9 +142,10 @@ def register(
             "bundle": tree_hash(bundle),
             "skill": hashlib.sha256(skill_path.read_bytes()).hexdigest(),
         },
-        "expected_children": expected_children,
         "role_metadata": model_config(roles),
     }
+    if expected_children is not None:
+        expectation["expected_children"] = expected_children
     if expected_routes is not None or forbidden_routes is not None:
         expected = sorted(expected_routes or [])
         forbidden = sorted(forbidden_routes or [])
@@ -324,10 +325,10 @@ def filter_events(events, start, today):
                  "src/errors.py": 'def fail(code):\n    return f"Error: could not proccess invoice {code}"\n',
              }, [], catalog),
              bundle=new, skill="cstack", roles=[], body=trivial,
+             expected_children=None,
              expected_routes=["skills/cstack/playbooks/bug-fix.md"],
              forbidden_routes=[
                  "skills/cstack/references/principles/laziness-protocol.md",
-                 "skills/how/SKILL.md",
              ])
 
     typed_boundary = """Use $cstack:cstack. Operators hand-edit config.yaml and the service reads it at startup. Give the configuration a typed shape and write the loader that produces it. Operators regularly ship a missing key, a quoted number where an integer belongs, or an endpoint with no scheme."""
@@ -337,6 +338,7 @@ def filter_events(events, start, today):
                  "src/config.py": "def load(path):\n    raise NotImplementedError\n",
              }, [], catalog),
              bundle=new, skill="cstack", roles=[], body=typed_boundary,
+             expected_children=None,
              expected_routes=[
                  "skills/cstack/references/principles/boundary-discipline.md",
                  "skills/cstack/references/principles/foundational-thinking.md",
@@ -351,6 +353,7 @@ def filter_events(events, start, today):
                  "src/api.py": 'from .auth import legacy_auth\n\n\ndef handle(token):\n    return legacy_auth(token)\n',
              }, [], catalog),
              bundle=new, skill="cstack", roles=[], body=migration,
+             expected_children=None,
              expected_routes=[
                  "skills/cstack/playbooks/refactoring.md",
                  "skills/cstack/references/principles/migrate-callers-then-delete-legacy-apis.md",
@@ -362,6 +365,7 @@ def filter_events(events, start, today):
                  "src/worker.py": 'def drain(queue):\n    while True:\n        if not queue:\n            continue\n        queue.pop()\n',
              }, [], catalog),
              bundle=new, skill="cstack", roles=[], body=live_process,
+             expected_children=None,
              expected_routes=["skills/cstack/playbooks/runtime-forensics.md"],
              forbidden_routes=["skills/cstack/playbooks/trace-forensics.md"])
     return cases, expectations

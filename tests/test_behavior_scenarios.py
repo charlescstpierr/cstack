@@ -39,7 +39,6 @@ class BehaviorScenarioGeneratorTests(unittest.TestCase):
                     "expected": ["skills/cstack/playbooks/bug-fix.md"],
                     "forbidden": [
                         "skills/cstack/references/principles/laziness-protocol.md",
-                        "skills/how/SKILL.md",
                     ],
                 },
                 "routing_typed_external_boundary": {
@@ -66,6 +65,9 @@ class BehaviorScenarioGeneratorTests(unittest.TestCase):
                 for route in value["expected"] + value["forbidden"]:
                     self.assertFalse(route.startswith("skills/principle-"))
                     self.assertTrue((ROOT / "plugins" / "cstack" / route).is_file())
+            for case in expectations:
+                if case["id"].startswith("routing_"):
+                    self.assertNotIn("expected_children", case)
 
 
 if __name__ == "__main__":

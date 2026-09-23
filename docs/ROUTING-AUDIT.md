@@ -17,7 +17,7 @@ La couche 0 est fermée mécaniquement : les 29 skills distribués portent `allo
 
 ## Méthode
 
-Huit tâches formulées comme des demandes ordinaires ont été confiées à des agents séparés, chacun dans une copie isolée de l'arbre de skills, sans qu'aucun sache qu'une mesure avait lieu. L'observable est l'heure d'accès des fichiers : quels `SKILL.md`, playbooks et références de principles ont réellement été ouverts. Aucune auto-déclaration n'a été demandée, conformément à `playbooks/eval.md`, qui interdit de demander au sujet la liste des skills qu'il a appliqués. Les attentes étaient écrites avant l'exécution.
+Huit tâches formulées comme des demandes ordinaires ont été confiées à des agents séparés, chacun dans une copie isolée de l'arbre de skills, sans qu'aucun sache qu'une mesure avait lieu. L'observable visé est la liste des fichiers réellement ouverts : quels `SKILL.md`, playbooks et références de principles ont été lus pendant le tour. Aucune auto-déclaration n'a été demandée, conformément à `playbooks/eval.md`, qui interdit de demander au sujet la liste des skills qu'il a appliqués. Les attentes étaient écrites avant l'exécution.
 
 Un second passage a inversé le contenu de quatre principles, en conservant leurs conditions de déclenchement intactes pour que le routage reste identique, afin de distinguer un fichier qui oriente réellement la décision d'un fichier que le système contourne.
 
@@ -29,6 +29,7 @@ Elles sont importantes et conditionnent toute lecture des résultats.
 - **Une seule passe par cas.** Aucune estimation de variance. Un déclenchement observé une fois ne prouve pas un taux.
 - **Un cas perdu sur huit** pour la couche 2 : ses lectures sont survenues pendant un balayage `grep` de masse et n'ont pas pu être séparées des lectures délibérées.
 - **La grille d'attentes était trop stricte au moins une fois.** `principle-fix-root-causes` a été compté comme excédentaire sur une correction de faute d'orthographe, alors que le routeur dit "for a defect" et que le déclenchement est donc légitime.
+- **L'atime n'est pas une preuve fiable.** `relatime`, `noatime`, les caches et les lectures de masse peuvent masquer ou mélanger les accès. Les scénarios ci-dessous demandent un traçage explicite des ouvertures de fichiers ; `verify-behavior.py` ne le fait pas encore seul.
 
 ## Résultats
 
@@ -71,7 +72,7 @@ Aucune n'est tranchée ici.
 
 ### 1. `principle-laziness-protocol` se comporte comme un défaut
 
-Ouvert dans cinq des sept cas exploitables, dont une correction d'un mot et un ajout de couverture. Sa condition, "before a refactor or a new abstraction", est assez large pour être lue comme toujours applicable. Le scénario `routing_one_word_user_string` encode ce constat sous forme de route interdite vers `skills/cstack/references/principles/laziness-protocol.md`.
+Ouvert dans cinq des sept cas exploitables, dont une correction d'un mot et un ajout de couverture. Sa condition, "before a refactor or a new abstraction", est assez large pour être lue comme toujours applicable. Le scénario `routing_one_word_user_string` encode ce constat sous forme de route interdite vers `skills/cstack/references/principles/laziness-protocol.md`. Il n'interdit pas `skills/how/SKILL.md`, car `bug-fix.md` peut légitimement l'appliquer pendant le diagnostic.
 
 ### 2. Les phrases de déclenchement des descriptions ne sont lues par personne
 
@@ -87,29 +88,57 @@ Quatre scénarios sont ajoutés à `scripts/behavior-scenarios.py`. Ils suivent 
 
 ```sh
 codex debug models > /tmp/cstack-model-catalog.json
+python3 - /tmp/cstack-model-catalog.json <<'PY'
+import json, sys
+
+catalog = json.load(open(sys.argv[1], encoding="utf-8"))
+
+def walk(value):
+    if isinstance(value, dict):
+        yield value
+        for child in value.values():
+            yield from walk(child)
+    elif isinstance(value, list):
+        for child in value:
+            yield from walk(child)
+
+for item in walk(catalog):
+    names = {str(item.get(key, "")) for key in ("id", "name", "model")}
+    if "gpt-5.6-luna" in names and "max" in json.dumps(item).lower():
+        raise SystemExit(0)
+raise SystemExit("catalogue Codex sans paire gpt-5.6-luna + max ; arrêt fail-closed")
+PY
 python3 scripts/behavior-scenarios.py --baseline /chemin/plugin-precedent --proposed /chemin/plugin-courant --catalog /tmp/cstack-model-catalog.json --output /tmp/cstack-cases
-python3 scripts/verify-behavior.py --cases /tmp/cstack-cases/cases.json --output /tmp/cstack-results --turn-timeout 900
+python3 scripts/verify-behavior.py --cases /tmp/cstack-cases/cases.json --output /tmp/cstack-results --model gpt-5.6-luna --effort max --turn-timeout 900
 ```
 
 Pour ne rejouer que le routage, restreindre `verify-behavior.py` avec `--case-id` :
 
 | Cas | Ce qu'il mesure |
 | --- | --- |
-| `routing_one_word_user_string` | Précision. Une correction d'un mot ne doit pas charger `skills/cstack/references/principles/laziness-protocol.md` ni `skills/how/SKILL.md`. |
+| `routing_one_word_user_string` | Précision. Une correction d'un mot ne doit pas charger `skills/cstack/references/principles/laziness-protocol.md`. |
 | `routing_typed_external_boundary` | Rappel dans la zone de recouvrement la plus dense : les principles de type, frontière et pensée fondationnelle. |
 | `routing_internal_api_replacement` | Le cluster migration : `skills/cstack/references/principles/migrate-callers-then-delete-legacy-apis.md` doit être atteint parmi ses voisins. |
 | `routing_live_process_diagnosis` | La direction non mesurée de la paire forensics : un processus vivant doit atteindre `runtime-forensics.md`, pas `trace-forensics.md`. |
 
-`expectations.json` porte désormais un bloc `routing` pour ces cas, avec `expected` et `forbidden` exprimés en chemins relatifs à la racine du bundle. Le générateur refuse une route inexistante ou présente dans les deux listes. Ces cas se jugent sur les routes empruntées, pas sur le nombre d'enfants : leur `expected_children` vaut zéro et n'est pas le sujet.
+`expectations.json` porte désormais un bloc `routing` pour ces cas, avec `expected` et `forbidden` exprimés en chemins relatifs à la racine du bundle. Le générateur refuse une route inexistante ou présente dans les deux listes. Ces cas se jugent sur les routes empruntées, pas sur le nombre d'enfants : ils omettent donc `expected_children`.
 
 Leurs fixtures sont réduites au strict nécessaire pour poser la question de routage. Un agent peut donc emprunter la bonne route puis signaler qu'il ne peut pas mener la tâche à terme, faute de processus vivant ou de dépôt complet. Ce n'est pas un échec du cas : le routage précède la découverte de cette limite.
 
-Le harnais ne capture pas encore les routes effectivement empruntées. Les établir demande une observation des fichiers ouverts pendant le tour ; c'est le travail restant pour transformer ces attentes en portail automatique.
+Le harnais ne capture pas encore les routes effectivement empruntées. Sur Linux, une exécution reproductible peut tracer les ouvertures de fichiers avec `strace` :
+
+```sh
+strace -ff -e trace=openat,openat2 -s 240 -o /tmp/cstack-route-open \
+  python3 scripts/verify-behavior.py --cases /tmp/cstack-cases/cases.json --case-id routing_one_word_user_string --output /tmp/cstack-results-routing-one-word --model gpt-5.6-luna --effort max --turn-timeout 900
+rg 'skills/(cstack/playbooks|cstack/references/principles|how/SKILL.md)' /tmp/cstack-route-open.*
+```
+
+Cette trace reste une preuve externe à comparer au bloc `routing`. Le travail restant est d'intégrer une capture équivalente dans le harnais et de comparer automatiquement les routes ouvertes aux attentes.
 
 ## Ce qui reste à faire
 
 - Rejouer les quatre scénarios sur Codex, avec plusieurs passages par cas, pour obtenir des taux plutôt que des observations uniques.
-- Instrumenter `verify-behavior.py` pour enregistrer les routes empruntées et comparer au bloc `routing`.
+- Instrumenter `verify-behavior.py` pour tracer les ouvertures de fichiers, enregistrer les routes empruntées et comparer au bloc `routing`.
 - Trancher les décisions ouvertes ci-dessus.
 - Étendre la couverture aux paires confusables non encore mesurées : `principle-subtract-before-you-add` contre `principle-outcome-oriented-execution`, et `playbooks/perf-issue.md` contre `playbooks/hillclimb.md`.
 - Mesurer le point de rupture de la redondance en inversant un groupe entier de principles voisins plutôt qu'un seul fichier.
