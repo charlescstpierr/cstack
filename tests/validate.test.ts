@@ -57,7 +57,7 @@ test("le paquet charge 29 skills et rejette les distributions dangereuses ou inc
         return JSON.stringify(value);
       }, /le chemin original n’existe pas/],
       ["plugins/cstack/README.md", (text: string) => text.replace(/\b29 (?:skills|compétences)\b/g, "27 compétences"), /nombre de skills cité 27/],
-      ["docs/VERIFICATION.md", (text: string) => text.replace(/(Le catalogue 0\.4\.0 contient )29 (?:skills|compétences)/, "$127 compétences"), /nombre de skills cité 27/],
+      ["docs/VERIFICATION.md", (text: string) => text.replace(/(Le catalogue \d+\.\d+\.\d+ contient )29 (?:skills|compétences)/, "$127 compétences"), /nombre de skills cité 27/],
       ["docs/VERIFICATION.md", (text: string) => text.replace("23 guides d'exécution.", "22 guides d'exécution."), /nombre de guides opérationnels cité 22/],
       ["docs/VERIFICATION.md", (text: string) => text.replace("23 guides d'exécution.", "22 guides d’exécution."), /nombre de guides opérationnels cité 22/],
       ["plugins/cstack/.codex-plugin/plugin.json", (text: string) => text.replace(/"version": "\d+\.\d+\.\d+"/, '"version": "9.9.9"'), /journal des modifications ou preuve manquants/],

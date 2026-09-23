@@ -1,13 +1,13 @@
-### Visual parity
+### Parité visuelle
 
-Follow [the Codex runtime contract](../references/codex-runtime.md).
+Suivez [le contrat d’exécution Codex](../references/codex-runtime.md).
 
-**You own pixel-exact equivalence. The baseline is the spec. You do not touch it.** Equivalence is verified by image diff, not by eye.
+**Tu possèdes l’équivalence exacte au pixel. La référence est la spécification. Tu n’y touches pas.** L’équivalence se vérifie par diff d’image, pas à l’œil.
 
-1. Establish the baseline first, before any migration: a visual regression harness that screenshots the current component across its states, plus the target when matching two implementations. No baseline, no parity claim. A blocking prerequisite, not a follow-up.
-2. Anti-shortcut clauses, stated and held: no harness modifications, no baseline tampering, no component restructuring to make a diff pass. If the baseline looks wrong, stop and ask, don't edit it.
-3. Migrate one component at a time. Parallelize across worktrees, one owner per component (the [Separate Before Serializing Shared State](../references/principles/separate-before-serializing-shared-state.md) principle reference). Shared primitives migrate first as a blocking phase. Run `../../deslop/SKILL.md` over the diff before each commit. Keep `deslop skipped: <reason>` when a step genuinely cannot run it.
-4. Verify each component against its baseline with an available native browser or simulator tool and an image diff. A nonzero diff fails. Investigate the pixel delta and continue in the foreground until the diff is zero or a documented platform variance remains.
-5. Run **Opening a PR** per component or safe batch only when the user authorized PR creation.
+1. Établis d’abord la référence, avant toute migration : un harnais de régression visuelle qui capture le composant courant dans ses états, plus la cible quand deux implémentations doivent correspondre. Pas de référence, pas de revendication de parité. C’est un prérequis bloquant, pas un suivi.
+2. Clauses anti-raccourci, énoncées et tenues : pas de modification du harnais, pas de falsification de référence, pas de restructuration de composant pour faire passer un diff. Si la référence semble fausse, arrête et demande, ne l’édite pas.
+3. Migre un composant à la fois. Parallélise entre worktrees, un propriétaire par composant (référence du principe [Séparer avant de sérialiser l’état partagé](../references/principles/separate-before-serializing-shared-state.md)). Les primitives partagées migrent d’abord comme phase bloquante.
+4. Vérifie chaque composant contre sa référence avec un navigateur natif ou outil simulateur disponible et un diff d’image. Un diff non nul échoue. Investigue le delta pixel et continue au premier plan jusqu’à ce que le diff soit zéro ou qu’il reste une variance plateforme documentée.
+5. Lance **Ouvrir une PR** par composant ou lot sûr, selon la portée de livraison du contrat d’exécution.
 
-**Reply:** components migrated, the diff result for each, the baseline harness location, what's left. Every claim carries its evidence or its label in the same sentence. Measured, inferred, or guess. A prediction or an unseen cause is a guess. Never hand the human a check you could run.
+**Réponse :** composants migrés, résultat de diff pour chacun, emplacement du harnais de référence, ce qui reste. Chaque affirmation porte sa preuve ou son étiquette dans la même phrase. Mesuré, inféré ou supposition. Une prédiction ou une cause non observée est une supposition. Ne remets jamais à l’humain un contrôle que tu pourrais lancer.

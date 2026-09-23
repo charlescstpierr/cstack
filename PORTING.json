@@ -226,14 +226,14 @@
     {
       "source": "pstack/skills/architect/references/design-red-flags.md",
       "target": "plugins/cstack/skills/architect/references/design-red-flags.md",
-      "status": "retained",
-      "reason": "Portable upstream content retained under its original MIT license."
+      "status": "ported",
+      "reason": "Textes et commentaires traduits en français ; contrats techniques et provenance conservés."
     },
     {
       "source": "pstack/skills/architect/references/rationale-template.md",
       "target": "plugins/cstack/skills/architect/references/rationale-template.md",
-      "status": "retained",
-      "reason": "Portable upstream content retained under its original MIT license."
+      "status": "ported",
+      "reason": "Textes et commentaires traduits en français ; contrats techniques et provenance conservés."
     },
     {
       "source": "pstack/skills/architect/references/runner-prompt.md",
@@ -274,20 +274,20 @@
     {
       "source": "pstack/skills/create-verification-skill/references/feature-map-example/README.md",
       "target": "plugins/cstack/skills/create-verification-skill/references/feature-map-example/README.md",
-      "status": "retained",
-      "reason": "Portable upstream content retained under its original MIT license."
+      "status": "ported",
+      "reason": "Textes et commentaires traduits en français ; contrats techniques et provenance conservés."
     },
     {
       "source": "pstack/skills/create-verification-skill/references/feature-map-example/create-note.md",
       "target": "plugins/cstack/skills/create-verification-skill/references/feature-map-example/create-note.md",
-      "status": "retained",
-      "reason": "Portable upstream content retained under its original MIT license."
+      "status": "ported",
+      "reason": "Textes et commentaires traduits en français ; contrats techniques et provenance conservés."
     },
     {
       "source": "pstack/skills/create-verification-skill/references/feature-map-example/search.md",
       "target": "plugins/cstack/skills/create-verification-skill/references/feature-map-example/search.md",
-      "status": "retained",
-      "reason": "Portable upstream content retained under its original MIT license."
+      "status": "ported",
+      "reason": "Textes et commentaires traduits en français ; contrats techniques et provenance conservés."
     },
     {
       "source": "pstack/skills/figure-it-out/SKILL.md",
@@ -304,14 +304,14 @@
     {
       "source": "pstack/skills/how/references/explainer-prompt.md",
       "target": "plugins/cstack/skills/how/references/explainer-prompt.md",
-      "status": "retained",
-      "reason": "Portable upstream content retained under its original MIT license."
+      "status": "ported",
+      "reason": "Textes et commentaires traduits en français ; contrats techniques et provenance conservés."
     },
     {
       "source": "pstack/skills/how/references/explorer-prompt.md",
       "target": "plugins/cstack/skills/how/references/explorer-prompt.md",
-      "status": "retained",
-      "reason": "Portable upstream content retained under its original MIT license."
+      "status": "ported",
+      "reason": "Textes et commentaires traduits en français ; contrats techniques et provenance conservés."
     },
     {
       "source": "pstack/skills/interrogate/SKILL.md",
@@ -322,8 +322,8 @@
     {
       "source": "pstack/skills/interrogate/references/code-quality-review.md",
       "target": "plugins/cstack/skills/interrogate/references/code-quality-review.md",
-      "status": "retained",
-      "reason": "Portable upstream content retained under its original MIT license."
+      "status": "ported",
+      "reason": "Textes et commentaires traduits en français ; contrats techniques et provenance conservés."
     },
     {
       "source": "pstack/skills/interrogate/references/lead-judgment.md",
@@ -562,8 +562,8 @@
     {
       "source": "pstack/skills/poteto-mode/scripts/watch-pr/cli.ts",
       "target": "plugins/cstack/skills/cstack/scripts/watch-pr/cli.ts",
-      "status": "retained",
-      "reason": "Portable upstream content retained under its original MIT license."
+      "status": "ported",
+      "reason": "Textes et commentaires traduits en français ; contrats techniques et provenance conservés."
     },
     {
       "source": "pstack/skills/poteto-mode/scripts/watch-pr/fakes.test-helper.ts",
@@ -586,20 +586,20 @@
     {
       "source": "pstack/skills/poteto-mode/scripts/watch-pr/policy.test.ts",
       "target": "plugins/cstack/skills/cstack/scripts/watch-pr/policy.test.ts",
-      "status": "retained",
-      "reason": "Portable upstream content retained under its original MIT license."
+      "status": "ported",
+      "reason": "Textes et commentaires traduits en français ; contrats techniques et provenance conservés."
     },
     {
       "source": "pstack/skills/poteto-mode/scripts/watch-pr/policy.ts",
       "target": "plugins/cstack/skills/cstack/scripts/watch-pr/policy.ts",
-      "status": "retained",
-      "reason": "Portable upstream content retained under its original MIT license."
+      "status": "ported",
+      "reason": "Textes et commentaires traduits en français ; contrats techniques et provenance conservés."
     },
     {
       "source": "pstack/skills/poteto-mode/scripts/watch-pr/render.ts",
       "target": "plugins/cstack/skills/cstack/scripts/watch-pr/render.ts",
-      "status": "retained",
-      "reason": "Portable upstream content retained under its original MIT license."
+      "status": "ported",
+      "reason": "Textes et commentaires traduits en français ; contrats techniques et provenance conservés."
     },
     {
       "source": "pstack/skills/poteto-mode/scripts/watch-pr/tsconfig.json",
@@ -610,8 +610,8 @@
     {
       "source": "pstack/skills/poteto-mode/scripts/watch-pr/types.compile.ts",
       "target": "plugins/cstack/skills/cstack/scripts/watch-pr/types.compile.ts",
-      "status": "retained",
-      "reason": "Portable upstream content retained under its original MIT license."
+      "status": "ported",
+      "reason": "Textes et commentaires traduits en français ; contrats techniques et provenance conservés."
     },
     {
       "source": "pstack/skills/poteto-mode/scripts/watch-pr/types.ts",
@@ -880,14 +880,14 @@
     {
       "source": "pstack/skills/why/references/epistemics.md",
       "target": "plugins/cstack/skills/why/references/epistemics.md",
-      "status": "retained",
-      "reason": "Portable upstream content retained under its original MIT license."
+      "status": "ported",
+      "reason": "Textes et commentaires traduits en français ; contrats techniques et provenance conservés."
     },
     {
       "source": "pstack/skills/why/references/investigator-prompt.md",
       "target": "plugins/cstack/skills/why/references/investigator-prompt.md",
-      "status": "retained",
-      "reason": "Portable upstream content retained under its original MIT license."
+      "status": "ported",
+      "reason": "Textes et commentaires traduits en français ; contrats techniques et provenance conservés."
     },
     {
       "source": "pstack/skills/why/references/source-playbook.md",
@@ -898,44 +898,44 @@
     {
       "source": "pstack/skills/why/references/sources/code-archaeology.md",
       "target": "plugins/cstack/skills/why/references/sources/code-archaeology.md",
-      "status": "retained",
-      "reason": "Portable upstream content retained under its original MIT license."
+      "status": "ported",
+      "reason": "Textes et commentaires traduits en français ; contrats techniques et provenance conservés."
     },
     {
       "source": "pstack/skills/why/references/sources/databricks.md",
       "target": "plugins/cstack/skills/why/references/sources/databricks.md",
-      "status": "retained",
-      "reason": "Portable upstream content retained under its original MIT license."
+      "status": "ported",
+      "reason": "Textes et commentaires traduits en français ; contrats techniques et provenance conservés."
     },
     {
       "source": "pstack/skills/why/references/sources/datadog.md",
       "target": "plugins/cstack/skills/why/references/sources/datadog.md",
-      "status": "retained",
-      "reason": "Portable upstream content retained under its original MIT license."
+      "status": "ported",
+      "reason": "Textes et commentaires traduits en français ; contrats techniques et provenance conservés."
     },
     {
       "source": "pstack/skills/why/references/sources/incident-postmortem.md",
       "target": "plugins/cstack/skills/why/references/sources/incident-postmortem.md",
-      "status": "retained",
-      "reason": "Portable upstream content retained under its original MIT license."
+      "status": "ported",
+      "reason": "Textes et commentaires traduits en français ; contrats techniques et provenance conservés."
     },
     {
       "source": "pstack/skills/why/references/sources/linear.md",
       "target": "plugins/cstack/skills/why/references/sources/linear.md",
-      "status": "retained",
-      "reason": "Portable upstream content retained under its original MIT license."
+      "status": "ported",
+      "reason": "Textes et commentaires traduits en français ; contrats techniques et provenance conservés."
     },
     {
       "source": "pstack/skills/why/references/sources/notion.md",
       "target": "plugins/cstack/skills/why/references/sources/notion.md",
-      "status": "retained",
-      "reason": "Portable upstream content retained under its original MIT license."
+      "status": "ported",
+      "reason": "Textes et commentaires traduits en français ; contrats techniques et provenance conservés."
     },
     {
       "source": "pstack/skills/why/references/sources/sentry.md",
       "target": "plugins/cstack/skills/why/references/sources/sentry.md",
-      "status": "retained",
-      "reason": "Portable upstream content retained under its original MIT license."
+      "status": "ported",
+      "reason": "Textes et commentaires traduits en français ; contrats techniques et provenance conservés."
     },
     {
       "source": "pstack/skills/why/references/sources/slack.md",
@@ -1138,6 +1138,42 @@
     {
       "path": "plugins/cstack/sources/matt-pocock.json",
       "reason": "Provenance record for Matt Pocock adaptations."
+    },
+    {
+      "path": "plugins/cstack/skills/cstack/references/runtime-workers.md",
+      "reason": "Contrat original de dispatch CLI, permissions et reçus des workers multi-runtime."
+    },
+    {
+      "path": "plugins/cstack/skills/cstack/scripts/runtime/runtime.ts",
+      "reason": "Lanceur original de workers CLI officiels sans accès aux credentials."
+    },
+    {
+      "path": "plugins/cstack/skills/cstack/scripts/runtime/runtime.test.ts",
+      "reason": "Vérification des vrais sous-processus simulés, erreurs et permissions du lanceur CLI."
+    },
+    {
+      "path": "plugins/cstack/skills/cstack/scripts/runtime/tsconfig.json",
+      "reason": "Vérification stricte des types du lanceur CLI et de ses tests."
+    },
+    {
+      "path": "plugins/cstack/skills/cstack/scripts/worker-context.ts",
+      "reason": "Contexte explicite des workers, snapshots vérifiables et tests de confinement."
+    },
+    {
+      "path": "plugins/cstack/skills/cstack/scripts/worker-context.test.ts",
+      "reason": "Contexte explicite des workers, snapshots vérifiables et tests de confinement."
+    },
+    {
+      "path": "plugins/cstack/skills/cstack/scripts/worker-skills.ts",
+      "reason": "Bundle textuel de skills CStack commun à tous les workers CLI, sans installation dans les autres clients."
+    },
+    {
+      "path": "plugins/cstack/skills/cstack/scripts/worker-skills.test.ts",
+      "reason": "Bundle textuel de skills CStack commun à tous les workers CLI, sans installation dans les autres clients."
+    },
+    {
+      "path": "plugins/cstack/docs/guide/11-cli-workers.md",
+      "reason": "Guide pratique original des workers CLI, des skills communs et du contexte partagé."
     }
   ]
 }

@@ -1,107 +1,114 @@
-### Orchestrate
+### Orchestrer
 
-Follow [the Codex runtime contract](../references/codex-runtime.md).
+Suivez [le contrat d’exécution Codex](../references/codex-runtime.md).
 
-**You own the program and its decisions. Owners write code.** Use this playbook for a program that spans many units or PRs and outlives one agent's useful context. Use `autonomous-run.md` for one task with a checkable predicate.
+**Tu possèdes le programme et ses décisions. Les propriétaires écrivent le code.** Utilise ce playbook pour un programme qui couvre plusieurs unités ou PR et dépasse le contexte utile d’un seul agent. Utilise `autonomous-run.md` pour une tâche avec un prédicat vérifiable.
 
-Keep the ceremony proportional to the work. Near-identical cheap units need short briefs and inline checks. Novel or risky units need separate verification.
+Garde la cérémonie proportionnelle au travail. Les unités bon marché presque identiques ont besoin de briefs courts et de contrôles inline. Les unités nouvelles ou risquées ont besoin d’une vérification séparée.
 
-Three rules carry the program:
+Trois règles portent le programme :
 
-- Treat completions as queue events.
-- Give every owner and follow-up the current standing orders.
-- Make every brief executable by a new agent with no hidden chat context.
+- Traite les achèvements comme des événements de file.
+- Donne à chaque propriétaire et suivi les ordres permanents courants.
+- Rends chaque brief exécutable par un nouvel agent sans contexte de chat caché.
 
-#### Roles
+#### Rôles
 
-- **Coordinator.** Frames the program, writes briefs, drains results, owns topology, records decisions, and reports to the user. It never authors or edits code. It may perform mechanical git integration when authorized, such as a fast-forward or a clean cherry-pick of a worker's commit, then push. Conflicted merges, restacks, and code changes are always owner tasks.
-- **Track coordinator.** Add one only when the root cannot drain a track directly. It owns a bounded unit list, writes briefs, assigns owners and verifiers, and returns a reduced rollup. Keep nesting shallow.
-- **Owner or verifier.** Give each agent a bounded task, exclusive files or worktree, acceptance criteria, exact checks, and the instructions from `../references/agents/cstack-agent.md`. The verifier is always a different actor from the worker. When the session cannot provide a different model, the report states `single-model verification` instead of claiming independence. A verifier does not write the code it judges.
+- **Coordinateur.** Cadre le programme, écrit les briefs, draine les résultats, possède la topologie, enregistre les décisions et rapporte à l’utilisateur. Il n’écrit ni n’édite jamais le code. Il peut effectuer une intégration git mécanique quand elle est autorisée, comme un fast-forward ou un cherry-pick propre du commit d’un worker, puis push. Les merges conflictuels, restacks et changements de code sont toujours des tâches de propriétaire.
+- **Coordinateur de piste.** Ajoute-en un seulement quand la racine ne peut pas drainer directement une piste. Il possède une liste d’unités bornée, écrit des briefs, assigne propriétaires et vérificateurs, puis retourne un rollup réduit. Garde une imbrication faible.
+- **Propriétaire ou vérificateur.** Donne à chaque agent une tâche bornée, des fichiers ou worktree exclusifs, des critères d’acceptation, les contrôles exacts et les instructions de `../references/agents/cstack-agent.md`. Le vérificateur est toujours un acteur différent du worker. Quand la session ne peut pas fournir de modèle différent, le rapport indique `single-model verification` au lieu de revendiquer l’indépendance. Un vérificateur n’écrit pas le code qu’il juge.
 
-Bound the rolling window to native subagent capacity and run extra work in waves. A missing slot serializes that unit as a separate re-scoped pass in this session, labeled `single-agent`, and the report names the missing independence. Models inherit by default. Apply only an available override for each unit's matched work from `.cstack/models.json`. If an explicit model is unavailable, stop that selection and report it.
+Limite la fenêtre roulante à la capacité des sous-agents natifs et lance le travail supplémentaire par vagues. Pour une capacité manquante, applique [Orchestration requise](../references/codex-runtime.md#orchestration-requise). Les modèles héritent par défaut. Applique seulement une surcharge disponible depuis `.cstack/models.json` pour le travail correspondant de chaque unité. Si un modèle explicite est indisponible, arrête cette sélection et rapporte-le.
 
-#### State layout
+Une sélection de worker ou vérificateur avec `runtime` suit le [dispatch CLI](../references/runtime-workers.md), sans changer le store ni les rôles. Il transmet les mêmes skills CStack pertinents et les snapshots de contexte utiles à chaque worker. Le coordinateur publie un pointeur `inbox` vers le reçu après la fin du processus, puis vérifie le rapport. Un reçu d’exécution ne crée jamais à lui seul une ligne de ledger. Le repli single-agent ci-dessus ne remplace pas un runtime choisi.
 
-Create `.cstack/orchestrate/<project-slug>/` in the target workspace. Every file has one writer. Owners publish facts and readers aggregate them. Resolve the plugin root, then run the helper as `bash <plugin-root>/scripts/run-tool.sh orch/orch.ts <command>`. The launcher stages locked sources in a fresh `cstack-run-<random>` directory under `~/.cache/cstack/stages/` and removes it after the run.
+#### Disposition de l’état
 
-- `preferences.md` contains numbered standing orders, one constraint per line.
-- `overview.md` records durable PR and issue facts. Append instead of rewriting history.
-- `units.tsv` records unit, track, state, branch, PR, head SHA, and brief path.
-- `frontier.json` records the computed merge frontier.
-- `ledger.tsv` records verdicts by PR and head SHA.
-- `inbox/` holds completion pointers.
-- `gates.md` records user gates with options and the blocked operation.
-- `decisions.tsv` records the decision trail.
-- `status.md` is generated from the tables at each drain.
+Crée `.cstack/orchestrate/<project-slug>/` dans le workspace cible. Chaque fichier a un rédacteur. Les propriétaires publient les faits et les lecteurs les agrègent. Résous la racine du plugin, puis lance le helper comme `bash <plugin-root>/scripts/run-tool.sh orch/orch.ts <command>`. Le lanceur met en scène les sources verrouillées sous `.cstack/tools/`.
 
-Do not write program state into the installed plugin directory.
+- `preferences.md` contient les ordres permanents numérotés, une contrainte par ligne.
+- `overview.md` enregistre les faits durables de PR et d’issue. Ajouter plutôt que réécrire l’historique.
+- `units.tsv` enregistre unité, piste, état, branche, PR, SHA head et chemin de brief.
+- `frontier.json` enregistre la frontière de merge calculée.
+- `ledger.tsv` enregistre les verdicts par PR et SHA head.
+- `inbox/` contient les pointeurs d’achèvement.
+- `gates.md` enregistre les barrières utilisateur avec options et opération bloquée.
+- `decisions.tsv` enregistre la trace de décisions.
+- `status.md` est généré depuis les tableaux à chaque drain.
 
-#### Brief format
+N’écris pas l’état du programme dans le répertoire de plugin installé.
 
-Every owner brief contains these fields. Collapse the form for a tiny unit, but keep the facts.
+Le verrou interne `.orch.lock/` contient un marqueur `owner.<pid>.<uuid>` propre à chaque acquisition. Une reprise vise uniquement le marqueur observé et la fermeture retire uniquement celui du détenteur. Les anciens fichiers PID sont migrés sous le verrou temporaire `.orch.lock.migration/`, récupérable après la mort de son détenteur.
+
+Un handle dont le marqueur a été remplacé refuse toute nouvelle opération nécessitant le verrou, y compris après la fermeture du remplaçant. Ouvre un nouveau handle pour reprendre. Les lectures et l’ajout de pointeurs avec `inbox.push`, qui ne prennent pas le verrou, restent disponibles.
+
+`--force` remplace un détenteur vivant sans arrêter son processus. La vérification du marqueur et la publication d’une écriture ne sont pas atomiques : une opération déjà engagée peut encore publier après le remplacement. Pour garantir l’exclusion, attends l’arrêt de l’ancien détenteur avant de forcer la reprise.
+
+#### Format de brief
+
+Chaque brief de propriétaire contient ces champs. Raccourcis la forme pour une toute petite unité, mais garde les faits.
 
 ```text
-GOAL         one outcome that a new agent can execute
-SCOPE        writable paths, forbidden paths, and the exclusive worktree or branch
-CONTEXT      repository paths, PRs, and upstream facts needed by this unit
-ACCEPTANCE   checkable criteria, one per line
-VERIFY       exact commands or native interface checks, with known hazards
-DESLOP       Run `<plugin-root>/skills/deslop/SKILL.md` over the diff before each commit. Keep `deslop skipped: <reason>` when a step genuinely cannot run it.
-TIMEBOX      a rough cap; return partial evidence when it expires
-FORBIDDEN    no topology edits, no force-push, no unrelated fixes, plus unit bans
-REPORT       status, branch, head SHA, PR, verdict, checks run, deviations, follow-ups
-STANDING     current preferences.md instructions
+GOAL         un résultat qu’un nouvel agent peut exécuter
+SCOPE        chemins inscriptibles, chemins interdits et worktree ou branche exclusifs
+CONTEXT      chemins du dépôt, PR et faits amont nécessaires à cette unité
+ACCEPTANCE   critères vérifiables, un par ligne
+VERIFY       commandes exactes ou contrôles d’interface natifs, avec dangers connus
+TIMEBOX      plafond approximatif ; retourner des preuves partielles à expiration
+FORBIDDEN    pas d’éditions de topologie, pas de force-push, pas de correctifs non liés, plus interdits d’unité
+REPORT       statut, branche, SHA head, PR, verdict, contrôles lancés, écarts, suivis
+STANDING     instructions preferences.md courantes
 ```
 
-Pass context by repository path or by quoting only the necessary upstream result. Native subagents do not automatically see sibling results. A missing field means the unit is not ready to assign. Follow-up prompts restate the complete current brief.
+Passe le contexte par chemin de dépôt ou en citant seulement le résultat amont nécessaire. Les sous-agents natifs ne voient pas automatiquement les résultats frères. Un champ manquant signifie que l’unité n’est pas prête à assigner. Les prompts de suivi répètent le brief courant complet.
 
-#### Steps
+#### Étapes
 
-1. **Frame.** State a countable done predicate, unit count, rough effort, expected PR shape, and time budget. If one agent can finish within the session, switch to `autonomous-run.md`. Name independent tracks. Use `../../arena/SKILL.md` before a disputed decomposition. When no subagent slot is available, run the comparison in this session as a separate re-scoped pass, label it `single-agent`, and report the missing independence. Confirm whether the user's request authorizes PR creation, external messages, or merges. Continue local reversible preparation without those actions.
-2. **Initialize state.** Run `orch init` through the plugin launcher. Write standing orders before assigning work. Seed `frontier.json` from current git and GitHub PR facts with `orch frontier set --repo <repo-dir>`.
-3. **Pilot one unit.** Take one representative unit through brief, implementation, verification, stack entry, ledger row, and authorized delivery. Use the pilot to test the brief, unit size, and check recipe. For cheap repeated units, the first ordinary unit is the pilot.
-4. **Scale with a rolling window.** Refill native subagent slots as owners finish. Start dependent work only after its required context exists. Audit one sampled brief per track without blocking the current wave.
-5. **Drain results.** Use the queue procedure below at each safe boundary.
-6. **Integrate continuously.** Integrate verified units from the start. Keep one topology writer per stack. Advance `frontier.json` only after a confirmed merge or a reported new head. Create PRs and merge only when the user authorized those operations. After a unit's confirmed merge and verification, reconcile its worktree users; apply the **After a completed delivery** mode in [worktree cleanup](worktree-cleanup.md) once its owners, verifiers and dependents have released the recorded task-created path.
-7. **Close.** Reconcile every assigned unit to a terminal row. Verify the predicate on the real artifact. Confirm that every delivered PR has a verdict for its current head. Audit the decision trail and preserve `.cstack/orchestrate/<project-slug>/` in a surviving workspace. Finish any eligible post-merge cleanup and report retained worktrees with their reasons.
+1. **Cadrer.** Énonce un prédicat de fin comptable, le nombre d’unités, l’effort approximatif, la forme de PR attendue et le budget temps. Si un agent peut terminer dans la session, bascule vers `autonomous-run.md`. Nomme les pistes indépendantes. Utilise `../../arena/SKILL.md` avant une décomposition disputée. Pour une capacité manquante, applique [Orchestration requise](../references/codex-runtime.md#orchestration-requise) avec `route: Arena`. Applique la portée de livraison du contrat d’exécution aux unités d’implémentation. Confirme séparément si la demande autorise les messages externes ou les merges. Continue la préparation locale réversible sans ces actions.
+2. **Initialiser l’état.** Lance `orch init` via le lanceur du plugin. Écris les ordres permanents avant d’assigner le travail. Amorçe `frontier.json` depuis les faits git courants et PR GitHub avec `orch frontier set --repo <repo-dir>`.
+3. **Piloter une unité.** Mène une unité représentative à travers brief, implémentation, vérification, entrée de pile, ligne de ledger et livraison autorisée. Utilise le pilote pour tester le brief, la taille d’unité et la recette de contrôle. Pour les unités répétées bon marché, la première unité ordinaire est le pilote.
+4. **Monter en charge avec une fenêtre roulante.** Remplis à nouveau les emplacements de sous-agents natifs quand les propriétaires terminent. Commence le travail dépendant seulement après que son contexte requis existe. Audite un brief échantillonné par piste sans bloquer la vague courante.
+5. **Drainer les résultats.** Utilise la procédure de file ci-dessous à chaque frontière sûre.
+6. **Intégrer continuellement.** Intègre les unités vérifiées dès le début. Garde un seul rédacteur de topologie par pile. Avance `frontier.json` seulement après un merge confirmé ou un nouveau head rapporté. Crée des PR selon la portée de livraison du contrat d’exécution. Fusionne seulement quand l’utilisateur a autorisé le merge. Après le merge confirmé et la vérification d’une unité, réconcilie les utilisateurs de son worktree ; applique le mode **Après une livraison terminée** dans [nettoyage de worktree](worktree-cleanup.md) une fois que ses propriétaires, vérificateurs et dépendants ont libéré le chemin créé par la tâche enregistré.
+7. **Fermer.** Réconcilie chaque unité assignée vers une ligne terminale. Vérifie le prédicat sur l’artéfact réel. Confirme que chaque PR livrée a un verdict pour son head courant. Audite la trace de décisions et préserve `.cstack/orchestrate/<project-slug>/` dans un workspace survivant. Termine tout nettoyage post-merge admissible et rapporte les worktrees conservés avec leurs raisons.
 
-#### Queue and drain
+#### File et drain
 
-- On completion, run `orch inbox push <agent> <unit> <status> [--report PATH]`. Finish the current critical section before deep review.
-- Drain after a critical section, a track rollup, a frontier watcher wake, and before a user report. Start with `orch inbox drain`. Arrivals during a drain wait for the next drain.
-- Critical sections include writing a brief, changing stack topology, resolving a conflict, writing a gate, and updating the ledger or frontier.
-- Classify each pointer as landed, needs verification, failed, stale, or noise. Write the result with `orch unit add`, `orch unit set`, and `orch ledger record`. Then run `orch status` and assign the next ready wave.
-- Account for every child as completed, replaced, abandoned, or absorbed with a reason. Do not hide missing results by silently redoing them.
+- À l’achèvement, lance `orch inbox push <agent> <unit> <status> [--report PATH]`. Termine la section critique courante avant la revue profonde.
+- Draine après une section critique, un rollup de piste, un réveil du watcher de frontière et avant un rapport utilisateur. Commence avec `orch inbox drain`. Les arrivées pendant un drain attendent le drain suivant.
+- Les sections critiques incluent l’écriture d’un brief, le changement de topologie de pile, la résolution d’un conflit, l’écriture d’une barrière et la mise à jour du ledger ou de la frontière.
+- Classe chaque pointeur comme landed, needs verification, failed, stale ou noise. Écris le résultat avec `orch unit add`, `orch unit set` et `orch ledger record`. Puis lance `orch status` et assigne la prochaine vague prête.
+- Comptabilise chaque enfant comme terminé, remplacé, abandonné ou absorbé avec une raison. Ne cache pas les résultats manquants en les refaisant silencieusement.
 
-#### GitHub stack safety
+#### Sûreté de pile GitHub
 
-- Compute the stack from GitHub PR head and base relationships, starting from the current branch. Reject ambiguous parents, cycles, missing PRs, and duplicate children. Record ordered PRs, branches, head SHAs, a generation, and the lowest unmerged PR in `frontier.json`.
-- Use git and `gh` only.
-- Keep exactly one topology writer per stack. Owners do not rebase, retarget PRs, or force-push unless their brief grants that exact operation.
-- Run `babysit.md` against one frozen frontier generation. Conflicts return to the topology owner.
-- Treat closing, retargeting, and merging as explicit units. They require the user's concrete authority because each changes external state.
+- Calcule la pile depuis les relations head et base des PR GitHub, en partant de la branche courante. Rejette les parents ambigus, cycles, PR manquantes et enfants dupliqués. Enregistre les PR ordonnées, branches, SHA head, une génération et la PR non fusionnée la plus basse dans `frontier.json`.
+- Utilise seulement git et `gh`.
+- Garde exactement un rédacteur de topologie par pile. Les propriétaires ne rebasent pas, ne reciblent pas les PR et ne force-push pas sauf si leur brief accorde cette opération exacte.
+- Lance `babysit.md` contre une génération de frontière figée. Les conflits retournent au propriétaire de topologie.
+- Traite fermeture, retargeting et merge comme des unités explicites. Elles exigent l’autorité concrète de l’utilisateur parce que chacune change l’état externe.
 
-#### Verification ledger
+#### Ledger de vérification
 
-Scale verification to risk. The owner may run its own gates as evidence. The unit's verdict still comes from a non-author. When no subagent slot is available, run the verdict in this session as a separate re-scoped pass over a clean re-read, label it `single-agent review`, and report the missing independence. When the session cannot provide a different model, label the result `single-model verification`.
+Adapte la vérification au risque. Le propriétaire peut lancer ses propres barrières comme preuve. Le verdict de l’unité vient quand même d’un non-auteur. Pour une capacité manquante, applique [Orchestration requise](../references/codex-runtime.md#orchestration-requise) avec `route: Review`. Quand la session ne peut pas fournir de modèle différent, étiquette le résultat `single-model verification`.
 
-Record verdicts with `orch ledger record` and check them with `orch ledger check`. Key each row by PR and exact head SHA. Allowed verdicts include `live-ui-verified`, `unit-test-verified`, `type-check-only`, `verifier-blocked`, and `verifier-failed`. CI green contributes evidence but does not replace a behavior verdict. A new head invalidates the old row unless an unchanged stable patch ID preserves the code verdict and current CI and mergeability pass.
+Enregistre les verdicts avec `orch ledger record` et vérifie-les avec `orch ledger check`. Clé chaque ligne par PR et SHA head exact. Les verdicts permis incluent `live-ui-verified`, `unit-test-verified`, `type-check-only`, `verifier-blocked` et `verifier-failed`. Une CI verte contribue des preuves mais ne remplace pas un verdict de comportement. Un nouveau head invalide l’ancienne ligne sauf si un patch ID stable inchangé préserve le verdict de code et que la CI et mergeability courantes passent.
 
-Externalize each completed unit at once. An owner records the branch and head, a verifier records the ledger row, and receipts live under `.cstack/`. Work that exists only in an agent's context is unfinished.
+Externalise chaque unité terminée immédiatement. Un propriétaire enregistre la branche et le head, un vérificateur enregistre la ligne de ledger, et les reçus vivent sous `.cstack/`. Le travail qui existe seulement dans le contexte d’un agent est inachevé.
 
-#### Liveness and recovery
+#### Vitalité et récupération
 
-- Inspect native agent state with the available coordination tools. Do not restart an idle agent merely to ask for status.
-- Reconcile liveness from `units.tsv`, the ledger, git refs, GitHub PR state, and native task status. Conversation timestamps alone are not proof.
-- Retry resource exhaustion with a smaller scope. Retry a network failure once. For a tool failure, use another available native method. After two failed retries, abandon the unit and replan.
-- Reconcile a late result against the current frontier and ledger before accepting it.
-- If a bad brief or broken dependency would corrupt a whole wave, stop refilling slots, let safe in-flight work finish, fix the cause, and update standing orders.
-- Before pausing or exiting, write the current predicate, completed work, durable paths, blockers, and exact resume command under `.cstack/`. Do not claim that local subagents survive application exit.
+- Inspecte l’état des agents natifs avec les outils de coordination disponibles. Pour un worker CLI, utilise le handle du processus lancé dans cette session et son reçu ; un PID ou une ancienne session enregistrés ne prouvent pas sa vitalité. Ne redémarre pas un agent idle seulement pour demander un statut.
+- Réconcilie la vitalité depuis `units.tsv`, le ledger, les refs git, l’état de PR GitHub et le statut des tâches natives. Les timestamps de conversation seuls ne sont pas une preuve.
+- Réessaie l’épuisement de ressources avec un périmètre plus petit. Réessaie une panne réseau une fois. Pour une panne d’outil, utilise une autre méthode native disponible. Après deux retries échoués, abandonne l’unité et replanifie.
+- Réconcilie un résultat tardif contre la frontière et le ledger courants avant de l’accepter.
+- Si un mauvais brief ou une dépendance cassée corromprait toute une vague, arrête de remplir les emplacements, laisse le travail in-flight sûr terminer, corrige la cause et mets à jour les ordres permanents.
+- Avant une pause ou sortie, écris le prédicat courant, le travail terminé, les chemins durables, les bloqueurs et la commande exacte de reprise sous `.cstack/`. Ne prétends pas que les sous-agents locaux survivent à la fermeture de l’application.
 
-#### Escalation
+#### Escalade
 
-Batch user gates in `gates.md`. Ask only when a destructive or irreversible operation, missing credentials or authority, or a real product choice blocks progress. Do not send external messages, create PRs, merge, publish, or deploy only because this playbook is active.
+Regroupe les barrières utilisateur dans `gates.md`. Demande seulement quand une opération destructive ou irréversible, des credentials ou une autorité manquants, ou un vrai choix produit bloque la progression. N’envoie pas de messages externes, ne fusionne pas, ne publie pas et ne déploie pas seulement parce que ce playbook est actif. Les PR des unités d’implémentation suivent la portée de livraison du contrat d’exécution.
 
-Fix mid-run discoveries only when they block the frontier or fall inside the granted scope. Record other findings as proposed follow-ups.
+Corrige les découvertes en cours d’exécution seulement quand elles bloquent la frontière ou tombent dans le périmètre accordé. Enregistre les autres constats comme suivis proposés.
 
-**Reply:** Report the predicate and count from `units.tsv` and `ledger.tsv`, track results, frontier PRs and SHAs, verdicts, abandoned units, user gates, and the `.cstack/` state paths. Include full GitHub PR links when they exist. Every claim carries its evidence or its label in the same sentence. Measured, inferred, or guess. A prediction or an unseen cause is a guess. Never hand the human a check you could run.
+**Réponse :** rapporte le prédicat et les comptes depuis `units.tsv` et `ledger.tsv`, les résultats de pistes, PR et SHA de frontière, verdicts, unités abandonnées, barrières utilisateur et chemins d’état `.cstack/`. Inclus les liens GitHub PR complets quand ils existent. Chaque affirmation porte sa preuve ou son étiquette dans la même phrase. Mesuré, inféré ou supposition. Une prédiction ou une cause non observée est une supposition. Ne remets jamais à l’humain un contrôle que tu pourrais lancer.
