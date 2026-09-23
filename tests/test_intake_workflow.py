@@ -142,7 +142,7 @@ class IntakeWorkflowTests(unittest.TestCase):
             skipped = run_workflow_script(script, output, reproduce_payload(outcome="blocked", patch="", evidence=[]))
             self.assertEqual(skipped.returncode, 0, skipped.stdout + skipped.stderr)
 
-            for evidence in ([], ["/tmp/before.png"], ["", "/tmp/after.png"]):
+            for evidence in ([], ["/tmp/before.png"], ["", "/tmp/after.png"], [" ", "\t"]):
                 with self.subTest(evidence=evidence):
                     result = run_workflow_script(script, output, reproduce_payload(evidence=evidence))
                     self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)

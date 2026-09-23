@@ -247,7 +247,7 @@ jobs:
             echo "missing pull request fields" >&2
             exit 1
           fi
-          EVIDENCE_COUNT=$(jq '[.evidence_paths[]? | select(type == "string" and length > 0)] | length' "$RESULT")
+          EVIDENCE_COUNT=$(jq '[.evidence_paths[]? | select(type == "string" and (gsub("^\\s+|\\s+$"; "") | length > 0))] | length' "$RESULT")
           if [ "$EVIDENCE_COUNT" -lt 2 ]; then
             echo "draft pull request requires before-and-after evidence paths" >&2
             exit 1
