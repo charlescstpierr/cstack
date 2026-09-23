@@ -52,10 +52,21 @@ class ModelSetupTests(unittest.TestCase):
                 self.assertTrue(all(set(item) == {"model", "reasoning_effort"} for item in resolved))
                 self.assertEqual(len(resolved), models.PANELS.get(role, 1))
             development = groups["feature, refactoring"]
-            for role in ("bug-fix", "perf-issue", "hillclimb"):
+            for role in ("perf-issue", "hillclimb"):
                 self.assertEqual(groups[role], development)
                 self.assertEqual(models.resolve(saved, role, CATALOG),
                                  models.resolve(saved, "feature, refactoring", CATALOG))
+            self.assertEqual(groups["bug-fix"], "difficult debugging")
+            self.assertEqual(models.resolve(saved, "bug-fix", CATALOG),
+                             [{"model": "gpt-6-astra", "reasoning_effort": "medium"}])
+
+    def test_setup_presents_agent_models_before_inheritance(self):
+        skill = (ROOT / "plugins/cstack/skills/setup-cstack/SKILL.md").read_text()
+        proposal = skill.index("Propositions de modèles d’agents")
+        inheritance = skill.index("affiche la configuration actuelle")
+        self.assertLess(proposal, inheritance)
+        self.assertIn("chaque rôle, chaque position de panel", skill)
+        self.assertIn("Ne commence jamais la réponse par", skill)
 
     def test_customization_preserves_legacy_values_and_explicit_inheritance(self):
         with tempfile.TemporaryDirectory() as directory:

@@ -42,20 +42,21 @@ $cstack:setup-cstack
 
 Le setup inspecte d’abord les CLI présents sur la machine, leurs versions et leurs capacités. Il consulte leur statut de connexion officiel quand il est disponible, sans lire les credentials ni lancer de génération. Il compare cet inventaire aux rôles du projet pour proposer de conserver, ajouter ou remplacer les choix concernés. Une connexion inconnue ou un CLI absent reste signalé.
 
-Pour les sous-agents natifs, la configuration affiche les réglages existants et ces recommandations, avec leur disponibilité vérifiée dans le catalogue courant :
+Pour les sous-agents natifs, la configuration affiche d'abord tous les rôles et positions de panel avec ces recommandations, dont la disponibilité est vérifiée dans le catalogue courant. Elle montre ensuite les autres modèles disponibles et la configuration actuelle :
 
 | Travail | Modèle | Effort |
 | --- | --- | --- |
 | Exploration | `gpt-5.6-luna` | `max` |
 | Petites modifications | `gpt-5.6-luna` | `max` |
 | Développement | `gpt-6-astra` | `low` |
+| Débogage difficile | `gpt-6-astra` | `medium` |
 | Revue de code | `gpt-6-astra` | `low` |
 | Architecture complexe | `gpt-6-astra` | `xhigh` |
 | Documentation | `gpt-5.6-luna` | `max` |
 
 La configuration vérifie aussi que l'outil de délégation peut transmettre le modèle et l'effort. Une paire présente dans le catalogue mais impossible à transmettre est signalée avant tout choix ; utilisez alors l'héritage ou une sélection supportée.
 
-Choisissez d'accepter les recommandations disponibles, de personnaliser les rôles, d'hériter de la session ou d'annuler. Seuls les rôles sélectionnés changent ; annuler ne crée ni ne modifie de fichier. Sans choix, les sous-agents héritent du modèle et de l'effort de la session. Un cache ancien ne prouve pas qu'un modèle est disponible.
+Choisissez d'accepter toutes les recommandations disponibles, certains groupes, une personnalisation par rôle ou position de panel, de conserver la configuration actuelle, d'hériter pour certains rôles ou d'annuler. Seuls les rôles sélectionnés changent ; annuler ne crée ni ne modifie de fichier. Un rôle sans choix sauvegardé hérite du modèle et de l'effort de la session, mais le setup présente les modèles disponibles avant cet état courant. Un cache ancien ne prouve pas qu'un modèle est disponible.
 
 Les choix natifs sont enregistrés dans `.cstack/models.json` sous forme d'objets `model` et `reasoning_effort`. Les workers externes ajoutent `runtime` ; voir le [guide Codex et Claude](./11-cli-workers.md). Les anciennes chaînes de modèle et les listes de comités restent compatibles. Un ancien modèle sans effort conserve les règles d'effort de l'hôte. Les rôles absents `simple edits` et `documentation` reprennent respectivement `feature, refactoring` et `judgment and prose`.
 
