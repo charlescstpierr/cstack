@@ -1,0 +1,60 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "classification",
+    "marker",
+    "comment_body",
+    "create_tracker",
+    "tracker_title",
+    "tracker_body",
+    "tracker_labels",
+    "tracker_url",
+    "source_permalink",
+    "stop_reason"
+  ],
+  "properties": {
+    "classification": {
+      "type": "string",
+      "enum": [
+        "bug",
+        "performance",
+        "feature_request",
+        "question_or_feedback",
+        "reroute"
+      ]
+    },
+    "marker": {
+      "type": "string",
+      "enum": ["[intake:bug]", "[intake:performance]", "[intake:other]"]
+    },
+    "comment_body": {
+      "type": "string",
+      "description": "Full source-thread verdict. Must contain exactly one configured marker and may add tracker=<url> on that marker line."
+    },
+    "create_tracker": {
+      "type": "boolean"
+    },
+    "tracker_title": {
+      "type": "string"
+    },
+    "tracker_body": {
+      "type": "string"
+    },
+    "tracker_labels": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "tracker_url": {
+      "type": "string"
+    },
+    "source_permalink": {
+      "type": "string"
+    },
+    "stop_reason": {
+      "type": "string"
+    }
+  }
+}

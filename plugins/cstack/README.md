@@ -1,6 +1,6 @@
 # cstack
 
-Les processus de pstack 0.15.2 adaptés aux outils natifs de Codex App et CLI. Plugin `0.4.0`. Version amont épinglée `889ec4b68fa5aab0e867dad71ec3fdf386ae48f3`.
+Les processus de pstack 0.15.2 adaptés aux outils natifs de Codex App et CLI. Plugin `0.5.0`. Version amont épinglée `889ec4b68fa5aab0e867dad71ec3fdf386ae48f3`.
 
 Les préparations `$cstack:clarify`, `$cstack:domain`, `$cstack:horizon` et `$cstack:audit-architecture` sont disponibles sur demande. La configuration peut préparer un bloc de projet dans `AGENTS.md` et les conventions documentaires, en conservant les instructions existantes. Voir [la configuration](docs/guide/01-setup.md) et [les processus de préparation](docs/guide/04-design.md).
 
@@ -14,11 +14,11 @@ Le plugin expose 29 compétences. Ses [23 principes](docs/guide/08-principles.md
 
 `$cstack:setup-cstack` affiche d'abord sept recommandations de modèle et d'effort pour tous les rôles et positions de panel, puis la configuration actuelle et l'héritage éventuel. Vous pouvez accepter, personnaliser, conserver, choisir l'héritage pour certains rôles ou annuler. Les choix sélectionnés sont validés dans le catalogue courant puis enregistrés localement dans `.cstack/models.json`, en préservant les autres réglages. Le modèle de la session reste inchangé. Voir [le tableau de configuration](docs/guide/01-setup.md#configurer-cstack). Les instructions du projet, le mode Plan et les autorisations Codex restent prioritaires.
 
-Le [guide](docs/guide/README.md) présente les commandes et les processus. Le [contrat d’exécution natif](skills/cstack/references/codex-runtime.md) décrit les sous-agents, l'état local, les scripts et les limites des intégrations. Les webhooks Grok Bot et le [pack Benny](automations/benny/README.md) ne sont pas fournis comme services natifs.
+Le [guide](docs/guide/README.md) présente les commandes et les processus. Le [contrat d’exécution natif](skills/cstack/references/codex-runtime.md) décrit les sous-agents, l'état local, les scripts et les limites des intégrations. Les webhooks Grok Bot et Benny ne sont pas fournis comme services natifs ; le [pack intake](automations/intake/README.md) documente le déclenchement GitHub Actions compatible Codex.
 
 Le [guide Codex et Claude](docs/guide/11-cli-workers.md) explique la configuration, les skills communs et le contexte partagé. Les [workers CLI facultatifs](skills/cstack/references/runtime-workers.md) permettent de mélanger Codex natif, Codex CLI, Claude Code, Cursor CLI et Grok Build dans les panels existants. Le coordinateur conserve les briefs, worktrees, rapports et revues ; les CLI gèrent eux-mêmes leur login, sans credentials dans CStack.
 
-Les assistants TypeScript utilisent Bun et leurs dépendances verrouillées. Leur installation nécessite le registre de paquets ou un cache Bun déjà rempli. Le lanceur bash/Python 3.9 crée une copie temporaire distincte sous `.cstack/tools/` pour chaque invocation, puis la nettoie. Les opérations GitHub nécessitent `git` et `gh` authentifié. Aucun cache de plugin ni réglage global n'est modifié.
+Les assistants TypeScript utilisent Bun et leurs dépendances verrouillées. Leur installation nécessite le registre de paquets ou un cache Bun déjà rempli. Le lanceur bash/Python 3.9 crée une copie temporaire distincte sous `~/.cache/cstack/stages/` pour chaque invocation, puis la nettoie. Les opérations GitHub nécessitent `git` et `gh` authentifié. Aucun cache de plugin ni réglage global n'est modifié.
 
 Mise à jour depuis GitHub : `codex plugin marketplace upgrade cstack`, puis `codex plugin add cstack@cstack`. Ouvrez ensuite une nouvelle conversation.
 

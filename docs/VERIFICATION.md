@@ -2,6 +2,10 @@
 
 Ce fichier distingue l'état courant des campagnes datées. Les nombres d'une section datée restent ceux de cette campagne. Ils ne décrivent pas le catalogue 0.4.0.
 
+## État 0.5.0
+
+Le catalogue 0.5.0 contient 29 compétences, 23 principes et 23 guides d'exécution. Cette section décrit la distribution courante; les campagnes datées ci-dessous conservent leurs propres mesures et limites.
+
 ## Workers CLI, 22 septembre 2026
 
 Campagne locale sur la branche `feat/multi-runtime-workers`, base `2d9caf8591f08135e2d87904a160a6054c3b508e`. Les [reçus et empreintes](evidence/multi-runtime.json) distinguent les essais connectés des simulations. L’amont pstack comparé est la version 0.15.2 déjà épinglée, commit `889ec4b68fa5aab0e867dad71ec3fdf386ae48f3` ; aucune parité avec les agents cloud ou l’interface Cursor n’est revendiquée.

@@ -40,6 +40,9 @@ test("le paquet charge 29 skills et rejette les distributions dangereuses ou inc
       ["plugins/cstack/skills/cstack/SKILL.md", (text: string) => `${text}\n[Titre manquant](references/codex-runtime.md#not-a-real-heading)\n`, /titre manquant pour le fragment/],
       ["plugins/cstack/skills/cstack/SKILL.md", (text: string) => text.replace("deux lectures raisonnables", "une seule lecture raisonnable"), /porte de clarification d’alignement manquante/],
       ["plugins/cstack/skills/cstack/SKILL.md", (text: string) => text.replace("avant toute addition de fonctionnalité ou modification", "après toute addition de fonctionnalité ou modification"), /porte de clarification d’alignement manquante/],
+      ["plugins/cstack/skills/make-bot-ui/SKILL.md", (text: string) => text.replace("Do not inject the page token into served HTML", "Do inject the page token into served HTML"), /garde anti-injection du token de page manquante/],
+      ["plugins/cstack/skills/make-bot-ui/SKILL.md", (text: string) => text.replace("Do not use `resume --last`", "Use `resume --last`"), /reprise interdite avec resume --last/],
+      ["plugins/cstack/skills/make-bot-ui/SKILL.md", (text: string) => text.replaceAll('PROMPT_TEXT=$(<"$PROMPT_FILE")', 'PROMPT_PATH="$PROMPT_FILE"').replaceAll('"$PROMPT_TEXT"', '"$PROMPT"'), /lecture du contenu du prompt file manquante/],
       ["plugins/cstack/skills/cstack/playbooks/feature.md", (text: string) => text.replace(/^### /, "## "), /le guide opérationnel doit commencer par un titre ###/],
       ["plugins/cstack/skills/cstack/playbooks/feature.md", (text: string) => text.replace(/^Suivez \[le contrat d.+codex-runtime\.md\).*$/m, "Ignorer le contrat."), /le guide opérationnel n’a pas de ligne de contrat d’exécution/],
       ["plugins/cstack/skills/cstack/playbooks/feature.md", (text: string) => text.replace(/\*\*Réponse\s*:\*\*/, "**Résultat :**"), /le guide opérationnel n’a pas de bloc Réponse/],
@@ -57,7 +60,7 @@ test("le paquet charge 29 skills et rejette les distributions dangereuses ou inc
         return JSON.stringify(value);
       }, /le chemin original n’existe pas/],
       ["plugins/cstack/README.md", (text: string) => text.replace(/\b29 (?:skills|compétences)\b/g, "27 compétences"), /nombre de skills cité 27/],
-      ["docs/VERIFICATION.md", (text: string) => text.replace(/(Le catalogue 0\.4\.0 contient )29 (?:skills|compétences)/, "$127 compétences"), /nombre de skills cité 27/],
+      ["docs/VERIFICATION.md", (text: string) => text.replace(/(Le catalogue \d+\.\d+\.\d+ contient )29 (?:skills|compétences)/, "$127 compétences"), /nombre de skills cité 27/],
       ["docs/VERIFICATION.md", (text: string) => text.replace("23 guides d'exécution.", "22 guides d'exécution."), /nombre de guides opérationnels cité 22/],
       ["docs/VERIFICATION.md", (text: string) => text.replace("23 guides d'exécution.", "22 guides d’exécution."), /nombre de guides opérationnels cité 22/],
       ["plugins/cstack/.codex-plugin/plugin.json", (text: string) => text.replace(/"version": "\d+\.\d+\.\d+"/, '"version": "9.9.9"'), /journal des modifications ou preuve manquants/],

@@ -18,8 +18,8 @@ Le repin 0.15.0 vers 0.15.2 apporte trois commits amont. `f8abedd` exige que cha
 | Deux agents | Invites embarquées transmises aux sous-agents natifs, sans installation de rôles nommés. |
 | Suivi de PR et orchestration | Assistants Bun conservés ; collecte de piles avec `git` et `gh`, sans dépendance à Graphite. |
 | Guide et visuels | Guide français et identité cstack ; retrait des captures spécifiques à Cursor. |
-| `make-bot-ui` | Entrée explicite expliquant l'absence d'un service natif de webhooks Grok Bot. |
-| Pack Benny | Notice documentaire uniquement ; aucune installation ni automatisation événementielle active. |
+| `make-bot-ui` | UI locale dont le serveur détient les identifiants et réveille `codex exec` ; pas de routine webhook hébergée. |
+| Pack d'intake | Deux exécutions `codex exec` déclenchées par GitHub Actions, avec connecteurs MCP ; ni webhook entrant ni scheduler côté Codex. |
 | `deslop` | Ajout original à cstack. Il remplace `/deslop` de `cursor-team-kit`, sans source portable. |
 
 Les 47 entrées issues du premier portage incluent la notice `make-bot-ui`. La version 0.3.0 ajoute quatre préparations explicites : 51 entrées au total, dont 50 compétences utilisables et une note de limite.

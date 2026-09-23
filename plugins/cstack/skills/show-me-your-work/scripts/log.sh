@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# Ajouter une ligne bien formée au journal de décision show-me-your-work (TSV).
-# Utilisation: log.sh <journal> <phase> <décision> <pourquoi> <preuve> <résultat>
+# Append a well-formed row to a show-me-your-work decision log (TSV).
+# Usage: log.sh <logfile> <phase> <decision> <why> <evidence> <result>
 set -euo pipefail
 
 if [ "$#" -ne 6 ]; then
-	printf 'utilisation: log.sh <journal> <phase> <décision> <pourquoi> <preuve> <résultat>\n' >&2
+	printf 'usage: log.sh <logfile> <phase> <decision> <why> <evidence> <result>\n' >&2
 	exit 1
 fi
 
@@ -31,19 +31,49 @@ if [ ! -f "$logfile" ]; then
 fi
 
 ts="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-# Retirer tabulations/nouvelles lignes/CR pour garder les cellules sur une
-# seule ligne, et préfixer d’une apostrophe toute cellule dont le premier
-# caractère serait interprété par un tableur comme une formule (=, +, -, @).
-# La skill prévoit une lecture de ce journal dans des tableurs; les preuves
-# contrôlées par un attaquant (titres de PR, noms de fichiers, texte généré)
-# ne doivent donc pas devenir une formule exécutée quand un réviseur ouvre le
-# fichier.
+# Map C0/DEL, UTF-8 C1 (U+0080-U+009F as C2 80-9F), a lone 0x9B (CSI),
+# and U+2028/U+2029 to spaces so cells stay one line. Prefix a cell whose
+# first non-space char is =, +, -, or @ so a spreadsheet will not parse it
+# as a formula after a leading control has been mapped to a space. Do not
+# strip 0x80-0x9F in isolation: those bytes are UTF-8 continuations (Û is
+# C3 9B). LC_ALL=C keeps tr and the byte walk byte-oriented.
+line_separator=$(printf '\xe2\x80\xa8')
+paragraph_separator=$(printf '\xe2\x80\xa9')
 clean() {
-	local v
-	v=$(printf '%s' "$1" | tr '\t\n\r' '   ')
-	case "$v" in
-		=*|+*|-*|@*) printf "'%s" "$v" ;;
-		*) printf '%s' "$v" ;;
+	local v out i len width byte next tail
+	v=$(printf '%s' "$1" | LC_ALL=C tr '[:cntrl:]' ' ')
+	local LC_ALL=C LANG=C
+	out=
+	i=0
+	len=${#v}
+	while [ "$i" -lt "$len" ]; do
+		printf -v byte '%d' "'${v:i:1}"
+		[ "$byte" -lt 0 ] && byte=$((byte + 256))
+		printf -v next '%d' "'${v:i+1:1}"
+		[ "$next" -lt 0 ] && next=$((next + 256))
+		width=1
+		if [ "$byte" -ge 240 ]; then
+			width=4
+		elif [ "$byte" -ge 224 ]; then
+			width=3
+		elif [ "$byte" -ge 194 ]; then
+			width=2
+		fi
+		[ $((i + width)) -gt "$len" ] && width=1
+		if [ "$byte" -eq 155 ] ||
+			{ [ "$byte" -eq 194 ] && [ "$next" -ge 128 ] && [ "$next" -le 159 ]; } ||
+			[ "${v:i:3}" = "$line_separator" ] ||
+			[ "${v:i:3}" = "$paragraph_separator" ]; then
+			out="$out "
+		else
+			out="$out${v:i:width}"
+		fi
+		i=$((i + width))
+	done
+	tail="${out#"${out%%[! ]*}"}"
+	case "$tail" in
+		=*|+*|-*|@*) printf "'%s" "$out" ;;
+		*) printf '%s' "$out" ;;
 	esac
 }
 printf '%s\t%s\t%s\t%s\t%s\t%s\n' \

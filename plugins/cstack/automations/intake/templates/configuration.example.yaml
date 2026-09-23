@@ -1,0 +1,155 @@
+# Copy to .github/cstack/intake/configuration.yaml and replace placeholders.
+# Secrets do not belong in this file. OPENAI_API_KEY comes from the
+# GitHub Actions secret store or from `codex login`. MCP credentials
+# belong in [mcp_servers.<name>] env / bearer_token_env_var, not here.
+#
+# The model never writes externally. Codex returns JSON that matches
+# --output-schema. The workflow posts the verdict, writes tracker labels,
+# pushes a branch, and opens a draft pull request with GITHUB_TOKEN.
+
+schema_version: 1
+
+automations:
+  triage_name: "intake-triage"
+  reproduce_name: "intake-reproduce"
+
+source:
+  # github_issues is the first-class trigger (Actions `on: issues`).
+  # workflow_dispatch is the maintainer path for an outside reporter.
+  # connector is a variant: an MCP server plus an external scheduler.
+  kind: "github_issues"
+  # Same owner/repo slug format as GITHUB_REPOSITORY.
+  repository: "example-org/example-repo"
+  default_branch: "main"
+  issue_labels:
+    intake: "intake"
+    needs_repro: "needs-repro"
+  # For github_issues: identity recorded on the posted comment.
+  # github-actions[bot] if the workflow posts with GITHUB_TOKEN.
+  triage_identity: "github-actions[bot]"
+  allow_source_root_posts: false
+  allow_worker_external_writes: false
+  connector:
+    mcp_server: ""
+    channel_id: ""
+    operations_channel_id: ""
+    tools:
+      read: ""
+      thread_post: ""
+      file_download: ""
+      operations_edit: ""
+
+runner:
+  command: "codex exec"
+  sandbox: "read-only"
+  working_directory: "."
+  output_last_message: ".cstack/intake/last-message.json"
+  extra_args:
+    - "--json"
+  permission_profile: ""
+  safety_strategy: "drop-sudo"
+  # Empty: the action's write-access check requires a collaborator.
+  # Set "*" or a username list on the action input to let an outside
+  # reporter through. Otherwise a maintainer uses workflow_dispatch.
+  allow_users: ""
+  allow_bots: false
+  model: ""
+  effort: ""
+  prompt_file_triage: ".github/cstack/intake/prompts/triage.md"
+  prompt_file_reproduce: ".github/cstack/intake/prompts/reproduce.md"
+  output_schema_file_triage: ".github/cstack/intake/schemas/triage-result.schema.json"
+  output_schema_file_reproduce: ".github/cstack/intake/schemas/reproduce-result.schema.json"
+
+repository:
+  slug: "example-org/example-repo"
+  url: "https://github.com/example-org/example-repo"
+  default_branch: "main"
+  pull_request_url_format: "https://github.com/{owner}/{repo}/pull/{number}"
+  draft_only: true
+
+connectors:
+  tracker:
+    mcp_server: ""
+    tools:
+      search: ""
+      read: ""
+      create: ""
+      update: ""
+      add_source_link: ""
+      compensate: ""
+  control:
+    mcp_server: ""
+    tools:
+      bring_up: ""
+      drive_ui: ""
+      drive_mapped: ""
+      inspect: ""
+      screenshot: ""
+      recording: ""
+      cleanup: ""
+
+tracker:
+  type: "github_issues"
+  adapter_name: "github-issues-via-gh"
+  team: ""
+  project: ""
+  labels:
+    bug: "bug"
+    performance: "performance"
+    intake: "intake"
+    needs_repro: "needs-repro"
+  status: ""
+  source_link_title: "Source report"
+  require_compensation_action: true
+
+routing:
+  map_path: ".github/cstack/intake/routing.md"
+  owner_pings_default: false
+  allow_feature_owner_ping: false
+  allow_confirmed_regression_author_ping: false
+
+control:
+  adapter_name: "control-target-app"
+  feature_map_path: ".github/cstack/intake/feature-map.md"
+  environment: "safe-test-environment-placeholder"
+  artifact_directory: "/tmp/intake-artifacts"
+  artifact_retention_hours: 24
+
+verdict_markers:
+  bug: "[intake:bug]"
+  performance: "[intake:performance]"
+  other: "[intake:other]"
+  tracker_attribute: "tracker"
+
+status_labels:
+  seen: "Seen"
+  reproducing: "Reproducing"
+  reproduced: "Reproduced"
+  could_not_reproduce: "Could not reproduce"
+  blocked: "Blocked"
+  verifying_existing_fix: "Verifying existing fix"
+  fixing: "Attempting bounded fix"
+  fix_failed: "Fix did not land"
+  pull_request_opened: "Draft pull request opened"
+
+# Empty inherits the runner default. Do not commit a model slug.
+models:
+  triage: ""
+  reproduce: ""
+  code: ""
+  media_review: ""
+
+budgets:
+  # Unused on GitHub Actions. A connector source still needs an external
+  # scheduler. Codex CLI does not poll.
+  poll_seconds: 45
+  # Unused on GitHub Actions. The reproduce job starts through needs:
+  # when the triage output marker is bug or performance.
+  verdict_wait_minutes: 45
+  triage_follow_up_minutes: 10
+  triage_total_minutes: 30
+  repro_minutes: 60
+  # Unused on GitHub Actions. codex exec exits at the end of the turn.
+  rejection_window_minutes: 10
+  fix_minutes: 90
+  operations_follow_up_minutes: 45

@@ -1,0 +1,433 @@
+# Copy to .github/workflows/intake.yml in the target repository.
+# Pin measured 2026-09-12: openai/codex-action v1
+#   tag v1 -> commit 86365089eb2b84e0a8fb0717b304f8bdcb13b20e
+#   action.yml blob ff7088b97498db5cacab3c72b96c406f03f92fa5
+# Checkout pin matches this plugin's validate workflow.
+#
+# Codex reasons. This workflow writes. One run, two jobs, needs: for the
+# marker gate. Do not add issue_comment: github-actions[bot] comments
+# authored with GITHUB_TOKEN never start a second workflow.
+
+name: cstack intake
+
+on:
+  issues:
+    types: [opened]
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        description: Source GitHub issue number
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+concurrency:
+  group: intake-${{ github.event.issue.number || github.event.inputs.issue_number }}-${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  triage:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+    outputs:
+      marker: ${{ steps.publish.outputs.marker }}
+      issue_number: ${{ steps.publish.outputs.issue_number }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+      - name: Resolve issue number
+        id: issue
+        run: |
+          set -euo pipefail
+          ISSUE="${{ github.event.issue.number || github.event.inputs.issue_number }}"
+          test -n "$ISSUE"
+          echo "number=$ISSUE" >> "$GITHUB_OUTPUT"
+      - name: Require installed intake files
+        run: |
+          set -euo pipefail
+          for f in \
+            .github/cstack/intake/configuration.yaml \
+            .github/cstack/intake/prompts/triage.md \
+            .github/cstack/intake/schemas/triage-result.schema.json
+          do
+            test -f "$f"
+          done
+      - name: Snapshot source issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p .cstack/intake
+          CONFIG_REPOSITORY=$(python3 - <<'PY'
+          import re
+          from pathlib import Path
+
+          text = Path(".github/cstack/intake/configuration.yaml").read_text(encoding="utf-8")
+          match = re.search(r"(?ms)^source:\n(?:^[ \t]+.*\n)*?^[ \t]+repository:[ \t]*[\"']?([^\"'\n#]+)", text)
+          if not match:
+              raise SystemExit("source.repository is missing")
+          print(match.group(1).strip())
+          PY
+          )
+          if [ "$CONFIG_REPOSITORY" != "$GITHUB_REPOSITORY" ]; then
+            echo "source.repository must match GITHUB_REPOSITORY owner/repo slug: $GITHUB_REPOSITORY" >&2
+            exit 1
+          fi
+          ISSUE="${{ steps.issue.outputs.number }}"
+          gh issue view "$ISSUE" --json number,title,body,author,labels,url,comments,state \
+            > .cstack/intake/source-issue.json
+          gh api --paginate "/repos/$GITHUB_REPOSITORY/issues?state=all&per_page=100" | jq -s 'add | map(select(.pull_request | not) | {number,title,body,author:.user,labels,url:.html_url,comments,state,createdAt:.created_at,updatedAt:.updated_at,closedAt:.closed_at})' \
+            > .cstack/intake/tracker-issues-all.json
+          gh api --paginate "/repos/$GITHUB_REPOSITORY/pulls?state=all&per_page=100" | jq -s 'add | map({number,title,body,author:.user,labels:[],url:.html_url,state,isDraft:.draft,baseRefName:.base.ref,headRefName:.head.ref,headRefOid:.head.sha,mergeCommit:.merge_commit_sha,commits:.commits_url,createdAt:.created_at,updatedAt:.updated_at,closedAt:.closed_at,mergedAt:.merged_at})' \
+            > .cstack/intake/prs-all.json
+          git log --oneline --decorate > .cstack/intake/commits.txt
+          jq -n \
+            --arg repo "$GITHUB_REPOSITORY" \
+            --argjson issue "${{ steps.issue.outputs.number }}" \
+            '{repository:$repo, issue_number:$issue, run:"triage"}' \
+            > .cstack/intake/run-context.json
+      - name: Run intake triage
+        uses: openai/codex-action@86365089eb2b84e0a8fb0717b304f8bdcb13b20e
+        with:
+          prompt-file: .github/cstack/intake/prompts/triage.md
+          output-file: .cstack/intake/triage-output.json
+          output-schema-file: .github/cstack/intake/schemas/triage-result.schema.json
+          working-directory: ${{ github.workspace }}
+          sandbox: read-only
+          safety-strategy: drop-sudo
+          allow-bots: "false"
+          allow-users: ""
+          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+          codex-args: '["--json"]'
+      - name: Publish triage outputs
+        id: publish
+        run: |
+          set -euo pipefail
+          RESULT=.cstack/intake/triage-output.json
+          test -f "$RESULT"
+          python3 -c "import json,sys; json.load(open(sys.argv[1]))" "$RESULT"
+          MARKER=$(jq -r '.marker' "$RESULT")
+          BODY=$(jq -r '.comment_body' "$RESULT")
+          case "$MARKER" in
+            '[intake:bug]'|'[intake:performance]'|'[intake:other]') ;;
+            *) echo "invalid marker: $MARKER" >&2; exit 1 ;;
+          esac
+          if { [ "$MARKER" = "[intake:bug]" ] || [ "$MARKER" = "[intake:performance]" ]; } && { [ -z "$BODY" ] || [ "$BODY" = "null" ]; }; then
+            echo "bug/performance triage requires a verdict comment with the matching marker" >&2
+            exit 1
+          fi
+          FOUND=$(printf '%s\n' "$BODY" | grep -oE '\[intake:(bug|performance|other)\]' || true)
+          COUNT=$(printf '%s' "$FOUND" | grep -c . || true)
+          if [ -n "$BODY" ] && [ "$COUNT" != "1" ]; then
+            echo "comment_body must carry exactly one marker, found $COUNT" >&2
+            exit 1
+          fi
+          if [ -n "$BODY" ] && [ "$FOUND" != "$MARKER" ]; then
+            echo "comment_body marker $FOUND does not match $MARKER" >&2
+            exit 1
+          fi
+          {
+            echo "marker=$MARKER"
+            echo "issue_number=${{ steps.issue.outputs.number }}"
+          } >> "$GITHUB_OUTPUT"
+      - name: Stage triage evidence
+        run: |
+          set -euo pipefail
+          mkdir -p intake-artifacts/triage
+          cp .cstack/intake/triage-output.json intake-artifacts/triage/
+          cp .cstack/intake/run-context.json intake-artifacts/triage/
+          cp .cstack/intake/source-issue.json intake-artifacts/triage/
+          cp .cstack/intake/tracker-issues-all.json intake-artifacts/triage/
+          cp .cstack/intake/prs-all.json intake-artifacts/triage/
+          cp .cstack/intake/commits.txt intake-artifacts/triage/
+          jq -n \
+            --arg run_url "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" \
+            --arg run_attempt "${GITHUB_RUN_ATTEMPT:-1}" \
+            '{workflow_run_url:$run_url, run_attempt:$run_attempt}' \
+            > intake-artifacts/triage/manifest.json
+      - name: Upload triage evidence
+        id: upload-triage
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: intake-triage-${{ steps.issue.outputs.number }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: intake-artifacts/triage
+          if-no-files-found: error
+          retention-days: 30
+      - name: Post verdict comment
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ARTIFACT_URL: ${{ steps.upload-triage.outputs.artifact-url }}
+        run: |
+          set -euo pipefail
+          RESULT=.cstack/intake/triage-output.json
+          BODY=$(jq -r '.comment_body' "$RESULT")
+          if [ -z "$BODY" ] || [ "$BODY" = "null" ]; then
+            exit 0
+          fi
+          if [ -z "${ARTIFACT_URL:-}" ]; then
+            echo "missing triage artifact URL" >&2
+            exit 1
+          fi
+          ISSUE="${{ steps.issue.outputs.number }}"
+          printf '%s\n\nEvidence artifact: %s\n' "$BODY" "$ARTIFACT_URL" | gh issue comment "$ISSUE" --body-file -
+      - name: Write tracker labels
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          RESULT=.cstack/intake/triage-output.json
+          CREATE=$(jq -r '.create_tracker' "$RESULT")
+          MARKER=$(jq -r '.marker' "$RESULT")
+          ISSUE="${{ steps.issue.outputs.number }}"
+          if [ "$CREATE" != "true" ]; then
+            exit 0
+          fi
+          if [ "$MARKER" != "[intake:bug]" ] && [ "$MARKER" != "[intake:performance]" ]; then
+            echo "create_tracker is true but marker is $MARKER" >&2
+            exit 1
+          fi
+          LABELS=$(jq -r '.tracker_labels[]?' "$RESULT")
+          if [ -z "$LABELS" ]; then
+            exit 0
+          fi
+          ARGS=()
+          while IFS= read -r label; do
+            test -n "$label"
+            ARGS+=(--add-label "$label")
+          done <<< "$LABELS"
+          gh issue edit "$ISSUE" "${ARGS[@]}"
+
+  reproduce:
+    needs: triage
+    if: >
+      needs.triage.outputs.marker == '[intake:bug]' ||
+      needs.triage.outputs.marker == '[intake:performance]'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+      - name: Require installed intake files
+        run: |
+          set -euo pipefail
+          for f in \
+            .github/cstack/intake/configuration.yaml \
+            .github/cstack/intake/prompts/reproduce.md \
+            .github/cstack/intake/schemas/reproduce-result.schema.json \
+            .github/cstack/intake/feature-map.md
+          do
+            test -f "$f"
+          done
+      - name: Snapshot source issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p .cstack/intake
+          CONFIG_REPOSITORY=$(python3 - <<'PY'
+          import re
+          from pathlib import Path
+
+          text = Path(".github/cstack/intake/configuration.yaml").read_text(encoding="utf-8")
+          match = re.search(r"(?ms)^source:\n(?:^[ \t]+.*\n)*?^[ \t]+repository:[ \t]*[\"']?([^\"'\n#]+)", text)
+          if not match:
+              raise SystemExit("source.repository is missing")
+          print(match.group(1).strip())
+          PY
+          )
+          if [ "$CONFIG_REPOSITORY" != "$GITHUB_REPOSITORY" ]; then
+            echo "source.repository must match GITHUB_REPOSITORY owner/repo slug: $GITHUB_REPOSITORY" >&2
+            exit 1
+          fi
+          ISSUE="${{ needs.triage.outputs.issue_number }}"
+          gh issue view "$ISSUE" --json number,title,body,author,labels,url,comments,state \
+            > .cstack/intake/source-issue.json
+          gh api --paginate "/repos/$GITHUB_REPOSITORY/issues?state=all&per_page=100" | jq -s 'add | map(select(.pull_request | not) | {number,title,body,author:.user,labels,url:.html_url,comments,state,createdAt:.created_at,updatedAt:.updated_at,closedAt:.closed_at})' \
+            > .cstack/intake/tracker-issues-all.json
+          gh api --paginate "/repos/$GITHUB_REPOSITORY/pulls?state=all&per_page=100" | jq -s 'add | map({number,title,body,author:.user,labels:[],url:.html_url,state,isDraft:.draft,baseRefName:.base.ref,headRefName:.head.ref,headRefOid:.head.sha,mergeCommit:.merge_commit_sha,commits:.commits_url,createdAt:.created_at,updatedAt:.updated_at,closedAt:.closed_at,mergedAt:.merged_at})' \
+            > .cstack/intake/prs-all.json
+          git log --oneline --decorate > .cstack/intake/commits.txt
+          jq -n \
+            --arg repo "$GITHUB_REPOSITORY" \
+            --arg marker "${{ needs.triage.outputs.marker }}" \
+            --argjson issue "$ISSUE" \
+            '{repository:$repo, issue_number:$issue, marker:$marker, run:"reproduce"}' \
+            > .cstack/intake/run-context.json
+      - name: Run intake reproduce
+        uses: openai/codex-action@86365089eb2b84e0a8fb0717b304f8bdcb13b20e
+        with:
+          prompt-file: .github/cstack/intake/prompts/reproduce.md
+          output-file: .cstack/intake/reproduce-output.json
+          output-schema-file: .github/cstack/intake/schemas/reproduce-result.schema.json
+          working-directory: ${{ github.workspace }}
+          sandbox: read-only
+          safety-strategy: drop-sudo
+          allow-bots: "false"
+          allow-users: ""
+          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+          codex-args: '["--json"]'
+      - name: Stage reproduce evidence
+        run: |
+          set -euo pipefail
+          RESULT=.cstack/intake/reproduce-output.json
+          test -f "$RESULT"
+          python3 -c "import json,sys; json.load(open(sys.argv[1]))" "$RESULT"
+          BODY=$(jq -r '.source_comment_body' "$RESULT")
+          OUTCOME=$(jq -r '.outcome' "$RESULT")
+          MODE=$(jq -r '.mode' "$RESULT")
+          VERIFY=$(jq -r '.verify_verdict' "$RESULT")
+          PATCH=$(jq -r '.patch' "$RESULT")
+          NEEDS_EVIDENCE=false
+          if [ -n "$BODY" ] && [ "$BODY" != "null" ]; then
+            NEEDS_EVIDENCE=true
+          fi
+          if [ "$OUTCOME" = "reproduced" ] && [ "$MODE" = "fix" ] && [ "$VERIFY" = "not_applicable" ] && [ -n "$PATCH" ] && [ "$PATCH" != "null" ]; then
+            NEEDS_EVIDENCE=true
+          fi
+          mkdir -p intake-artifacts/reproduce/files
+          cp "$RESULT" intake-artifacts/reproduce/
+          cp .cstack/intake/run-context.json intake-artifacts/reproduce/
+          cp .cstack/intake/source-issue.json intake-artifacts/reproduce/
+          cp .cstack/intake/tracker-issues-all.json intake-artifacts/reproduce/
+          cp .cstack/intake/prs-all.json intake-artifacts/reproduce/
+          cp .cstack/intake/commits.txt intake-artifacts/reproduce/
+          jq -n \
+            --arg run_url "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" \
+            --arg run_attempt "${GITHUB_RUN_ATTEMPT:-1}" \
+            '{workflow_run_url:$run_url, run_attempt:$run_attempt}' \
+            > intake-artifacts/reproduce/manifest.json
+          if [ "$NEEDS_EVIDENCE" != "true" ]; then
+            exit 0
+          fi
+          jq -r '.evidence_paths[]? | select(type == "string") | gsub("^\\s+|\\s+$"; "") | select(length > 0)' "$RESULT" \
+            > intake-artifacts/reproduce/evidence-paths.txt
+          if ! test -s intake-artifacts/reproduce/evidence-paths.txt; then
+            echo "source comment or draft proof requires evidence paths" >&2
+            exit 1
+          fi
+          ARTIFACT_ROOT=$(python3 - <<'PY'
+          import re
+          from pathlib import Path
+
+          text = Path(".github/cstack/intake/configuration.yaml").read_text(encoding="utf-8")
+          match = re.search(r"(?ms)^control:\n(?:^[ \t]+.*\n)*?^[ \t]+artifact_directory:[ \t]*[\"']?([^\"'\n#]+)", text)
+          if not match:
+              raise SystemExit("control.artifact_directory is missing")
+          print(Path(match.group(1).strip()).expanduser().resolve(strict=True))
+          PY
+          )
+          : > intake-artifacts/reproduce/evidence-urls.txt
+          INDEX=0
+          while IFS= read -r evidence_path; do
+            case "$evidence_path" in
+              http://*|https://*)
+                printf '%s\n' "$evidence_path" >> intake-artifacts/reproduce/evidence-urls.txt
+                ;;
+              *)
+                ARTIFACT_ROOT="$ARTIFACT_ROOT" EVIDENCE_PATH="$evidence_path" python3 - <<'PY'
+          import os
+          from pathlib import Path
+
+          root = Path(os.environ["ARTIFACT_ROOT"]).resolve(strict=True)
+          try:
+              path = Path(os.environ["EVIDENCE_PATH"]).expanduser().resolve(strict=True)
+          except FileNotFoundError:
+              raise SystemExit(f"evidence path is not a file: {os.environ['EVIDENCE_PATH']}")
+          if not path.is_file():
+              raise SystemExit(f"evidence path is not a file: {os.environ['EVIDENCE_PATH']}")
+          try:
+              path.relative_to(root)
+          except ValueError:
+              raise SystemExit("evidence path must stay inside control.artifact_directory")
+          PY
+                INDEX=$((INDEX + 1))
+                BASENAME=$(basename "$evidence_path")
+                cp "$evidence_path" "intake-artifacts/reproduce/files/evidence-${INDEX}-${BASENAME}"
+                ;;
+            esac
+          done < intake-artifacts/reproduce/evidence-paths.txt
+      - name: Upload reproduce evidence
+        id: upload-reproduce
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: intake-reproduce-${{ needs.triage.outputs.issue_number }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: intake-artifacts/reproduce
+          if-no-files-found: error
+          retention-days: 30
+      - name: Post reproduce comment
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ARTIFACT_URL: ${{ steps.upload-reproduce.outputs.artifact-url }}
+        run: |
+          set -euo pipefail
+          RESULT=.cstack/intake/reproduce-output.json
+          test -f "$RESULT"
+          python3 -c "import json,sys; json.load(open(sys.argv[1]))" "$RESULT"
+          BODY=$(jq -r '.source_comment_body' "$RESULT")
+          if [ -z "$BODY" ] || [ "$BODY" = "null" ]; then
+            exit 0
+          fi
+          if [ -z "${ARTIFACT_URL:-}" ]; then
+            echo "missing reproduce artifact URL" >&2
+            exit 1
+          fi
+          ISSUE="${{ needs.triage.outputs.issue_number }}"
+          printf '%s\n\nEvidence artifact: %s\n' "$BODY" "$ARTIFACT_URL" | gh issue comment "$ISSUE" --body-file -
+      - name: Open draft pull request
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ARTIFACT_URL: ${{ steps.upload-reproduce.outputs.artifact-url }}
+        run: |
+          set -euo pipefail
+          RESULT=.cstack/intake/reproduce-output.json
+          OUTCOME=$(jq -r '.outcome' "$RESULT")
+          MODE=$(jq -r '.mode' "$RESULT")
+          VERIFY=$(jq -r '.verify_verdict' "$RESULT")
+          PATCH=$(jq -r '.patch' "$RESULT")
+          TITLE=$(jq -r '.pr_title' "$RESULT")
+          PRBODY=$(jq -r '.pr_body' "$RESULT")
+          MESSAGE=$(jq -r '.commit_message' "$RESULT")
+          ISSUE="${{ needs.triage.outputs.issue_number }}"
+          if [ "$OUTCOME" != "reproduced" ] || [ "$MODE" != "fix" ] || [ "$VERIFY" != "not_applicable" ]; then
+            echo "no draft pull request: outcome=$OUTCOME mode=$MODE verify=$VERIFY"
+            exit 0
+          fi
+          if [ -z "$PATCH" ] || [ "$PATCH" = "null" ]; then
+            echo "no patch in structured result"
+            exit 0
+          fi
+          if [ -z "$TITLE" ] || [ -z "$PRBODY" ] || [ -z "$MESSAGE" ]; then
+            echo "missing pull request fields" >&2
+            exit 1
+          fi
+          EVIDENCE_COUNT=$(jq '[.evidence_paths[]? | select(type == "string" and (gsub("^\\s+|\\s+$"; "") | length > 0))] | length' "$RESULT")
+          if [ "$EVIDENCE_COUNT" -lt 2 ]; then
+            echo "draft pull request requires before-and-after evidence paths" >&2
+            exit 1
+          fi
+          test -f intake-artifacts/reproduce/manifest.json
+          if [ -z "${ARTIFACT_URL:-}" ]; then
+            echo "missing reproduce artifact URL" >&2
+            exit 1
+          fi
+          BRANCH="intake/issue-${ISSUE}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT:-1}"
+          git checkout -b "$BRANCH"
+          printf '%s\n' "$PATCH" > .cstack/intake/proposed.patch
+          git apply --index .cstack/intake/proposed.patch
+          git -c user.name="github-actions[bot]" \
+              -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+              commit -m "$MESSAGE"
+          git push origin "$BRANCH"
+          printf '%s\n\nEvidence artifact: %s\n' "$PRBODY" "$ARTIFACT_URL" > .cstack/intake/pr-body.md
+          gh pr create --draft --title "$TITLE" --body-file .cstack/intake/pr-body.md

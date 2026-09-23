@@ -1,39 +1,39 @@
-# Portage de cstack
+# cstack port
 
-Cible approuvée : dépôt GitHub privé `charlescstpierr/cstack`, portage complet du commit `889ec4b68fa5aab0e867dad71ec3fdf386ae48f3` de `cursor/plugins/pstack` (pstack 0.15.2), Codex App et CLI, activation explicite avec `$cstack:cstack`, aucun moteur d'orchestration externe.
+Approved target: private GitHub repository `charlescstpierr/cstack`, full port of `cursor/plugins/pstack` commit `889ec4b68fa5aab0e867dad71ec3fdf386ae48f3` (pstack 0.15.2), Codex App and CLI, explicit activation with `$cstack:cstack`, no external orchestration runtime.
 
-## Checklist de livraison
+## Delivery checklist
 
-- [x] Empaqueter un plugin sous `plugins/cstack` et un marketplace de dépôt.
-- [x] Comptabiliser les 47 compétences amont comme 23 références de principes plus les compétences spécialisées restantes, 23 guides d'exécution principaux, deux invites d'agents, le pack d'automatisation dormant et la compétence originale `deslop` (29 compétences dans le catalogue 0.4.0).
-- [x] Porter le routeur et les guides d'exécution principaux vers les outils natifs, en préservant les limites de périmètre et d'autorisation.
-- [x] Porter les compétences et références de support ; documenter explicitement les intégrations indisponibles.
-- [x] Remplacer la résolution frontière de Graphite par git/gh ; préserver les portes de vérification du SHA de tête.
-- [x] Préparer les scripts assistants dans un état de projet modifiable plutôt que de muter les caches de plugins.
-- [x] Valider les manifestes, les métadonnées de compétences, les chemins de références et la couverture amont.
-- [x] Exécuter les tests existants et ciblés, la vérification de types, une revue indépendante et des contrôles réalistes de compétences.
-- [x] Publier en privé, vérifier une installation GitHub propre et la découverte dans une nouvelle session.
+- [x] Package one plugin under `plugins/cstack` and a repository marketplace.
+- [x] Account for the 47 upstream skills as 23 principle references plus the remaining specialized skills, 23 core playbooks, two agent prompts, the dormant automation pack, and the original `deslop` skill (29 skills in the 0.4.0 catalog).
+- [x] Port main router/playbooks to native tools, preserve scope and authorization boundaries.
+- [x] Port supporting skills/references; explicitly document unavailable integrations.
+- [x] Replace Graphite frontier resolution with git/gh; preserve head-SHA verification gates.
+- [x] Stage helper scripts in writable project state instead of mutating plugin caches.
+- [x] Validate manifests, skill metadata, reference paths and upstream coverage.
+- [x] Run existing and targeted tests, typecheck, independent review and realistic skill checks.
+- [x] Publish privately, verify clean GitHub installation and new-session discovery.
 
-## Contrats partagés
+## Shared contracts
 
-- Répertoire/nom de la compétence principale : `cstack` ; compétence de configuration : `setup-cstack`. Les autres slugs de compétences restent inchangés et leurs descriptions utilisent la syntaxe Codex `$skill`.
-- Toutes les politiques d'invocation de compétences sont explicites uniquement. Le routeur lit directement les chemins de compétences embarqués, relatifs à lui-même, quand un processus les demande.
-- Chaque point d'entrée lie vers `skills/cstack/references/codex-runtime.md` avec un lien relatif. Ce contrat partagé décrit le choix des outils natifs et l'état local.
-- Les rôles d'agents sont livrés comme invites Markdown sous les `references/agents` de la compétence principale ; transmettez leurs instructions aux sous-agents natifs disponibles. Ne supposez pas que des rôles nommés sont enregistrés.
-- L'état vit sous `.cstack/` dans l'espace de travail cible, jamais dans un stockage Cursor ni dans le cache du plugin installé. Les surcharges de modèles utilisent `.cstack/models.json` : un objet qui associe les libellés de rôles amont à une chaîne de modèle ou, pour les comités, à une liste de chaînes. Les entrées manquantes et `inherit-parent` héritent ; validez les vrais noms de modèles dans la session courante. N'inventez pas d'API de liste de modèles. L'usage principal fonctionne sans configuration.
-- Les assistants gardent Bun et les paquets amont verrouillés. La racine fournit `scripts/run-tool.sh`, qui prépare les sources fiables des assistants dans un nouveau répertoire temporaire sous `.cstack/tools/` à chaque invocation, y installe les dépendances verrouillées, exécute, puis nettoie. Les arguments et le cwd cible sont préservés. Les invocations parallèles ne partagent aucun état exécutable de l'espace de travail. Le cache ordinaire de paquets Bun évite les téléchargements répétés. Aucune installation dans le cache du plugin.
-- Les processus GitHub utilisent git/gh. Le résolveur `orch` suit les relations head/base des PR à partir de la branche courante, rejette les relations ambiguës, cycliques ou manquantes, et conserve la vérification du SHA de tête réel. `watch-pr --stack` surveille les ancêtres et les descendants ouverts de la PR sélectionnée, sans ajouter ses frères. Il identifie chaque branche par son dépôt et son nom, puis refuse les parents ambigus et les cycles.
-- Utilisez les continuations/attentes natives au premier plan. La reprise planifiée dépend d'un planificateur natif disponible et d'une demande explicite de l'utilisateur. Ne promettez pas que les agents locaux survivent à la fermeture de l'application. Le comportement Cursor cloud-only, l'interface de webhooks Grok et l'automatisation événementielle Benny sont des limites documentées, jamais des espaces réservés exécutables.
-- Aucun message externe automatique, création de PR, fusion, publication, opération destructive ni édition de compétences sans rapport ne découle de la seule activation d'un mode. Respectez l'autorisation déjà donnée pour la tâche concrète.
-- Le README, le bref guide utilisateur et les instructions des compétences sont en français. Les docs d'exécution doivent être autonomes, sans plugin compagnon requis.
+- Main skill directory/name: `cstack`; setup skill: `setup-cstack`. Other skill slugs remain unchanged and their descriptions use Codex `$skill` syntax.
+- All skill invocation policies are explicit-only. The router directly reads bundled skill paths relative to itself when a workflow calls for them.
+- Every entrypoint links to `plugins/cstack/skills/cstack/references/codex-runtime.md` with a relative link. This shared contract describes native tool selection and local state.
+- Agent roles ship as Markdown prompts under the main skill's `references/agents`; pass their instructions to available native subagents. Do not assume named roles are registered.
+- State lives under the target workspace `.cstack/`, never a Cursor store or installed plugin cache. Model overrides use `.cstack/models.json`: an object mapping upstream role labels to a model string or, for panels, a list of strings. Missing entries and `inherit-parent` inherit; validate real model names against the current session. Do not invent a model-list API. Core usage works without setup.
+- Helpers retain Bun and locked upstream packages. Root supplies `plugins/cstack/scripts/run-tool.sh`, which creates `.cstack/` in the workspace and writes `.cstack/.gitignore` when absent, then stages trusted helper sources to a fresh `cstack-run-<random>` directory under `~/.cache/cstack/stages/` for each invocation, installs locked dependencies there, executes, and removes the stage. Arguments and target cwd are preserved. Parallel invocations share no executable workspace state. Bun's ordinary package cache avoids repeated downloads. No installation into the plugin cache.
+- GitHub workflows use git/gh. Stack resolution follows PR head/base relationships starting from the current branch, rejects ambiguous/cyclic/missing relations, and retains actual head SHA verification.
+- Use native foreground continuation/waits. Scheduled resumption is conditional on an available native scheduler and explicit user request. Do not promise that local agents survive application exit. Cloud-only Cursor behavior, Grok webhook UI and event-driven Benny automation are documented limitations, never executable placeholders.
+- No automatic external messages, PR creation, merges, publication, destructive operations or unrelated skill edits based solely on activating a mode. Honor authorization already given for the concrete task.
+- README and short user guide are French; skill instructions stay English. Runtime docs must be self-contained, no required companion plugin.
 
-## Propriété d'exécution
+## Execution ownership
 
-- Racine : paquetage du plugin, contrat d'exécution partagé, lanceur inscriptible, configuration, validation, installation et publication.
-- Voie des compétences de support : toutes les compétences sauf cstack et setup-cstack, y compris leurs ressources et scripts ; notices d'intégrations non prises en charge.
-- Voie routeur : `SKILL.md` principal, guides d'exécution et références de la compétence principale sauf `codex-runtime.md` et les invites d'agents.
-- Voie assistants : scripts de la compétence principale seulement, remplacement de Graphite et tests.
+- Root: plugin packaging, shared runtime contract, writable launcher, setup, validation, installation and release.
+- Supporting-skill lane: all skills except cstack and setup-cstack, including their resources and scripts; unsupported integration notices.
+- Router lane: main SKILL.md, playbooks and main-skill references except codex-runtime.md and agent prompts.
+- Helper lane: main-skill scripts only, Graphite replacement and tests.
 
-Les preuves de base et de vérification sont enregistrées dans `docs/VERIFICATION.md` une fois complètes. Ce plan est de la documentation, pas une dépendance d'exécution installée.
+Baseline and verification evidence is recorded in `docs/VERIFICATION.md` when complete. This plan is documentation, not an installed workflow dependency.
 
-Décision après revue indépendante : les caches exécutables persistants locaux au projet peuvent être préremplis ou modifiés, dépendances et marqueurs de bootstrap inclus. Utilisez une préparation temporaire fraîche par invocation plutôt que de faire confiance à un répertoire de digest existant. Cela retire aussi la sérialisation entre exécutions d'assistants ; le coût est une installation de dépendances mise en cache par invocation.
+Ruling after independent review: persistent project-local executable caches can be pre-populated or modified, including dependencies and bootstrap markers. Use fresh per-invocation temporary staging instead of trusting an existing digest directory. This also removes serialization between helper executions; it costs a cached dependency installation per invocation.
