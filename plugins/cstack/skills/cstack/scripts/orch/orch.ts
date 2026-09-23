@@ -169,7 +169,7 @@ function frontierLine(value: Frontier): string {
               `${row.branches}#${row.pr}@${row.sha}:${row.state}`
           )
           .join(",");
-  return `generation=${value.generation} prs=${prs} plus-basse-non-fusionnee=${value.lowestUnmerged ?? "aucune"}`;
+  return `generation=${value.generation} prs=${prs} plus-basse-non-fusionnee=${value.lowestUnmerged ?? "aucune"} trou-ferme=${value.closedGap ?? "aucun"}`;
 }
 
 function statusLines(report: StatusReport): string {

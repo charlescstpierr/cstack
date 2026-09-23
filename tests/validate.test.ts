@@ -60,7 +60,7 @@ test("le paquet charge 29 skills et rejette les distributions dangereuses ou inc
       ["docs/VERIFICATION.md", (text: string) => text.replace(/(Le catalogue 0\.4\.0 contient )29 (?:skills|compétences)/, "$127 compétences"), /nombre de skills cité 27/],
       ["docs/VERIFICATION.md", (text: string) => text.replace("23 guides d'exécution.", "22 guides d'exécution."), /nombre de guides opérationnels cité 22/],
       ["docs/VERIFICATION.md", (text: string) => text.replace("23 guides d'exécution.", "22 guides d’exécution."), /nombre de guides opérationnels cité 22/],
-      ["plugins/cstack/.codex-plugin/plugin.json", (text: string) => text.replace('"version": "0.3.0"', '"version": "9.9.9"').replace('"version": "0.4.0"', '"version": "9.9.9"'), /journal des modifications ou preuve manquants/],
+      ["plugins/cstack/.codex-plugin/plugin.json", (text: string) => text.replace(/"version": "\d+\.\d+\.\d+"/, '"version": "9.9.9"'), /journal des modifications ou preuve manquants/],
       ["plugins/cstack/sources/matt-pocock.json", (text: string) => text.replace("3cca18b368ae95cdbdebbff572ccafa662551015", "unknown"), /provenance des sources de Matt/],
       ["plugins/cstack/skills/horizon/agents/openai.yaml", (text: string) => text.replace("allow_implicit_invocation: false", "allow_implicit_invocation: true"), /invocation explicite/],
       ["PORTING.json", (text: string) => text.replace(

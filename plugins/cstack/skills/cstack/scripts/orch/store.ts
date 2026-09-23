@@ -91,6 +91,7 @@ export interface Frontier {
   readonly generation: number;
   readonly prs: readonly FrontierPr[];
   readonly lowestUnmerged: number | null;
+  readonly closedGap: number | null;
 }
 
 export interface StandingLine {
@@ -774,7 +775,7 @@ function parseFrontier(raw: string): Frontier {
     throw new UserError("frontier.json doit contenir un objet");
   }
   if (Object.keys(value).length === 0) {
-    return { generation: 0, prs: [], lowestUnmerged: null };
+    return { generation: 0, prs: [], lowestUnmerged: null, closedGap: null };
   }
   if (
     typeof value.generation !== "number" ||
@@ -785,6 +786,12 @@ function parseFrontier(raw: string): Frontier {
       value.lowestUnmerged === null ||
       (typeof value.lowestUnmerged === "number" &&
         Number.isSafeInteger(value.lowestUnmerged))
+    ) ||
+    !(
+      value.closedGap === undefined ||
+      value.closedGap === null ||
+      (typeof value.closedGap === "number" &&
+        Number.isSafeInteger(value.closedGap))
     )
   ) {
     throw new UserError("frontier.json a une forme invalide");
@@ -817,6 +824,7 @@ function parseFrontier(raw: string): Frontier {
     generation: value.generation,
     prs,
     lowestUnmerged: value.lowestUnmerged,
+    closedGap: value.closedGap ?? null,
   };
 }
 
@@ -1028,6 +1036,7 @@ ${table(
 
 Generation: ${currentFrontier.generation}
 Plus basse non fusionnee: ${currentFrontier.lowestUnmerged ?? "aucune"}
+Trou ferme non fusionne: ${currentFrontier.closedGap ?? "aucun"}
 
 ${table(
   ["Branche", "PR", "SHA", "Etat"],
@@ -1634,6 +1643,7 @@ export function openStore(
           generation: old.generation + 1,
           prs,
           lowestUnmerged: prs.find((row) => row.state === "OPEN")?.pr ?? null,
+          closedGap: prs.find((row) => row.state === "CLOSED")?.pr ?? null,
         };
         await atomicWrite(
           join(store, "frontier.json"),

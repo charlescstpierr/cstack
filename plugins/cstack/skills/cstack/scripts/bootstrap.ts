@@ -28,6 +28,10 @@ export const HELPER_INSTALL_ARGS = [
   "install",
   "--frozen-lockfile",
   "--production",
+  // Le stage vit sous le workspace cible : Bun peut donc voir sa racine,
+  // ses scripts lifecycle et son .env. Ils appartiennent au dépôt inspecté.
+  "--ignore-scripts",
+  "--no-env-file",
 ] as const;
 
 export function ensureDependenciesInstalled(): void {

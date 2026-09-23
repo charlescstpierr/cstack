@@ -11,7 +11,6 @@ function example(): string {
   const template = playbook.split("````markdown\n")[1]?.split("````")[0];
   if (!template) throw new Error("Modèle de plan fourni manquant");
   return template.replace(/<[^>]+>/g, "exemple")
-    .replace(/(\*\*Vérifier, réel\.\*\*[^\n]*)/, (line) => (line.includes("dans la capacité native") ? line : `${line} dans la capacité native`))
     .replace(/^- \[ \] Voie (\d+)\..*$/gm, (_, number) => `- [ ] Voie ${number}. Exécuter le scénario. Enregistrer \`evidence/lane-${number}.log\`. Réussit quand le résultat observé correspond au contrat.`);
 }
 
@@ -68,6 +67,7 @@ for (const [language, convert] of [["français", (plan: string) => plan], ["angl
         example().replace("**Vérifier, unitaire.**", "**Absent.**"),
         example().replace(/Voie 10\..*/, "Voie 10. n/a:"),
         example().replace("**Livrer.**", "**Absent.**"),
+        example().replace("Limiter le nombre d’exécutions simultanées dans la capacité native et mettre le reste en file. ", ""),
         example().replace(/- \[ \].*vidéo.*\n/, ""),
       ]) {
         writeFileSync(path, convert(invalid));

@@ -4,6 +4,11 @@ Les versions suivent SemVer. Le format suit [Keep a Changelog](https://keepachan
 
 ## À publier
 
+- Installation des dépendances des helpers isolée du workspace inspecté. `bun install` reçoit `--ignore-scripts` et `--no-env-file`, tandis que le redémarrage conserve les drapeaux Bun et les arguments utilisateur.
+- Frontière d'orchestration : `frontier.set` enregistre le premier PR fermé non fusionné dans `closedGap`, sans déplacer la frontière du plus bas PR ouvert.
+- Le vérificateur de plans multi-PR suit le gabarit courant français/anglais et teste directement le bloc réel borné à la capacité native.
+- Le validateur de paquet ne dépend plus d'une version de plugin codée en dur dans sa mutation de test.
+
 - Nettoyage : préservation des preuves et suppression du worktree dans deux appels d’outil distincts, avec reçu vérifié et conservation obligatoire en cas d’échec intermédiaire.
 
 - Reprise facultative d’un worker Claude Code depuis son reçu précédent, avec contrôle de provenance, exclusion des reprises concurrentes et conservation des permissions. Le démarrage neuf reste le défaut ; les erreurs de reprise ne provoquent pas de relance cachée.
