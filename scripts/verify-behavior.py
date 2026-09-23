@@ -10,6 +10,7 @@ import os
 from pathlib import Path
 import re
 import selectors
+import shlex
 import shutil
 import subprocess
 import sys
@@ -421,7 +422,40 @@ def tree_hash(root, excluded):
 OPENED_PATH = re.compile(r'openat2?\([^\n]*?, "((?:[^"\\]|\\.)+)"[^\n]*?\)\s+=\s+(\d+)')
 
 
-def observed_routes(trace_prefix, bundle):
+def explicit_route_reads(commands, bundle, cwd):
+    """Accept only simple direct file reads; complex shell commands remain unclassified."""
+    direct = set()
+    for command in commands:
+        if any(operator in command for operator in ("|", ";", "&&", ">", "<", "$", "`")):
+            continue
+        try:
+            words = shlex.split(command)
+        except ValueError:
+            continue
+        if not words or Path(words[0]).name not in {"cat", "sed", "head", "tail"}:
+            continue
+        if Path(words[0]).name == "sed" and any(word == "-i" or word.startswith("--in-place")
+                                                  for word in words[1:]):
+            continue
+        for word in words[1:]:
+            if word.startswith("-"):
+                continue
+            path = Path(word)
+            if not path.is_absolute():
+                path = cwd / path
+            try:
+                relative = path.resolve().relative_to(bundle.resolve()).as_posix()
+            except ValueError:
+                continue
+            if relative.startswith("skills/") and (
+                relative.endswith("/SKILL.md") or "/playbooks/" in relative
+                or "/principles/" in relative
+            ):
+                direct.add(relative)
+    return direct
+
+
+def observed_routes(trace_prefix, bundle, commands=(), cwd=None):
     """Record successful filesystem opens; an open alone does not prove semantic use."""
     routes = set()
     ambiguous = False
@@ -446,17 +480,25 @@ def observed_routes(trace_prefix, bundle):
                 or "/principles/" in relative
             ):
                 routes.add(relative)
-    return {"opened": sorted(routes), "ambiguous_path": ambiguous, "trace_files": len(traces),
-            "evidence": "successful filesystem open; bulk scans and transitive bundles may count"}
+    direct = routes & explicit_route_reads(commands, bundle, cwd or bundle)
+    return {"opened": sorted(routes), "direct_reads": sorted(direct),
+            "unattributed_opens": sorted(routes - direct),
+            "ambiguous_path": ambiguous, "trace_files": len(traces),
+            "evidence": "direct_reads require a simple read command and a successful filesystem open; other opens are unresolved"}
 
 
 def score_routes(observed, expectation):
     gold = expectation.get("routing", {})
     expected, forbidden = set(gold.get("expected", [])), set(gold.get("forbidden", []))
     opened = set(observed["opened"])
-    return {"true_positive": sorted(expected & opened), "false_negative": sorted(expected - opened),
-            "false_positive": sorted(forbidden & opened),
-            "known_true_negative": sorted(forbidden - opened),
+    direct = set(observed["direct_reads"])
+    incomplete = observed["ambiguous_path"]
+    return {"true_positive": sorted(expected & direct),
+            "false_negative": sorted(expected - opened) if not incomplete else [],
+            "unknown_expected": sorted((expected & opened) - direct | (expected - opened if incomplete else set())),
+            "false_positive": sorted(forbidden & direct),
+            "unknown_forbidden": sorted((forbidden & opened) - direct | (forbidden - opened if incomplete else set())),
+            "known_true_negative": sorted(forbidden - opened) if not incomplete else [],
             "unlabelled_opened": sorted(opened - expected - forbidden)}
 
 
@@ -678,7 +720,9 @@ def run_case(case, output, command, model, effort, timeout, trace_routes=False):
         "raw_stream": str(raw_path.resolve()), "stderr": str(stderr_path.resolve()),
     }
     if trace_routes:
-        result["route_observation"] = observed_routes(trace_prefix, case["bundle"])
+        result["route_observation"] = observed_routes(
+            trace_prefix, case["bundle"], state["actual_commands"], case["cwd"]
+        )
     return result
 
 
