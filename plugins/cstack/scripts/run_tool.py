@@ -288,7 +288,10 @@ def main():
             command = bun_command(bunfig, tsconfig, str(staged_entry), *sys.argv[2:])
         else:
             command = [runtime, str(staged_entry), *sys.argv[2:]]
-        raise SystemExit(exit_status(run_tracked(command)))
+        child_environment = os.environ | {
+            "CSTACK_PLUGIN_ROOT": str(Path(__file__).resolve().parent.parent),
+        }
+        raise SystemExit(exit_status(run_tracked(command, env=child_environment)))
     finally:
         signal.signal(signal.SIGINT, previous_int)
         signal.signal(signal.SIGTERM, previous_term)

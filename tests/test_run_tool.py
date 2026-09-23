@@ -119,6 +119,7 @@ class RunToolTest(unittest.TestCase):
                 "no_env_file": no_env_file,
                 "config": config,
                 "tsconfig": tsconfig,
+                "plugin_root": os.environ.get("CSTACK_PLUGIN_ROOT"),
             }))
             """))
         bun.chmod(0o755)
@@ -537,6 +538,16 @@ class RunToolTest(unittest.TestCase):
         self.assertEqual(data["content"], "trusted\n")
         self.assertFalse((self.cwd / ".cstack" / "tools").exists())
         self.assertEqual(self.leftover_stage_dirs(self.cwd), [])
+
+    def test_child_receives_trusted_plugin_root_from_launcher(self):
+        (self.source / "tool.ts").write_text("trusted")
+        data = json.loads(
+            self.run_tool(
+                "tool.ts",
+                env=self.env | {"CSTACK_PLUGIN_ROOT": "/tmp/not-trusted"},
+            ).stdout
+        )
+        self.assertEqual(data["plugin_root"], str(self.plugin))
 
     def test_python_floor_rejects_versions_below_3_9(self):
         spec = importlib.util.spec_from_file_location("run_tool", PY_LAUNCHER)
