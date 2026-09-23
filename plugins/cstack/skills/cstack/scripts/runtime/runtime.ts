@@ -8,10 +8,12 @@ import {
   lstat,
   readFile,
   realpath,
+  rename,
+  rm,
   stat,
   writeFile,
 } from "node:fs/promises";
-import { basename, delimiter, isAbsolute, join, relative, resolve, sep } from "node:path";
+import { basename, delimiter, dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { loadWorkerContext } from "../worker-context.ts";
 import { loadWorkerSkills } from "../worker-skills.ts";
 
@@ -24,6 +26,7 @@ type ExecutionStatus =
   | "UNSUPPORTED"
   | "AUTH_REQUIRED"
   | "INVALID_OUTPUT"
+  | "RESUME_FAILED"
   | "NONZERO"
   | "TIMEOUT"
   | "CANCELLED"
@@ -45,6 +48,7 @@ interface RunRequest {
   readonly output_dir: string;
   readonly permissions: PermissionProfile;
   readonly timeout_ms?: number;
+  readonly resume_from?: string;
 }
 
 interface WorkerCheck {
@@ -77,6 +81,7 @@ interface CommandParams {
   readonly schemaPath: string;
   readonly schemaText: string;
   readonly lastMessagePath: string;
+  readonly resumeSessionId: string | null;
 }
 
 interface CommandBuild {
@@ -122,7 +127,39 @@ interface RunResult {
     readonly stderr_truncated: boolean;
     readonly message: string;
   };
+  readonly provenance: {
+    readonly mode: "fresh" | "resume";
+    readonly cwd: string | null;
+    readonly task_dir: string | null;
+    readonly output_dir: string | null;
+    readonly output_parent: string | null;
+    readonly permissions: PermissionProfile;
+    readonly version: string | null;
+    readonly selection: Selection;
+    readonly skills_sha256: string | null;
+    readonly lineage_root: string | null;
+    readonly resume_count: number;
+    readonly resumed_from: string | null;
+  };
   readonly worker: WorkerReport;
+}
+
+interface ResumeState {
+  readonly current_result: string;
+  readonly session_id: string;
+  readonly status: "IDLE" | "RUNNING" | "NOT_RESUMABLE";
+  readonly resume_count: number;
+  readonly running_output_dir?: string;
+  readonly message?: string;
+}
+
+interface ResumePlan {
+  readonly mode: "fresh" | "resume";
+  readonly previousResult: string | null;
+  readonly sessionId: string | null;
+  readonly lineageRoot: string | null;
+  readonly resumeCount: number;
+  readonly lockDir: string | null;
 }
 
 interface ProbeResult {
@@ -145,6 +182,9 @@ interface Io {
 const OUTPUT_LIMIT = 512 * 1024;
 const DEFAULT_TIMEOUT_MS = 10 * 60 * 1000;
 const MAX_TIMEOUT_MS = 2 * 60 * 60 * 1000;
+const RECEIPT_LIMIT = 1024 * 1024;
+const MAX_RESUMES = 8;
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 const WORKER_SCHEMA = {
   type: "object",
@@ -177,7 +217,10 @@ const RUNTIMES: Readonly<Record<RuntimeName, RuntimeDefinition>> = {
     versionArgs: ["--version"],
     helpArgs: ["exec", "--help"],
     requiredHelp: ["--config", "--cd", "--sandbox", "--json", "--output-schema", "--output-last-message", "--model", "--ignore-user-config"],
-    command: ({ request, cwd, brief, schemaPath, lastMessagePath }) => {
+    command: ({ request, cwd, brief, schemaPath, lastMessagePath, resumeSessionId }) => {
+      if (resumeSessionId !== null) {
+        throw new UnsupportedError("codex-cli: reprise de session non prise en charge par ce runner");
+      }
       return {
         argv: [
           "exec",
@@ -208,11 +251,12 @@ const RUNTIMES: Readonly<Record<RuntimeName, RuntimeDefinition>> = {
     versionArgs: ["--version"],
     helpArgs: ["--help"],
     requiredHelp: ["--print", "--output-format", "--json-schema", "--permission-mode", "--permission-prompts", "--restricted", "--safe-mode", "--strict-mcp-config", "--mcp-config", "--add-dir", "--tools"],
-    command: ({ request, cwd, brief, schemaText }) => {
+    command: ({ request, cwd, brief, schemaText, resumeSessionId }) => {
       const writable = request.permissions === "workspace-write";
       return {
         argv: [
           "--print",
+          ...(resumeSessionId === null ? [] : ["--resume", resumeSessionId]),
           "--output-format",
           "json",
           "--json-schema",
@@ -244,7 +288,10 @@ const RUNTIMES: Readonly<Record<RuntimeName, RuntimeDefinition>> = {
     versionArgs: ["--version"],
     helpArgs: ["--help"],
     requiredHelp: ["--print", "--output-format", "--mode", "--sandbox", "--workspace", "--model"],
-    command: ({ request, cwd, brief }) => {
+    command: ({ request, cwd, brief, resumeSessionId }) => {
+      if (resumeSessionId !== null) {
+        throw new UnsupportedError("cursor-agent: reprise de session non prise en charge par ce runner");
+      }
       if (request.permissions === "workspace-write") {
         throw new UnsupportedError("cursor-agent: workspace-write non pris en charge sans contrôle d'outils write/shell");
       }
@@ -276,7 +323,10 @@ const RUNTIMES: Readonly<Record<RuntimeName, RuntimeDefinition>> = {
     versionArgs: ["--version"],
     helpArgs: ["--help"],
     requiredHelp: ["--prompt-file", "--cwd", "--output-format", "--json-schema", "--sandbox", "--permission-mode", "--tools", "--allow", "--deny", "--no-subagents", "--model", "--reasoning-effort"],
-    command: ({ request, cwd, promptPath, schemaText }) => {
+    command: ({ request, cwd, promptPath, schemaText, resumeSessionId }) => {
+      if (resumeSessionId !== null) {
+        throw new UnsupportedError("grok: reprise de session non prise en charge par ce runner");
+      }
       const writable = request.permissions === "workspace-write";
       return {
       argv: [
@@ -379,7 +429,7 @@ function parseRequestJson(raw: string): RunRequest {
   if (!isRecord(parsed)) {
     throw new UsageError("request: objet attendu");
   }
-  rejectExtraKeys(parsed, ["selection", "brief_file", "context_files", "skills", "skill_references", "cwd", "output_dir", "permissions", "timeout_ms"], "request");
+  rejectExtraKeys(parsed, ["selection", "brief_file", "context_files", "skills", "skill_references", "cwd", "output_dir", "permissions", "timeout_ms", "resume_from"], "request");
   if (!isRecord(parsed.selection)) {
     throw new UsageError("selection: objet attendu");
   }
@@ -412,6 +462,7 @@ function parseRequestJson(raw: string): RunRequest {
     output_dir: stringField(parsed, "output_dir"),
     permissions: parsePermissions(parsed.permissions),
     timeout_ms: parseTimeout(parsed.timeout_ms),
+    resume_from: optionalStringField(parsed, "resume_from"),
   };
 }
 
@@ -466,9 +517,44 @@ async function assertAbsoluteRealFile(path: string, label: string): Promise<stri
   return actual;
 }
 
+async function assertBoundedJsonFile(path: string, label: string, limit: number): Promise<string> {
+  if (resolve(path) !== path) {
+    throw new UsageError(`${label}: chemin absolu requis`);
+  }
+  const linkInfo = await lstat(path);
+  if (linkInfo.isSymbolicLink()) {
+    throw new UsageError(`${label}: lien symbolique refusé`);
+  }
+  const actual = await realpath(path);
+  const info = await stat(actual);
+  if (!info.isFile()) {
+    throw new UsageError(`${label}: fichier régulier requis`);
+  }
+  if (info.size > limit) {
+    throw new UsageError(`${label}: fichier trop volumineux`);
+  }
+  return actual;
+}
+
 async function assertAbsoluteRealDirectory(path: string, label: string): Promise<string> {
   if (resolve(path) !== path) {
     throw new UsageError(`${label}: chemin absolu requis`);
+  }
+  const actual = await realpath(path);
+  const info = await stat(actual);
+  if (!info.isDirectory()) {
+    throw new UsageError(`${label}: dossier requis`);
+  }
+  return actual;
+}
+
+async function assertAbsoluteRealDirectoryNoSymlink(path: string, label: string): Promise<string> {
+  if (resolve(path) !== path) {
+    throw new UsageError(`${label}: chemin absolu requis`);
+  }
+  const linkInfo = await lstat(path);
+  if (linkInfo.isSymbolicLink()) {
+    throw new UsageError(`${label}: lien symbolique refusé`);
   }
   const actual = await realpath(path);
   const info = await stat(actual);
@@ -497,6 +583,15 @@ async function createFreshOutputDirectory(path: string): Promise<string> {
   const output = resolve(parent, basename(path));
   await mkdir(output, { mode: 0o700 });
   return output;
+}
+
+async function readBoundedJson(path: string, label: string): Promise<unknown> {
+  const actual = await assertBoundedJsonFile(path, label, RECEIPT_LIMIT);
+  try {
+    return JSON.parse(await readFile(actual, "utf8"));
+  } catch (error) {
+    throw new UsageError(`${label}: JSON invalide: ${error instanceof Error ? error.message : String(error)}`);
+  }
 }
 
 async function executablePath(binary: string): Promise<string | null> {
@@ -681,10 +776,10 @@ async function probeRuntime(name: RuntimeName): Promise<ProbeResult> {
   );
 }
 
-async function requireCapabilities(definition: RuntimeDefinition, executable: string, cwd: string): Promise<void> {
+async function requireCapabilities(definition: RuntimeDefinition, executable: string, cwd: string, extraRequired: readonly string[] = []): Promise<void> {
   const helpResult = await commandOutput(executable, definition.helpArgs, cwd);
   const helpText = `${helpResult.captured.stdout}\n${helpResult.captured.stderr}`;
-  const missing = definition.requiredHelp.filter((flag) => !helpText.includes(flag));
+  const missing = [...definition.requiredHelp, ...extraRequired].filter((flag) => !helpText.includes(flag));
   if (helpResult.exitCode !== 0 || helpResult.timedOut || helpResult.cancelled || helpResult.captured.stdoutTruncated) missing.push("échec de --help");
   if (missing.length > 0) {
     throw new UnsupportedError(`${definition.name}: drapeaux requis absents: ${missing.join(", ")}`);
@@ -737,6 +832,20 @@ function runResult(params: {
       stderr_truncated: params.process?.captured.stderrTruncated ?? false,
       message: params.message,
     },
+    provenance: {
+      mode: "fresh",
+      cwd: null,
+      task_dir: null,
+      output_dir: params.outputDir,
+      output_parent: params.outputDir === null ? null : dirname(params.outputDir),
+      permissions: params.request.permissions,
+      version: params.version,
+      selection: params.request.selection,
+      skills_sha256: null,
+      lineage_root: params.outputDir,
+      resume_count: 0,
+      resumed_from: null,
+    },
     worker: params.worker,
   };
 }
@@ -753,6 +862,210 @@ function extractSessionId(value: unknown): string | null {
   }
   return null;
 }
+
+function sameSelection(left: Selection, right: Selection): boolean {
+  return left.runtime === right.runtime && left.model === right.model && left.reasoning_effort === right.reasoning_effort;
+}
+
+function parseSelectionReceipt(value: unknown): Selection | null {
+  if (!isRecord(value)) {
+    return null;
+  }
+  const runtime = value.runtime;
+  if (runtime !== "codex-cli" && runtime !== "claude-code" && runtime !== "grok" && runtime !== "cursor-agent") {
+    return null;
+  }
+  if ((value.model !== undefined && typeof value.model !== "string") || (value.reasoning_effort !== undefined && typeof value.reasoning_effort !== "string")) {
+    return null;
+  }
+  return { runtime, model: value.model, reasoning_effort: value.reasoning_effort };
+}
+
+function receiptString(value: Record<string, unknown>, key: string): string | null {
+  const field = value[key];
+  return typeof field === "string" && field.length > 0 ? field : null;
+}
+
+function receiptNumber(value: Record<string, unknown>, key: string): number | null {
+  const field = value[key];
+  return typeof field === "number" && Number.isInteger(field) && field >= 0 ? field : null;
+}
+
+function resumeFailureLikely(text: string): boolean {
+  return /resume (failed|refused|not found|invalid|expired)|session (not found|missing|unknown|invalid|expired|purged)|conversation (not found|missing|unknown|invalid|expired|purged)|no (conversation|session) found|no such (session|conversation)|cannot resume|can't resume/i.test(text);
+}
+
+function statePath(lineageRoot: string): string {
+  return join(lineageRoot, "resume-state.json");
+}
+
+function lockPath(lineageRoot: string): string {
+  return join(lineageRoot, "resume.lock");
+}
+
+async function readResumeState(lineageRoot: string): Promise<ResumeState | null> {
+  const path = statePath(lineageRoot);
+  const exists = await lstat(path).catch(() => null);
+  if (exists === null) {
+    return null;
+  }
+  if (exists.isSymbolicLink() || !exists.isFile() || exists.size > RECEIPT_LIMIT) {
+    throw new UsageError("resume-state: fichier invalide");
+  }
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(await readFile(path, "utf8")) as unknown;
+  } catch (error) {
+    throw new UsageError(`resume-state: JSON invalide: ${error instanceof Error ? error.message : String(error)}`);
+  }
+  if (!isRecord(parsed)) {
+    throw new UsageError("resume-state: objet attendu");
+  }
+  const currentResult = receiptString(parsed, "current_result");
+  const sessionId = receiptString(parsed, "session_id");
+  const status = parsed.status;
+  const resumeCount = receiptNumber(parsed, "resume_count");
+  if (currentResult === null || sessionId === null || (status !== "IDLE" && status !== "RUNNING" && status !== "NOT_RESUMABLE") || resumeCount === null) {
+    throw new UsageError("resume-state: forme invalide");
+  }
+  return {
+    current_result: currentResult,
+    session_id: sessionId,
+    status,
+    resume_count: resumeCount,
+    running_output_dir: typeof parsed.running_output_dir === "string" ? parsed.running_output_dir : undefined,
+    message: typeof parsed.message === "string" ? parsed.message : undefined,
+  };
+}
+
+async function writeResumeState(lineageRoot: string, state: ResumeState): Promise<void> {
+  const path = statePath(lineageRoot);
+  const temp = join(lineageRoot, `.resume-state.${process.pid}.${Date.now()}.tmp`);
+  try {
+    await writeFile(temp, JSON.stringify(state, null, 2), { flag: "wx" });
+    await rename(temp, path);
+  } finally {
+    await rm(temp, { force: true });
+  }
+}
+
+async function releaseResumeLock(plan: ResumePlan): Promise<void> {
+  if (plan.lockDir !== null) {
+    await rm(plan.lockDir, { recursive: true, force: true });
+  }
+}
+
+async function recordResumeOutcome(result: RunResult, launched: boolean): Promise<void> {
+  const resultPath = result.provenance.output_dir === null ? null : join(result.provenance.output_dir, "result.json");
+  const lineageRoot = result.provenance.lineage_root;
+  if (lineageRoot === null || resultPath === null) {
+    return;
+  }
+  if (result.execution.status === "COMPLETED" && result.execution.session_id !== null && UUID_PATTERN.test(result.execution.session_id)) {
+    await writeResumeState(lineageRoot, {
+      current_result: resultPath,
+      session_id: result.execution.session_id,
+      status: "IDLE",
+      resume_count: result.provenance.resume_count,
+    });
+    return;
+  }
+  if (result.provenance.mode === "resume" && launched) {
+    await writeResumeState(lineageRoot, {
+      current_result: result.provenance.resumed_from ?? resultPath,
+      session_id: result.execution.session_id ?? "unknown",
+      status: "NOT_RESUMABLE",
+      resume_count: result.provenance.resume_count,
+      message: result.execution.message,
+    });
+  }
+}
+
+async function prepareResume(params: {
+  readonly request: RunRequest;
+  readonly cwd: string;
+  readonly taskDir: string;
+  readonly outputParent: string;
+  readonly version: string | null;
+  readonly skillsSha256: string | null;
+}): Promise<ResumePlan> {
+  if (params.request.resume_from === undefined) {
+    return { mode: "fresh", previousResult: null, sessionId: null, lineageRoot: null, resumeCount: 0, lockDir: null };
+  }
+  if (params.request.selection.runtime !== "claude-code") {
+    throw new UnsupportedError("reprise de session seulement prise en charge pour claude-code");
+  }
+  try {
+    const previousResult = await assertBoundedJsonFile(params.request.resume_from, "resume_from", RECEIPT_LIMIT);
+    if (basename(previousResult) !== "result.json" || dirname(dirname(previousResult)) !== params.outputParent) {
+      throw new ResumeError("resume_from: chemin de reçu result.json attendu dans le parent de sortie courant");
+    }
+    const previous = await readBoundedJson(previousResult, "resume_from");
+    if (!isRecord(previous) || !isRecord(previous.execution) || !isRecord(previous.provenance)) {
+      throw new ResumeError("resume_from: reçu CStack avec provenance attendu");
+    }
+    const previousStatus = previous.execution.status;
+    const sessionId = typeof previous.execution.session_id === "string" ? previous.execution.session_id : null;
+    if (previousStatus !== "COMPLETED") {
+      throw new ResumeError("resume_from: seul un reçu COMPLETED est reprenable");
+    }
+    if (sessionId === null || !UUID_PATTERN.test(sessionId)) {
+      throw new ResumeError("resume_from: session_id Claude UUID requis");
+    }
+    const previousSelection = parseSelectionReceipt(previous.provenance.selection);
+    const lineageRootRaw = receiptString(previous.provenance, "lineage_root");
+    const resumeCount = receiptNumber(previous.provenance, "resume_count");
+    if (previousSelection === null || lineageRootRaw === null || resumeCount === null) {
+      throw new ResumeError("resume_from: provenance de lignée incomplète");
+    }
+    const lineageRoot = await assertAbsoluteRealDirectoryNoSymlink(lineageRootRaw, "resume_from lineage_root");
+    if (dirname(lineageRoot) !== params.outputParent) {
+      throw new ResumeError("resume_from: parent de lignée différent");
+    }
+    if (previous.provenance.output_dir !== dirname(previousResult)) {
+      throw new ResumeError("resume_from: chemin du reçu ne correspond pas à output_dir");
+    }
+    if (resumeCount >= MAX_RESUMES) {
+      throw new ResumeError("resume_from: limite de reprises atteinte");
+    }
+    if (previous.provenance.cwd !== params.cwd) throw new ResumeError("resume_from: cwd différent");
+    if (previous.provenance.task_dir !== params.taskDir) throw new ResumeError("resume_from: task_dir différent");
+    if (previous.provenance.output_parent !== params.outputParent) throw new ResumeError("resume_from: output_dir parent différent");
+    if (previous.provenance.permissions !== params.request.permissions) throw new ResumeError("resume_from: permissions différentes");
+    if (previous.provenance.version !== params.version) throw new ResumeError("resume_from: version CLI différente");
+    if (previous.provenance.skills_sha256 !== params.skillsSha256) throw new ResumeError("resume_from: skills différents");
+    if (!sameSelection(previousSelection, params.request.selection)) throw new ResumeError("resume_from: sélection différente");
+    const lockDir = lockPath(lineageRoot);
+    try {
+      await mkdir(lockDir, { mode: 0o700 });
+    } catch {
+      throw new ResumeError("resume_from: lignée déjà en cours ou verrou bloquant");
+    }
+    try {
+      const state = await readResumeState(lineageRoot);
+      if (state === null) {
+        throw new ResumeError("resume_from: état de lignée introuvable");
+      }
+      if (state.status !== "IDLE") {
+        throw new ResumeError("resume_from: lignée non reprenable");
+      }
+      if (state.current_result !== previousResult || state.session_id !== sessionId || state.resume_count !== resumeCount) {
+        throw new ResumeError("resume_from: reçu périmé, seule la dernière tentative est reprenable");
+      }
+    } catch (error) {
+      await rm(lockDir, { recursive: true, force: true });
+      throw error;
+    }
+    return { mode: "resume", previousResult, sessionId, lineageRoot, resumeCount, lockDir };
+  } catch (error) {
+    if (error instanceof ResumeError) {
+      throw error;
+    }
+    throw new ResumeError(`resume_from: ${error instanceof Error ? error.message : String(error)}`);
+  }
+}
+
+class ResumeError extends Error {}
 
 async function parseRuntimeOutput(definition: RuntimeDefinition, stdout: string, lastMessagePath: string): Promise<{ readonly worker: WorkerReport; readonly sessionId: string | null } | null> {
   let raw = stdout;
@@ -804,7 +1117,17 @@ async function runRuntime(request: RunRequest): Promise<RunResult> {
   let contextSha256: string | null = null;
   let skillBundle: Awaited<ReturnType<typeof loadWorkerSkills>> | null = null;
   let contextFiles: readonly { readonly path: string; readonly sha256: string }[] = [];
+  let canonicalCwd: string | null = null;
+  let taskDir: string | null = null;
+  let outputParent: string | null = null;
+  let resumePlan: ResumePlan = { mode: "fresh", previousResult: null, sessionId: null, lineageRoot: null, resumeCount: 0, lockDir: null };
+  let launched = false;
+  let finishStarted = false;
   const finish = async (result: RunResult): Promise<RunResult> => {
+    if (finishStarted) {
+      throw new Error("résultat runtime déjà en finalisation");
+    }
+    finishStarted = true;
     const enriched = {
       ...result,
       skills: { names: request.skills ?? [], references: request.skill_references ?? [], sha256: skillBundle?.sha256 ?? null, files: skillBundle?.files ?? [] },
@@ -812,16 +1135,37 @@ async function runRuntime(request: RunRequest): Promise<RunResult> {
         sha256: contextSha256,
         files: contextFiles,
       },
+      provenance: {
+        mode: resumePlan.mode,
+        cwd: canonicalCwd,
+        task_dir: taskDir,
+        output_dir: outputDir,
+        output_parent: outputParent,
+        permissions: request.permissions,
+        version,
+        selection: request.selection,
+        skills_sha256: skillBundle?.sha256 ?? null,
+        lineage_root: resumePlan.lineageRoot ?? outputDir,
+        resume_count: resumePlan.mode === "resume" ? resumePlan.resumeCount + 1 : 0,
+        resumed_from: resumePlan.previousResult,
+      },
     };
-    if (outputDir !== null) {
-      await writeFile(join(outputDir, "result.json"), JSON.stringify(enriched, null, 2));
+    try {
+      if (outputDir !== null) {
+        await writeFile(join(outputDir, "result.json"), JSON.stringify(enriched, null, 2));
+      }
+      await recordResumeOutcome(enriched, launched);
+    } finally {
+      await releaseResumeLock(resumePlan);
     }
     return enriched;
   };
   try {
     const briefPath = await assertAbsoluteRealFile(request.brief_file, "brief_file");
     const cwd = await assertAbsoluteRealDirectory(request.cwd, "cwd");
-    const outputParent = await assertAbsoluteRealDirectory(resolve(request.output_dir, ".."), "output_dir parent");
+    canonicalCwd = cwd;
+    taskDir = dirname(briefPath);
+    outputParent = await assertAbsoluteRealDirectory(resolve(request.output_dir, ".."), "output_dir parent");
     const relativeOutput = relative(cwd, resolve(outputParent, basename(request.output_dir)));
     if (request.permissions === "workspace-write" && relativeOutput !== ".." && !relativeOutput.startsWith(`..${sep}`) && !isAbsolute(relativeOutput)) {
       throw new UsageError("output_dir doit être hors du worktree inscriptible du worker");
@@ -835,8 +1179,6 @@ async function runRuntime(request: RunRequest): Promise<RunResult> {
     contextFiles = context.files;
     await writeFile(join(outputDir, "context-snapshot.json"), JSON.stringify(context, null, 2));
     const promptPath = join(outputDir, "worker-prompt.txt");
-    const workerPrompt = `${skillBundle.text}\n\nTASK BRIEF AND SHARED CONTEXT\n${context.prompt}`;
-    await writeFile(promptPath, workerPrompt);
     const executable = await executablePath(definition.binary);
     if (executable === null) {
       return await finish(runResult({
@@ -853,12 +1195,34 @@ async function runRuntime(request: RunRequest): Promise<RunResult> {
     const versionResult = await commandOutput(executable, definition.versionArgs, cwd);
     if (versionResult.exitCode !== 0 || versionResult.timedOut || versionResult.cancelled) throw new UnsupportedError("échec de --version ; aucun worker lancé");
     version = versionResult.captured.stdout.trim() || versionResult.captured.stderr.trim() || null;
-    await requireCapabilities(definition, executable, cwd);
+    await requireCapabilities(definition, executable, cwd, request.resume_from !== undefined ? ["--resume"] : []);
+    resumePlan = await prepareResume({
+      request,
+      cwd,
+      taskDir,
+      outputParent,
+      version,
+      skillsSha256: skillBundle.sha256,
+    });
+    const workerPrompt = resumePlan.mode === "resume"
+      ? `RESUMED CSTACK TASK\nThe disk state and the files below are authoritative. Re-read files from disk before editing. Continue the same bounded task and return only the requested JSON report.\n\nTASK BRIEF AND SHARED CONTEXT\n${context.prompt}`
+      : `${skillBundle.text}\n\nTASK BRIEF AND SHARED CONTEXT\n${context.prompt}`;
+    await writeFile(promptPath, workerPrompt);
     const schemaPath = join(outputDir, "worker-report.schema.json");
     const schemaText = JSON.stringify(WORKER_SCHEMA);
     const lastMessagePath = join(outputDir, "last-message.json");
     await writeFile(schemaPath, JSON.stringify(WORKER_SCHEMA, null, 2));
-    const built = definition.command({ request, cwd, brief: workerPrompt, promptPath, schemaPath, schemaText, lastMessagePath });
+    const built = definition.command({ request, cwd, brief: workerPrompt, promptPath, schemaPath, schemaText, lastMessagePath, resumeSessionId: resumePlan.sessionId });
+    if (resumePlan.mode === "resume" && resumePlan.lineageRoot !== null && resumePlan.sessionId !== null) {
+      await writeResumeState(resumePlan.lineageRoot, {
+        current_result: resumePlan.previousResult ?? "",
+        session_id: resumePlan.sessionId,
+        status: "RUNNING",
+        resume_count: resumePlan.resumeCount,
+        running_output_dir: outputDir,
+      });
+    }
+    launched = true;
     processResult = await runProcess({
       executable,
       argv: built.argv,
@@ -906,7 +1270,7 @@ async function runRuntime(request: RunRequest): Promise<RunResult> {
     }
     const combined = `${processResult.captured.stdout}\n${processResult.captured.stderr}`;
     if (processResult.exitCode !== 0) {
-      const execution = authLikely(combined) ? "AUTH_REQUIRED" : "NONZERO";
+      const execution = authLikely(combined) ? "AUTH_REQUIRED" : resumePlan.mode === "resume" && resumeFailureLikely(combined) ? "RESUME_FAILED" : "NONZERO";
       return await finish(runResult({
         definition,
         request,
@@ -914,7 +1278,7 @@ async function runRuntime(request: RunRequest): Promise<RunResult> {
         version,
         process: processResult,
         outputDir,
-        message: execution === "AUTH_REQUIRED" ? "authentification requise par le CLI" : `sortie non nulle: ${processResult.exitCode}`,
+        message: execution === "AUTH_REQUIRED" ? "authentification requise par le CLI" : execution === "RESUME_FAILED" ? "reprise refusée par le CLI" : `sortie non nulle: ${processResult.exitCode}`,
         worker: blocked("Runtime terminé sans rapport worker valide.", execution),
       }));
     }
@@ -931,6 +1295,19 @@ async function runRuntime(request: RunRequest): Promise<RunResult> {
         worker: blocked("Runtime terminé sans JSON worker valide.", "INVALID_OUTPUT"),
       }));
     }
+    if (resumePlan.mode === "resume" && worker.sessionId !== resumePlan.sessionId) {
+      return await finish(runResult({
+        definition,
+        request,
+        execution: "RESUME_FAILED",
+        version,
+        sessionId: worker.sessionId,
+        process: processResult,
+        outputDir,
+        message: worker.sessionId === null ? "reprise sans session_id retourné" : "reprise a retourné un session_id différent",
+        worker: blocked("Runtime terminé avec une session de reprise invalide.", "RESUME_SESSION_MISMATCH"),
+      }));
+    }
     return await finish(runResult({
       definition,
       request,
@@ -943,7 +1320,10 @@ async function runRuntime(request: RunRequest): Promise<RunResult> {
       worker: worker.worker,
     }));
   } catch (error) {
-    const execution = error instanceof UnsupportedError ? "UNSUPPORTED" : "FAILED";
+    if (finishStarted) {
+      throw error;
+    }
+    const execution = error instanceof ResumeError ? "RESUME_FAILED" : error instanceof UnsupportedError ? "UNSUPPORTED" : "FAILED";
     return await finish(runResult({
       definition,
       request,
@@ -975,7 +1355,7 @@ export async function main(argv: readonly string[], io: Io = { stdout: (value) =
   try {
     const [command, ...rest] = argv;
     if ((command === "--help" || command === "-h") && rest.length === 0) {
-      io.stdout("runtime.ts probe <codex-cli|claude-code|cursor-agent|grok>\nruntime.ts run --request <chemin JSON absolu>\nChamps : selection, brief_file, context_files?, skills?, skill_references?, cwd, output_dir, permissions, timeout_ms?\n");
+      io.stdout("runtime.ts probe <codex-cli|claude-code|cursor-agent|grok>\nruntime.ts run --request <chemin JSON absolu>\nChamps : selection, brief_file, context_files?, skills?, skill_references?, cwd, output_dir, permissions, timeout_ms?, resume_from?\n");
       return 0;
     }
     if (command === "probe") {

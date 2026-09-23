@@ -47,6 +47,16 @@ La seconde session a exécuté l’inventaire en mode aperçu : sondes des quatr
 
 La suite existante passe avec 191 tests et un cas ignoré. Le validateur de skills, les liens documentaires, l’exemple JSON contre le resolver, les types et le chargement des 29 bundles passent. Une revue indépendante a approuvé le parcours et la documentation ; aucune fonction de runtime n’a été changée.
 
+## Reprise Claude Code, 23 septembre 2026
+
+La reprise est une option explicite `resume_from` du runner, réservée à Claude Code. Le reçu précédent lie la session à son worktree, sa tâche, sa sélection, ses permissions, ses skills et sa version de CLI. Le parent continue de vérifier le code ; aucun changement de résultat métier ou gain de performance n’est revendiqué.
+
+Des appels connectés avec Claude Code 2.1.280 ont vérifié la correction dans la même session et la conservation d’une modification humaine intervenue entre les tours. Le parent a contrôlé la règle sur 101 âges. Les demandes utilisant un reçu périmé ou des permissions différentes sont refusées. Une reprise avec outils de lecture seule ne crée pas le fichier d’écriture demandé.
+
+Le runner a aussi produit `TIMEOUT` puis refusé de reprendre la lignée. Une annulation réelle par SIGTERM a produit `CANCELLED` en environ 0,53 seconde, suivie du même refus. Le test de session absente utilise un reçu CStack synthétique avec un UUID inexistant ; le CLI réel renvoie « No conversation found with session ID ». Ce message est classé `RESUME_FAILED` après correction, sans relance ni lecture des sessions privées.
+
+Les tests déterministes couvrent les changements de provenance, reçus périmés, verrous concurrents, limite de huit reprises, JSON invalide, symlinks, ID retourné absent ou différent et distinction avec une erreur d’authentification. Les contrôles passent : 55 tests Python et un ignoré, 7 tests Bun racine, 146 tests des helpers, types stricts, paquet et syntaxe Bash. Les [reçus et empreintes](evidence/claude-resume.json) distinguent les appels connectés des fixtures synthétiques. Opus 5.5, demandé avec `xhigh`, a approuvé le code puis les corrections issues de sa revue. Son identité déclarée et l’empreinte du runtime approuvé sont enregistrées. La dernière précision du test d’erreur d’écriture a été relue par le parent ; le runtime approuvé est inchangé.
+
 ## État 0.4.0
 
 Cette section décrit une campagne datée, pas l'état courant de HEAD. Mesures du 12 septembre 2026, arbre commité de la branche `feat/pstack-parity-deslop`, Python 3.9.6, Bun 1.4.2. Plugin `0.4.0`. Version amont épinglée de pstack `0.15.2`, commit `889ec4b68fa5aab0e867dad71ec3fdf386ae48f3`.

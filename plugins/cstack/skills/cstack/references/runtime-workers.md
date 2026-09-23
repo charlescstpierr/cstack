@@ -122,7 +122,19 @@ Pour Orchestrate, attache le reçu par `orch inbox push <agent> <unit> <status> 
 
 ## Reprise et limites
 
-Le point de reprise CStack reste la source des faits à revérifier et ne donne aucune autorité nouvelle. Conserve le chemin de tentative et l’ID de session retourné lorsqu’il existe. Le helper lance des tentatives bornées neuves ; il ne reprend pas automatiquement une session CLI et ne réessaie pas un run qui a pu écrire. Avant une nouvelle tentative, réconcilie les artefacts et les processus, puis complète le brief avec le travail restant. N’utilise pas `--last` ou `--continue` pour deviner une session au milieu de plusieurs workers.
+Le démarrage neuf reste le défaut. Pour une correction confiée au même worker Claude Code, le coordinateur peut ajouter `resume_from` à la requête. Sa valeur est le chemin absolu du `result.json` précédent, pas un ID de session arbitraire. Le runner utilise alors `claude --resume` avec les mêmes restrictions d’outils. Les autres runtimes refusent cette option.
+
+Une reprise exige une tentative précédente `COMPLETED`, la même tâche et le même répertoire de travail, les mêmes permissions, sélection modèle/effort, version de CLI et empreinte de skills. Conserve les briefs d’une tâche dans le même dossier et les sorties de ses tentatives sous le même parent. Chaque tentative garde un répertoire de sortie neuf. Les anciens reçus sans provenance de reprise restent consultables, mais ne permettent pas de reprendre une session.
+
+Le runner conserve la tête de la lignée dans le premier dossier de sortie et n’accepte que son dernier reçu terminé. Un verrou local empêche deux reprises concurrentes ; une lignée accepte au maximum huit reprises. Ne déplace pas les reçus d’une lignée active. Après un crash laissant un verrou, ne le supprime pas automatiquement : inspecte les processus et les fichiers, puis prépare une tentative neuve.
+
+Le prompt de reprise transmet le brief et les faits actuels via `context_files`, sans répéter le texte des skills dont l’empreinte a été vérifiée. Le worker doit relire les fichiers avant de les modifier ; le disque fait foi. Le coordinateur transmet les décisions actuelles, les changements externes et les erreurs de tests, puis vérifie le vrai diff et réexécute VERIFY. Un historique de session ne remplace aucune de ces vérifications.
+
+Une provenance incompatible, une session introuvable ou un ID retourné différent produit `RESUME_FAILED`. Les interruptions restent `TIMEOUT` ou `CANCELLED`. Un échec après lancement rend la lignée non reprenable ; le helper ne relance pas automatiquement un travail qui a pu écrire. Réconcilie les artefacts avant de préparer une nouvelle tentative sans `resume_from`.
+
+Une erreur d’arguments ou de persistance du reçu peut terminer le helper avec le code 64 et sans JSON sur stdout. Le coordinateur doit traiter toute sortie non nulle comme un échec, lire stderr et vérifier les fichiers ; il ne suppose pas qu’un reçu a pu être écrit.
+
+Les candidats indépendants et les reviewers partent de sessions neuves. N’utilise jamais la session d’un auteur pour sa revue indépendante, ni `--last` ou `--continue` pour deviner une session. CStack ne lit pas les fichiers privés du CLI ; Claude Code possède la conservation et le rechargement de sa conversation. Cette option ne partage pas les sessions entre runtimes et ne crée pas de processus permanent.
 
 Cursor est limité au profil lecture seule dans cette version ; l’écriture sans bypass n’est pas implémentée. Sa sortie JSON contient du texte à valider, sans garantie native de JSON Schema. Aucun test de compte connecté Cursor ou Grok n’est revendiqué.
 
