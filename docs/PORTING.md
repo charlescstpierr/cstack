@@ -4,7 +4,7 @@ Source : pstack 0.15.2, commit `889ec4b68fa5aab0e867dad71ec3fdf386ae48f3` de `cu
 
 `UPSTREAM.json` enregistre les 158 fichiers source et leurs identifiants Git. `PORTING.json` associe chaque fichier à une destination avec un statut et une raison. Aucun sous-ensemble issu du portage ChatGPT Web n'est utilisé comme base.
 
-Le repin 0.15.0 vers 0.15.2 apporte trois commits amont. `f8abedd` exige que chaque affirmation porte sa preuve ou son étiquette (mesuré, inféré, guess) dans la même phrase. `f5bdd68` remplace les pronoms genrés par « the operator » et demande un message de statut dans le chat. `889ec4b` aligne les rôles code-delegate `bug-fix`, `perf-issue` et `hillclimb` sur le défaut déjà utilisé par fonctionnalité et refactorisation.
+Le repin 0.15.0 vers 0.15.2 apporte trois commits amont. `f8abedd` exige que chaque affirmation porte sa preuve ou son étiquette (mesuré, inféré, guess) dans la même phrase. `f5bdd68` remplace les pronoms genrés par « the operator » et demande un message de statut dans le chat. `889ec4b` aligne les rôles code-delegate `bug-fix`, `perf-issue` et `hillclimb` sur le défaut déjà utilisé par fonctionnalité et refactorisation. Le setup cstack conserve le rôle d'exécution, mais recommande maintenant `gpt-6-astra` avec l'effort `medium` pour `bug-fix` au lieu du groupe développement `low`.
 
 ## Couverture
 
@@ -40,7 +40,7 @@ Codex qualifie les compétences de plugin avec leur espace de noms. Le nom compl
 
 - Les compétences utilisent les outils réellement exposés par Codex. Aucun appel `Task` de Cursor, chemin de transcript Cursor ou nom de modèle propre à un fournisseur n'est requis.
 - La délégation est native et limitée à la capacité de la session. Une exécution séquentielle faute de sous-agents est signalée. Une revue sur le même modèle n'est pas présentée comme une comparaison de modèles différents.
-- Les modèles et efforts sont hérités par défaut. La configuration présente six recommandations facultatives, validées dans le catalogue courant, et conserve les réglages non sélectionnés. Les objets `model` / `reasoning_effort` et les anciennes chaînes sont pris en charge. Chaque délégation transmet les deux champs sélectionnés ; si l’outil natif ne le permet pas, cstack signale la limite sans substitution ni instruction d'invite présentée comme configuration. La session principale reste inchangée.
+- Les modèles et efforts sont hérités par défaut. La configuration présente d'abord sept recommandations facultatives pour tous les rôles et positions de panel, validées dans le catalogue courant, puis seulement l'état actuel et l'héritage éventuel. Elle conserve les réglages non sélectionnés. Les objets `model` / `reasoning_effort` et les anciennes chaînes sont pris en charge. Chaque délégation transmet les deux champs sélectionnés ; si l’outil natif ne le permet pas, cstack signale la limite sans substitution ni instruction d'invite présentée comme configuration. La session principale reste inchangée.
 - Les assistants sont exécutés depuis une copie inscriptible dans le projet. Le contenu du plugin installé reste immuable.
 - La reprise repose sur les tâches accessibles, le contexte courant et des points de reprise locaux. Aucune lecture d'historiques d'autres projets ni promesse de survie de processus après fermeture de Codex.
 - Un suivi périodique requiert une capacité de planification native disponible et une demande explicite. cstack n'ajoute pas de service permanent.

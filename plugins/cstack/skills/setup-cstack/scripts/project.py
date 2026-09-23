@@ -206,14 +206,23 @@ def _merge(old: bytes | None, payload: bytes, *, owned: bool) -> bytes:
 
 
 def _agent_payload(snapshots: dict[str, bytes | None]) -> bytes:
-    lines = ["## cstack", "", "Lire [docs/agents/cstack.md](docs/agents/cstack.md) seulement après invocation explicite d’une skill cstack par l’utilisateur."]
+    lines = [
+        "## cstack",
+        "",
+        "Les consignes cstack restent inactives pendant les tâches ordinaires.",
+        "",
+        "Quand l’utilisateur invoque explicitement une skill `$cstack:*` :",
+        "",
+        "1. Lire [docs/agents/cstack.md](docs/agents/cstack.md) pour la durée de cette tâche cstack.",
+    ]
     if snapshots.get("CLAUDE.md") and snapshots["CLAUDE.md"].strip():
-        lines += ["", "Lire [CLAUDE.md](CLAUDE.md) pour les règles projet existantes quand elles s’appliquent. Ne pas les copier ici."]
+        lines.append("2. Lire [CLAUDE.md](CLAUDE.md) pour les conventions partagées qui s’appliquent, seulement pendant cette tâche cstack.")
+    lines += ["", "Sans invocation cstack explicite, ne pas charger ni appliquer ces fichiers comme instructions. Une demande utilisateur peut toujours demander de les lire ou de les modifier comme fichiers ordinaires."]
     return ("\n".join(lines) + "\n").encode()
 
 
 def _workflow_payload(tracker: dict[str, str]) -> bytes:
-    rows = ["# Guide projet cstack", "", "Lire ce fichier seulement après invocation explicite d’une skill cstack par l’utilisateur.", "", "## Flux de travail", "", "`$cstack:cstack` possède la préparation automatique et le routage d’exécution; utiliser les commandes ci-dessous pour une demande de préparation ciblée.", "", "| Flux de travail | Invocation | Règle de nombre d’agents | Clés de rôles réutilisées |", "| --- | --- | --- | --- |"]
+    rows = ["# Guide projet cstack", "", "Charger et appliquer ce fichier seulement quand l’utilisateur invoque explicitement `$cstack:*`.", "", "## Flux de travail", "", "`$cstack:cstack` possède la préparation automatique et le routage d’exécution; utiliser les commandes ci-dessous pour une demande de préparation ciblée.", "", "| Flux de travail | Invocation | Règle de nombre d’agents | Clés de rôles réutilisées |", "| --- | --- | --- | --- |"]
     for name, value in WORKFLOWS.items():
         rows.append(f"| `{name}` | `$cstack:{name}` | {value['count_rule']} | {', '.join(f'`{role}`' for role in value['roles'])} |")
     rows += ["", "## Enregistrements de domaine", "", "Utiliser le CONTEXT.md existant du projet et les conventions ADR quand ils existent. La configuration ne crée pas de CONTEXT.md ou de fichiers ADR vides.", "", "## État local", "", "Utiliser `.cstack/horizon` pour l’état Horizon. Garder `.cstack/models.json` comme source des choix de modèles et d’effort de raisonnement. La configuration n’effectue aucune configuration globale, aucun envoi distant (`push`), aucune étiquette et aucune action distante.", "", "## Limite des rôles", "", "Utiliser `hardest tasks` seulement pour l’architecture complexe explicite. La synthèse Horizon utilise `judgment and prose`.", "", "## Mode de suivi", "", f"Le mode de suivi configuré est `{tracker['mode']}`."]

@@ -17,8 +17,9 @@ GROUPS = {
         "how explorer", "how explainer", "why investigators", "why synthesizer"]),
     "simple changes": ("gpt-5.6-luna", "max", ["simple edits"]),
     "development": ("gpt-6-astra", "low", [
-        "feature, refactoring", "bug-fix", "perf-issue", "hillclimb",
+        "feature, refactoring", "perf-issue", "hillclimb",
         "swarm workers", "arena runners"]),
+    "difficult debugging": ("gpt-6-astra", "medium", ["bug-fix"]),
     "code review": ("gpt-6-astra", "low", [
         "judgment and prose", "reflect tooling",
         "reflect judgment, divergent, synthesizer",
@@ -199,7 +200,7 @@ def preview(config, digest, catalog):
         except ValueError as error:
             problem = str(error)
         recommendations[group] = {"choices": values, "unavailable": problem}
-    return {"saved": config, "sha256": digest, "recommendations": recommendations}
+    return {"recommendations": recommendations, "saved": config, "sha256": digest}
 
 
 def resolve(config, role, catalog):
