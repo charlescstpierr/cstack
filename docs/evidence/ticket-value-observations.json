@@ -1,0 +1,71 @@
+{
+  "observations": [
+    {
+      "label": "amber",
+      "arm": "current",
+      "model": "gpt-5.6-luna",
+      "effort": "max",
+      "outcome": "reject; alpha preexisting, beta introduced; hardcoded fixture limitation stated"
+    },
+    {
+      "label": "birch",
+      "arm": "current",
+      "model": "gpt-6-astra",
+      "effort": "medium",
+      "outcome": "reject; alpha preexisting, beta introduced; hardcoded fixture limitation stated"
+    },
+    {
+      "label": "dune",
+      "arm": "extra clause",
+      "model": "gpt-5.6-luna",
+      "effort": "max",
+      "outcome": "reject; alpha preexisting, beta introduced"
+    },
+    {
+      "label": "elm",
+      "arm": "extra clause",
+      "model": "gpt-6-astra",
+      "effort": "medium",
+      "outcome": "reject; alpha preexisting, beta introduced; hardcoded fixture limitation stated"
+    },
+    {
+      "label": "cedar",
+      "arm": "current",
+      "model": "claude-opus-5-5",
+      "effort": "xhigh",
+      "runtime": "claude-code",
+      "execution": "COMPLETED",
+      "outcome": "Verdict : le changement ne peut pas être livré tel quel. La validation échouait déjà avant, mais seulement sur `alpha`. Après le changement, `beta` échoue aussi. C'est un nouvel échec qui vient d'apparaître. D'après les journaux, `beta` passait sur base001 et échoue sur head002 (« total should be 10, got 0 »), avec la même commande et, selon ces journaux, le même Python et les mêmes entrées. `alpha` échoue dans les deux révisions avec le même message, donc cet échec n'est pas imputable au changement. Le code de sortie est 1 dans les deux cas, ce qui cache que la liste des échecs s'est allongée. Je n'ai pas pu relancer `python3 checks.py`, car cette session n'a pas d'outil shell. Ce verdict repose donc sur les journaux fournis, sans reproduction locale.",
+      "commands_executed": false
+    },
+    {
+      "label": "fern",
+      "arm": "extra clause",
+      "model": "claude-opus-5-5",
+      "effort": "xhigh",
+      "runtime": "claude-code",
+      "execution": "COMPLETED",
+      "outcome": "Verdict : le changement ne peut PAS être livré tel quel. Les deux révisions sortent avec le code 1, mais les échecs ne sont pas les mêmes. alpha échoue déjà avant le changement (préexistant). beta passe sur base001 et échoue sur head002 : c'est une régression introduite par le changement. Selon GUIDANCE.md:21, un même code de sortie ne prouve pas que tous les échecs sont préexistants, et une nouvelle assertion en échec reste une régression. Les deux journaux sont comparables : même commande et même environnement déclarés. Le verdict n'est donc pas INCONCLUSIVE. Limite : je n'ai rien exécuté moi-même, faute d'outil shell dans cette session. Le verdict repose seulement sur les journaux fournis.",
+      "commands_executed": false
+    }
+  ],
+  "limitations": [
+    "one synthetic fixture per arm/model",
+    "classification only; no real application bug",
+    "no claim of general quality gain",
+    "native reports returned to root; process execution inspected in reports, not model internals",
+    "Claude runner read-only had no shell tool; native agents had shell access. Do not compare cost or provider performance from these runs.",
+    "Model labels are requested selections; no independent provider attestation.",
+    "Native outcomes are paraphrased by the parent; Claude summaries are verbatim worker reports.",
+    "Ceiling effect: current guidance succeeds 3/3 on explicit PASS/FAIL labels; no general conclusion about the extra clause is supported."
+  ],
+  "fixture": {
+    "base_log": "revision: base001\ncommand: python3 checks.py\nenvironment: same Python, same inputs\nalpha: FAIL (existing configuration mismatch)\nbeta: PASS\nexit_code: 1\n",
+    "current_log": "revision: head002\ncommand: python3 checks.py\nenvironment: same Python, same inputs\nalpha: FAIL (existing configuration mismatch)\nbeta: FAIL (total should be 10, got 0)\nexit_code: 1\n",
+    "checks_py": "import sys\nprint('alpha: FAIL (existing configuration mismatch)')\nprint('beta: FAIL (total should be 10, got 0)')\nsys.exit(1)\n",
+    "prompt": "Lis GUIDANCE.md et les journaux de ce projet. La validation échoue après notre changement, mais elle échouait aussi avant. Détermine si le changement peut être livré tel quel. Vérifie localement ce qui est possible, ne modifie aucun fichier, et donne un verdict court avec les faits qui le justifient. Les liens de GUIDANCE.md sont des références du projet source, absentes de cette petite copie; utilise son contenu présent sans rechercher ces fichiers ailleurs. Tu es chargé uniquement de ce diagnostic en lecture seule, sans délégation ni action GitHub.",
+    "base_guidance_sha256": "e1a65b672df99c5a001a8897adf4d2d0156c81e0f22635c845a83194371212db",
+    "added_clause": "\nSi la base et la version courante échouent, compare les identités et causes des échecs. Un même code de sortie ne prouve pas que tous les échecs sont préexistants. Une nouvelle assertion en échec reste une régression. Si les preuves ne sont pas comparables, conclus INCONCLUSIVE.\n",
+    "base_guidance_source": "plugins/cstack/skills/cstack/playbooks/bug-fix.md@c787a12dbd76168cc0da64209e7fd99a2d73d72f"
+  }
+}
