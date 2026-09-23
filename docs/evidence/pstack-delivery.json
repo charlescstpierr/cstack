@@ -1,0 +1,78 @@
+{
+  "date": "2026-09-22",
+  "scope": "implementation-delivery parity with pinned pstack 0.15.2",
+  "base_commit": "57ea2edbc8ec1d9797dbfd6d269ef8c502172ee9",
+  "upstream_commit": "889ec4b68fa5aab0e867dad71ec3fdf386ae48f3",
+  "independent_review": {
+    "actor": "parity_audit",
+    "verdict": "APPROVE",
+    "findings": 0
+  },
+  "checks": {
+    "python_pass": 55,
+    "python_skipped": 1,
+    "bun_root_pass": 7,
+    "bun_helper_pass": 129,
+    "repository_validator": "PASS",
+    "skill_validator": "PASS",
+    "plugin_validator": "PASS",
+    "typechecks": "PASS",
+    "shell_syntax": "PASS",
+    "diff_check": "PASS"
+  },
+  "behavior": {
+    "implementation": "commit + local remote push + simulated PR create/view PASS",
+    "readonly": "no file, commit, push or PR mutation PASS",
+    "unrequested_merge": "none",
+    "head": "ef585f2253cc5003ec4c59335f8f06d31e726ba4"
+  },
+  "source_hashes": {
+    "README.md": "9733d3451d4e01ebe99fc8cd7fdc0ffa8882dc9737331dab62bcd59772b6c70a",
+    "plugins/cstack/docs/guide/02-cstack.md": "ad00172fd5ddebc81712a70565980103ee0fa9bf364e304221553392ff1af475",
+    "plugins/cstack/docs/guide/06-verify-and-ship.md": "7a024e47d3e6b2e4531364cb620843f0029cd2b19cf743a401b8124ad89a95b5",
+    "plugins/cstack/skills/cstack/SKILL.md": "d4f36a974bd5dc364b18368704c342f9618ee6703e3826701393e49bc79dc6f6",
+    "plugins/cstack/skills/cstack/playbooks/authoring-a-skill.md": "6a4b2d06aa1247493c5baed9f8e3635407682baecd3143ab3d3fba553bba50a1",
+    "plugins/cstack/skills/cstack/playbooks/autonomous-run.md": "72d0b8a3c65dc13a7d3cc662b98033ea6969e139120a6ef20775decff1243b04",
+    "plugins/cstack/skills/cstack/playbooks/autopilot-full.md": "9757b63f700c072a95b3c7eac9f9d1bfacd52e0f96676e3e5954a177874ffacc",
+    "plugins/cstack/skills/cstack/playbooks/autopilot-stack.md": "16b57306af68550c140c3a0386f687d527a52039a5c38ad6f254d54e7b3a61bc",
+    "plugins/cstack/skills/cstack/playbooks/bug-fix.md": "0fcb7a8661ae67c55be746a96b53e91e8b4046ec7449618ae9e078da0961c254",
+    "plugins/cstack/skills/cstack/playbooks/feature.md": "2b75e56a5c36dd0e139f2dcaac702966d76c3ded4eb12ababc52d25029bf6a50",
+    "plugins/cstack/skills/cstack/playbooks/hillclimb.md": "21ca4c13f96837078be2238ac72c03013865ed8992c4bfb99e54b951ed150bb3",
+    "plugins/cstack/skills/cstack/playbooks/multi-phase-plan.md": "166b3d95f98fe06e4fb4607d2f3e9c0537c4289ebc501080a8191326164b1f24",
+    "plugins/cstack/skills/cstack/playbooks/opening-a-pr.md": "b7e3985b91a0728e1372cff167a8035e23558cb0fe4ff8f1997f452aa045d156",
+    "plugins/cstack/skills/cstack/playbooks/orchestrate.md": "393959664f3c9b344e501ef6a3e4f477181062e42528b16377a9e6e851c54e06",
+    "plugins/cstack/skills/cstack/playbooks/perf-issue.md": "d321ba625be374f0027d8ba6225ba1f2edf427a244bbc3c4e7d57fd64f50a183",
+    "plugins/cstack/skills/cstack/playbooks/refactoring.md": "566ea53d0b7af08213fc24fa13f37276979595e201f0416d30f22fc87ba492a6",
+    "plugins/cstack/skills/cstack/playbooks/visual-parity.md": "55b64f85ab8b53876ecf4855e47f950c15418b7d629b9f45f42f285cd0fa09af",
+    "plugins/cstack/skills/cstack/references/codex-runtime.md": "edbf70cf38b7624cce7a40d7440c35dce8d7ac770d094a9cad67df632e5d1f2d"
+  },
+  "limits": [
+    "Delivery handoff scenario begins after implementation; it does not exercise full Feature or Arena.",
+    "Git commits and pushes use a real local bare repository. GitHub PR create/view is simulated.",
+    "Read-only trial left no persistent mutation; it created and removed transient Python cache and a fixture gh version-call log.",
+    "No merge or post-merge cleanup was performed in these scenarios.",
+    "These bounded observations do not prove identical model quality or reliability across all tasks.",
+    "Fresh bugfix trial proves worktree creation, fix, commit/push and simulated PR but not child delegation; real parent task used a separate instruction writer and reviewer."
+  ],
+  "installation": {
+    "method": "codex plugin add with command-scoped local marketplace override",
+    "version": "0.4.0",
+    "tracked_files_compared": 194,
+    "mismatches": 0,
+    "persistent_marketplace_source": "https://github.com/charlescstpierr/cstack.git",
+    "pickup": "New Codex thread loads the updated skill instructions."
+  },
+  "fresh_bugfix": {
+    "result": "PASS with capability limitation",
+    "head": "02be62b6231f1f84c658637ac13d9f78da80b19e",
+    "worktree_created": true,
+    "ownership_record": ".cstack/tasks/pstack-delivery/behavior/fresh/.cstack/tasks/slug-bugfix.md",
+    "main_unchanged": true,
+    "test_failed_before_fix": true,
+    "tests_pass_after_fix": true,
+    "commit_push_simulated_pr": true,
+    "native_child_spawned": false,
+    "delegation_limit": "No spawn tool exposed to leaf trial session; serialized single-agent review reported. Parent independently inspected final diff and ran space/tab behavior assertions.",
+    "merge_performed": false
+  }
+}

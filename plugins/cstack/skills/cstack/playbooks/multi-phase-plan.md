@@ -6,7 +6,7 @@ Suivez [le contrat d’exécution Codex](../references/codex-runtime.md).
 
 1. Si le changement touche un ou deux fichiers avec une approche évidente, explique pourquoi un plan formel n’ajoute pas de valeur et retourne le court aperçu d’exécution.
 2. Tranche les questions observables avec `prototype.md` avant d’écrire le plan. Demande seulement pour une préférence produit ou un choix matériellement divergent qu’aucune exécution ne peut trancher. Enregistre les chemins et preuves de prototype en Annexe A.
-3. Explore les zones indépendantes du dépôt avec des sous-agents natifs bornés. Ventile par défaut : au moins deux zones dès qu’elles existent. Une zone unique exige une raison nommée. Donne à chacun un périmètre en lecture seule et demande des pointeurs de fichiers, conventions, contrôles et points d’entrée. Limite le nombre d’exécutions simultanées à la capacité native et lance le travail excédentaire par vagues. Quand aucun emplacement de sous-agent n’est disponible, lance chaque exploration dans cette session comme passe séparée au périmètre redéfini, étiquette-la `single-agent` et rapporte l’indépendance manquante. Les modèles héritent sauf si `.cstack/models.json` fournit une surcharge `how explorer` disponible.
+3. Explore les zones indépendantes du dépôt avec des sous-agents natifs bornés. Ventile par défaut : au moins deux zones dès qu’elles existent. Une zone unique exige une raison nommée. Donne à chacun un périmètre en lecture seule et demande des pointeurs de fichiers, conventions, contrôles et points d’entrée. Limite le nombre d’exécutions simultanées à la capacité native et lance le travail excédentaire par vagues. Pour une capacité manquante, applique [Orchestration requise](../references/codex-runtime.md#orchestration-requise) avec `route: Swarm`. Les modèles héritent sauf si `.cstack/models.json` fournit une surcharge `how explorer` disponible.
 4. Copie le squelette ci-dessous dans `.cstack/plans/<slug>.md` sauf si l’utilisateur nomme un chemin. Remplis chaque placeholder. Garde les titres et blocs dans l’ordre. Donne à chaque PR un changement et ses propres preuves. Choisis `autopilot-full.md`, `autopilot-stack.md` ou `orchestrate.md` comme playbook d’exécution.
 5. Lis et applique `../../technical-writing/SKILL.md` et `../../unslop/SKILL.md`. Garde le corps comme mode d’emploi. Utilise les annexes pour l’explication et la référence.
 6. Résous la racine du plugin et lance `bash <plugin-root>/scripts/run-tool.sh check-plan.mjs <plan.md>`. Corrige chaque erreur rapportée.
@@ -61,7 +61,7 @@ Les tests seuls ne vérifient pas une PR. Chaque PR exige des preuves unitaires,
 ### Traiter chaque PR
 
 - [ ] Utiliser seulement git et `gh`.
-- [ ] Créer une PR ready avec `gh pr create --base <base-branch>` seulement avec autorisation. Un enfant de pile cible sa branche parent.
+- [ ] Créer une PR ready avec `gh pr create --base <base-branch>` selon la portée de livraison du contrat d’exécution. Un enfant de pile cible sa branche parent.
 - [ ] Lancer les contrôles ciblés, lint et typecheck du dépôt avant le push visible côté PR.
 - [ ] Lancer `<plugin-root>/skills/deslop/SKILL.md` sur le diff avant chaque commit. Garder `deslop skipped: <reason>` quand une étape ne peut vraiment pas s’exécuter.
 - [ ] Lire et appliquer `<plugin-root>/skills/no-comments/SKILL.md` avant revue. Cette étape est obligatoire. Elle n’est pas seulement pour une demande explicite.
@@ -71,7 +71,7 @@ Les tests seuls ne vérifient pas une PR. Chaque PR exige des preuves unitaires,
 
 ### Vérifier et livrer chaque PR
 
-- [ ] Au SHA head merge-ready, lancer les barrières, les dix voies réelles ci-dessous, la voie de performance et un audit diff-et-reçus. Limiter le nombre de voies simultanées dans la capacité native et mettre le reste en file. Un emplacement manquant sérialise une voie. Il n’en supprime jamais une. Le verdict vient d’un acteur qui n’a pas écrit le code. Quand aucun sous-agent n’est disponible, lancer une passe de revue séparée après relecture propre du diff, l’étiqueter `single-agent review` et nommer l’indépendance manquante.
+- [ ] Au SHA head merge-ready, lancer les barrières, les dix voies réelles ci-dessous, la voie de performance et un audit diff-et-reçus. Limiter le nombre de voies simultanées dans la capacité native et mettre le reste en file. Un emplacement manquant sérialise une voie. Il n’en supprime jamais une. Le verdict vient d’un acteur qui n’a pas écrit le code. Pour une capacité manquante, applique [Orchestration requise](../references/codex-runtime.md#orchestration-requise) avec `route: Review`.
 - [ ] Marquer clean seulement quand chaque voie applicable passe. Un head changé reçoit un verdict frais sauf si un patch ID inchangé préserve le verdict de code et que la CI et mergeability courantes passent.
 - [ ] Suivre la règle de merge ou append du playbook d’exécution. Ne pas fusionner sans autorisation concrète.
 

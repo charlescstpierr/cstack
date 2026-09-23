@@ -17,7 +17,7 @@ Explore le codebase pour répondre aux questions "comment X fonctionne ?". Produ
 
 Suis le chemin d'héritage direct du contrat runtime quand rien n'est configuré; sinon résous chaque rôle nommé avec son helper et transmets à chaque spawn natif la sélection complète, effort de raisonnement compris. Signale les lacunes de capacité de l'hôte au lieu de supprimer un champ sélectionné.
 
-Un subagent manquant sérialise une étape. Il ne la retire jamais. Quand aucun slot de subagent n'est disponible, exécute la passe explorer, explainer ou synthesizer dans la même session comme passe séparée et explicitement recadrée, étiquette le résultat `single-agent`, et signale l'indépendance manquante.
+Un subagent manquant suit [Orchestration requise](../cstack/references/codex-runtime.md#orchestration-requise). Il ne retire jamais une étape. Quand l'étape n'exige pas d'indépendance réelle et que la session courante possède l'orchestration, exécute la passe explorer, explainer ou synthesizer dans cette session comme passe séparée et explicitement recadrée, étiquette le résultat `single-agent`, et signale l'indépendance manquante.
 
 ## Étape 1. Poser les angles
 
@@ -31,7 +31,7 @@ Un seul angle : va à l'Étape 2b. Cette sortie exige un des trois tests ci-dess
 
 - **Cible unique.** La question nomme une seule fonction, un seul type ou un seul fichier, et tu peux citer ce chemin avant d'explorer.
 - **Fichiers indissociables.** Toute seconde tranche relirait les mêmes fichiers que la première.
-- **Délégation exclue.** La demande de l'utilisateur, le mode courant ou les permissions de la session interdisent les sous-agents.
+- **Délégation exclue.** La demande de l'utilisateur, le mode courant ou les permissions de la session interdisent la délégation de cette question dans son ensemble. Le fait que le parent possède le lancement, ou qu'un emplacement manque temporairement, n'est pas ce test.
 
 Aucun test satisfait : va à l'Étape 2a. Une impression de simplicité n'est pas un test.
 

@@ -44,7 +44,7 @@ Dérive l'intention depuis :
 
 ## Étape 3, Lancer les reviewers
 
-Résous `interrogate reviewers` une fois selon le contrat runtime. La longueur de son panneau est le nombre exact de reviewers, borné seulement par la concurrence native; mets les tentatives excédentaires en vagues. Préserve la sélection complète du modèle et de l'effort de raisonnement pour chaque position. Quand aucun slot de subagent n'est disponible, exécute chaque passe reviewer dans la même session comme passe séparée et explicitement recadrée, étiquette le résultat `single-agent` et signale l'indépendance manquante. L'absence de capacité ne supprime jamais un reviewer ni un axe. Le panneau par défaut contient trois reviewers avec ces responsabilités :
+Résous `interrogate reviewers` une fois selon le contrat runtime. La longueur de son panneau est le nombre exact de reviewers, borné seulement par la concurrence native; mets les tentatives excédentaires en vagues. Préserve la sélection complète du modèle et de l'effort de raisonnement pour chaque position. Si la capacité de revue manque, applique [Orchestration requise](../cstack/references/codex-runtime.md#orchestration-requise) avec `route: Review`. L'absence de capacité ne supprime jamais un reviewer ni un axe. Le panneau par défaut contient trois reviewers avec ces responsabilités :
 
 - Reviewer 1 : Standards, en utilisant les sources de standards fournies par le dépôt.
 - Reviewer 2 : Spec, en utilisant seulement les preuves d'exigences approuvées. Sans source approuvée, rapporte l'écart de preuve et n'invente pas d'exigences.
