@@ -87,9 +87,12 @@ Une demande de revue ou l'activation d'une compétence spécialisée n'autorise 
 
 ## Développement
 
+Les mises à jour amont passent par le [synchroniseur](docs/UPSTREAM-SYNC.md) : simulation, résolution des adaptations locales, puis application sans avancer le pin en cas de conflit. Les [faits du paquet](docs/GENERATED-FACTS.md) sont dérivés des inventaires et de l’arbre des compétences ; régénérez-les avec `bun scripts/generate-facts.mjs` après une mise à jour.
+
 Les commandes suivent l'ordre du processus `.github/workflows/validate.yml`. Installer les assistants avant tout `tsc`. Revenir à la racine avant le `tsc` du dépôt.
 
 ```sh
+bun scripts/generate-facts.mjs --check
 bun scripts/validate.ts
 python3 -m unittest discover -s tests -p 'test_*.py'
 bun test tests
@@ -100,12 +103,18 @@ bun run typecheck
 cd ../../../../..
 plugins/cstack/skills/cstack/scripts/node_modules/.bin/tsc -p tsconfig.json
 bash -n plugins/cstack/scripts/run-tool.sh plugins/cstack/skills/cstack/scripts/worktree-audit.sh plugins/cstack/skills/show-me-your-work/scripts/log.sh
+docker run --rm -v "$PWD:/repo:ro" -w /repo \
+  koalaman/shellcheck:v0.10.0@sha256:2097951f02e735b613f4a34de20c40f937a6c8f18ecb170612c88c34517221fb \
+  --severity=warning plugins/cstack/scripts/run-tool.sh plugins/cstack/skills/cstack/scripts/worktree-audit.sh plugins/cstack/skills/show-me-your-work/scripts/log.sh
+docker run --rm -v "$PWD:/repo:ro" -w /repo \
+  rhysd/actionlint:1.7.12@sha256:b1934ee5f1c509618f2508e6eb47ee0d3520686341fec936f3b79331f9315667 \
+  -no-color .github/workflows/*.yml plugins/cstack/automations/intake/templates/github-intake.yml
 git diff --check
 ```
 
 Python 3.9 ou plus récent exécute les assistants et toute la suite de tests. L'analyse du fichier `config.toml` de Codex dans `scripts/verify-behavior.py` exige Python 3.11 ou plus récent.
 
-Le [guide](plugins/cstack/docs/guide/README.md) détaille les processus. Le [rapport de vérification](docs/VERIFICATION.md) distingue les tests effectués des limites de validation. `UPSTREAM.json` identifie les fichiers source et `PORTING.json` leur destination dans cstack. Le [journal des modifications](CHANGELOG.md) décrit les versions publiées.
+Le [guide](plugins/cstack/docs/guide/README.md) détaille les processus. Le [rapport de vérification](docs/VERIFICATION.md) distingue les tests effectués des limites de validation. `UPSTREAM.json` identifie les fichiers source et `PORTING.json` leur destination dans cstack. [MAINTENANCE-SOURCES.json](MAINTENANCE-SOURCES.json) conserve la provenance des outils de développement adaptés de pstack-claude. Le [journal des modifications](CHANGELOG.md) décrit les versions publiées.
 
 ## Licence
 

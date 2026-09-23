@@ -2,7 +2,15 @@
 
 Les versions suivent SemVer. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
-## À publier
+## [0.6.0] - 2026-09-23
+
+### Ajouté
+
+- Livraison : inspection de la révision complète des PR, annulation vérifiée des merges en attente avant réécriture, condition de head côté GitHub, lease explicite et frontière enfant après squash.
+- Maintenance : synchronisation amont en trois voies avec simulation, résolutions liées aux blobs et refus d'avancer la provenance tant qu'un conflit reste ouvert.
+- Paquet : faits documentaires générés et vérifiés, ShellCheck et Actionlint en CI.
+
+### Autres changements intégrés
 
 - Comparaison optionnelle des observations base/candidat avec `compare-checks.py` : détection des nouvelles régressions dans une base déjà rouge, refus des preuves incomplètes et maintien des barrières de livraison. Aucun runner ni dépendance ajouté.
 

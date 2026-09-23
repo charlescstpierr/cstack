@@ -3,7 +3,6 @@ import { createHash } from "node:crypto";
 import { existsSync, readFileSync, readdirSync, realpathSync, statSync } from "node:fs";
 import { dirname, isAbsolute, join, relative, resolve } from "node:path";
 
-const PINNED_COMMIT = "889ec4b68fa5aab0e867dad71ec3fdf386ae48f3";
 const DIRECT_INVOCATION_ONLY: Record<string, string> = {
   "automate-me": "Utilitaire d’automatisation Cursor invoqué directement, sans passer par le routeur.",
   "bro": "Personnage conversationnel invoqué directement, sans passer par le routeur.",
@@ -16,6 +15,7 @@ const EXECUTABLES = [
   "scripts/run-tool.sh",
   "skills/cstack/scripts/worktree-audit.sh",
   "skills/cstack/scripts/watch-pr/watch-pr",
+  "skills/cstack/scripts/watch-pr/ship-pr",
   "skills/cstack/scripts/check-plan.mjs",
   "skills/show-me-your-work/scripts/log.sh",
 ];
@@ -170,7 +170,10 @@ export function validate(root: string): { skills: number; sourceFiles: number } 
 
   const inventory = json(join(root, "UPSTREAM.json"));
   const coverage = json(join(root, "PORTING.json"));
-  requireValue(inventory.commit === PINNED_COMMIT && coverage.commit === inventory.commit, "le commit amont ne correspond pas");
+  requireValue(typeof inventory.commit === "string" && /^[a-f0-9]{40}$/.test(inventory.commit)
+    && coverage.commit === inventory.commit, "le commit amont ne correspond pas");
+  requireValue(inventory.repository === "https://github.com/cursor/plugins" && inventory.subdirectory === "pstack",
+    "dépôt ou sous-arbre amont invalide");
   requireValue(Array.isArray(inventory.files) && Array.isArray(coverage.files), "inventaire des sources manquant");
   const sourcePaths = new Set<string>();
   const sourceBlobs = new Map<string, string>();
@@ -181,7 +184,7 @@ export function validate(root: string): { skills: number; sourceFiles: number } 
     sourcePaths.add(item.path);
     sourceBlobs.set(item.path, item.git_blob);
   }
-  requireValue(sourcePaths.size === 158, "l’inventaire amont doit contenir 158 fichiers");
+  requireValue(sourcePaths.size > 0, "l’inventaire amont est vide");
   const covered = new Set<string>();
   const portTargets = new Set<string>();
   for (const item of coverage.files) {
@@ -237,6 +240,25 @@ export function validate(root: string): { skills: number; sourceFiles: number } 
   }
   for (const name of ["clarify", "domain", "horizon", "audit-architecture"]) {
     requireValue(adaptedTargets.has(`skills/${name}/SKILL.md`), `provenance manquante pour ${name}`);
+  }
+
+  const deliverySources = json(join(plugin, "sources/pstack-claude.json"));
+  requireValue(deliverySources.repository === "https://github.com/michael-denyer/pstack-claude"
+    && typeof deliverySources.commit === "string" && /^[a-f0-9]{40}$/.test(deliverySources.commit)
+    && deliverySources.license === "LICENSE", "provenance pstack-claude invalide");
+  requireValue(Array.isArray(deliverySources.adaptations) && deliverySources.adaptations.length > 0,
+    "adaptations pstack-claude manquantes");
+  const deliveryTargets = new Set<string>();
+  for (const item of deliverySources.adaptations) {
+    requireValue(record(item) && typeof item.target === "string" && !deliveryTargets.has(item.target)
+      && inside(plugin, resolve(plugin, item.target)) && existsSync(resolve(plugin, item.target)), "cible pstack-claude invalide");
+    requireValue(Array.isArray(item.sources) && item.sources.length > 0, "sources pstack-claude manquantes");
+    for (const source of item.sources) {
+      requireValue(record(source) && typeof source.path === "string" && source.path.startsWith("plugins/pstack/")
+        && !source.path.split("/").includes("..") && typeof source.sha256 === "string"
+        && /^[a-f0-9]{64}$/.test(source.sha256), "empreinte pstack-claude invalide");
+    }
+    deliveryTargets.add(item.target);
   }
 
   const all = files(plugin);
@@ -403,7 +425,7 @@ export function validate(root: string): { skills: number; sourceFiles: number } 
 if (import.meta.main) {
   try {
     const result = validate(resolve(process.argv[2] ?? join(import.meta.dir, "..")));
-    console.log(`${result.skills} skills et ${result.sourceFiles} fichiers amont validés.`);
+    console.log(`${result.skills} skills et ${result.sourceFiles} références amont vérifiées contre les inventaires.`);
   } catch (error) {
     console.error(error instanceof Error ? error.message : String(error));
     process.exitCode = 1;

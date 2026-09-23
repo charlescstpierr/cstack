@@ -1,0 +1,88 @@
+{
+  "repository": "https://github.com/michael-denyer/pstack-claude",
+  "commit": "47fbcd46bbd10fbfd9e7af90714431e6d4c3788b",
+  "license": "LICENSE",
+  "adaptations": [
+    {
+      "target": "skills/cstack/scripts/watch-pr/landing.ts",
+      "sources": [
+        {
+          "path": "plugins/pstack/skills/poteto-mode/scripts/watch-pr/landing.ts",
+          "sha256": "bd4cd2bed14f8ad03d354fcbe0369197b2ed5151bc2e2e5c51e8be8a4e597d8d"
+        }
+      ]
+    },
+    {
+      "target": "skills/cstack/scripts/watch-pr/shipping.ts",
+      "sources": [
+        {
+          "path": "plugins/pstack/skills/poteto-mode/scripts/watch-pr/shipping.ts",
+          "sha256": "01e4ca815cb8b6fe072a2f39120f64cbb49bf0f74dfff71cedf86a1df0b28e9a"
+        }
+      ]
+    },
+    {
+      "target": "skills/cstack/scripts/watch-pr/shipping-cli.ts",
+      "sources": [
+        {
+          "path": "plugins/pstack/skills/poteto-mode/scripts/watch-pr/shipping-cli.ts",
+          "sha256": "e41941b7d5c7cc6c4e9eee245413db6046ef0f9cc6941ddc32fa4ca0dc2ff407"
+        }
+      ]
+    },
+    {
+      "target": "skills/cstack/scripts/watch-pr/ship-pr",
+      "sources": [
+        {
+          "path": "plugins/pstack/skills/poteto-mode/scripts/watch-pr/ship-pr",
+          "sha256": "16eebf752572625a559fe214c0463c0775d48233b4e5cec3c5af20de36926490"
+        }
+      ]
+    },
+    {
+      "target": "skills/cstack/scripts/watch-pr/shipping.test.ts",
+      "sources": [
+        {
+          "path": "plugins/pstack/skills/poteto-mode/scripts/watch-pr/shipping.test.ts",
+          "sha256": "18a2415b06b89f8bac237870773e1d78b51a9d16c8a49f3173b002a07d308bf8"
+        }
+      ]
+    },
+    {
+      "target": "skills/cstack/scripts/watch-pr/shipping-cli.test.ts",
+      "sources": [
+        {
+          "path": "plugins/pstack/skills/poteto-mode/scripts/watch-pr/shipping-cli.test.ts",
+          "sha256": "e4f950b8f9355613bea55f08bab662b2ff50aac4d8377f6010330ac52268000c"
+        }
+      ]
+    },
+    {
+      "target": "skills/cstack/scripts/watch-pr/wrapper.test.ts",
+      "sources": [
+        {
+          "path": "plugins/pstack/skills/poteto-mode/scripts/watch-pr/wrapper.test.ts",
+          "sha256": "ba3575c686cf1e29508afcfb525d950394e4d23b8b977e475ad5c8e111dc0fc3"
+        }
+      ]
+    },
+    {
+      "target": "skills/cstack/references/merge-safety.md",
+      "sources": [
+        {
+          "path": "plugins/pstack/skills/poteto-mode/references/merge-safety.md",
+          "sha256": "277f7e43aa53ee8ab526dc322e16387eca6c120fdb203e58f183d360619ddcec"
+        }
+      ]
+    },
+    {
+      "target": "skills/cstack/playbooks/shipping.md",
+      "sources": [
+        {
+          "path": "plugins/pstack/skills/poteto-mode/playbooks/shipping.md",
+          "sha256": "0a6157ae0d06c533708b1d205f8bb9d043092960d2ed5154ed0eeca6a93c79c2"
+        }
+      ]
+    }
+  ]
+}

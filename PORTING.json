@@ -1182,6 +1182,42 @@
     {
       "path": "plugins/cstack/skills/cstack/scripts/compare-checks.py",
       "reason": "Comparateur original passif en bibliothèque standard Python; aucune exécution de commandes ou lecture de références de preuve."
+    },
+    {
+      "path": "plugins/cstack/skills/cstack/references/merge-safety.md",
+      "reason": "Adaptation des protections de livraison pstack-claude ; sources et empreintes dans sources/pstack-claude.json."
+    },
+    {
+      "path": "plugins/cstack/skills/cstack/scripts/watch-pr/landing.ts",
+      "reason": "Adaptation des protections de livraison pstack-claude ; sources et empreintes dans sources/pstack-claude.json."
+    },
+    {
+      "path": "plugins/cstack/skills/cstack/scripts/watch-pr/ship-pr",
+      "reason": "Adaptation des protections de livraison pstack-claude ; sources et empreintes dans sources/pstack-claude.json."
+    },
+    {
+      "path": "plugins/cstack/skills/cstack/scripts/watch-pr/shipping-cli.test.ts",
+      "reason": "Adaptation des protections de livraison pstack-claude ; sources et empreintes dans sources/pstack-claude.json."
+    },
+    {
+      "path": "plugins/cstack/skills/cstack/scripts/watch-pr/shipping-cli.ts",
+      "reason": "Adaptation des protections de livraison pstack-claude ; sources et empreintes dans sources/pstack-claude.json."
+    },
+    {
+      "path": "plugins/cstack/skills/cstack/scripts/watch-pr/shipping.test.ts",
+      "reason": "Adaptation des protections de livraison pstack-claude ; sources et empreintes dans sources/pstack-claude.json."
+    },
+    {
+      "path": "plugins/cstack/skills/cstack/scripts/watch-pr/shipping.ts",
+      "reason": "Adaptation des protections de livraison pstack-claude ; sources et empreintes dans sources/pstack-claude.json."
+    },
+    {
+      "path": "plugins/cstack/skills/cstack/scripts/watch-pr/wrapper.test.ts",
+      "reason": "Adaptation des protections de livraison pstack-claude ; sources et empreintes dans sources/pstack-claude.json."
+    },
+    {
+      "path": "plugins/cstack/sources/pstack-claude.json",
+      "reason": "Inventaire des adaptations pstack-claude épinglées et de leur licence MIT."
     }
   ]
 }

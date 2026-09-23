@@ -1,10 +1,24 @@
 # Vérification de cstack
 
-Ce fichier distingue l'état courant des campagnes datées. Les nombres d'une section datée restent ceux de cette campagne. Ils ne décrivent pas le catalogue 0.4.0.
+Ce fichier distingue le catalogue courant des campagnes datées. Les nombres historiques restent ceux de leur campagne.
+
+## État 0.6.0
+
+Le catalogue 0.6.0 contient 29 skills, 23 références de principes et 23 guides d'exécution. La couverture conserve 158 fichiers source.
+
+Les [preuves 0.6.0](evidence/0.6.0.json) enregistrent **315 tests réussis et un ignoré** : 109 tests Python réussis sur 110 collectés, 26 tests Bun racine et 180 tests des assistants. Les deux vérifications de types, le validateur du paquet et celui du plugin, les faits générés, ShellCheck, Actionlint et la syntaxe Bash passent. Actionlint couvre aussi le workflow d’intake livré avec le plugin.
+
+Deux essais natifs ont chargé les sources cstack finales. Le premier exécute l’entrée CLI réelle sur un reçu `MERGED` et constate `not-open`, code 1, sans modifier la fixture. Le second exécute le synchroniseur sur le checkout amont au pin courant : 150 cibles, aucun changement ni conflit, avec les empreintes des deux inventaires inchangées. Les applications, résolutions de conflits, refus périmés, modes exécutables et restaurations après erreur sont exercés par les fixtures Git locales.
+
+La lecture réelle de la PR 46 et l’introspection du schéma GitHub corroborent les champs de transport. `dequeuePullRequest` attend `input.id`, un identifiant de PR. Les mutations auto-merge/file sont testées à la frontière GitHub simulée ; aucun merge ou dequeue de production n’a été exécuté. GitHub ne fournit pas de CAS sur l’identifiant de file : l’annulation reste une observation qui exige un propriétaire de topologie unique.
+
+La revue indépendante Claude/Astra/Luna a conduit à corriger les cas de résolution sans cible, les collisions de provenance, les modes Git et les consignes de livraison. Les reproductions Spec et adversariales ont été rejouées après correction. Un premier essai natif via le lanceur complet a rencontré des restrictions de cache/réseau et dépassé 240 secondes ; le test final de refus utilise l’entrée CLI avec les dépendances déjà installées, et le lanceur isolé a été vérifié séparément. Les essais natifs sont des observations uniques, pas un benchmark.
+
+Le validateur du paquet contrôle la cohérence des fichiers avec les inventaires enregistrés ; il n’authentifie pas à lui seul leur origine distante. La vérification de provenance compare aussi ces inventaires au checkout Git amont épinglé, via le synchroniseur en simulation, et les adaptations pstack-claude aux empreintes de leurs blobs source.
 
 ## État 0.5.0
 
-Le catalogue 0.5.0 contient 29 compétences, 23 principes et 23 guides d'exécution. Cette section décrit la distribution courante; les campagnes datées ci-dessous conservent leurs propres mesures et limites.
+Le catalogue 0.5.0 contient 29 compétences, 23 principes et 23 guides d'exécution. Cette section conserve le catalogue de la version 0.5.0 ; les campagnes datées ci-dessous gardent leurs propres mesures et limites.
 
 ## Workers CLI, 22 septembre 2026
 

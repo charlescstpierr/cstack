@@ -2,6 +2,8 @@
 
 Suivez [le contrat d’exécution Codex](../references/codex-runtime.md).
 
+Avant toute réécriture ou fusion, appliquez [la sécurité de fusion et de restack](../references/merge-safety.md). L’atterrissage de chaque PR suit [Expédition](shipping.md), y compris la condition serveur sur le head vérifié et les barrières durables pour une fusion différée.
+
 **Tu possèdes les verdicts. Un propriétaire mène chaque PR indépendante de la construction au merge, et aucune PR ne fusionne sans verdict indépendant.** Utilise ce playbook quand l’utilisateur autorise une file de PR et accorde l’autorité de merge dans la conversation courante. Utilise `autopilot-stack.md` quand l’utilisateur conserve l’autorité d’atterrissage.
 
 1. **Enregistrer le périmètre et l’autorité.** Marque les items que l’opérateur réserve pour revue personnelle ou merge. Si la demande ne veut qu’un protocole ou un plan, retourne cet artéfact et arrête. Enregistre la phrase exacte par laquelle l’utilisateur a accordé l’autorité de merge. Sans cette phrase, lance plutôt `autopilot-stack.md`. L’accord enregistré plus un verdict propre de non-auteur constitue l’autorisation de merge. Ce playbook ne s’autorise jamais lui-même. Enregistre l’objectif, la file, le prédicat de fin et cette phrase dans `.cstack/`.

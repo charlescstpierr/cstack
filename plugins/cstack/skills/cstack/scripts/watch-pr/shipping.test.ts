@@ -1,0 +1,313 @@
+import { describe, expect, it } from "bun:test";
+import { parsePrNumber } from "./types.ts";
+import {
+  GhShippingService,
+  cancelPending,
+  inspectLanding,
+  parseLandingRecord,
+  type LandingRecord,
+  type ShippingService,
+} from "./shipping.ts";
+
+const context = { owner: "owner", repo: "repo", number: parsePrNumber(1) };
+const empty: LandingRecord = {
+  revision: {
+    context,
+    headRefOid: "head",
+    baseRefName: "main",
+    baseRefOid: "base",
+  },
+  pullRequestId: "pr-id",
+  state: "OPEN",
+  pending: { autoMerge: false, queueEntryId: null },
+  mergeCommitOid: null,
+};
+
+function fixture(pending: LandingRecord["pending"]) {
+  let current: LandingRecord = { ...empty, pending };
+  const mutations: string[] = [];
+  const service: ShippingService = {
+    async inspect() {
+      return current;
+    },
+    async disableAutoMerge(id) {
+      expect(id).toBe("pr-id");
+      mutations.push("disable");
+      current = {
+        ...current,
+        pending: { ...current.pending, autoMerge: false },
+      };
+    },
+    async dequeue(id) {
+      expect(id).toBe("pr-id");
+      mutations.push("dequeue");
+      current = {
+        ...current,
+        pending: { ...current.pending, queueEntryId: null },
+      };
+    },
+  };
+  return {
+    service,
+    mutations,
+    read: () => current,
+    set: (value: LandingRecord) => {
+      current = value;
+    },
+  };
+}
+
+describe("cancellation des fusions en attente", () => {
+  for (const pending of [
+    { autoMerge: false, queueEntryId: null },
+    { autoMerge: true, queueEntryId: null },
+    { autoMerge: false, queueEntryId: "queue-id" },
+    { autoMerge: true, queueEntryId: "queue-id" },
+  ]) {
+    it(`retire ${JSON.stringify(pending)} et relit un état ouvert stable`, async () => {
+      const f = fixture(pending);
+      const expected = f.read();
+      expect(await cancelPending(f.service, expected)).toEqual({
+        kind: "cancelled",
+        record: empty,
+      });
+      expect(f.read().pending).toEqual({
+        autoMerge: false,
+        queueEntryId: null,
+      });
+      expect(f.mutations).toEqual([
+        ...(pending.autoMerge ? ["disable"] : []),
+        ...(pending.queueEntryId ? ["dequeue"] : []),
+      ]);
+      if (pending.autoMerge || pending.queueEntryId)
+        expect(await cancelPending(f.service, expected)).toMatchObject({
+          kind: "changed",
+          observed: { pending: empty.pending },
+        });
+      else
+        expect(await cancelPending(f.service, expected)).toEqual({
+          kind: "cancelled",
+          record: empty,
+        });
+    });
+  }
+
+  it("ne déqueue pas si désactiver auto-merge retire aussi la file", async () => {
+    const f = fixture({ autoMerge: true, queueEntryId: "queue-id" });
+    const expected = f.read();
+    f.service.disableAutoMerge = async () => {
+      f.set(empty);
+    };
+    expect(await cancelPending(f.service, expected)).toEqual({
+      kind: "cancelled",
+      record: empty,
+    });
+    expect(f.mutations).toEqual([]);
+  });
+
+  for (const observed of [
+    { autoMerge: false, queueEntryId: "q1" },
+    { autoMerge: true, queueEntryId: "q2" },
+  ]) {
+    it(`refuse un pending différent du reçu avant la première mutation: ${JSON.stringify(observed)}`, async () => {
+      const f = fixture(observed);
+      const expected = {
+        ...empty,
+        pending: { autoMerge: true, queueEntryId: "q1" },
+      };
+      expect(await cancelPending(f.service, expected)).toMatchObject({
+        kind: "changed",
+      });
+      expect(f.mutations).toEqual([]);
+    });
+  }
+
+  it("refuse une nouvelle entrée de queue avant dequeue sans la supprimer", async () => {
+    const f = fixture({ autoMerge: false, queueEntryId: "q1" });
+    const expected = f.read();
+    let reads = 0;
+    f.service.inspect = async () => {
+      const observed = f.read();
+      if (++reads === 1)
+        f.set({
+          ...observed,
+          pending: { autoMerge: false, queueEntryId: "q2" },
+        });
+      return observed;
+    };
+    expect(await cancelPending(f.service, expected)).toMatchObject({
+      kind: "changed",
+      observed: { pending: { queueEntryId: "q2" } },
+    });
+    expect(f.mutations).toEqual([]);
+    expect(f.read().pending.queueEntryId).toBe("q2");
+  });
+
+  for (const change of [
+    { revision: { ...empty.revision, headRefOid: "changed" } },
+    { revision: { ...empty.revision, baseRefName: "release" } },
+    { revision: { ...empty.revision, baseRefOid: "advanced" } },
+    { pullRequestId: "different-pr" },
+  ]) {
+    it(`refuse un enregistrement périmé avant mutation: ${JSON.stringify(change)}`, async () => {
+      const f = fixture({ autoMerge: true, queueEntryId: "queue-id" });
+      const expected = f.read();
+      f.set({ ...expected, ...change });
+      expect(await cancelPending(f.service, expected)).toMatchObject({
+        kind: "changed",
+      });
+      expect(f.mutations).toEqual([]);
+      expect(f.read().pending).toEqual(expected.pending);
+    });
+  }
+
+  it("s'arrête si la base avance pendant l'annulation", async () => {
+    const f = fixture({ autoMerge: true, queueEntryId: "queue-id" });
+    const expected = f.read();
+    const disable = f.service.disableAutoMerge;
+    f.service.disableAutoMerge = async (id) => {
+      await disable(id);
+      f.set({
+        ...f.read(),
+        revision: { ...empty.revision, baseRefOid: "advanced" },
+      });
+    };
+    expect(await cancelPending(f.service, expected)).toMatchObject({
+      kind: "changed",
+    });
+    expect(f.mutations).toEqual(["disable"]);
+    expect(f.read().pending.queueEntryId).toBe("queue-id");
+  });
+
+  it("rapporte une fusion concurrente au lieu d'autoriser une réécriture", async () => {
+    const f = fixture({ autoMerge: false, queueEntryId: "queue-id" });
+    const expected = f.read();
+    f.service.dequeue = async () => {
+      f.set({ ...empty, state: "MERGED", mergeCommitOid: "merged" });
+    };
+    expect(await cancelPending(f.service, expected)).toMatchObject({
+      kind: "not-open",
+      record: { state: "MERGED" },
+    });
+  });
+
+  it("refuse un état pending réarmé après readback", async () => {
+    const f = fixture({ autoMerge: false, queueEntryId: "queue-id" });
+    const expected = f.read();
+    f.service.dequeue = async () => {
+      f.set({ ...empty, pending: { autoMerge: true, queueEntryId: null } });
+    };
+    expect(await cancelPending(f.service, expected)).toMatchObject({
+      kind: "still-pending",
+    });
+  });
+
+  it("retourne unavailable si le readback échoue et ne continue pas", async () => {
+    const f = fixture({ autoMerge: true, queueEntryId: "queue-id" });
+    const expected = f.read();
+    let reads = 0;
+    f.service.inspect = async () => {
+      if (++reads > 1) throw new Error("offline");
+      return f.read();
+    };
+    expect(await cancelPending(f.service, expected)).toEqual({
+      kind: "unavailable",
+      detail: "offline",
+    });
+    expect(f.mutations).toEqual(["disable"]);
+  });
+});
+
+const raw = {
+  id: "pr-id",
+  state: "OPEN",
+  headRefOid: "head",
+  baseRefName: "main",
+  baseRefOid: "base",
+  autoMergeRequest: null,
+  mergeQueueEntry: null,
+  mergeCommit: null,
+};
+const response = (pullRequest: unknown) => ({
+  data: { repository: { pullRequest } },
+});
+
+describe("frontière GitHub de livraison", () => {
+  it("parse une révision complète et distingue la file seule", async () => {
+    const service = new GhShippingService(async () =>
+      response({ ...raw, mergeQueueEntry: { id: "queued" } })
+    );
+    expect(await service.inspect(context)).toEqual({
+      ...empty,
+      pending: { autoMerge: false, queueEntryId: "queued" },
+    });
+  });
+
+  for (const field of [
+    "baseRefOid",
+    "autoMergeRequest",
+    "mergeQueueEntry",
+    "mergeCommit",
+  ]) {
+    it(`traite le champ ${field} absent comme unavailable`, async () => {
+      const missing = Object.fromEntries(
+        Object.entries(raw).filter(([key]) => key !== field)
+      );
+      const service = new GhShippingService(async () => response(missing));
+      expect(await inspectLanding(service, context)).toMatchObject({
+        kind: "unavailable",
+      });
+    });
+  }
+
+  it("refuse une réponse GraphQL partielle avec erreurs", async () => {
+    const service = new GhShippingService(async () => ({
+      ...response(raw),
+      errors: [{ message: "denied" }],
+    }));
+    expect(await inspectLanding(service, context)).toMatchObject({
+      kind: "unavailable",
+    });
+  });
+
+  it("utilise deux mutations et relit les deux mécanismes", async () => {
+    let autoMergeRequest: { enabledAt: string } | null = {
+      enabledAt: "now",
+    };
+    let mergeQueueEntry: { id: string } | null = { id: "queue" };
+    const service = new GhShippingService(async (args) => {
+      const query = args.find((arg) => arg.startsWith("query=")) ?? "";
+      if (query.includes("disablePullRequestAutoMerge")) {
+        expect(args).toContain("id=pr-id");
+        autoMergeRequest = null;
+        return {
+          data: { disablePullRequestAutoMerge: { clientMutationId: null } },
+        };
+      }
+      if (query.includes("dequeuePullRequest")) {
+        expect(query).toContain("dequeuePullRequest(input:{id:$id})");
+        expect(args).toContain("id=pr-id");
+        mergeQueueEntry = null;
+        return { data: { dequeuePullRequest: { clientMutationId: null } } };
+      }
+      return response({ ...raw, autoMergeRequest, mergeQueueEntry });
+    });
+    const expected = await service.inspect(context);
+    expect(await cancelPending(service, expected)).toEqual({
+      kind: "cancelled",
+      record: empty,
+    });
+  });
+
+  it("refuse un contexte sauvegardé invalide avant de sélectionner la PR", () => {
+    expect(() =>
+      parseLandingRecord({
+        ...empty,
+        revision: {
+          ...empty.revision,
+          context: { ...context, number: -1 },
+        },
+      })
+    ).toThrow();
+  });
+});

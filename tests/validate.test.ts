@@ -25,8 +25,33 @@ test("le paquet charge 29 skills et rejette les distributions dangereuses ou inc
       cpSync(join(root, "docs/VERIFICATION.md"), join(copy, "docs/VERIFICATION.md"));
     }
     if (existsSync(join(root, "README.md"))) cpSync(join(root, "README.md"), join(copy, "README.md"));
-    expect(validate(copy)).toEqual({ skills: 29, sourceFiles: 158 });
+    const sourceFiles = JSON.parse(readFileSync(join(copy, "UPSTREAM.json"), "utf8")).files.length;
+    expect(validate(copy)).toEqual({ skills: 29, sourceFiles });
+    const snapshots = new Map(["UPSTREAM.json", "PORTING.json", "README.md", "plugins/cstack/README.md", "docs/VERIFICATION.md"]
+      .map((path) => [path, readFileSync(join(copy, path), "utf8")]));
+    try {
+      const inventory = JSON.parse(readFileSync(join(copy, "UPSTREAM.json"), "utf8"));
+      const coverage = JSON.parse(readFileSync(join(copy, "PORTING.json"), "utf8"));
+      inventory.commit = coverage.commit = "a".repeat(40);
+      inventory.files.push({ path: "pstack/new-reference.md", git_blob: "b".repeat(40) });
+      coverage.files.push({ source: "pstack/new-reference.md", target: "plugins/cstack/README.md", status: "ported", reason: "Nouvelle source regroupée." });
+      writeFileSync(join(copy, "UPSTREAM.json"), JSON.stringify(inventory));
+      writeFileSync(join(copy, "PORTING.json"), JSON.stringify(coverage));
+      for (const path of ["README.md", "plugins/cstack/README.md", "docs/VERIFICATION.md"]) {
+        writeFileSync(join(copy, path), readFileSync(join(copy, path), "utf8")
+          .replace(new RegExp(`\\b${sourceFiles}\\b`, "g"), String(sourceFiles + 1)));
+      }
+      expect(validate(copy)).toEqual({ skills: 29, sourceFiles: sourceFiles + 1 });
+      coverage.commit = "c".repeat(40);
+      writeFileSync(join(copy, "PORTING.json"), JSON.stringify(coverage));
+      expect(() => validate(copy)).toThrow(/le commit amont ne correspond pas/);
+    } finally {
+      for (const [path, text] of snapshots) writeFileSync(join(copy, path), text);
+    }
     const cases = [
+      ["UPSTREAM.json", (text: string) => text.replace("https://github.com/cursor/plugins", "https://example.invalid/other"), /dépôt ou sous-arbre amont invalide/],
+      ["plugins/cstack/sources/pstack-claude.json", (text: string) => text.replace(/"sha256": "[a-f0-9]+"/, '"sha256": "invalid"'), /empreinte pstack-claude invalide/],
+      ["plugins/cstack/sources/pstack-claude.json", (text: string) => text.replace(/"target": "[^"]+"/, '"target": "../../README.md"'), /cible pstack-claude invalide/],
       ["plugins/cstack/.codex-plugin/plugin.json", (text: string) => text.replace('"name": "cstack"', '"name": "other"'), /identité du manifeste/],
       ["plugins/cstack/skills/cstack/agents/openai.yaml", (text: string) => text.replace("allow_implicit_invocation: false", "allow_implicit_invocation: true"), /invocation explicite/],
       ["plugins/cstack/skills/cstack/agents/openai.yaml", (text: string) => text.replace("$cstack:cstack", "$cstack"), /invocation canonique/],
