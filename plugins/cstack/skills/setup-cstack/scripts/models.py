@@ -200,7 +200,7 @@ def preview(config, digest, catalog):
         except ValueError as error:
             problem = str(error)
         recommendations[group] = {"choices": values, "unavailable": problem}
-    return {"saved": config, "sha256": digest, "recommendations": recommendations}
+    return {"recommendations": recommendations, "saved": config, "sha256": digest}
 
 
 def resolve(config, role, catalog):

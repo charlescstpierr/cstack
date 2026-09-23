@@ -66,7 +66,7 @@ La configuration ne promet pas de planification persistante, de messages externe
 
 ## Préparer les instructions du projet
 
-La configuration propose aussi un aperçu des fichiers du projet avant application. `AGENTS.md` reçoit un bloc cstack délimité, qui renvoie au guide `docs/agents/cstack.md`. Le texte autour de ce bloc reste intact. Si `CLAUDE.md` existe, son contenu reste intact ; les conventions communes peuvent être référencées sans copie. Aucune règle globale n'est écrite et la présence du bloc n'active pas cstack.
+La configuration propose aussi un aperçu des fichiers du projet avant application. `AGENTS.md` reçoit un bloc cstack délimité, qui charge le guide `docs/agents/cstack.md` comme instructions seulement pendant une tâche où vous invoquez `$cstack:*`. Si `CLAUDE.md` existe, la même limite s'applique à son utilisation comme instructions. Une tâche ordinaire peut toujours lire ou modifier ces fichiers quand vous le demandez. Le texte autour du bloc et le contenu de `CLAUDE.md` restent intacts. Aucune règle globale n'est écrite et la présence du bloc n'active pas cstack. Après une modification de `AGENTS.md`, ouvrez une nouvelle conversation App ou une nouvelle session CLI pour charger le nouveau bloc. Les choix de `.cstack/models.json` s'appliquent sans redémarrage aux rôles résolus après leur écriture; un délégué déjà lancé garde sa sélection.
 
 Pour Horizon, la configuration reprend le document de suivi `docs/agents/issue-tracker.md` s'il existe, ou présente le choix entre les fichiers locaux et GitHub. Un choix GitHub enregistre le dépôt ciblé sans créer d'issue, de label ou de dépendance distante. Les termes et ADRs suivent les conventions du projet ; la configuration ne crée pas de glossaire vide.
 

@@ -4,7 +4,7 @@ Source : pstack 0.15.2, commit `889ec4b68fa5aab0e867dad71ec3fdf386ae48f3` de `cu
 
 `UPSTREAM.json` enregistre les 158 fichiers source et leurs identifiants Git. `PORTING.json` associe chaque fichier à une destination avec un statut et une raison. Aucun sous-ensemble issu du portage ChatGPT Web n'est utilisé comme base.
 
-Le repin 0.15.0 vers 0.15.2 apporte trois commits amont. `f8abedd` exige que chaque affirmation porte sa preuve ou son étiquette (mesuré, inféré, guess) dans la même phrase. `f5bdd68` remplace les pronoms genrés par « the operator » et demande un message de statut dans le chat. `889ec4b` aligne les rôles code-delegate `bug-fix`, `perf-issue` et `hillclimb` sur le défaut déjà utilisé par fonctionnalité et refactorisation.
+Le repin 0.15.0 vers 0.15.2 apporte trois commits amont. `f8abedd` exige que chaque affirmation porte sa preuve ou son étiquette (mesuré, inféré, guess) dans la même phrase. `f5bdd68` remplace les pronoms genrés par « the operator » et demande un message de statut dans le chat. `889ec4b` aligne les rôles code-delegate `bug-fix`, `perf-issue` et `hillclimb` sur le défaut déjà utilisé par fonctionnalité et refactorisation. Le setup cstack conserve le rôle d'exécution, mais recommande maintenant `gpt-6-astra` avec l'effort `medium` pour `bug-fix` au lieu du groupe développement `low`.
 
 ## Couverture
 

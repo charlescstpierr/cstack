@@ -4,6 +4,8 @@ Les versions suivent SemVer. Le format suit [Keep a Changelog](https://keepachan
 
 ## À publier
 
+- `setup-cstack` présente sept groupes de modèles avant l'état d'héritage. `bug-fix` recommande `gpt-6-astra` avec l'effort `medium`. Le bloc `AGENTS.md` charge les guides cstack et `CLAUDE.md` comme instructions seulement après une invocation `$cstack:*`, sans interdire leur lecture ordinaire demandée par l'utilisateur.
+- Le setup distingue l'activation immédiate de `.cstack/models.json` pour les rôles résolus après l'écriture du rechargement de `AGENTS.md` dans une nouvelle conversation App ou session CLI.
 - Installation des dépendances des helpers isolée du workspace inspecté. `bun install` reçoit `--ignore-scripts` et `--no-env-file`, tandis que le redémarrage conserve les drapeaux Bun et les arguments utilisateur.
 - Frontière d'orchestration : `frontier.set` enregistre le premier PR fermé non fusionné dans `closedGap`, sans déplacer la frontière du plus bas PR ouvert.
 - Le vérificateur de plans multi-PR suit le gabarit courant français/anglais et teste directement le bloc réel borné à la capacité native.

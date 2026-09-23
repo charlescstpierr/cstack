@@ -29,6 +29,7 @@ class ModelSetupTests(unittest.TestCase):
             path = Path(directory) / ".cstack/models.json"
             config, digest = models.read_config(path)
             preview = models.preview(config, digest, CATALOG)
+            self.assertEqual(list(preview), ["recommendations", "saved", "sha256"])
             self.assertFalse(path.exists(), "l’aperçu doit rester en lecture seule")
             choices = {}
             expected = {}
