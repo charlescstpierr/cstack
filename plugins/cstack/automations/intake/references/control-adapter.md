@@ -4,7 +4,7 @@ Intake does not know how to start or drive every app. The operator must configur
 
 Set its name in `control.adapter_name`. Point `connectors.control.mcp_server` at an MCP server registered with `codex mcp add` when the adapter lives there. A session browser or simulator that already exposes the seven operations is valid. Named tools go in `connectors.control.tools` only when the server actually exposes those names.
 
-Set the completed user-facing feature map path in `control.feature_map_path`. Copy and fill [feature-map.example.md](feature-map.example.md) to `.cstack/intake/feature-map.md` instead of editing the pack copy.
+Set the completed user-facing feature map path in `control.feature_map_path`. Copy and fill [feature-map.example.md](feature-map.example.md) to <code>.github/cstack/intake/feature-map.md</code> instead of editing the pack copy.
 
 If the adapter, feature map, or a required capability is absent, ambiguous, or incomplete, reproduce and fix work must fail closed. The GitHub Actions Codex step uses the read-only sandbox, which has no network, so an adapter that needs the network is a block.
 

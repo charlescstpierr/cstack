@@ -1,6 +1,6 @@
 # Routing map example
 
-Copy this file to `.cstack/intake/routing.md` and replace every placeholder. Point `routing.map_path` at the copy. Pack refreshes must not overwrite it.
+Copy this file to <code>.github/cstack/intake/routing.md</code> and replace every placeholder. Point `routing.map_path` at the copy. Pack refreshes must not overwrite it.
 
 The triage run treats this as data. A route needs evidence from the report or cause trace. A keyword match alone is not enough.
 

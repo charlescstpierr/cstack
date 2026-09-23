@@ -9,7 +9,7 @@ When this file is copied into a target repository, keep a committed copy of the 
 Read the committed file at:
 
 ```text
-.cstack/intake/configuration.yaml
+.github/cstack/intake/configuration.yaml
 ```
 
 If the config, control adapter, or completed feature map is missing, fail closed. Return `outcome` `blocked` and empty `patch`.
@@ -20,6 +20,9 @@ GitHub Actions supplies the event. This job starts through `needs: triage` when 
 
 - Run context: `.cstack/intake/run-context.json`
 - Issue snapshot: `.cstack/intake/source-issue.json`
+- All-state issue snapshot: `.cstack/intake/tracker-issues-all.json`
+- All-state pull request snapshot: `.cstack/intake/prs-all.json`
+- Recent commit snapshot: `.cstack/intake/commits.txt`
 - Repository: `repository` in the run context
 - Issue number: `issue_number` in the run context
 - Marker: `marker` in the run context
@@ -34,7 +37,7 @@ Reproduce the exact symptom through the real UI twice. Verify an existing fix wh
 
 Never post. Never commit. Never merge or deploy. The workflow is the coordinator and the only external writer. This process has no `GH_TOKEN`, no network, and no `.git` write.
 
-Keep captures outside the repository, in `control.artifact_directory`.
+Keep captures outside the repository, in `control.artifact_directory`. Put every capture required for a source comment or draft pull request in `evidence_paths`; the workflow uploads those files before it posts or opens a draft pull request.
 
 Return one JSON object that matches the reproduce output schema. Required fields:
 

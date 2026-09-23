@@ -2,7 +2,7 @@
 
 Map every user-facing feature this pack may reproduce. Read the relevant section before driving the app. Keep this map at the user point of view. Discover internals and current code paths at runtime instead of freezing them here.
 
-Copy this file to `.cstack/intake/feature-map.md` and set `control.feature_map_path` to that copy. Pack refreshes must not overwrite the copy.
+Copy this file to <code>.github/cstack/intake/feature-map.md</code> and set `control.feature_map_path` to that copy. Pack refreshes must not overwrite the copy.
 
 Follow [the Codex runtime contract](../../../skills/cstack/references/codex-runtime.md).
 

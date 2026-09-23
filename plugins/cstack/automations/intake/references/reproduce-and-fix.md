@@ -69,6 +69,8 @@ Stop when a person clearly claims the fix, gives a concrete implementation plan,
 
 If an open pull request or merged commit plausibly fixes this report, switch to [verify-existing-fix.md](verify-existing-fix.md). A claim without a commit or pull request is not a fix artifact. If a person owns the work but has not produced an artifact, stop. Do not race them.
 
+Use `.cstack/intake/prs-all.json` and `.cstack/intake/commits.txt` for the first fix-artifact pass. Treat those files as snapshots from before the no-network Codex run. If they are missing, fail closed instead of assuming that no fix exists.
+
 ## 4. Optional operations status
 
 If `source.connector.operations_channel_id` is set, do not post there. Put the status string in `status_label`. The workflow is the only writer.
@@ -113,7 +115,7 @@ An expected dialog, loading state, or setup step is not the bug. Use `budgets.re
 
 ## 8. Capture evidence
 
-For a successful repro: record the full path, capture a screenshot of the broken final state, save a short note with the exact steps, and keep artifacts in `control.artifact_directory`. Put those paths in `evidence_paths`.
+For a successful repro: record the full path, capture a screenshot of the broken final state, save a short note with the exact steps, and keep artifacts in `control.artifact_directory`. Put those paths in `evidence_paths` so the workflow can upload them before runner teardown.
 
 Have a read-only media reviewer answer one question: does the evidence visibly show the discriminating broken state? If the answer is no or uncertain, the repro is not confirmed.
 

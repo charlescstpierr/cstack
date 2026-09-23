@@ -12,18 +12,18 @@ Copy these files into the target repository. Do not point a workflow at the plug
 
 | Pack file | Copy to |
 | --- | --- |
-| [templates/configuration.example.yaml](templates/configuration.example.yaml) | `.cstack/intake/configuration.yaml` |
-| [templates/github-intake.yml](templates/github-intake.yml) | `.github/workflows/intake.yml` |
-| [templates/triage-prompt.md](templates/triage-prompt.md) | `.cstack/intake/prompts/triage.md` |
-| [templates/reproduce-prompt.md](templates/reproduce-prompt.md) | `.cstack/intake/prompts/reproduce.md` |
-| [templates/triage-result.schema.json](templates/triage-result.schema.json) | `.cstack/intake/schemas/triage-result.schema.json` |
-| [templates/reproduce-result.schema.json](templates/reproduce-result.schema.json) | `.cstack/intake/schemas/reproduce-result.schema.json` |
-| [references/triage.md](references/triage.md) | `.cstack/intake/references/triage.md` |
-| [references/reproduce-and-fix.md](references/reproduce-and-fix.md) | `.cstack/intake/references/reproduce-and-fix.md` |
-| [references/verify-existing-fix.md](references/verify-existing-fix.md) | `.cstack/intake/references/verify-existing-fix.md` |
-| [references/control-adapter.md](references/control-adapter.md) | `.cstack/intake/references/control-adapter.md` |
-| [references/routing.example.md](references/routing.example.md) | `.cstack/intake/routing.md` |
-| [references/feature-map.example.md](references/feature-map.example.md) | `.cstack/intake/feature-map.md` |
+| [templates/configuration.example.yaml](templates/configuration.example.yaml) | <code>.github/cstack/intake/configuration.yaml</code> |
+| [templates/github-intake.yml](templates/github-intake.yml) | <code>.github/workflows/intake.yml</code> |
+| [templates/triage-prompt.md](templates/triage-prompt.md) | <code>.github/cstack/intake/prompts/triage.md</code> |
+| [templates/reproduce-prompt.md](templates/reproduce-prompt.md) | <code>.github/cstack/intake/prompts/reproduce.md</code> |
+| [templates/triage-result.schema.json](templates/triage-result.schema.json) | <code>.github/cstack/intake/schemas/triage-result.schema.json</code> |
+| [templates/reproduce-result.schema.json](templates/reproduce-result.schema.json) | <code>.github/cstack/intake/schemas/reproduce-result.schema.json</code> |
+| [references/triage.md](references/triage.md) | <code>.github/cstack/intake/references/triage.md</code> |
+| [references/reproduce-and-fix.md](references/reproduce-and-fix.md) | <code>.github/cstack/intake/references/reproduce-and-fix.md</code> |
+| [references/verify-existing-fix.md](references/verify-existing-fix.md) | <code>.github/cstack/intake/references/verify-existing-fix.md</code> |
+| [references/control-adapter.md](references/control-adapter.md) | <code>.github/cstack/intake/references/control-adapter.md</code> |
+| [references/routing.example.md](references/routing.example.md) | <code>.github/cstack/intake/routing.md</code> |
+| [references/feature-map.example.md](references/feature-map.example.md) | <code>.github/cstack/intake/feature-map.md</code> |
 
 Commit the copies. Fill every placeholder. Then enable the workflow.
 
@@ -41,8 +41,8 @@ Slack is not a wake. If the source is a Slack channel, register an MCP server wi
 
 One workflow file, one run per report.
 
-1. **triage** checks out the repository, fail-closes if the installed files are missing, snapshots the issue with `gh` and `GITHUB_TOKEN`, runs Codex in the read-only sandbox with the triage schema, exposes `marker` and `comment_body` as job outputs, posts the single verdict comment from a `run:` step, and applies tracker labels only when the JSON says `create_tracker` is true for a bug or performance marker.
-2. **reproduce** uses `needs: triage` and runs only when that output marker is `[intake:bug]` or `[intake:performance]`. It snapshots the issue again, runs Codex in the read-only sandbox with the reproduce schema, posts an optional source comment from a `run:` step, then applies a returned patch, pushes a branch, and opens a draft pull request with `GITHUB_TOKEN`.
+1. **triage** checks out the repository, fail-closes if the installed files are missing, requires `source.repository` to match `GITHUB_REPOSITORY`, snapshots the source issue, all-state issues, all-state pull requests, and recent commits, runs Codex in the read-only sandbox with the triage schema, uploads the triage evidence artifact, posts the single verdict comment from a `run:` step, and applies tracker labels only when the JSON says `create_tracker` is true for a bug or performance marker.
+2. **reproduce** uses `needs: triage` and runs only when that output marker is `[intake:bug]` or `[intake:performance]`. It snapshots the issue, all-state issues, all-state pull requests, and recent commits before Codex runs. After Codex returns, it uploads local proof files named in `evidence_paths` before it posts an optional source comment or opens a draft pull request. Retry branches include both `GITHUB_RUN_ID` and `GITHUB_RUN_ATTEMPT`.
 
 Codex never posts, never commits, never calls the network. The workflow is the coordinator and the only external writer.
 
@@ -50,6 +50,7 @@ Shared rules, unchanged:
 
 - Source coordinates are immutable after freeze.
 - Fail closed on missing config, missing adapter capability, or mismatched source.
+- `source.repository` uses the `owner/repo` slug format from `GITHUB_REPOSITORY`, not a GitHub URL.
 - The coordinator is the only external writer.
 - Never merge or deploy.
 - Exactly one verdict comment carrying exactly one marker.
@@ -62,7 +63,7 @@ Shared rules, unchanged:
 ## Install
 
 1. Copy the files above into the target repository.
-2. Fill `.cstack/intake/configuration.yaml`. Secrets stay in the GitHub Actions secret store or in the Codex CLI login. Do not put token values in the YAML.
+2. Fill <code>.github/cstack/intake/configuration.yaml</code>. Set `source.repository` and `repository.slug` to the same `owner/repo` value as `GITHUB_REPOSITORY`. Secrets stay in the GitHub Actions secret store or in the Codex CLI login. Do not put token values in the YAML.
 3. Copy [references/control-adapter.md](references/control-adapter.md) requirements onto a control adapter you own. Fill the feature map. Run the nine-step adapter smoke in that file before enabling reproduce.
 4. Register any extra connectors with `codex mcp add`, then `codex mcp list` to confirm. Declare the same names under `[mcp_servers.<name>]` in user `~/.codex/config.toml` or a trusted project `.codex/config.toml`.
 5. Store `OPENAI_API_KEY` as a repository secret if the workflow uses API-key auth. Local `codex exec` reuses saved CLI auth.
@@ -100,7 +101,7 @@ The action also accepts inline `output-schema`. This pack uses `output-schema-fi
 Local smoke, from a git repository, after the copies exist:
 
 ```sh
-codex exec --cd . -s read-only --output-schema .cstack/intake/schemas/triage-result.schema.json -o /tmp/intake-last.json --json "Read .cstack/intake/prompts/triage.md and return the JSON object the schema requires. Do not post."
+codex exec --cd . -s read-only --output-schema .github/cstack/intake/schemas/triage-result.schema.json -o /tmp/intake-last.json --json "Read .github/cstack/intake/prompts/triage.md and return the JSON object the schema requires. Do not post."
 ```
 
 ## Limits

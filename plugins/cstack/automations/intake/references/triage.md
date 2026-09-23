@@ -103,7 +103,7 @@ When `connectors.tracker.mcp_server` is empty and `tracker.type` is `github_issu
 
 ## 7. Dedupe
 
-Always check whether this source permalink is already linked to a tracker issue or a prior triage reply. Read `.cstack/intake/tracker-open.json`. If so, do not ask the workflow to post or create a duplicate: empty `comment_body`, `create_tracker` false, `stop_reason` naming the duplicate.
+Always check whether this source permalink is already linked to a tracker issue or a prior triage reply. Read `.cstack/intake/tracker-issues-all.json`, `.cstack/intake/prs-all.json`, and `.cstack/intake/commits.txt`. If a duplicate exists, do not ask the workflow to post or create another item: empty `comment_body`, `create_tracker` false, and `stop_reason` naming the duplicate.
 
 For bugs and performance reports, search using exact error signature, product area, trigger, symptom, version or date window, suspected regression commit, and source permalink.
 

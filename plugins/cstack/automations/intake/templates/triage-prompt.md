@@ -9,7 +9,7 @@ When this file is copied into a target repository, keep a committed copy of the 
 Read the committed file at:
 
 ```text
-.cstack/intake/configuration.yaml
+.github/cstack/intake/configuration.yaml
 ```
 
 If that file is missing, malformed, or incomplete, stop. Return `marker` `[intake:other]`, empty `comment_body`, `create_tracker` false, and a `stop_reason`. Write nothing externally.
@@ -20,7 +20,9 @@ GitHub Actions supplies the event. Freeze coordinates from the snapshot files. D
 
 - Run context: `.cstack/intake/run-context.json`
 - Issue snapshot: `.cstack/intake/source-issue.json`
-- Open issues snapshot: `.cstack/intake/tracker-open.json`
+- All-state issue snapshot: `.cstack/intake/tracker-issues-all.json`
+- All-state pull request snapshot: `.cstack/intake/prs-all.json`
+- Recent commit snapshot: `.cstack/intake/commits.txt`
 - Repository: `repository` in the run context
 - Issue number: `issue_number` in the run context
 
