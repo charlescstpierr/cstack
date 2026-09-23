@@ -465,6 +465,10 @@ def score_routes(observed, expectation):
 def require_route_trace():
     if not shutil.which("strace"):
         raise HarnessError("--trace-routes exige strace sous Linux")
+    options = subprocess.run(["strace", "--help"], capture_output=True, text=True,
+                             timeout=10, check=False)
+    if "--kill-on-exit" not in options.stdout:
+        raise HarnessError("--trace-routes exige strace avec --kill-on-exit")
     with tempfile.TemporaryDirectory() as directory:
         result = subprocess.run(
             ["strace", "-o", str(Path(directory) / "probe"), sys.executable, "-c", "pass"],
@@ -598,7 +602,7 @@ def run_case(case, output, command, model, effort, timeout, trace_routes=False):
     error = None
     parent_thread = None
     trace_prefix = case_dir / "route-open"
-    actual_command = (["strace", "-ff", "-e", "trace=openat,openat2", "-s", "4096",
+    actual_command = (["strace", "-ff", "--kill-on-exit", "-e", "trace=openat,openat2", "-s", "4096",
                        "-o", str(trace_prefix), *command] if trace_routes else command)
     try:
         server = AppServer(actual_command, case["cwd"], raw_path, stderr_path)
