@@ -1,6 +1,6 @@
 interface:
   display_name: "audit-architecture"
   short_description: "Auditer l'architecture sans changer le code"
-  default_prompt: "Utilise $cstack:audit-architecture pour cette tâche. Utilise au plus un explorateur borné comme sous-agent natif."
+  default_prompt: "Utilise $cstack:audit-architecture pour cette tâche. Si la carte ne gagne aucune couverture séparée utile, inspecte-la directement; sinon je demande au moins deux explorateurs natifs sur des angles distincts, normalement trois quand trois angles utiles existent."
 policy:
   allow_implicit_invocation: false

@@ -13,6 +13,20 @@ Donnez :
 
 Pour les migrations ou tâches longues, utilisez [`$cstack:figure-it-out`](../../skills/figure-it-out/SKILL.md) et [`$cstack:show-me-your-work`](../../skills/show-me-your-work/SKILL.md). Le journal reste dans l'espace de travail afin d'être relu.
 
+## Un Goal pour toute la livraison
+
+Pour une implémentation multi-phase, le prompt proposé par le sélecteur cstack contient une demande explicite de Goal natif. Elle doit figurer dans le message réellement envoyé. Une invocation nue de `$cstack:cstack` ne l'active pas. Vous pouvez aussi écrire :
+
+```text
+$cstack:cstack ajoute cette fonctionnalité. Je demande un Goal natif global jusqu'à une PR testée et revue. Utilise les agents configurés.
+```
+
+Le coordinateur conserve le même objectif pendant l'exploration, l'implémentation, les tests, la revue et l'ouverture de PR. Il annonce les playbooks, les skills et les appels d'agents avec leur runtime, modèle et effort, puis actualise la todo. Une exploration déléguée utilise au moins deux explorateurs, normalement trois angles distincts, en vagues si nécessaire.
+
+La PR prête pour revue est la fin par défaut. Une demande « local seulement » arrête plus tôt ; merge, installation et déploiement exigent une autorisation explicite. Les questions et petites modifications mécaniques suivent le parcours ordinaire. Sans outils Goal, cstack signale la limite et poursuit au premier plan sans annoncer un Goal actif.
+
+La boucle fonctionne aussi en journée. Elle continue tant que le résultat convenu reste à atteindre et que la session le permet. Une pause demandée suspend le Goal ; un blocage réel ou une limite native est rapporté sans recréer d'objectif pour le contourner. Aucun budget n'est ajouté sans demande. Fermer l'application ne garantit pas la continuation.
+
 ## Ce que fait la boucle
 
 ```text

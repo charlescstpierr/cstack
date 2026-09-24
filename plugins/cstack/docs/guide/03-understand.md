@@ -10,7 +10,7 @@ $cstack:how comment cette initialisation fonctionne-t-elle ? Montre le flux, les
 
 [`$cstack:how`](../../skills/how/SKILL.md) explique le flux d'exécution et les couches utiles. Il convient avant une modification ou une question de placement.
 
-Par défaut, `how` découpe la question en deux à quatre angles, envoie un explorateur en lecture seule par angle, puis fait synthétiser une explication unique. Une question qui nomme une seule fonction, un seul type ou un seul fichier reste sur une passe unique, et la réponse indique alors quel test a autorisé cette exception. Une demande qui interdit la délégation reste également sur une passe unique.
+Par défaut, `how` découpe la question en angles distincts, normalement trois quand ils sont utiles, envoie au moins deux explorateurs en lecture seule quand l'exploration est déléguée, puis fait synthétiser une explication unique. Une cible unique suit la même règle si elle est déléguée ; elle reste une passe directe du parent seulement si la délégation est explicitement exclue ou réellement indisponible. Une demande qui interdit la délégation reste sur une passe directe.
 
 ## Chercher les raisons avec `$cstack:why`
 

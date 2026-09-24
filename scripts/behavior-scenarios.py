@@ -301,23 +301,23 @@ def filter_events(events, start, today):
 1. Quel fait détermine la durée de conservation et la fréquence des sauvegardes ?
 2. Quel fait détermine la procédure de retour arrière ?
 """
-    horizon_first = """Utilise $cstack:horizon pour organiser ce travail sur plusieurs sessions. La destination est déjà définie : migrer les archives d’événements vers un stockage en ajout seul, sans perte de données et avec un retour arrière possible pendant 14 jours. J’autorise l’écriture des documents de planification Horizon dans .cstack/horizon/, mais ne modifie pas le code du produit et ne crée ni PR ni objectif natif. Le README fourni est la source principale pour deux questions de recherche en lecture seule. Crée exactement ces tickets : 001 recherche les faits de conservation et sauvegarde dans le README ; 002 recherche les faits de retour arrière dans le README ; 003 est une décision humaine de politique bloquée par 001 et 002 ; 004 est une décision humaine de politique bloquée par 003. Affecte un sous-agent natif de recherche à chaque ticket de recherche prêt en utilisant le rôle how explorer configuré. Lors de cette invocation, résous uniquement 001 et 002 ; laisse 003 et 004 ouverts. Ne réponds pas à la place d’un humain."""
+    horizon_first = """Utilise $cstack:horizon pour organiser ce travail sur plusieurs sessions. La destination est déjà définie : migrer les archives d’événements vers un stockage en ajout seul, sans perte de données et avec un retour arrière possible pendant 14 jours. J’autorise l’écriture des documents de planification Horizon dans .cstack/horizon/, mais ne modifie pas le code du produit et ne crée ni PR ni objectif natif. Le README fourni est la source principale pour deux questions de recherche en lecture seule. Crée exactement ces tickets : 001 recherche les faits de conservation et sauvegarde dans le README ; 002 recherche les faits de retour arrière dans le README ; 003 est une décision humaine de politique bloquée par 001 et 002 ; 004 est une décision humaine de politique bloquée par 003. Pour chaque ticket de recherche prêt, affecte exactement deux enfants natifs de recherche sur deux angles distincts en utilisant le rôle how explorer configuré; conserve un handle et un artefact par angle et attends les quatre résultats avant de résoudre 001 ou 002. Lors de cette invocation, résous uniquement 001 et 002 ; laisse 003 et 004 ouverts. Ne réponds pas à la place d’un humain."""
     horizon_second = """Utilise $cstack:horizon pour reprendre depuis l’état Horizon existant. Résous uniquement le ticket 003 avec cette décision utilisateur : conserver les événements source pendant 90 jours, garder les instantanés nocturnes pendant 30 jours et exiger un retour arrière possible pendant 14 jours. Le ticket 004 doit rester ouvert, car il dépend de 003 et n’a aucune réponse humaine. L’écriture des documents du plan reste autorisée ; ne modifie pas le code du produit et ne crée ni PR ni objectif natif. Vérifie les documents de recherche de 001 et 002 avant d’enregistrer 003 et ne réponds pas à 004."""
     register(cases, expectations, case_id="horizon_two_research_then_policy",
              project=create_project(output, "fir", {"README.md": horizon_readme}, ["how explorer"], catalog),
              bundle=new, skill="horizon", roles=["how explorer"],
-             bodies=[horizon_first, horizon_second], expected_children=2)
+             bodies=[horizon_first, horizon_second], expected_children=4)
 
     audit_files = {
         "src/users.py": 'def username(user):\n    return user["name"].strip().lower()\n',
         "src/orders.py": 'def owner_name(order):\n    return order["owner"].strip().lower()\n',
         "src/reports.py": 'def actor_name(report):\n    return report["actor"].strip().lower()\n',
     }
-    audit = """Utilise $cstack:audit-architecture sur le périmètre src/. Lis directement la compétence indiquée, puis dresse une enquête d'architecture en lecture seule sur le point chaud de normalisation des noms d'utilisateur dans ces trois modules. Utilise au plus un explorateur borné si la délégation native est disponible. Ne modifie aucun fichier. Rapporte les chemins, symboles, appelants, preuves et la profondeur d'interface observée; toute forme proposée doit rester explicitement non vérifiée."""
+    audit = """Utilise $cstack:audit-architecture sur le périmètre src/. Lis directement la compétence indiquée, puis dresse une enquête d'architecture en lecture seule sur le point chaud de normalisation des noms d'utilisateur dans ces trois modules. Utilise exactement deux explorateurs bornés sur deux angles distincts; conserve les builders et reviewers hors de ce panel. Ne modifie aucun fichier. Rapporte les chemins, symboles, appelants, preuves et la profondeur d'interface observée; toute forme proposée doit rester explicitement non vérifiée."""
     register(cases, expectations, case_id="audit_architecture_username_scope",
              project=create_project(output, "rowan", audit_files, ["how explorer"], catalog),
              bundle=new, skill="audit-architecture", roles=["how explorer"],
-             body=audit, french=True, sandbox="read-only", expected_children=1)
+             body=audit, french=True, sandbox="read-only", expected_children=2)
 
     trivial = """Use $cstack:cstack. src/errors.py prints "could not proccess invoice" to users. The word should be "process". Correct it."""
     register(cases, expectations, case_id="routing_one_word_user_string",
