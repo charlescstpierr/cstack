@@ -67,6 +67,8 @@ Si `docs/agents/cstack.md` existe, consulte ses conventions de projet pendant qu
 
 ### Comprendre avant d’éditer
 
+- Avant toute implémentation de bug ou de fonctionnalité qui change un comportement, applique `../tdd/SKILL.md` et transmets son contrat aux builders. Les changements sans effet comportemental et les impossibilités réelles suivent ses exceptions ; vérifie ses preuves avant toute livraison.
+
 - Pour un changement non trivial ou une question d’architecture, lis et applique `../how/SKILL.md`.
 - Pour la motivation derrière un comportement existant, une régression ou une décision que personne n’explique, lis et applique `../why/SKILL.md`.
 - Quand l’utilisateur demande qu’on lui enseigne un sous-système plutôt qu’un correctif, lis et applique `../teach/SKILL.md`. Il exécute les passes `how` et `why` et retourne une leçon au lieu d’un diff.

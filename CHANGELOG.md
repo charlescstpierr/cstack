@@ -4,6 +4,8 @@ Les versions suivent SemVer. Le format suit [Keep a Changelog](https://keepachan
 
 ## À publier
 
+- TDD pour les bugs et nouvelles fonctionnalités comportementales : les builders fournissent une preuve rouge → vert, ou un parcours hors TDD justifié et vérifié, avant livraison.
+
 - Le setup affiche une todo actualisée à chaque étape, dans le plan natif disponible ou dans la conversation, avec les attentes de choix et d’approbation et les blocages.
 
 - Comparaison optionnelle des observations base/candidat avec `compare-checks.py` : détection des nouvelles régressions dans une base déjà rouge, refus des preuves incomplètes et maintien des barrières de livraison. Aucun runner ni dépendance ajouté.
