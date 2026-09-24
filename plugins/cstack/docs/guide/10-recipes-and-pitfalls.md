@@ -29,7 +29,7 @@ $cstack:interrogate examine toute la branche sans modifier les fichiers. Signale
 ## Corriger une anomalie avec une preuve ciblée
 
 ```text
-$cstack:cstack reproduis l'écriture en double. Si le test local est bon marché, utilise $cstack:tdd, puis corrige et rejoue la preuve.
+$cstack:cstack reproduis l'écriture en double. Utilise $cstack:tdd avant le correctif, puis rejoue la preuve ; si le cycle est impraticable, motive l’exception et exécute une vérification alternative.
 ```
 
 ## Garder une tâche autonome honnête

@@ -1,45 +1,42 @@
 ---
 name: tdd
-description: "Utiliser $cstack:tdd seulement quand l'utilisateur demande explicitement du TDD, un test échouant ou un test de régression, OU quand le bug à une cible de test locale évidente et peu coûteuse. Sauter quand le chemin de test est flou, coûteux, lourd en intégration ou non demandé."
+description: "Utiliser $cstack:tdd pour les bugs et les nouvelles fonctionnalités qui ajoutent ou modifient un comportement, même petites. Exempter les changements sans effet comportemental ; toute impossibilité réelle exige une exception motivée et une vérification alternative exécutée."
 ---
 
-# Correction de bug en TDD
+# Bugs et fonctionnalités en TDD
 
 Contrat d'exécution : [`../cstack/references/codex-runtime.md`](../cstack/references/codex-runtime.md).
 
-Quand tu corriges un bug avec un chemin de test clair et peu coûteux, rends le comportement cassé exécutable avant de changer le code de production. L'objectif est un test de régression cible qui échoue avant le correctif et passe après.
+Pour chaque bug ou comportement nouveau ou modifié, écris et exécute un test qui échoue pour la raison attendue avant de modifier le code de production. Fais-le ensuite passer avec le plus petit changement utile. La taille du diff ne décide pas de l'application du TDD.
 
-Ne force pas un test quand ce serait impraticable. Si le test disponible exigeait une large configuration de harnais, des mocks fragiles, une infrastructure end-to-end lente, un état production-only, des étapes de reproduction vagues ou un gros churn de fixtures sans rapport, saute l'ajout d'un nouveau test et utilise plutôt la vérification utile la plus proche.
+## Choisir le parcours
 
-## Flux de travail
+- **Comportement modifié :** TDD, y compris logique métier, validation, API et interactions UI testables.
+- **Aucun comportement modifié :** documentation, texte, formatage ou présentation pure peuvent être exemptés. Nomme la raison et exécute les contrôles pertinents. Une modification d'interaction, de permission ou de validation ne devient pas exemptée parce qu'elle touche peu de lignes ou un fichier Markdown.
+- **TDD réellement impraticable :** avant l'implémentation, consigne la contrainte concrète et la vérification alternative choisie. L'absence de demande explicite de TDD, la petite taille ou la seule volonté d'aller vite ne justifient pas une exception. Réutilise un test ou une reproduction exécutable existants avant de conclure à l'impossibilité.
 
-1. **Comprendre le bug.** Identifie le comportement attendu, le comportement actuel, le chemin touché et la plus petite reproduction observable.
-2. **Choisir la vérification exécutable la plus étroite.** Préfère le test unitaire, composant, intégration ou régression le plus proche déjà utilisé pour ce chemin de code. Si aucun chemin de test pratique n'est évident, n'en crée pas un depuis zéro seulement pour satisfaire le flux de travail.
-3. **Écrire d'abord le test échouant.** Ajoute le plus petit test cible qui aurait attrapé le bug. Le test doit encoder le comportement attendu, pas miroiter l'implémentation courante.
-4. **Exécuter le nouveau test avant de corriger.** Confirme qu'il échoue pour la raison attendue. S'il passe ou échoue pour une raison sans rapport, corrige le test ou la reproduction avant de modifier l'implémentation.
-5. **Corriger le bug.** Fais le plus petit changement de production qui satisfait le comportement attendu tout en préservant les contrats voisins.
-6. **Relancer le test de régression.** Confirme que le test passe maintenant.
-7. **Exécuter la validation voisine.** Lance les tests adjacents pertinents, typéchecks, lint ou checks de scénario quand le changement à un risque plus large.
+## Cycle rouge → vert
 
-## Si un test échouant est impraticable
+1. Identifie le comportement attendu et la plus petite vérification observable. Pour une fonctionnalité, le test décrit le comportement à ajouter ; pour un bug, il reproduit le défaut.
+2. Écris le test avec les outils du projet. Teste le comportement, pas la structure interne ni un mock qui répète sa propre entrée.
+3. Exécute-le **avant** le changement de production. Garde la commande et sa sortie d'échec dans les preuves de tâche. Confirme la raison : une dépendance absente, un environnement cassé ou une erreur de syntaxe sans rapport ne constituent pas le rouge attendu.
+4. Implémente le minimum nécessaire pour satisfaire le test sans affaiblir ses assertions.
+5. Relance le même test et garde la commande et sa sortie passante. Puis lance les contrôles voisins pertinents et simplifie en conservant les tests verts.
+6. Répète par comportement. N'écris pas toute l'implémentation avant de construire les tests. Un test ajouté après coup peut prouver une régression, mais ne prouve pas que le développement a suivi le TDD ; ne reconstitue pas une chronologie fictive.
 
-Ne saute pas silencieusement l'étape de régression. Avant de corriger, explique explicitement pourquoi un test échouant est impossible ou ne vaut pas son coût, puis choisis la vérification de régression exécutable disponible la plus proche. Exemples : script cible, commande de reproduction manuelle, automatisation navigateur, comparaison de snapshots, assertion de logs ou check d'intégration cible.
+Si le builder ne dispose pas des outils pour exécuter les tests, le coordinateur les lance et lui transmet la preuve rouge avant le changement de production, puis la preuve verte après. L’absence de shell chez un worker CLI ne justifie pas, à elle seule, une exception au TDD.
 
-Préfère aucun nouveau test à un mauvais test. Un mauvais test teste surtout des mocks, encode des détails de l'implémentation courante, dépend du timing ou d'un état global sans rapport, exige une infrastructure coûteuse pour un petit correctif, ou serait supprimé immédiatement après avoir prouvé le correctif.
+## Exceptions et vérifications alternatives
 
-## Garde-fous
+Une exception explique ce qui empêche réellement le cycle test-first : infrastructure indisponible, reproduction uniquement sur un système inaccessible ou test qui exigerait une simulation sans rapport avec le comportement. Elle nomme une vérification concrète : commande de reproduction, scénario navigateur, test d'intégration, comparaison de sorties ou inspection de l'artefact pertinent.
 
-- Ne change pas les tests simplement pour correspondre à une implémentation fausse.
-- N'affaiblis pas les assertions existantes sauf si le comportement attendu à vraiment change et que la raison est claire.
-- Garde le test de régression centre sur le bug. Évite le grand churn de fixtures ou l'expansion de couverture sans rapport.
-- N'ajoute pas de tests quand le signal pratique est faible. Utilise une vérification manuelle ou scriptee et dis pourquoi.
-- Si le bug est flaky, rends le test deterministe quand c'est possible et documente le signal verrouille.
-- Si le bug expose une classe plus large d'échecs, livre d'abord le chemin de régression cible, puis envisage une couverture sœur supplémentaire.
+Exécute cette vérification et conserve son résultat. Une exception ne dispense pas de vérifier. Si aucun contrôle pertinent ne peut aboutir, rapporte le blocage et ne déclare pas la livraison prête. Si l'absence de preuve rouge n'est découverte qu'après l'implémentation, rapporte le manquement ; une simple déclaration rétrospective ne vaut pas exception justifiée.
 
-## Réponse finale
+## Preuve et livraison
 
-Rapporte les preuves, pas seulement le résultat :
+Le builder transmet au coordinateur l'un des parcours suivants, avec les chemins des preuves :
 
-- Nomme le test ou check exécutable échouant avant correction et l'échec qu'il a produit.
-- Nomme l'exécution de test passant après correction et toute validation voisine effectuee.
-- Si la preuve d'échec avant correction n'a pas pu être démontrée, dis pourquoi et décris le check de régression le plus proche utilisé à la place.
+- **TDD :** comportement, test, commande et échec observé avant implémentation, puis commande et réussite après ; contrôles voisins.
+- **Hors TDD :** absence d'effet comportemental, ou exception motivée, avec vérification alternative effectivement exécutée et résultat.
+
+Le coordinateur et le reviewer examinent ces preuves avant de déclarer le travail prêt pour PR ou merge. **Bloque la livraison si ni le cycle rouge → vert ni le parcours hors TDD justifié et vérifié ne sont établis.** « Tests OK » seul ne prouve pas le TDD. Cette barrière est une consigne de livraison aux agents ; une CI verte ne contrôle pas à elle seule l'ordre dans lequel code et tests ont été écrits.

@@ -2,6 +2,8 @@
 
 Suivez [le contrat d’exécution Codex](../references/codex-runtime.md).
 
+Avant de déclarer une livraison prête, applique la barrière de preuve de [TDD](../../tdd/SKILL.md) : cycle rouge → vert ou parcours hors TDD justifié et vérifié. Sans preuve suffisante, bloque la livraison même si la CI est verte.
+
 **Tu possèdes la PR qui sort. Nettoie le diff, obtiens un verdict indépendant, puis ouvre-la selon la portée de livraison du contrat d’exécution.** Préparer des commits ou terminer une compétence spécialisée sélectionnée directement n’accorde pas cette autorité.
 
 1. **Worktree.** Utilise un worktree git propre basé sur la branche de base prévue. Donne aux rédacteurs parallèles des worktrees et branches séparés. Préserve les changements utilisateur non liés. Ne reset pas et ne jette pas un arbre sale pour faire de la place.
