@@ -100,7 +100,7 @@ Externalise chaque unité terminée immédiatement. Un propriétaire enregistre 
 
 - Inspecte l’état des agents natifs avec les outils de coordination disponibles. Pour un worker CLI, utilise le handle du processus lancé dans cette session et son reçu ; un PID ou une ancienne session enregistrés ne prouvent pas sa vitalité. Ne redémarre pas un agent idle seulement pour demander un statut.
 - Réconcilie la vitalité depuis `units.tsv`, le ledger, les refs git, l’état de PR GitHub et le statut des tâches natives. Les timestamps de conversation seuls ne sont pas une preuve.
-- Réessaie l’épuisement de ressources avec un périmètre plus petit. Réessaie une panne réseau une fois. Pour une panne d’outil, utilise une autre méthode native disponible. Après deux retries échoués, abandonne l’unité et replanifie.
+- Applique la relance bornée du [suivi visible commun](../references/codex-runtime.md#suivi-visible-du-workflow-et-des-délégués), avec la sélection conservée. Après épuisement de cette relance, marque l'unité bloquée et diagnostique la cause avant de replanifier ; réduire le brief ou changer d'identifiant ne remet pas ce compteur à zéro. Les emplacements occupés attendent leur tour sans consommer de tentative.
 - Réconcilie un résultat tardif contre la frontière et le ledger courants avant de l’accepter.
 - Si un mauvais brief ou une dépendance cassée corromprait toute une vague, arrête de remplir les emplacements, laisse le travail in-flight sûr terminer, corrige la cause et mets à jour les ordres permanents.
 - Avant une pause ou sortie, écris le prédicat courant, le travail terminé, les chemins durables, les bloqueurs et la commande exacte de reprise sous `.cstack/`. Ne prétends pas que les sous-agents locaux survivent à la fermeture de l’application.

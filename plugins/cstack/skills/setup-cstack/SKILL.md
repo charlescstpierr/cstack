@@ -11,11 +11,7 @@ Lis le [contrat d’exécution natif Codex](../cstack/references/codex-runtime.m
 
 Avant la première inspection, affiche une todo courte des étapes du setup demandé : découverte, choix, prévisualisation, application et vérification. Adapte-la au périmètre : une configuration modèle seule garde découverte, `show` et choix, puis `apply` et vérification par `resolve` ; une preview, une lecture seule ou le mode Plan excluent l’application et sa vérification.
 
-Utilise l'outil natif de plan ou de todo s'il est exposé et accepte l'appel ; sinon, affiche une checklist dans la conversation. Mets le même suivi à jour avant chaque étape et dès son résultat connu, avec une seule étape en cours. En conversation, regroupe la fin d'une étape et le début de la suivante dans une seule mise à jour. Marque une étape terminée seulement après lecture de son résultat ; indique les étapes non applicables comme telles, avec leur raison.
-
-Si un choix ou une approbation manque, indique « en attente de votre choix » ou « en attente d'approbation » sur l'étape concernée et laisse les suivantes à faire. En cas d'échec ou de résultat `partial`, affiche le blocage et l'action de reprise ; garde l'application et la vérification incomplètes jusqu'au succès relu. Termine avec le statut réel de chaque étape, y compris une annulation ou un arrêt après preview.
-
-Garde ce suivi dans l'interface ou la conversation, sans fichier de todo, objectif natif, tâche planifiée ni configuration supplémentaire. À l'étape des modèles, la todo indique seulement l'avancement ; les propositions précèdent toujours la configuration actuelle. Le suivi conserve les règles d'approbation du parcours choisi, sans ajouter d'approbation ni autoriser d'écriture.
+Applique le [suivi visible commun](../cstack/references/codex-runtime.md#suivi-visible-du-workflow-et-des-délégués) : cases cochées au fil des résultats vérifiés, attentes et blocages explicites. Pour un résultat `partial`, garde application et vérification incomplètes jusqu'au succès relu. À l'étape des modèles, la todo indique seulement l'avancement ; les propositions précèdent toujours la configuration actuelle. Le suivi n'ajoute aucune approbation ni écriture.
 
 ## Decouvrir et présenter
 
