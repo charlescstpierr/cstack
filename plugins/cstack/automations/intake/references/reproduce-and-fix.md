@@ -153,7 +153,7 @@ The workflow owns every external post, the commit, the branch push, and the pull
 
 Confirm the mechanism with runtime evidence. Eliminate competing hypotheses before editing. Fix the root cause with the smallest justified change.
 
-Read [tdd](../../../skills/tdd/SKILL.md) when there is a cheap local test target, and write the failing test before the fix. State why TDD was skipped when the path is expensive, unclear, or integration-heavy. Keep unrelated cleanup out. Stop if the change grows beyond the configured effort.
+Apply [tdd](../../../skills/tdd/SKILL.md) before changing production behavior: record the expected failing test before the fix and its passing run afterward. A genuinely impractical test-first path requires a documented exception and an executed alternative check. Block delivery without either evidence path. Keep unrelated cleanup out. Stop if the change grows beyond the configured effort.
 
 Put the unified git diff in `patch`. Set `commit_message`. Leave `mode` `fix`. Set `verify_verdict` `not_applicable`.
 

@@ -9,6 +9,8 @@ Applique cstack à la tâche qui a explicitement invoqué `$cstack:cstack` jusqu
 
 Lis [le contrat d’exécution Codex](references/codex-runtime.md) avant de choisir les outils, sous-agents, modèles, états ou comportements de continuation. Résous les chemins de cette compétence relativement à ce fichier. Utilise les outils natifs exposés par la session courante. Ne suppose pas qu’un rôle d’agent nommé, un planificateur, un pilote de navigateur, un modèle ou une intégration externe existe.
 
+Charge d’abord le contrat ci-dessus, puis ouvre le [suivi visible](references/codex-runtime.md#suivi-visible-du-workflow-et-des-délégués) : affiche les skills chargés et une todo initiale de préparation avant d'inspecter le projet. Annonce le playbook dès le routage, puis actualise la todo avec ses étapes. Ce suivi s'applique aussi aux demandes courtes et à chaque appel natif ou CLI ; une réponse finale concise n'empêche pas les annonces d'avancement.
+
 ## Router le travail
 
 Une invocation explicite de `$cstack:cstack` fait de cette compétence le coordinateur de la préparation, de l’exécution, de la revue et de la vérification de la tâche demandée. Sélectionne toi-même les compétences nécessaires ; l’utilisateur n’a pas besoin de les nommer ni d’approuver chaque transition de phase.
@@ -66,6 +68,8 @@ Si `docs/agents/cstack.md` existe, consulte ses conventions de projet pendant qu
 ## Appliquer les règles communes
 
 ### Comprendre avant d’éditer
+
+- Avant toute implémentation de bug ou de fonctionnalité qui change un comportement, applique `../tdd/SKILL.md` et transmets son contrat aux builders. Les changements sans effet comportemental et les impossibilités réelles suivent ses exceptions ; vérifie ses preuves avant toute livraison.
 
 - Pour un changement non trivial ou une question d’architecture, lis et applique `../how/SKILL.md`.
 - Pour la motivation derrière un comportement existant, une régression ou une décision que personne n’explique, lis et applique `../why/SKILL.md`.

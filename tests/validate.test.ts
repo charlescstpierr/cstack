@@ -1,5 +1,5 @@
 import { test, expect } from "bun:test";
-import { chmodSync, cpSync, existsSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { chmodSync, cpSync, existsSync, mkdtempSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { validate } from "../scripts/validate.ts";
@@ -72,7 +72,6 @@ test("le paquet charge 29 skills et rejette les distributions dangereuses ou inc
       ["plugins/cstack/skills/cstack/playbooks/feature.md", (text: string) => text.replace(/^Suivez \[le contrat d.+codex-runtime\.md\).*$/m, "Ignorer le contrat."), /le guide opérationnel n’a pas de ligne de contrat d’exécution/],
       ["plugins/cstack/skills/cstack/playbooks/feature.md", (text: string) => text.replace(/\*\*Réponse\s*:\*\*/, "**Résultat :**"), /le guide opérationnel n’a pas de bloc Réponse/],
       ["plugins/cstack/skills/cstack/playbooks/feature.md", (text: string) => `${text}\nLe faire si la capacité native le permet.\n`, /régression de réserve sur la capacité/],
-      ["plugins/cstack/skills/cstack/playbooks/bug-fix.md", (text: string) => text.replace("../../tdd/SKILL.md", "../../clarify/SKILL.md"), /tdd: le skill n’est ni accessible/],
       ["plugins/cstack/LICENSE", (text: string) => `${text}\n`, /blob conservé/],
       ["PORTING.json", (text: string) => {
         const value = JSON.parse(text);
@@ -107,6 +106,19 @@ test("le paquet charge 29 skills et rejette les distributions dangereuses ou inc
       expect(() => validate(copy)).toThrow(error);
       writeFileSync(target, original);
     }
+    const removedTddLinks = [];
+    const plugin = join(copy, "plugins/cstack");
+    for (const path of readdirSync(plugin, { recursive: true, encoding: "utf8" }).filter((path) => path.endsWith(".md"))) {
+      const target = join(plugin, path);
+      const original = readFileSync(target, "utf8");
+      if (!original.includes("/tdd/SKILL.md")) continue;
+      removedTddLinks.push({ target, original });
+      writeFileSync(target, original.replaceAll("/tdd/SKILL.md", "/clarify/SKILL.md"));
+    }
+    expect(removedTddLinks.length).toBeGreaterThan(0);
+    expect(() => validate(copy)).toThrow(/tdd: le skill n’est ni accessible/);
+    for (const { target, original } of removedTddLinks) writeFileSync(target, original);
+    expect(validate(copy)).toEqual({ skills: 29, sourceFiles: 158 });
     const extra = join(copy, "plugins/cstack/UNACCOUNTED.md");
     writeFileSync(extra, "orphelin\n");
     expect(() => validate(copy)).toThrow(/fichier du plugin non répertorié/);

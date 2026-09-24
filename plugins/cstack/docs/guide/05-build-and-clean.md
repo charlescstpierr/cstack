@@ -18,7 +18,7 @@ Indiquez le déclencheur, les invariants à conserver et la preuve attendue. Cet
 $cstack:tdd implémente ce changement avec un test qui échoue pour la bonne raison.
 ```
 
-[`$cstack:tdd`](../../skills/tdd/SKILL.md) choisit le plus petit test qui prouve le comportement. Si le chemin est coûteux ou artificiel, le flux peut retenir une vérification exécutable plus proche de l'utilisateur.
+[`$cstack:tdd`](../../skills/tdd/SKILL.md) choisit le plus petit test qui prouve le comportement. Les bugs et fonctionnalités qui changent un comportement exigent le cycle rouge → vert. Un changement sans effet comportemental ou une impossibilité réelle suit une exception motivée avec une vérification exécutée ; sans preuve de l’un de ces parcours, la livraison reste bloquée.
 
 ## Laisser les règles TypeScript s'appliquer
 

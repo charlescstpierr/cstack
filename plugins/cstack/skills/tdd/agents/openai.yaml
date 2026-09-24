@@ -1,6 +1,6 @@
 interface:
   display_name: "tdd"
-  short_description: "Coder avec un check échouant avant correctif"
+  short_description: "Bugs et fonctionnalités : test rouge puis vert"
   default_prompt: "Utilise $cstack:tdd pour cette tâche."
 policy:
   allow_implicit_invocation: false

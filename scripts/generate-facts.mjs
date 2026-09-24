@@ -103,6 +103,16 @@ export function verifyDocumentationFacts(root, facts) {
   const commit = escapeRegExp(facts.upstreamCommit);
   // README and verification-report counts stay owned by scripts/validate.ts.
 
+  const upstream = json(root, "UPSTREAM.json");
+  const notice = read("plugins/cstack/NOTICE.md");
+  for (const [field, value] of [
+    ["Source", `${upstream.repository.replace(/\.git$/, "")}/tree/${facts.upstreamCommit}/${upstream.subdirectory}`],
+    ["Upstream commit", `\`${facts.upstreamCommit}\``],
+    ["Upstream manifest version", `\`${facts.upstreamVersion}\``],
+  ]) {
+    assertContains(notice, "plugins/cstack/NOTICE.md", new RegExp(`^- ${field}: ${escapeRegExp(value)}$`, "m"), field);
+  }
+
   assertContains(
     read("README.md"),
     "README.md",

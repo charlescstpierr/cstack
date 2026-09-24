@@ -3,6 +3,8 @@
 Suivez [le contrat d’exécution Codex](../references/codex-runtime.md) et
 [Sécurité de fusion et de restack](../references/merge-safety.md).
 
+Avant de déclarer une livraison prête, applique la barrière de preuve de [TDD](../../tdd/SKILL.md) : cycle rouge → vert ou parcours hors TDD justifié et vérifié. Sans preuve suffisante, bloque la livraison même si la CI est verte.
+
 **Tu possèdes ce qui atterrit. Vérifie chaque PR indépendamment, fais atterrir seulement la série contiguë vérifiée depuis la racine et laisse le reste inchangé.** Lance ce playbook seulement après que l’utilisateur autorise merge, landing, shipping ou merge-when-ready.
 
 1. **Vérifier chaque PR indépendamment.** Utilise git et `gh`. Donne à chaque PR un vérificateur qui n’a pas écrit son code. Si la capacité de revue manque, applique [Orchestration requise](../references/codex-runtime.md#orchestration-requise) avec `route: Review`. Un rapport dégradé `ISSUES` ne vaut ni `PASS` ni `PASS+NOTES` pour l’atterrissage. Lance les vérificateurs par vagues si nécessaire. Chaque vérificateur contrôle le parent et le head sur la vraie interface avec les outils natifs disponibles, puis retourne `PASS`, `PASS+NOTES` ou `FAIL`. Les modèles héritent par défaut. Utilise seulement une surcharge `swarm workers` disponible depuis `.cstack/models.json`. La CI et l’approbation de bot sont des intrants, pas des verdicts indépendants. Garde les verdicts dans `.cstack/` sauf si l’utilisateur a aussi autorisé leur publication.

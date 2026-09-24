@@ -160,3 +160,24 @@ test("la génération dérive les statuts du portage au lieu de les figer dans l
     rmSync(directory, { recursive: true, force: true });
   }
 });
+
+test.each([
+  ["Source", "https://github.com/cursor/plugins/tree/outdated/pstack"],
+  ["Upstream commit", "`0000000000000000000000000000000000000000`"],
+  ["Upstream manifest version", "`0.0.0`"],
+])("le contrôle des faits refuse une provenance NOTICE périmée : %s", (field, staleValue) => {
+  const directory = fixture();
+  try {
+    const path = join(directory, "plugins/cstack/NOTICE.md");
+    const original = readFileSync(path, "utf8");
+    const stale = original.replace(new RegExp(`^- ${field}: .+$`, "m"), `- ${field}: ${staleValue}`);
+    expect(stale).not.toBe(original);
+    writeFileSync(path, stale);
+    const result = run("--root", directory, "--check");
+    expect(result.exitCode).toBe(1);
+    expect(result.stderr.toString()).toContain("plugins/cstack/NOTICE.md");
+    expect(readFileSync(path, "utf8")).toBe(stale);
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});

@@ -59,7 +59,7 @@ bun scripts/sync-upstream.mjs \
 
 Avant d’écrire, le script revalide les pins, l’empreinte des manifestes, chaque blob source, chaque blob local et chaque résultat approuvé. Un conflit, une résolution inconnue, dupliquée ou périmée, une nouvelle source non mappée ou un retained invalide arrête l’opération. Les cibles et les deux inventaires sont écrits avec sauvegarde et rollback sur erreur capturée ; le pin n’avance qu’après succès. Une erreur de rollback est signalée comme incomplète avec les chemins concernés.
 
-Après un apply réussi, actualiser les faits courants du README, du README plugin, de `docs/PORTING.md` et de la section courante de `docs/VERIFICATION.md` sans réécrire l’historique, puis régénérer les faits documentaires et vérifier le diff :
+Après un apply réussi, actualiser les faits courants du README, du README plugin, de `plugins/cstack/NOTICE.md` (URL source, commit et version amont), de `docs/PORTING.md` et de la section courante de `docs/VERIFICATION.md` sans réécrire l’historique, puis régénérer les faits documentaires et vérifier le diff :
 
 ```sh
 bun scripts/generate-facts.mjs
