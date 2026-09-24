@@ -15,6 +15,8 @@ Charge d’abord le contrat ci-dessus, puis ouvre le [suivi visible](references/
 
 Une invocation explicite de `$cstack:cstack` fait de cette compétence le coordinateur de la préparation, de l’exécution, de la revue et de la vérification de la tâche demandée. Sélectionne toi-même les compétences nécessaires ; l’utilisateur n’a pas besoin de les nommer ni d’approuver chaque transition de phase.
 
+Pour une implémentation multi-phase, vérifie l'autorisation du [Goal global](references/codex-runtime.md#goal-global) dans la demande utilisateur effective. S'il est autorisé, lis `playbooks/autonomous-run.md` pour son cycle de vie et garde le même objectif à travers les playbooks spécialisés. Une invocation nue de `$cstack:cstack` ne vaut pas demande de Goal.
+
 ### Préparer la demande
 
 1. Lis la demande, les consignes du projet, les faits pertinents du dépôt et tout état de tâche existant. Réutilise les décisions tranchées et les faits observés tant qu’ils restent valides.

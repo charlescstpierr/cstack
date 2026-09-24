@@ -26,11 +26,15 @@ TRACKER_MODES = {"keep", "local", "github"}
 TRACKER_KEYS = {"mode", "owner", "repo"}
 
 # Les comptes sont du texte de politique pour la prévisualisation de configuration, pas de la répartition automatique.
+EXPLORATION_RULE = (
+    "au moins 2 explorateurs, normalement 3 angles distincts utiles, en vagues selon la capacité; "
+    "une synthèse unique ne compte pas comme exploration"
+)
 WORKFLOWS = {
-    "clarify": {"count_rule": "0 par défaut; un explorateur par fait indépendant délégué", "roles": ["how explorer"]},
-    "domain": {"count_rule": "0 par défaut; délégation factuelle optionnelle", "roles": ["how explorer", "documentation", "judgment and prose"]},
-    "horizon": {"count_rule": "enfants de recherche variables; 1 synthèse optionnelle (judgment and prose)", "roles": ["how explorer", "judgment and prose"]},
-    "audit-architecture": {"count_rule": "au plus 1 explorateur initial", "roles": ["how explorer"]},
+    "clarify": {"count_rule": f"0 par défaut; {EXPLORATION_RULE}", "roles": ["how explorer"]},
+    "domain": {"count_rule": f"0 par défaut; {EXPLORATION_RULE}", "roles": ["how explorer", "documentation", "judgment and prose"]},
+    "horizon": {"count_rule": f"{EXPLORATION_RULE} par recherche", "roles": ["how explorer", "judgment and prose"]},
+    "audit-architecture": {"count_rule": EXPLORATION_RULE, "roles": ["how explorer"]},
 }
 
 
@@ -235,7 +239,7 @@ def _tracker_payload(tracker: dict[str, str]) -> bytes:
     rows = ["# Suivi des tickets", "", f"Mode de suivi: `{tracker['mode']}`."]
     if tracker["mode"] == "local":
         rows += [
-            "Utiliser `.cstack/horizon/<slug>/map.md` pour la carte, `.cstack/horizon/<slug>/tickets/<id>-<slug>.md` pour les tickets et `.cstack/horizon/<slug>/research/<id>.md` pour la recherche.",
+            "Utiliser `.cstack/horizon/<slug>/map.md` pour la carte, `.cstack/horizon/<slug>/tickets/<id>-<slug>.md` pour les tickets et `.cstack/horizon/<slug>/research/<id>-<angle>.md` pour la recherche.",
             "Utiliser les statuts `ready`, `claimed`, `waiting`, `resolved` et `out-of-scope`. Garder `owner` stable, utiliser des IDs valides dans `blocked_by` et rendre un ticket éligible seulement quand ses dépendances sont `resolved`.",
             "Garder un seul rédacteur parent. Les artefacts enfants restent dans leurs propres fichiers. Enregistrer la réponse avant de mettre un ticket à `resolved`, puis ajouter le résumé de carte.",
             "Voir les modèles de documents `$cstack:horizon` pour les formes d’enregistrement détaillées. La configuration ne crée aucune étiquette ni aucun état distant.",

@@ -8,7 +8,9 @@ Dans le sélecteur, cherchez `$cstack` et choisissez **cstack**. Pour une comman
 
 Activez `$cstack:cstack` dans une tâche pour choisir un processus d'investigation, d'implémentation, de revue ou de livraison vérifiée. Le mode reste limité à cette tâche et se désactive sur demande. L'installation seule n'active aucune compétence.
 
-Le plugin expose 29 compétences. Ses [23 principes](docs/guide/08-principles.md) sont des références consultées au besoin, sans commandes individuelles dans le sélecteur. Pour en demander un, nommez-le dans votre demande à `$cstack:cstack`. L'ancrage d'une question de code part en exploration parallèle par défaut, puis en synthèse ; une cible unique nommée reste sur une passe unique. Codex exige que la demande de délégation figure dans votre tour : sélectionnez la compétence dans le sélecteur, dont le prompt par défaut la porte, ou ajoutez-la vous-même. Voir [le dépannage](docs/guide/10-recipes-and-pitfalls.md#un-seul-agent-travaille).
+Le plugin expose 29 compétences. Ses [23 principes](docs/guide/08-principles.md) sont des références consultées au besoin, sans commandes individuelles dans le sélecteur. Pour en demander un, nommez-le dans votre demande à `$cstack:cstack`. L'exploration déléguée utilise au moins deux explorateurs, normalement trois angles distincts, puis une synthèse. Une cible unique ne réduit pas ce nombre à un. Codex exige que la demande de délégation figure dans votre tour : sélectionnez la compétence dans le sélecteur, dont le prompt par défaut la porte, ou ajoutez-la vous-même. Voir [le dépannage](docs/guide/10-recipes-and-pitfalls.md#un-seul-agent-travaille).
+
+Pour une implémentation multi-phase, une demande explicite de Goal natif permet de garder le même objectif entre les playbooks jusqu’à une PR testée et revue. Voir [la continuation autonome](docs/guide/07-overnight.md).
 
 `$cstack:deslop` nettoie un diff de code avant commit. `$cstack:unslop` nettoie la prose. `$cstack:no-comments` confie les commentaires à un relecteur qui ne les a pas écrits. `deslop` est original à cstack. pstack livrait `/deslop` dans `cursor-team-kit`, sans source portable.
 

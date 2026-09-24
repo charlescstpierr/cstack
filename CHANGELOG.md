@@ -2,6 +2,11 @@
 
 Les versions suivent SemVer. Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## [Unreleased]
+
+- Goal natif explicitement autorisé pour suivre une implémentation multi-phase jusqu’à sa livraison convenue, avec une PR testée et revue par défaut. La continuation utilise les outils natifs de Codex.
+- Exploration déléguée : minimum deux explorateurs, normalement trois angles utiles. Setup, How, audit et recherches Horizon partagent cette règle et conservent les modèles configurés.
+
 ## [0.6.0] - 2026-09-23
 
 ### Ajouté

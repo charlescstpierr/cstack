@@ -4,6 +4,18 @@ Suivez [le contrat d’exécution Codex](../references/codex-runtime.md).
 
 **Tu possèdes la condition de sortie. Définis ce que signifie terminé, puis avances jusqu’à l’atteindre sans t’arrêter.**
 
+## Cycle du Goal natif
+
+Applique cette section seulement quand le [Goal global](../references/codex-runtime.md#goal-global) est explicitement autorisé. Le coordinateur racine en est l'unique propriétaire ; ses délégués retournent leurs résultats sans créer ni terminer de Goal.
+
+1. Inspecte les outils Goal réellement exposés et lis l'objectif courant avec `get_goal` ou son équivalent natif. Réutilise l'objectif actif de cette tâche. Un objectif inachevé d'une autre tâche reste intact : rapporte le conflit et continue seulement le travail indépendant qui ne nécessite pas de le remplacer.
+2. S'il n'y a aucun objectif inachevé, crée un seul Goal avec le résultat global, les limites et les preuves de fin. N'ajoute un budget que si l'utilisateur en a demandé un. Le défaut est une PR testée, revue indépendamment et ouverte sans draft ; « local seulement » ou une livraison plus large explicitement autorisée modifient ce prédicat.
+3. Exécute les playbooks nécessaires dans ce même objectif. Après chaque résultat, actualise la todo et le checkpoint, puis lance la prochaine étape autorisée. L'arrêt d'une feuille, un commit ou l'ouverture d'une PR intermédiaire ne termine pas le Goal. Les choix techniques réversibles relèvent du coordinateur ; une décision produit matérielle ou une autorité manquante bloque ses dépendants, pas le travail indépendant.
+4. Avant la réponse finale, relis le Goal et vérifie le prédicat sur les artefacts réels, y compris le head et l'état de PR quand ils font partie du résultat. Passe à `complete` seulement quand aucune étape requise ne reste. Ne réduis pas le prédicat pour finir une phase. Rapporte la consommation finale si l'outil la demande pour un objectif budgété.
+5. Une pause exige une demande explicite ; utilise alors `pause-safely.md` et le statut natif `paused`. Pour une impasse, applique exactement le contrat de l'outil avant `blocked`, notamment son seuil de répétition. Les limites de budget/usage appartiennent à l'hôte : ne les contourne pas en recréant un Goal. À la reprise, réconcilie l'état natif avec Git et les preuves ; un ancien checkpoint ne réactive pas une pause ou une limite. Si la reprise native exige une action utilisateur, nomme-la sans inventer d'API.
+
+## Itérations
+
 1. Énonce la condition de sortie comme prédicat vérifiable avant la première itération (tests verts, repro corrigée, les N PR toutes fusionnées, pixel-diff à zéro).
 2. Continue au premier plan avec les attentes natives. Pour la CI, un merge ou un changement de ref, utilise l’outil sensible aux événements ou le watcher fourni via le lanceur du plugin. Utilise un planificateur natif seulement s’il est disponible et si l’utilisateur a demandé une continuation planifiée. Calibre le polling au moment où un résultat vaut la peine d’être vérifié. Ne promets pas que le travail survit à la fermeture de l’app.
 3. Chaque itération effectue le plus petit changement justifié par les preuves, le vérifie contre le prédicat, committe s’il fait avancer, et abandonne les changements qui n’aident pas. Un double garde-fou qui « pourrait aider » est rétabli, pas laissé en place. Abandonne seulement les fichiers touchés par cette itération, avec `git checkout -- <paths>` ou `git stash push <paths>`. Jamais `reset --hard`, jamais `git clean`, jamais `checkout -- .`. Lance `../../deslop/SKILL.md` sur le diff avant chaque commit. Garde `deslop skipped: <reason>` quand une étape ne peut vraiment pas s’exécuter.

@@ -1,6 +1,6 @@
 interface:
   display_name: "horizon"
   short_description: "Planifier grands objectifs et unités d'implémentation"
-  default_prompt: "Utilise $cstack:horizon pour cette tâche. Affecte un sous-agent natif de recherche à chaque ticket de recherche prêt."
+  default_prompt: "Utilise $cstack:horizon pour cette tâche. Affecte au moins deux sous-agents natifs de recherche à chaque ticket de recherche prêt, normalement trois sur des angles utiles distincts."
 policy:
   allow_implicit_invocation: false

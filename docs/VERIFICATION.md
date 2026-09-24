@@ -206,9 +206,9 @@ Les neuf créations d’enfants transmettent `gpt-5.6-luna` et `max`, et leurs t
 
 Les premiers essais invalidés par le banc (questions nulles, héritage du mauvais dépôt Git, lecture d’un enfant déjà fermé) et les interruptions à 300 secondes sont conservés localement, mais exclus de ces 13 résultats. Les essais longs retenus utilisent une limite explicite de 900 secondes par tour. Ces scénarios synthétiques ne garantissent pas l’absence de toute régression et ne démontrent aucun gain général de tokens. Les traces brutes et le journal de décisions restent sous `.cstack/tasks/horizon-project-setup/` ; le JSON publié contient leurs empreintes.
 
-## Révision en attente, non mesurée
+## Historique : révision de la ventilation avant Goal
 
-Cette section ne relève d'aucune campagne. Aucun essai natif n'a été exécuté pour la révision décrite ; son environnement et ses dates ne sont donc pas ceux épinglés plus haut.
+Cette section conserve l'état de preuve de cette ancienne révision. La règle actuelle impose au moins deux explorateurs lors d'une délégation ; les anciennes exceptions cible unique et fichiers indissociables sont supprimées.
 
 ### Ventilation d'ancrage et demande de délégation
 
@@ -273,3 +273,14 @@ Un second essai a utilisé la sélection structurée `UserInput::Skill` du séle
 L'essai a aussi révélé une différence de syntaxe : du texte brut `$cstack` ne désigne pas la compétence qualifiée d'un plugin. La version 0.1.1 utilise des invocations complètes dans ses invites et exemples ; un test de paquet rejette désormais une invite de compétence non qualifiée. La recherche puis sélection de **cstack** dans le sélecteur reste disponible.
 
 Ces essais vérifient le protocole et le moteur partagés par App et CLI. Ils ne constituent pas une observation visuelle de l'interface du gestionnaire de plugins. Les limites de connecteurs, planification et webhooks restent documentées dans PORTING.md.
+
+## Vérifier le Goal natif
+
+La sonde `scripts/verify-goal.py` réutilise l’app-server du runner existant, dans une fixture temporaire sans Git ni délégation. Elle observe le Goal via l’API native ; elle ne simule pas la continuation. Les threads sont persistants car les threads éphémères refusent les Goals. Aucune installation ni configuration utilisateur n’est modifiée. La sonde utilise toutefois le CODEX_HOME courant : les conversations persistent dans son historique et les fixtures restent dans le répertoire temporaire.
+
+```sh
+python3 scripts/verify-goal.py --scenario authorized --output /tmp/cstack-goal-authorized
+python3 scripts/verify-goal.py --scenario no-consent --output /tmp/cstack-goal-no-consent
+```
+
+Ces commandes lancent un modèle réel. `--model` et `--effort` permettent une sélection explicite compatible avec l’hôte. Chaque dossier de sortie doit être vide. Le premier cas exige deux tours, le même objectif actif puis complet, aucun budget, l’absence du fichier de phase 2 après le premier tour et les deux fichiers attendus à la fin. Le second lit aussi le YAML contenant la demande de Goal, mais exige un état natif nul faute de demande utilisateur. Les traces et le résultat sont conservés dans le dossier de sortie.
