@@ -4,6 +4,8 @@ Les versions suivent SemVer. Le format suit [Keep a Changelog](https://keepachan
 
 ## À publier
 
+- Suivi commun des workflows cstack : playbook annoncé, todo cochée en direct, appels Codex natifs et CLI nommés avec rôle, modèle/effort du setup et skills. Les résultats restent liés aux preuves disponibles ; les erreurs temporaires permettent une seule relance annoncée sans substitution.
+
 - TDD pour les bugs et nouvelles fonctionnalités comportementales : les builders fournissent une preuve rouge → vert, ou un parcours hors TDD justifié et vérifié, avant livraison.
 
 - Le setup affiche une todo actualisée à chaque étape, dans le plan natif disponible ou dans la conversation, avec les attentes de choix et d’approbation et les blocages.
