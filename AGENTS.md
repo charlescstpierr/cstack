@@ -34,3 +34,20 @@ git diff --check
 ```
 
 `bun run typecheck` est le contrôle strict de watch-pr. La ligne `tsc -p tsconfig.json` vérifie les types du `tsconfig.json` du dépôt avec le binaire `tsc` que `bun install` vient de créer, après retour à la racine du dépôt. Les tests Python utilisent le lanceur `unittest` de la bibliothèque standard. L'achèvement exige le comportement pertinent observé ainsi que des contrôles verts ; un nombre d'appels plus faible ne suffit pas à établir de meilleurs résultats.
+
+## Agent skills
+
+### Issue tracker
+
+Les tickets sont suivis dans GitHub Issues sur `charlescstpierr/cstack`.
+Voir `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Les cinq labels de triage standards sont utilisés.
+Voir `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Organisation single-context : `CONTEXT.md` et `docs/adr/` à la racine.
+Voir `docs/agents/domain.md`.
