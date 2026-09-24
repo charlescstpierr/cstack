@@ -1,0 +1,17 @@
+{
+  "repository": "https://github.com/michael-denyer/pstack-claude",
+  "commit": "47fbcd46bbd10fbfd9e7af90714431e6d4c3788b",
+  "license": "LICENSE",
+  "adaptations": [
+    {
+      "target": "scripts/sync-upstream.mjs",
+      "source": "tools/sync.mjs",
+      "sha256": "2f18e0ee640f4387707b123a0ef9f1cfbc5fa88ddf81fc26c3839d4cde390cf5"
+    },
+    {
+      "target": "tests/shipping-git.test.ts",
+      "source": "tests/shipping-git.test.mjs",
+      "sha256": "2c7292ccc0e13d2fca5c3ecdac629aa6ca6db088ff7471359103cfc06b980f07"
+    }
+  ]
+}

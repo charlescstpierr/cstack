@@ -1,6 +1,6 @@
 {
   "name": "cstack",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "Portage des workflows pstack pour Codex App et CLI. Investigation, implémentation, revue et livraison vérifiée.",
   "author": {
     "name": "charlescstpierr",

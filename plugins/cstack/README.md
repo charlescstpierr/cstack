@@ -1,6 +1,6 @@
 # cstack
 
-Les processus de pstack 0.15.2 adaptés aux outils natifs de Codex App et CLI. Plugin `0.5.0`. Version amont épinglée `889ec4b68fa5aab0e867dad71ec3fdf386ae48f3`.
+Les processus de pstack 0.15.2 adaptés aux outils natifs de Codex App et CLI. Plugin `0.6.0`. Version amont épinglée `889ec4b68fa5aab0e867dad71ec3fdf386ae48f3`.
 
 Les préparations `$cstack:clarify`, `$cstack:domain`, `$cstack:horizon` et `$cstack:audit-architecture` sont disponibles sur demande. La configuration peut préparer un bloc de projet dans `AGENTS.md` et les conventions documentaires, en conservant les instructions existantes. Voir [la configuration](docs/guide/01-setup.md) et [les processus de préparation](docs/guide/04-design.md).
 
@@ -19,6 +19,8 @@ Le [guide](docs/guide/README.md) présente les commandes et les processus. Le [c
 Le [guide Codex et Claude](docs/guide/11-cli-workers.md) explique la configuration, les skills communs et le contexte partagé. Les [workers CLI facultatifs](skills/cstack/references/runtime-workers.md) permettent de mélanger Codex natif, Codex CLI, Claude Code, Cursor CLI et Grok Build dans les panels existants. Le coordinateur conserve les briefs, worktrees, rapports et revues ; les CLI gèrent eux-mêmes leur login, sans credentials dans CStack.
 
 Les assistants TypeScript utilisent Bun et leurs dépendances verrouillées. Leur installation nécessite le registre de paquets ou un cache Bun déjà rempli. Le lanceur bash/Python 3.9 crée une copie temporaire distincte sous `~/.cache/cstack/stages/` pour chaque invocation, puis la nettoie. Les opérations GitHub nécessitent `git` et `gh` authentifié. Aucun cache de plugin ni réglage global n'est modifié.
+
+La [livraison des PR](skills/cstack/playbooks/shipping.md) impose le head vérifié à GitHub et relit les merges en attente avant une réécriture. L’assistant `watch-pr/ship-pr` inspecte ou annule ces demandes ; il ne fusionne aucune PR. Les limites du contrôle de destination et des files de merge sont précisées dans [la référence de sécurité](skills/cstack/references/merge-safety.md).
 
 Mise à jour depuis GitHub : `codex plugin marketplace upgrade cstack`, puis `codex plugin add cstack@cstack`. Ouvrez ensuite une nouvelle conversation.
 

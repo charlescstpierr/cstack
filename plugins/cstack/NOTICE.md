@@ -7,7 +7,7 @@ cstack is an independent Codex adaptation of pstack by Lauren Tan.
 - Upstream manifest version: `0.15.2`
 - Original copyright: Copyright (c) 2026 Lauren Tan
 - License: MIT. The original license is preserved in LICENSE.
-- cstack plugin version: `0.5.0`
+- cstack plugin version: `0.6.0`
 - Catalog: 29 skills, 23 principle references, 23 playbooks, two agent prompts
 
 The adaptation replaces Cursor-specific execution instructions, model routing and plugin packaging with native Codex workflows. Modified files retain the original license. cstack is not an official Cursor or OpenAI product.
@@ -23,3 +23,9 @@ Optional clarification, domain documentation, Horizon, architecture audit, proje
 The native cstack port changes invocation names, tool calls and local state paths. Horizon retains decision-planning and human-input boundaries. The project setup uses managed document blocks and existing Codex model roles. Review axes reuse the selected cstack panel rather than adding another panel. No Matt plugin or setup is required at runtime.
 
 [Original pinned source](https://github.com/mattpocock/skills/tree/3cca18b368ae95cdbdebbff572ccafa662551015).
+
+## pstack-claude delivery adaptations
+
+The landing records, pending-merge cancellation helper, related tests and merge-safety guidance adapt [michael-denyer/pstack-claude at 47fbcd46bbd10fbfd9e7af90714431e6d4c3788b](https://github.com/michael-denyer/pstack-claude/tree/47fbcd46bbd10fbfd9e7af90714431e6d4c3788b). That port and its additions are MIT-licensed, with Copyright (c) 2026 Lauren Tan preserved in [LICENSE](LICENSE). The [adaptation inventory](sources/pstack-claude.json) records source hashes. These additions do not change the primary pstack pin in UPSTREAM.json.
+
+The repository maintenance synchronizer adapts the three-way comparison approach from the [upstream synchronizer](https://github.com/michael-denyer/pstack-claude/blob/47fbcd46bbd10fbfd9e7af90714431e6d4c3788b/tools/sync.mjs) at the same pstack-claude revision. Its source hash and the local Git regression tests are recorded in the repository-level `MAINTENANCE-SOURCES.json`; these developer tools are not part of the installed plugin.
