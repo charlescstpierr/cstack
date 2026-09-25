@@ -73,14 +73,19 @@ class Fixture:
 
 
 class FakeRunner:
-    def __init__(self, edit):
+    def __init__(self, edit, commands=None):
         self.edit = edit
+        self.commands = commands or []
         self.cases = []
+        self.seen_models = []
 
     def run_case(self, case, output, command, model, effort, timeout):
         self.cases.append(case)
+        models = Path(case["cwd"]) / ".cstack" / "models.json"
+        self.seen_models.append(json.loads(models.read_text()) if models.exists() else None)
         self.edit(Path(case["cwd"]))
         return {
+            "actual_commands": self.commands,
             "status": "completed", "wall_seconds": 1.5, "questions": [], "native_child_thread_ids": ["c1"],
             "after_turn_actual_metadata": [{"token_usage": [{"total": {"totalTokens": 100}}]}],
             "child_metadata": [{"thread_id": "c1", "token_usage": [{"total": {"totalTokens": 40}}]}],
@@ -167,14 +172,15 @@ class OutcomeBenchTests(unittest.TestCase):
         self.assertIn(str(pstack / "skills" / "poteto-mode" / "SKILL.md"), poteto)
         self.assertNotIn("$cstack", poteto)
 
-    def run_with(self, edit):
+    def run_with(self, edit, arm="vanilla", base="vanilla", models=None, commands=()):
         task = self.fixture.load()
-        runner = FakeRunner(edit)
+        runner = FakeRunner(edit, list(commands))
         context = {
             "output": self.root / "out", "work": self.work, "bundles": {"cstack": ROOT / "plugins" / "cstack"},
             "runner": runner, "command": [], "model": None, "effort": None, "turn_timeout": 10,
+            "arm_bases": {arm: base}, "arm_models": {arm: models} if models is not None else {},
         }
-        run = {"run_id": "calc-add--vanilla--r1", "task_id": "calc-add", "arm": "vanilla", "repetition": 1}
+        run = {"run_id": f"calc-add--{arm}--r1", "task_id": "calc-add", "arm": arm, "repetition": 1}
         with patch.object(outcome_bench, "run_test", local_test):
             return outcome_bench.execute_run(run, task, "image", context), runner
 
@@ -270,6 +276,93 @@ class OutcomeBenchTests(unittest.TestCase):
             pin["blobs"] = {"pstack/skills/poteto-mode/SKILL.md": "0" * 40}
             with self.assertRaisesRegex(outcome_bench.BenchError, "UPSTREAM.json"):
                 outcome_bench.fetch_pstack(self.work)
+
+    def test_arm_specs_accept_named_cstack_variants_only(self):
+        arms = outcome_bench.parse_arms("vanilla,cstack,cstack-mixed=cstack:panels.json")
+        self.assertEqual([(arm["name"], arm["base"]) for arm in arms],
+                         [("vanilla", "vanilla"), ("cstack", "cstack"), ("cstack-mixed", "cstack")])
+        self.assertEqual(arms[2]["models"], Path("panels.json"))
+        for text, message in (
+            ("vanilla,pstack=pstack:m.json", "seule une base cstack"),
+            ("vanilla=vanilla:m.json,cstack", "seule une base cstack"),
+            ("cstack,cstack", "noms distincts"),
+            ("vanilla,bad name=cstack", "bras invalide"),
+            ("vanilla,x=claude", "bras invalide"),
+        ):
+            with self.subTest(text=text), self.assertRaisesRegex(outcome_bench.BenchError, message):
+                outcome_bench.parse_arms(text)
+
+    def test_arm_models_are_validated_with_the_setup_helper(self):
+        good = self.root / "mixed.json"
+        good.write_text(json.dumps({"interrogate reviewers": [{"runtime": "codex-cli"}, {"runtime": "claude-code"}]}))
+        bad = self.root / "bad.json"
+        bad.write_text(json.dumps({"unknown role": "inherit-parent"}))
+        arms = outcome_bench.parse_arms(f"cstack,mixed=cstack:{good}")
+        self.assertEqual(list(outcome_bench.load_arm_models(arms)), ["mixed"])
+        with self.assertRaisesRegex(outcome_bench.BenchError, "config de modèles invalide"):
+            outcome_bench.load_arm_models(outcome_bench.parse_arms(f"cstack,bad=cstack:{bad}"))
+        with self.assertRaisesRegex(outcome_bench.BenchError, "vide ou absente"):
+            outcome_bench.load_arm_models(outcome_bench.parse_arms(f"cstack,none=cstack:{self.root / 'none.json'}"))
+        with self.assertRaisesRegex(outcome_bench.BenchError, "invalide"):
+            outcome_bench.main(["run", "--tasks", str(self.fixture.tasks), "--work", str(self.work),
+                                "--output", str(self.root / "c"), "--seed", "1", "--arms", f"cstack,bad=cstack:{bad}"])
+
+    def test_arm_models_reach_the_workspace_but_not_the_diff(self):
+        models = {"arena runners": [{"runtime": "claude-code"}]}
+        row, runner = self.run_with(lambda cwd: (cwd / "calc.py").write_text(FIXED),
+                                    arm="mixed", base="cstack", models=models)
+        self.assertEqual(runner.seen_models, [models])
+        self.assertIn("$cstack:cstack", runner.cases[0]["prompts"][0])
+        self.assertEqual((row["arm"], row["base"]), ("mixed", "cstack"))
+        self.assertTrue(row["resolved"])
+        self.assertEqual(row["diff"]["files_changed"], 1)
+        self.assertNotIn(".cstack", Path(row["patch"]).read_text())
+        _, plain = self.run_with(lambda cwd: None)
+        self.assertEqual(plain.seen_models, [None])
+
+    def test_fetching_the_fix_is_flagged_and_excluded_from_rates(self):
+        row, _ = self.run_with(lambda cwd: (cwd / "calc.py").write_text(FIXED),
+                               commands=["git log --oneline", "curl -s https://github.com/o/r/pull/1.diff"])
+        self.assertTrue(row["possible_leak"])
+        clean, _ = self.run_with(lambda cwd: None, commands=["git status", "python3 -m pytest"])
+        self.assertFalse(clean["possible_leak"])
+        task = self.fixture.load()
+        self.assertTrue(outcome_bench.possible_leak(task, [f"cat {task['repo'].split('://', 1)[1]}/x"]))
+        summary = outcome_bench.summarize([
+            dict(row, tokens=1), dict(clean, arm="cstack", tokens=1),
+            dict(clean, run_id="x", tokens=1),
+        ])
+        self.assertEqual(summary["arms"]["vanilla"]["possible_leaks"], 1)
+        self.assertEqual(summary["arms"]["vanilla"]["runs"], 1)
+
+    def test_network_flag_reaches_the_command_and_manifest(self):
+        with patch.object(outcome_bench, "build_image", return_value="image"), \
+                patch.object(outcome_bench, "run_test", local_test):
+            outcome_bench.command_validate(outcome_bench.argparse.Namespace(
+                tasks=self.fixture.tasks, work=self.work, task_ids=None))
+        output = self.root / "net"
+        seen = {}
+
+        class Runner(FakeRunner):
+            def build_command(self):
+                return ["codex", "app-server"]
+
+            def scrub(self, value):
+                return value
+
+            def run_case(self, case, output_dir, command, model, effort, timeout):
+                seen["command"] = command
+                return super().run_case(case, output_dir, command, model, effort, timeout)
+
+        with patch.object(outcome_bench, "load_runner", return_value=Runner(lambda cwd: None)), \
+                patch.object(outcome_bench, "run_test", local_test):
+            outcome_bench.main(["run", "--tasks", str(self.fixture.tasks), "--work", str(self.work),
+                                "--output", str(output), "--seed", "1", "--repetitions", "1", "--network"])
+        self.assertEqual(seen["command"][-2:], outcome_bench.NETWORK_FLAG)
+        manifest = json.loads((output / "manifest.json").read_text())
+        self.assertTrue(manifest["network"])
+        self.assertEqual([arm["name"] for arm in manifest["arms"]], ["vanilla", "cstack"])
+        self.assertEqual(len((output / "results.jsonl").read_text().splitlines()), 2)
 
     def test_run_rejects_bad_arm_lists_and_missing_pstack_checkout(self):
         common = ["run", "--tasks", str(self.fixture.tasks), "--work", str(self.work),

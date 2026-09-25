@@ -24,6 +24,10 @@ DEFAULT_TASKS = ROOT / "evals" / "outcome"
 DEFAULT_PLUGIN = ROOT / "plugins" / "cstack"
 ARMS = ("vanilla", "cstack", "pstack")
 DEFAULT_ARMS = ("vanilla", "cstack")
+MODELS_HELPER = ROOT / "plugins" / "cstack" / "skills" / "setup-cstack" / "scripts" / "models.py"
+NETWORK_FLAG = ["-c", "sandbox_workspace_write.network_access=true"]
+# Signaux d’une récupération possible du correctif amont pendant un run avec réseau.
+LEAK_COMMAND = re.compile(r"\bgit\s+(?:fetch|clone|pull|ls-remote)\b|\b(?:curl|wget)\b[^\n]*github", re.IGNORECASE)
 UPSTREAM_INVENTORY = ROOT / "UPSTREAM.json"
 # Point d’entrée de chaque paquet évalué. pstack reste la source amont épinglée, non traduite.
 ARM_SKILLS = {"cstack": "cstack", "pstack": "poteto-mode"}
@@ -43,11 +47,56 @@ class BenchError(RuntimeError):
     pass
 
 
-def load_runner():
-    spec = importlib.util.spec_from_file_location("verify_behavior", RUNNER_PATH)
+def load_module(name: str, path: Path):
+    spec = importlib.util.spec_from_file_location(name, path)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
+
+
+def load_runner():
+    return load_module("verify_behavior", RUNNER_PATH)
+
+
+def parse_arms(text: str) -> list[dict[str, Any]]:
+    """Lit `nom` ou `nom=base[:models.json]` ; seule une base cstack accepte une config de modèles."""
+    arms = []
+    for item in (part.strip() for part in text.split(",")):
+        if not item:
+            continue
+        name, _, spec = item.partition("=")
+        base, _, models = (spec or name).partition(":")
+        if not SAFE_ID.fullmatch(name) or base not in ARMS:
+            raise BenchError(f"bras invalide: {item!r} ; base parmi {', '.join(ARMS)}")
+        if models and base != "cstack":
+            raise BenchError(f"{name}: seule une base cstack lit .cstack/models.json")
+        arms.append({"name": name, "base": base, "models": Path(models) if models else None})
+    names = [arm["name"] for arm in arms]
+    if len(arms) < 2 or len(set(names)) != len(names):
+        raise BenchError("--arms exige au moins deux bras de noms distincts")
+    return arms
+
+
+def load_arm_models(arms: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
+    helper = load_module("cstack_models", MODELS_HELPER)
+    configs = {}
+    for arm in arms:
+        if arm["models"] is None:
+            continue
+        path = arm["models"].expanduser().resolve()
+        try:
+            config, _ = helper.read_config(path)
+        except (OSError, ValueError) as error:
+            raise BenchError(f"{arm['name']}: config de modèles invalide {path}: {error}") from error
+        if not config:
+            raise BenchError(f"{arm['name']}: config de modèles vide ou absente {path}")
+        configs[arm["name"]] = config
+    return configs
+
+
+def possible_leak(task: dict[str, Any], commands: list[str]) -> bool:
+    repo = task["repo"].split("://", 1)[1].removesuffix(".git").lower()
+    return any(LEAK_COMMAND.search(command) or repo in command.lower() for command in commands)
 
 
 def git(cwd: Path, *args: str, check: bool = True) -> str:
@@ -283,6 +332,7 @@ def arm_prompt(task: dict[str, Any], arm: str, bundles: dict[str, Path]) -> str:
 
 
 def plan_runs(tasks: list[dict[str, Any]], repetitions: int, seed: int, arms=DEFAULT_ARMS) -> list[dict[str, Any]]:
+    """`arms` contient des noms de bras ; chaque nom apparaît autant de fois par tâche."""
     runs = [
         {"run_id": f"{task['id']}--{arm}--r{rep}", "task_id": task["id"], "arm": arm, "repetition": rep}
         for task in tasks for arm in arms for rep in range(1, repetitions + 1)
@@ -365,8 +415,12 @@ def execute_run(run: dict[str, Any], task: dict[str, Any], image: str, context: 
     work: Path = context["work"]
     source = mirror(task, work)
     workspace = checkout(source, task["base_sha"], work / "workspaces" / run["run_id"], history=True)
+    base = context["arm_bases"][run["arm"]]
+    models = context["arm_models"].get(run["arm"])
+    if models is not None:
+        write_json(workspace / ".cstack" / "models.json", models)
     case = {"id": run["run_id"], "cwd": workspace, "sandbox": "workspace-write",
-            "prompts": [arm_prompt(task, run["arm"], context["bundles"])]}
+            "prompts": [arm_prompt(task, base, context["bundles"])]}
     agent = context["runner"].run_case(case, output / "agent", context["command"], context["model"],
                                        context["effort"], context["turn_timeout"])
     patch = output / "patches" / f"{run['run_id']}.diff"
@@ -378,6 +432,8 @@ def execute_run(run: dict[str, Any], task: dict[str, Any], image: str, context: 
     graded = grade(task, image, source, patch, work)
     return {
         **run,
+        "base": base,
+        "possible_leak": possible_leak(task, agent.get("actual_commands", [])),
         "agent_status": agent.get("status"),
         "agent_error": agent.get("error"),
         "wall_seconds": agent.get("wall_seconds"),
@@ -399,8 +455,9 @@ def load_results(path: Path) -> list[dict[str, Any]]:
 
 def summarize(results: list[dict[str, Any]]) -> dict[str, Any]:
     arms: dict[str, Any] = {}
-    counted = [row for row in results if row.get("agent_status") != "infra_error"]
-    present = [arm for arm in ARMS if any(row["arm"] == arm for row in results)]
+    counted = [row for row in results if row.get("agent_status") != "infra_error" and not row.get("possible_leak")]
+    order = {base: index for index, base in enumerate(ARMS)}
+    present = sorted({row["arm"] for row in results}, key=lambda name: (order.get(name, len(ARMS)), name))
     for arm in present:
         rows = [row for row in counted if row["arm"] == arm]
         resolved = [row for row in rows if row.get("resolved")]
@@ -411,6 +468,7 @@ def summarize(results: list[dict[str, Any]]) -> dict[str, Any]:
             "resolved": len(resolved),
             "resolved_rate": round(len(resolved) / len(rows), 3) if rows else None,
             "infra_errors": sum(1 for row in results if row["arm"] == arm and row.get("agent_status") == "infra_error"),
+            "possible_leaks": sum(1 for row in results if row["arm"] == arm and row.get("possible_leak")),
             "needs_input": sum(1 for row in rows if row.get("agent_status") == "needs_input"),
             "median_tokens": statistics.median(tokens) if tokens else None,
             "tokens_known": len(tokens),
@@ -446,7 +504,7 @@ def summarize(results: list[dict[str, Any]]) -> dict[str, Any]:
         "paired": paired,
         "limits": [
             "Échantillon petit : l’écart doit être large et cohérent entre tâches pour être interprété.",
-            "infra_error est exclu des dénominateurs et compté à part.",
+            "infra_error et possible_leak sont exclus des dénominateurs et comptés à part.",
             "Les tokens viennent des métadonnées natives ; tokens_known indique leur couverture.",
         ],
     }
@@ -511,9 +569,10 @@ def fetch_pstack(work: Path) -> Path:
 
 def arm_roots(args: argparse.Namespace) -> dict[str, Path]:
     roots = {}
-    if "cstack" in args.arms:
+    bases = {arm["base"] for arm in args.arms}
+    if "cstack" in bases:
         roots["cstack"] = args.plugin.expanduser().resolve()
-    if "pstack" in args.arms:
+    if "pstack" in bases:
         roots["pstack"] = (args.pstack or default_pstack(args.work)).expanduser().resolve()
     for arm, root in roots.items():
         if not (root / "skills" / ARM_SKILLS[arm] / "SKILL.md").is_file():
@@ -532,11 +591,18 @@ def command_run(args: argparse.Namespace) -> int:
     output = args.output.expanduser().resolve()
     manifest_path = output / "manifest.json"
     roots = arm_roots(args)
+    arm_models = load_arm_models(args.arms)
     manifest = {
-        "schema_version": 2, "suite_digest": tree_digest(args.tasks), "merged_after": suite["merged_after"],
+        "schema_version": 3, "suite_digest": tree_digest(args.tasks), "merged_after": suite["merged_after"],
         "tasks": [task["id"] for task in tasks], "task_digests": {task["id"]: task["digest"] for task in tasks},
-        "arms": list(args.arms), "bundle_digests": {arm: tree_digest(root) for arm, root in roots.items()},
-        "repetitions": args.repetitions, "seed": args.seed,
+        "arms": [
+            {"name": arm["name"], "base": arm["base"],
+             "models_sha256": hashlib.sha256(json.dumps(arm_models[arm["name"]], sort_keys=True).encode()).hexdigest()
+             if arm["name"] in arm_models else None}
+            for arm in args.arms
+        ],
+        "bundle_digests": {base: tree_digest(root) for base, root in roots.items()},
+        "network": args.network, "repetitions": args.repetitions, "seed": args.seed,
         "model": args.model, "effort": args.effort, "turn_timeout": args.turn_timeout,
     }
     if manifest_path.exists():
@@ -555,15 +621,16 @@ def command_run(args: argparse.Namespace) -> int:
         if not bundles[arm].exists():
             shutil.copytree(root, bundles[arm], ignore=shutil.ignore_patterns("node_modules", "__pycache__", ".git"))
     runner = load_runner()
+    command = runner.build_command() + (NETWORK_FLAG if args.network else [])
     context = {
-        "output": output, "work": args.work, "bundles": bundles, "runner": runner,
-        "command": runner.build_command(), "model": args.model, "effort": args.effort,
-        "turn_timeout": args.turn_timeout,
+        "output": output, "work": args.work, "bundles": bundles, "runner": runner, "command": command,
+        "arm_bases": {arm["name"]: arm["base"] for arm in args.arms}, "arm_models": arm_models,
+        "model": args.model, "effort": args.effort, "turn_timeout": args.turn_timeout,
     }
     results_path = output / "results.jsonl"
     done = {row["run_id"] for row in load_results(results_path)}
     by_id = {task["id"]: task for task in tasks}
-    for run in plan_runs(tasks, args.repetitions, args.seed, args.arms):
+    for run in plan_runs(tasks, args.repetitions, args.seed, [arm["name"] for arm in args.arms]):
         if run["run_id"] in done:
             continue
         print(f"[{run['run_id']}] démarrage", flush=True)
@@ -607,7 +674,9 @@ def main(argv: list[str] | None = None) -> int:
     run.add_argument("--output", type=Path, required=True, help="dossier de campagne ; une campagne identique reprend")
     run.add_argument("--plugin", type=Path, default=DEFAULT_PLUGIN, help="racine du plugin cstack évalué")
     run.add_argument("--pstack", type=Path, help="racine pstack ; par défaut le checkout épinglé de fetch-pstack")
-    run.add_argument("--arms", default=",".join(DEFAULT_ARMS), help=f"bras séparés par des virgules parmi {', '.join(ARMS)}")
+    run.add_argument("--arms", default=",".join(DEFAULT_ARMS),
+                     help=f"bras `nom` ou `nom=base[:models.json]` séparés par des virgules ; bases : {', '.join(ARMS)}")
+    run.add_argument("--network", action="store_true", help="autorise le réseau du sandbox pour tous les bras")
     run.add_argument("--repetitions", type=int, default=3)
     run.add_argument("--seed", type=int, required=True, help="graine de l’ordre entrelacé, enregistrée")
     run.add_argument("--model", help="modèle natif commun à tous les bras")
@@ -617,9 +686,10 @@ def main(argv: list[str] | None = None) -> int:
     report.add_argument("--output", type=Path, required=True)
     args = parser.parse_args(argv)
     if args.command == "run":
-        args.arms = tuple(arm.strip() for arm in args.arms.split(",") if arm.strip())
-        if len(args.arms) < 2 or len(set(args.arms)) != len(args.arms) or not set(args.arms) <= set(ARMS):
-            parser.error(f"--arms exige au moins deux bras distincts parmi {', '.join(ARMS)}")
+        try:
+            args.arms = parse_arms(args.arms)
+        except BenchError as error:
+            parser.error(str(error))
     if args.command == "run" and not 1 <= args.repetitions <= 10:
         parser.error("--repetitions doit être compris entre 1 et 10")
     if args.command == "run" and not 0 < args.turn_timeout <= 900:

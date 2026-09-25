@@ -1,0 +1,5 @@
+{
+  "arena runners": [{"runtime": "codex-cli"}, {"runtime": "claude-code"}],
+  "architect runners": [{"runtime": "codex-cli"}, {"runtime": "claude-code"}],
+  "interrogate reviewers": [{"runtime": "codex-cli"}, {"runtime": "claude-code"}]
+}
