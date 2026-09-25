@@ -1,0 +1,40 @@
+{
+  "id": "click-help-param",
+  "repo": "https://github.com/pallets/click",
+  "source": "https://github.com/pallets/click/commit/b67832c2167e5b0ff6764a8c04a0a9087e697b5a",
+  "language": "python",
+  "kind": "bug",
+  "base_sha": "8c1a0a7abbc1c36f70d1f65f3604acc46c5ce6ab",
+  "fix_sha": "b67832c2167e5b0ff6764a8c04a0a9087e697b5a",
+  "merged_at": "2026-07-09T20:24:08-07:00",
+  "prompt": "A parameter named `help` breaks parsing\n\nIf a command has a parameter whose name is `help` (for example `click.argument(\"help\")`, or an option such as `click.Option([\"--assist\", \"help\"])`), the command no longer works: the automatic `--help` option also stores its value under the name `help`, so the two parameters overwrite each other during parsing.\n\nReproduction:\n\n```python\nimport click\nfrom click.testing import CliRunner\n\ncli = click.Command(\n    \"cli\",\n    params=[click.Argument([\"help\"])],\n    callback=lambda help: click.echo(help),\n)\nresult = CliRunner().invoke(cli, [\"value\"])\nprint(result.exit_code, repr(result.output))\n```\n\nExpected: exit code 0 and output `\"value\\n\"`, and `--help` on the same command still prints the help page (\"Show this message and exit.\") with exit code 0. The same holds for an option named `help` and for custom `help_option_names` (e.g. `help_option_names=[\"--man\"]` with an option `click.Option([\"--foo\", \"man\"])`).\n\nRequested behavior:\n\n1. The automatic help option must store its value under the reserved name `_click_default_help` instead of `help`. So `cli.get_help_option(ctx).name == \"_click_default_help\"`, and this name is what appears for the help option in `Command.to_info_dict()` / `Context.to_info_dict()` output (with `\"opts\": [\"--help\"]` unchanged).\n2. An option that explicitly reuses the `--help` flag (e.g. `@click.option(\"--help\", default=\"default value\")`) still replaces the automatic help option entirely, as today (`get_help_option` returns `None`).\n3. If a user parameter claims the reserved name itself (e.g. `@click.argument(\"_click_default_help\")`), emit a `UserWarning` whose message contains `reserved for the automatic help option`. Parsing may still fail in that case (usage error, exit code 2), but no longer silently.\n4. If an argument shares its storage name with another parameter (e.g. `@click.option(\"--foo\", \"target\")` together with `@click.argument(\"target\")`), emit a `UserWarning` whose message contains `'target' is used by an argument` (the argument's value still wins, exit code 0). Options that deliberately share a name to compete for one value (feature switches such as `--upper`/`--lower` both storing `transformation`) must NOT warn.\n\nThe warnings in 3 and 4 must be emitted when the command's parameters are collected at invocation time (e.g. inside `CliRunner.invoke`), not when the command is defined with the decorators. Click's own test configuration turns warnings into errors, so no warning may fire for ordinary commands.",
+  "hidden_paths": [
+    "tests/test_basic.py",
+    "tests/test_info_dict.py",
+    "tests/test_options.py"
+  ],
+  "fail_to_pass": [
+    {
+      "id": "param-named-help",
+      "command": "python3 -m pytest -q -p no:cacheprovider tests/test_basic.py::test_param_named_help"
+    },
+    {
+      "id": "reserved-name-warning",
+      "command": "python3 -m pytest -q -p no:cacheprovider tests/test_basic.py::test_param_squatting_help_option_name"
+    },
+    {
+      "id": "info-dict-help-name",
+      "command": "python3 -m pytest -q -p no:cacheprovider tests/test_info_dict.py::test_command tests/test_info_dict.py::test_context"
+    },
+    {
+      "id": "argument-sharing-name-warning",
+      "command": "python3 -m pytest -q -p no:cacheprovider tests/test_options.py::test_argument_sharing_param_name_warning"
+    }
+  ],
+  "pass_to_pass": [
+    {
+      "id": "related-test-files",
+      "command": "python3 -m pytest -q -p no:cacheprovider tests/test_basic.py tests/test_info_dict.py tests/test_options.py tests/test_arguments.py tests/test_commands.py tests/test_context.py tests/test_shell_completion.py --deselect tests/test_basic.py::test_param_named_help --deselect tests/test_basic.py::test_param_squatting_help_option_name --deselect tests/test_info_dict.py::test_command --deselect tests/test_info_dict.py::test_context --deselect tests/test_options.py::test_argument_sharing_param_name_warning"
+    }
+  ]
+}

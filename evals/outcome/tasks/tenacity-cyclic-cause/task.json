@@ -1,0 +1,26 @@
+{
+  "id": "tenacity-cyclic-cause",
+  "repo": "https://github.com/jd/tenacity",
+  "source": "https://github.com/jd/tenacity/commit/b3c5a9f9212187aaf96353378daa9a9ebd800742",
+  "language": "python",
+  "kind": "bug",
+  "base_sha": "c650fb45204635f07910948d5fc59a8c551ffdda",
+  "fix_sha": "b3c5a9f9212187aaf96353378daa9a9ebd800742",
+  "merged_at": "2026-07-29T10:39:31+00:00",
+  "prompt": "retry_if_exception_cause_type hangs forever when the exception's __cause__ chain contains a cycle\n\nPython allows exception cause chains that loop back on themselves, for example `raise e from e`, or two exceptions whose `__cause__` point at each other. When such an exception reaches a `Retrying` configured with `retry_if_exception_cause_type`, the process spins at 100% CPU and never returns: the stop condition is never reached and the exception is never re-raised.\n\nReproduction:\n\n```python\nimport tenacity\n\ndef boom():\n    try:\n        raise ValueError(\"inner\")\n    except ValueError as e:\n        raise e from e\n\nr = tenacity.Retrying(\n    retry=tenacity.retry_if_exception_cause_type(KeyError),\n    stop=tenacity.stop_after_attempt(2),\n    reraise=True,\n)\nr(boom)  # never returns\n```\n\nThe same happens with a two-exception cycle:\n\n```python\na = ValueError(\"a\")\nb = RuntimeError(\"b\")\na.__cause__ = b\nb.__cause__ = a\nraise a\n```\n\nExpected behavior: a cyclic cause chain is handled like any other chain. Every exception in the chain is still checked, but once the walk comes back to an exception it has already visited it stops. If no cause matches, the predicate returns False, so in the examples above tenacity stops after 2 attempts and re-raises the original `ValueError`. Chains without cycles should behave as they do today.",
+  "hidden_paths": [
+    "tests/test_tenacity.py"
+  ],
+  "fail_to_pass": [
+    {
+      "id": "cause-cycles",
+      "command": "timeout 60 python3 -m pytest -q -p no:cacheprovider tests/test_tenacity.py::TestDecoratorWrapper::test_retry_if_exception_cause_type_handles_cause_cycles"
+    }
+  ],
+  "pass_to_pass": [
+    {
+      "id": "tests-except-cause-cycles",
+      "command": "timeout 300 python3 -m pytest -q -p no:cacheprovider tests --deselect tests/test_tenacity.py::TestDecoratorWrapper::test_retry_if_exception_cause_type_handles_cause_cycles"
+    }
+  ]
+}
