@@ -78,17 +78,25 @@ class FakeRunner:
         self.commands = commands or []
         self.cases = []
         self.seen_models = []
+        self.watch = []
+        self.hidden_modes = {}
+        self.metadata = {
+            "after_turn_actual_metadata": [{"model": "m1", "reasoning_effort": "high",
+                                            "token_usage": [{"total": {"totalTokens": 100}}]}],
+            "child_metadata": [{"thread_id": "c1", "model": "m1", "reasoning_effort": "high",
+                                "token_usage": [{"total": {"totalTokens": 40}}]}],
+        }
 
     def run_case(self, case, output, command, model, effort, timeout):
         self.cases.append(case)
+        self.hidden_modes = {path: path.stat().st_mode & 0o777 for path in self.watch if path.exists()}
         models = Path(case["cwd"]) / ".cstack" / "models.json"
         self.seen_models.append(json.loads(models.read_text()) if models.exists() else None)
         self.edit(Path(case["cwd"]))
         return {
             "actual_commands": self.commands,
             "status": "completed", "wall_seconds": 1.5, "questions": [], "native_child_thread_ids": ["c1"],
-            "after_turn_actual_metadata": [{"token_usage": [{"total": {"totalTokens": 100}}]}],
-            "child_metadata": [{"thread_id": "c1", "token_usage": [{"total": {"totalTokens": 40}}]}],
+            **self.metadata,
         }
 
 
@@ -133,7 +141,8 @@ class OutcomeBenchTests(unittest.TestCase):
 
     def test_validation_accepts_real_red_green_and_rejects_already_green_task(self):
         with patch.object(outcome_bench, "run_test", local_test), \
-                patch.object(outcome_bench, "build_image", return_value="image"):
+                patch.object(outcome_bench, "build_image", return_value="image"), \
+                patch.object(outcome_bench, "image_id", return_value="sha256:" + "a" * 64):
             receipt = outcome_bench.validate_task(self.fixture.load(), self.work)
             self.assertTrue(receipt["valid"], receipt["problems"])
             self.fixture.write(fail_to_pass=[{"id": "neg", "command": "PYTHONPATH=. python3 tests/test_neg.py"}])
@@ -172,12 +181,16 @@ class OutcomeBenchTests(unittest.TestCase):
         self.assertIn(str(pstack / "skills" / "poteto-mode" / "SKILL.md"), poteto)
         self.assertNotIn("$cstack", poteto)
 
-    def run_with(self, edit, arm="vanilla", base="vanilla", models=None, commands=()):
+    def run_with(self, edit, arm="vanilla", base="vanilla", models=None, commands=(), model=None, effort=None,
+                 metadata=None):
         task = self.fixture.load()
         runner = FakeRunner(edit, list(commands))
+        runner.watch = [self.work, self.root / "out" / "patches"]
+        if metadata is not None:
+            runner.metadata = metadata
         context = {
             "output": self.root / "out", "work": self.work, "bundles": {"cstack": ROOT / "plugins" / "cstack"},
-            "runner": runner, "command": [], "model": None, "effort": None, "turn_timeout": 10,
+            "runner": runner, "command": [], "model": model, "effort": effort, "turn_timeout": 10,
             "arm_bases": {arm: base}, "arm_models": {arm: models} if models is not None else {},
         }
         run = {"run_id": f"calc-add--{arm}--r1", "task_id": "calc-add", "arm": arm, "repetition": 1}
@@ -342,6 +355,7 @@ class OutcomeBenchTests(unittest.TestCase):
 
     def test_network_flag_reaches_the_command_and_manifest(self):
         with patch.object(outcome_bench, "build_image", return_value="image"), \
+                patch.object(outcome_bench, "image_id", return_value="sha256:" + "a" * 64), \
                 patch.object(outcome_bench, "run_test", local_test):
             outcome_bench.command_validate(outcome_bench.argparse.Namespace(
                 tasks=self.fixture.tasks, work=self.work, task_ids=None))
@@ -368,6 +382,98 @@ class OutcomeBenchTests(unittest.TestCase):
         self.assertTrue(manifest["network"])
         self.assertEqual([arm["name"] for arm in manifest["arms"]], ["vanilla", "cstack"])
         self.assertEqual(len((output / "results.jsonl").read_text().splitlines()), 2)
+
+    def test_agent_works_outside_the_mirror_with_private_paths_hidden(self):
+        (self.root / "out" / "patches").mkdir(parents=True)
+        row, runner = self.run_with(lambda cwd: (cwd / "calc.py").write_text(FIXED))
+        case = runner.cases[0]
+        self.assertFalse(case["ephemeral"])
+        self.assertNotIn(self.work.resolve(), Path(case["cwd"]).resolve().parents)
+        self.assertEqual(set(runner.hidden_modes.values()), {0})
+        self.assertNotEqual(self.work.stat().st_mode & 0o777, 0)
+        self.assertFalse(Path(case["cwd"]).exists())
+        self.assertTrue(row["resolved"])
+        leak, _ = self.run_with(lambda cwd: None, commands=[f"ls {self.work}/mirrors"])
+        self.assertTrue(leak["possible_leak"])
+        task = self.fixture.load()
+        self.assertTrue(outcome_bench.possible_leak(task, [f"git show {task['fix_sha'][:12]}"]))
+
+    def test_observed_model_or_effort_mismatch_is_flagged_and_excluded(self):
+        same, _ = self.run_with(lambda cwd: None, model="m1", effort="high")
+        self.assertEqual((same["settings_observed"], same["settings_mismatch"]), (True, False))
+        other = {"after_turn_actual_metadata": [{"model": "m2", "reasoning_effort": "high"}], "child_metadata": []}
+        drift, _ = self.run_with(lambda cwd: None, model="m1", effort="high", metadata=other)
+        self.assertTrue(drift["settings_mismatch"])
+        unseen, _ = self.run_with(lambda cwd: None, model="m1",
+                                  metadata={"after_turn_actual_metadata": [], "child_metadata": []})
+        self.assertEqual((unseen["settings_observed"], unseen["settings_mismatch"]), (False, False))
+        summary = outcome_bench.summarize([dict(same, tokens=1), dict(drift, run_id="d", tokens=1)])
+        self.assertEqual(summary["arms"]["vanilla"]["runs"], 1)
+        self.assertEqual(summary["arms"]["vanilla"]["settings_mismatches"], 1)
+
+    def test_docker_launch_failures_are_infrastructure_errors(self):
+        class Result:
+            returncode, stdout, stderr = 125, "", "Unable to find image"
+        with patch.object(outcome_bench.subprocess, "run", return_value=Result()):
+            with self.assertRaisesRegex(outcome_bench.BenchError, "avant le test"):
+                outcome_bench.run_test("sha256:x", self.root, "true", 5)
+        Result.returncode = 1
+        with patch.object(outcome_bench.subprocess, "run", return_value=Result()):
+            self.assertFalse(outcome_bench.run_test("sha256:x", self.root, "true", 5)["passed"])
+
+    def test_non_root_operators_get_their_checkout_back(self):
+        with patch.object(outcome_bench.os, "getuid", return_value=1000), \
+                patch.object(outcome_bench.os, "getgid", return_value=1000):
+            wrapped = outcome_bench.owned_command("pytest -q")
+        self.assertIn("chown -R 1000:1000 /work", wrapped)
+        result = subprocess.run(["sh", "-c", wrapped.replace("pytest -q", "exit 3")], capture_output=True)
+        self.assertEqual(result.returncode, 3)
+        with patch.object(outcome_bench.os, "getuid", return_value=0):
+            self.assertEqual(outcome_bench.owned_command("pytest -q"), "pytest -q")
+
+    def test_receipts_must_name_an_immutable_image(self):
+        task = self.fixture.load()
+        receipt = self.work / "validation" / "calc-add.json"
+        receipt.parent.mkdir(parents=True)
+        receipt.write_text(json.dumps({"valid": True, "task_digest": task["digest"], "image": "cstack-outcome/x:1"}))
+        with self.assertRaisesRegex(outcome_bench.BenchError, "identité d’image"):
+            outcome_bench.require_receipt(task, self.work)
+        receipt.write_text(json.dumps({"valid": True, "task_digest": task["digest"], "image": "sha256:" + "b" * 64}))
+        self.assertEqual(outcome_bench.require_receipt(task, self.work), "sha256:" + "b" * 64)
+
+    def test_truncated_last_record_is_dropped_and_repaired(self):
+        path = self.root / "results.jsonl"
+        path.write_text('{"run_id": "a"}\n{"run_id": "b"}\n{"run_id": "c", "resol')
+        self.assertEqual([row["run_id"] for row in outcome_bench.load_results(path)], ["a", "b"])
+        self.assertIn('"c"', path.read_text())
+        outcome_bench.load_results(path, repair=True)
+        self.assertEqual(path.read_text(), '{"run_id": "a"}\n{"run_id": "b"}\n')
+        outcome_bench.append_result(path, {"run_id": "c"})
+        self.assertEqual(len(outcome_bench.load_results(path)), 3)
+        path.write_text('{"run_id": "a"}\n{broken\n{"run_id": "c"}\n')
+        with self.assertRaisesRegex(outcome_bench.BenchError, "milieu"):
+            outcome_bench.load_results(path)
+
+    def test_report_requires_a_manifest_and_flags_missing_runs(self):
+        output = self.root / "campaign"
+        with self.assertRaisesRegex(outcome_bench.BenchError, "manifest.json absent"):
+            outcome_bench.main(["report", "--output", str(output)])
+        output.mkdir()
+        manifest = {"tasks": ["calc-add"], "arms": [{"name": "vanilla"}, {"name": "cstack"}],
+                    "repetitions": 2, "seed": 3}
+        (output / "manifest.json").write_text(json.dumps(manifest))
+        row = {"run_id": "calc-add--vanilla--r1", "task_id": "calc-add", "arm": "vanilla", "resolved": True,
+               "agent_status": "completed", "diff": {"lines_added": 0, "lines_removed": 0, "hidden_paths_touched": []}}
+        (output / "results.jsonl").write_text(json.dumps(row) + "\n")
+        outcome_bench.main(["report", "--output", str(output)])
+        summary = json.loads((output / "summary.json").read_text())
+        self.assertFalse(summary["complete"])
+        self.assertEqual(len(summary["missing_runs"]), 3)
+
+    def test_campaign_output_cannot_live_in_the_hidden_work_dir(self):
+        with self.assertRaisesRegex(outcome_bench.BenchError, "hors de --work"):
+            outcome_bench.main(["run", "--tasks", str(self.fixture.tasks), "--work", str(self.work),
+                                "--output", str(self.work / "campaign"), "--seed", "1"])
 
     def test_run_rejects_bad_arm_lists_and_missing_pstack_checkout(self):
         common = ["run", "--tasks", str(self.fixture.tasks), "--work", str(self.work),

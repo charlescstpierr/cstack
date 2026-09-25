@@ -538,7 +538,7 @@ def run_case(case, output, command, model, effort, timeout):
         server.notify("initialized")
         thread_params = {
             "cwd": str(case["cwd"]), "approvalPolicy": "never", "sandbox": case["sandbox"],
-            "ephemeral": True, "developerInstructions": NEUTRAL_INSTRUCTIONS,
+            "ephemeral": case.get("ephemeral", True), "developerInstructions": NEUTRAL_INSTRUCTIONS,
         }
         if model:
             thread_params["model"] = model
