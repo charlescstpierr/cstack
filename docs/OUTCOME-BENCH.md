@@ -22,6 +22,8 @@ python3 scripts/outcome-bench.py run --output .cstack/outcome-runs/<campagne> --
 python3 scripts/outcome-bench.py report --output .cstack/outcome-runs/<campagne>
 ```
 
+Derrière un proxy HTTPS qui réécrit les certificats, les Dockerfiles TypeScript acceptent un secret BuildKit facultatif : construire l’image une fois avec `docker build --secret id=ca,src=<bundle CA> -t <tag> evals/outcome/tasks/<id>`, sous le tag attendu par `image_tag`, puis `validate` la réutilise. Sans proxy, rien n’est à faire.
+
 `fetch-pstack` récupère `cursor/plugins` au commit épinglé et refuse le checkout si un seul blob diffère de l’inventaire. `validate` n’appelle aucun modèle : pour chaque tâche, les tests `fail_to_pass` échouent sur la base avec les tests cachés, tous passent avec le correctif et les `pass_to_pass` passent sur la base. Son reçu, lié à l’empreinte de la tâche, est exigé par `run`. Une campagne interrompue reprend avec la même commande ; un manifeste différent est refusé.
 
 ## Mesures
