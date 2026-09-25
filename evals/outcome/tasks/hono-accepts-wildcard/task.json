@@ -1,0 +1,35 @@
+{
+  "id": "hono-accepts-wildcard",
+  "repo": "https://github.com/honojs/hono",
+  "source": "https://github.com/honojs/hono/commit/28a9c128912de19f3fb28b00ae289c9b93f6f392",
+  "language": "typescript",
+  "kind": "bug",
+  "base_sha": "1096d66e03a3fd16a5cc5f912c2d5e8fd6d990b0",
+  "fix_sha": "28a9c128912de19f3fb28b00ae289c9b93f6f392",
+  "merged_at": "2026-08-22T14:55:00+09:00",
+  "prompt": "`accepts()` helper ignores wildcard media ranges like `application/*`\n\nThe `accepts` helper from `hono/accepts` does not understand media ranges with a wildcard subtype. If the client sends `Accept: application/*`, a supported type such as `application/json` is never selected and the configured `default` is returned instead.\n\nReproduction:\n\n```ts\nimport { Hono } from 'hono'\nimport { accepts } from 'hono/accepts'\n\nconst app = new Hono()\napp.get('/', (c) =>\n  c.text(\n    accepts(c, {\n      header: 'Accept',\n      supports: ['application/json', 'text/html'],\n      default: 'text/html',\n    })\n  )\n)\n\nconst res = await app.request('/', { headers: { Accept: 'application/*' } })\nconsole.log(await res.text()) // prints \"text/html\"\n```\n\nExpected: `application/json`, because it is the first entry of `supports` that falls within `application/*`.\n\nExpected behavior of the default matcher, in more detail:\n- A `type/*` range matches any supported value with the same main type (e.g. `text/*` matches `text/plain`); the result is the matching entry from `supports`.\n- When several ranges have the same quality factor, more specific ones win: an exact type beats `type/*`, which beats `*/*`. For example `Accept: */*, text/*` with `supports: ['application/json', 'text/plain']` and `default: 'application/json'` must return `text/plain`, and `Accept: */*, application/json` with `supports: ['text/html', 'application/json']` must return `application/json`.\n- The fully generic wildcards `*/*` and `*` keep falling through to `default` rather than picking an entry from `supports` (e.g. `Accept: text/plain, */*;q=0.5` with `supports: ['application/json']` and `default: 'text/html'` returns `text/html`; `Accept-Encoding: *` with `supports: ['gzip', 'deflate']` and `default: 'identity'` returns `identity`).\n- Quality factors still take priority, and existing exact-match behavior is unchanged.",
+  "hidden_paths": [
+    "src/helper/accepts/accepts.test.ts"
+  ],
+  "fail_to_pass": [
+    {
+      "id": "subtype-wildcard",
+      "command": "ln -sfn /deps/node_modules node_modules && npx vitest run --project main --coverage.enabled=false src/helper/accepts/accepts.test.ts -t 'should match wildcard subtype application'"
+    },
+    {
+      "id": "subtype-wildcard-specificity",
+      "command": "ln -sfn /deps/node_modules node_modules && npx vitest run --project main --coverage.enabled=false src/helper/accepts/accepts.test.ts -t 'should match subtype wildcard while global wildcard falls through to default'"
+    }
+  ],
+  "pass_to_pass": [
+    {
+      "id": "accepts-rest",
+      "command": "ln -sfn /deps/node_modules node_modules && npx vitest run --project main --coverage.enabled=false src/helper/accepts/accepts.test.ts -t '^(?!.*(should match wildcard subtype application|should match subtype wildcard while global wildcard)).*$'"
+    },
+    {
+      "id": "parse-accept",
+      "command": "ln -sfn /deps/node_modules node_modules && npx vitest run --project main --coverage.enabled=false src/utils/accept.test.ts"
+    }
+  ],
+  "test_timeout": 600
+}

@@ -1,0 +1,40 @@
+{
+  "id": "ky-streaming-upload",
+  "repo": "https://github.com/sindresorhus/ky",
+  "source": "https://github.com/sindresorhus/ky/commit/06ebf18e1927b3772726037bda5a78d4b7eb6dba",
+  "language": "typescript",
+  "kind": "bug",
+  "base_sha": "f87efe6f5d8d6067756a80c5120e7782f4ed847e",
+  "fix_sha": "06ebf18e1927b3772726037bda5a78d4b7eb6dba",
+  "merged_at": "2026-09-12T11:24:33+02:00",
+  "prompt": "Requests fail when streaming request bodies are unavailable (onUploadProgress, keepalive, no-cors, unsupported runtimes)\n\n`onUploadProgress` is documented as being silently ignored where streaming request bodies are not supported, but in several situations ky throws instead and the request never happens.\n\n1. `keepalive` / `no-cors` requests. With an upload progress handler, a request that uses `keepalive: true` or `mode: 'no-cors'` rejects before it is sent (reproduced in Node.js 24):\n\n```ts\nimport ky from 'ky'\n\nawait ky.post('http://localhost:3000/', {\n  keepalive: true,\n  body: 'payload',\n  onUploadProgress() {},\n}).text()\n// TypeError: keepalive\n\nawait ky.post('http://localhost:3000/', {\n  mode: 'no-cors',\n  body: 'payload',\n  onUploadProgress() {},\n}).text()\n// TypeError: If request is made from ReadableStream, mode should be \"same-origin\" or \"cors\"\n```\n\nExpected: both requests are sent normally with the original body (the server receives `payload`) and `onUploadProgress` is simply never called, because these requests cannot use a streaming body.\n\n2. Runtimes without request stream support. In an environment whose `Request` constructor throws when given a `ReadableStream` body (for example `TypeError: Streaming request bodies are not supported`), importing ky throws that same error, so not even a plain `ky.get(url)` works. Only QQBrowser's \"unsupported BodyInit type\" error seems to be tolerated today. You can simulate this in Node.js by replacing `globalThis.Request` with a subclass whose constructor throws for `ReadableStream` bodies before importing ky.\n\nExpected: whatever error such a runtime throws, ky treats it as \"request streams are not supported\". Ordinary requests (GET, and POST with a string body) must then work normally, `onUploadProgress` must be silently ignored (never called), ky should check for stream support only once, and must not try to construct any other request with a `ReadableStream` body in that environment.",
+  "hidden_paths": [
+    "test/stream.ts",
+    "test/request-stream-support.ts"
+  ],
+  "fail_to_pass": [
+    {
+      "id": "keepalive-upload-progress",
+      "command": "ln -sfn /deps/node_modules node_modules && npx ava test/stream.ts --match 'upload progress does not prevent keepalive requests'"
+    },
+    {
+      "id": "no-cors-upload-progress",
+      "command": "ln -sfn /deps/node_modules node_modules && npx ava test/stream.ts --match 'upload progress does not prevent no-cors requests'"
+    },
+    {
+      "id": "unsupported-request-streams",
+      "command": "ln -sfn /deps/node_modules node_modules && npx ava test/request-stream-support.ts"
+    }
+  ],
+  "pass_to_pass": [
+    {
+      "id": "stream-rest",
+      "command": "ln -sfn /deps/node_modules node_modules && npx ava test/stream.ts --match '!upload progress does not prevent *'"
+    },
+    {
+      "id": "main-hooks-body",
+      "command": "ln -sfn /deps/node_modules node_modules && npx ava test/main.ts test/hooks.ts test/formdata-searchparams.ts test/body-size.ts"
+    }
+  ],
+  "test_timeout": 900
+}

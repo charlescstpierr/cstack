@@ -1,0 +1,27 @@
+{
+  "id": "urfave-unicode-flags",
+  "repo": "https://github.com/urfave/cli",
+  "source": "https://github.com/urfave/cli/commit/ae1fde92d52c18cb0e713172915a0b94f1c5daa3",
+  "language": "go",
+  "kind": "bug",
+  "base_sha": "277cbea35016fe8e389643ffe9f659ea2e9efe8b",
+  "fix_sha": "ae1fde92d52c18cb0e713172915a0b94f1c5daa3",
+  "merged_at": "2026-09-20T10:19:32-04:00",
+  "prompt": "Single-letter flags with a non-ASCII name (e.g. Hebrew or Cyrillic) are not recognized\n\nWith urfave/cli v3, a flag whose name is a single non-ASCII letter cannot be used on the command line, and it is shown with the wrong prefix in help/docs.\n\nMinimal reproduction:\n\n```go\ncmd := &cli.Command{\n    Name:  \"app\",\n    Flags: []cli.Flag{&cli.StringFlag{Name: \"ש\"}},\n    Action: func(_ context.Context, cmd *cli.Command) error {\n        fmt.Printf(\"value=%q args=%q\\n\", cmd.String(\"ש\"), cmd.Args().Slice())\n        return nil\n    },\n}\ncmd.Run(context.Background(), []string{\"app\", \"-ש\", \"value\", \"operand\"})\n```\n\nActual: the flag is not parsed at all; `-ש`, `value` and `operand` are all treated as positional arguments and `cmd.String(\"ש\")` is empty.\nExpected: `value=\"value\" args=[\"operand\"]`, exactly like an ASCII single-letter flag such as `-s value operand`.\n\nAlso, help output and generated docs render this flag as `--ש`; like any other one-letter flag name it should be rendered with a single dash, `-ש`. ASCII flags and multi-letter flags must keep working as they do today.\n",
+  "hidden_paths": [
+    "command_test.go"
+  ],
+  "fail_to_pass": [
+    {
+      "id": "TestCommand_SingleRuneUnicodeFlag",
+      "command": "go test -count=1 -run '^TestCommand_SingleRuneUnicodeFlag$' ."
+    }
+  ],
+  "pass_to_pass": [
+    {
+      "id": "root-package",
+      "command": "go test -count=1 -skip '^TestCommand_SingleRuneUnicodeFlag$' ."
+    }
+  ],
+  "test_timeout": 600
+}

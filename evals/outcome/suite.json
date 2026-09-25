@@ -1,0 +1,15 @@
+{
+  "merged_after": "2026-06-24",
+  "tasks": [
+    "tomlkit-aot-dotted",
+    "tenacity-cyclic-cause",
+    "click-help-param",
+    "attrs-ne-validator",
+    "hono-router-wildcard",
+    "hono-accepts-wildcard",
+    "ky-streaming-upload",
+    "chi-mount-collision",
+    "urfave-unicode-flags",
+    "fd-min-depth-symlink"
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "id": "tomlkit-aot-dotted",
+  "repo": "https://github.com/python-poetry/tomlkit",
+  "source": "https://github.com/python-poetry/tomlkit/commit/67d3e86502706df2a9ed67114ab67e25bcdcbbb7",
+  "language": "python",
+  "kind": "bug",
+  "base_sha": "e23a25438c6cc9b8cc28b6dcf76dc52f9c7a33e3",
+  "fix_sha": "67d3e86502706df2a9ed67114ab67e25bcdcbbb7",
+  "merged_at": "2026-07-14T08:59:45+08:00",
+  "prompt": "Assigning an array of tables over a dotted key captures the following dotted key\n\nWhen a document contains a dotted key and I replace that key with an array of tables, the next dotted key in the document ends up rendered inside the new `[[...]]` section, so it silently changes meaning on the next parse.\n\nReproduction:\n\n```python\nimport tomlkit\n\ndoc = tomlkit.parse(\"a.b = 1\\nc.d = 2\\n\")\narr = tomlkit.aot()\ntbl = tomlkit.table()\ntbl[\"x\"] = 9\narr.append(tbl)\ndoc[\"a\"] = arr\nprint(repr(doc.as_string()))\nprint(tomlkit.parse(doc.as_string()))\n```\n\nActual output: `'[[a]]\\nx = 9\\nc.d = 2\\n'`. Because `c.d = 2` now follows the `[[a]]` header, re-parsing puts `c` inside the array entry instead of at the top level.\n\nExpected output: the sibling stays at the top level, before the new header:\n\n```\nc.d = 2\n\n[[a]]\nx = 9\n```\n\ni.e. `doc.as_string() == \"c.d = 2\\n\\n[[a]]\\nx = 9\\n\"` and `tomlkit.parse(doc.as_string()) == {\"c\": {\"d\": 2}, \"a\": [{\"x\": 9}]}`. Replacing the dotted key with a regular table (`tomlkit.table()`) already behaves this way; arrays of tables should too, without changing the existing behavior for other replacements.",
+  "hidden_paths": [
+    "tests/test_toml_document.py"
+  ],
+  "fail_to_pass": [
+    {
+      "id": "replace-dotted-key-with-aot",
+      "command": "python3 -m pytest -q -p no:cacheprovider tests/test_toml_document.py::test_replace_dotted_key_with_aot_keeps_following_sibling"
+    }
+  ],
+  "pass_to_pass": [
+    {
+      "id": "tests-except-toml-test-suite",
+      "command": "python3 -m pytest -q -p no:cacheprovider tests --ignore tests/test_toml_tests.py --deselect tests/test_toml_document.py::test_replace_dotted_key_with_aot_keeps_following_sibling"
+    }
+  ]
+}

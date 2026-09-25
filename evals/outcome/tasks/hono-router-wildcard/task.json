@@ -1,0 +1,43 @@
+{
+  "id": "hono-router-wildcard",
+  "repo": "https://github.com/honojs/hono",
+  "source": "https://github.com/honojs/hono/commit/a19462879716e7b600daed8eb3a1b2af4bd68feb",
+  "language": "typescript",
+  "kind": "bug",
+  "base_sha": "63bbcf508c74d9fe7a3e20f4dfe7ffacc566dcce",
+  "fix_sha": "a19462879716e7b600daed8eb3a1b2af4bd68feb",
+  "merged_at": "2026-08-17T12:01:21+09:00",
+  "prompt": "Wildcard routes over-match with PatternRouter and LinearRouter\n\nWhen I use `PatternRouter` (e.g. via `hono/tiny`) or `LinearRouter` (e.g. `new Hono({ router: new LinearRouter() })`), routes that end with a wildcard match paths they should not match. The default `RegExpRouter` and `TrieRouter` behave correctly, so the same app gives different results depending on the router.\n\nReproduction:\n\n```ts\nimport { Hono } from 'hono'\nimport { PatternRouter } from 'hono/router/pattern-router'\n\nconst app = new Hono({ router: new PatternRouter() })\napp.get('/assets*', (c) => c.text('assets'))\napp.get('/path/*', (c) => c.text('path'))\napp.get('/a/*/b/*', (c) => c.text('b'))\n\nfor (const p of ['/asset', '/pathfoo', '/a/x/bz']) {\n  console.log(p, (await app.request(p)).status)\n}\n```\n\nActual: all three requests return 200 (they hit the `assets`, `path` and `b` handlers). The same happens with `LinearRouter`.\n\nExpected: all three return 404, while these must keep matching:\n- `/assets*` matches `/assets`, `/assets-v2` and `/assets/app.js` (a bare `*` suffix is a plain prefix match on the full literal `/assets`), but not `/asset`.\n- `/path/*` matches `/path` and `/path/to/file`, but not `/pathfoo` (a trailing `/*` only matches at a segment boundary).\n- `/a/*/b/*` matches `/a/x/b` and `/a/x/b/c`, but not `/a/x/bz`.\n\nBoth routers should agree with `RegExpRouter` and `TrieRouter` on these cases, and existing routing behavior should otherwise be unchanged.",
+  "hidden_paths": [
+    "src/router/common.case.test.ts"
+  ],
+  "fail_to_pass": [
+    {
+      "id": "suffix-wildcard",
+      "command": "ln -sfn /deps/node_modules node_modules && npx vitest run --project main --coverage.enabled=false src/router/linear-router src/router/pattern-router -t 'Suffix wildcard'"
+    },
+    {
+      "id": "trailing-wildcard",
+      "command": "ln -sfn /deps/node_modules node_modules && npx vitest run --project main --coverage.enabled=false src/router/linear-router src/router/pattern-router -t 'Common Trailing wildcard GET'"
+    },
+    {
+      "id": "trailing-after-middle-wildcard",
+      "command": "ln -sfn /deps/node_modules node_modules && npx vitest run --project main --coverage.enabled=false src/router/linear-router src/router/pattern-router -t 'Trailing wildcard after a middle wildcard'"
+    }
+  ],
+  "pass_to_pass": [
+    {
+      "id": "linear-pattern-router-rest",
+      "command": "ln -sfn /deps/node_modules node_modules && npx vitest run --project main --coverage.enabled=false src/router/linear-router src/router/pattern-router -t '^(?!.*(Suffix wildcard|Trailing wildcard)).*$'"
+    },
+    {
+      "id": "other-routers",
+      "command": "ln -sfn /deps/node_modules node_modules && npx vitest run --project main --coverage.enabled=false src/router/reg-exp-router src/router/trie-router src/router/smart-router"
+    },
+    {
+      "id": "hono-app",
+      "command": "ln -sfn /deps/node_modules node_modules && npx vitest run --project main --coverage.enabled=false src/hono.test.ts"
+    }
+  ],
+  "test_timeout": 600
+}

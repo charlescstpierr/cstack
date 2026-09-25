@@ -1,0 +1,31 @@
+{
+  "id": "chi-mount-collision",
+  "repo": "https://github.com/go-chi/chi",
+  "source": "https://github.com/go-chi/chi/commit/29164f023bf9319e74d5961a21a712653bb98c83",
+  "language": "go",
+  "kind": "bug",
+  "base_sha": "bc02284e9db220c644912320fe1db6bc9b4a087c",
+  "fix_sha": "29164f023bf9319e74d5961a21a712653bb98c83",
+  "merged_at": "2026-08-20T10:55:43+02:00",
+  "prompt": "`Routes()` / `chi.Walk()` silently drop a handler registered on the same pattern as a `Route()` / `Mount()`\n\nWhen a router has both a real handler on a path and a sub-router mounted at that same path, the real handler disappears from route introspection. Requests to it are served correctly, but `chi.Walk()` and `Routes()` don't report it, so our generated route docs and permission checks miss the endpoint.\n\nMinimal reproduction (chi v5, current master):\n\n```go\nr := chi.NewRouter()\nh := func(w http.ResponseWriter, r *http.Request) {}\n\nr.Route(\"/foo\", func(r chi.Router) {\n    r.Route(\"/bar\", func(r chi.Router) {\n        r.Get(\"/{id}\", h)\n    })\n    r.Get(\"/bar\", h)\n})\n\nchi.Walk(r, func(method, route string, _ http.Handler, _ ...func(http.Handler) http.Handler) error {\n    fmt.Println(method, route)\n    return nil\n})\n```\n\nActual output: only `GET /foo/bar/{id}`.\nExpected output: both `GET /foo/bar` and `GET /foo/bar/{id}`.\n\nThe same thing is visible with `Routes()` directly: after `r.Route(\"/bar\", ...)` plus `r.Get(\"/bar\", h)` on the same router, there is no `/bar` entry at all. Expected: a `/bar` entry whose `Handlers` contains exactly the `GET` handler and whose `SubRoutes` is nil (the internal placeholder the mount uses must not show up as an extra handler, e.g. under `\"*\"`). A plain `r.Route(\"/api\", ...)` with nothing else on `/api` should keep reporting a single `/api/*` entry with its `SubRoutes`, as it does today, and middleware propagation through `Walk()` must not change.\n",
+  "hidden_paths": [
+    "tree_test.go"
+  ],
+  "fail_to_pass": [
+    {
+      "id": "TestWalkRouteWithHandlerAndSubrouter",
+      "command": "go test -count=1 -run '^TestWalkRouteWithHandlerAndSubrouter$' ."
+    }
+  ],
+  "pass_to_pass": [
+    {
+      "id": "root-package",
+      "command": "go test -count=1 -skip '^TestWalkRouteWithHandlerAndSubrouter$' ."
+    },
+    {
+      "id": "middleware-package",
+      "command": "go test -count=1 ./middleware/..."
+    }
+  ],
+  "test_timeout": 600
+}

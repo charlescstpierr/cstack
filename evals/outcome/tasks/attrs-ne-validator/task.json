@@ -1,0 +1,30 @@
+{
+  "id": "attrs-ne-validator",
+  "repo": "https://github.com/python-attrs/attrs",
+  "source": "https://github.com/python-attrs/attrs/commit/5aa76a4450c311d87eda43946ec0ecd743572649",
+  "language": "python",
+  "kind": "feature",
+  "base_sha": "f616f732c6c5f87a8f7a762176422baed250a6be",
+  "fix_sha": "5aa76a4450c311d87eda43946ec0ecd743572649",
+  "merged_at": "2026-08-01T12:40:48+00:00",
+  "prompt": "Add a `ne` (\"not equal\") validator to `attrs.validators`\n\nI want a field that accepts any signed integer except zero. Today the only way is to combine two comparison validators:\n\n```python\nattrs.field(validator=attrs.validators.or_(attrs.validators.le(-1), attrs.validators.ge(1)))\n```\n\nPlease add `attrs.validators.ne(val)` (also reachable as `attr.validators.ne`, and listed in the module's `__all__`), so this becomes:\n\n```python\nattrs.field(validator=attrs.validators.ne(0))\n```\n\nExpected behavior, consistent with the existing `lt`, `le`, `ge` and `gt` validators:\n\n```python\nfrom attrs import define, field, fields, validators\n\n@define\nclass C:\n    x = field(validator=validators.ne(42))\n\nC(43)   # C(x=43)\nC(41)   # C(x=41)\nC(42)   # ValueError: (\"'x' must be != 42: 42\")\n```\n\n- It raises `ValueError` when the value equals *val* (compared with `operator.ne`) and is silent otherwise.\n- Like the other comparison validators, the returned validator exposes the configured value as `.bound` (so `fields(C).x.validator.bound == 42`) and its operator as `.compare_op`, which is `\"!=\"`; its repr is `<Validator for x != 42>`.\n- Add the matching type stub (`def ne(val: _T) -> _ValidatorType[_T]: ...`) and document it next to the other comparison validators.",
+  "hidden_paths": [
+    "tests/test_validators.py"
+  ],
+  "fail_to_pass": [
+    {
+      "id": "comparison-validators-ne",
+      "command": "python3 -m pytest -q -p no:cacheprovider tests/test_validators.py -k TestLtLeGeGtNe"
+    },
+    {
+      "id": "validators-module-imports-ne",
+      "command": "python3 -m pytest -q -p no:cacheprovider tests/test_validators.py -k 'not TestLtLeGeGtNe'"
+    }
+  ],
+  "pass_to_pass": [
+    {
+      "id": "validator-users",
+      "command": "python3 -m pytest -q -p no:cacheprovider tests/test_setattr.py tests/test_next_gen.py tests/test_import.py tests/test_config.py tests/test_functional.py"
+    }
+  ]
+}

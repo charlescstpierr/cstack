@@ -1,0 +1,39 @@
+{
+  "id": "fd-min-depth-symlink",
+  "repo": "https://github.com/sharkdp/fd",
+  "source": "https://github.com/sharkdp/fd/commit/ce97e473ebaec49697c07daa50a7bc2b32f713d2",
+  "language": "rust",
+  "kind": "bug",
+  "base_sha": "2797c4a6d579ebb1bac8a6b3c58ab9db90bed116",
+  "fix_sha": "ce97e473ebaec49697c07daa50a7bc2b32f713d2",
+  "merged_at": "2026-09-24T01:34:13-06:00",
+  "prompt": "`--min-depth` / `--exact-depth` drop broken symlinks when using `--follow`\n\nWhen following symlinks (`-L`/`--follow`), broken symlinks are normally listed (e.g. with `--type symlink`), but as soon as a minimum depth is set they disappear, even when they are deep enough.\n\nReproduction:\n\n```sh\nmkdir -p t/one/two && cd t\nln -s /nonexistent one/two/broken_symlink\nfd --follow --type symlink broken_symlink                 # prints one/two/broken_symlink\nfd --follow --type symlink --min-depth 3 broken_symlink   # prints nothing\nfd --follow --type symlink --exact-depth 3 broken_symlink # prints nothing\n```\n\nExpected: the broken symlink sits at depth 3, so `--min-depth 3` and `--exact-depth 3` should print `one/two/broken_symlink`, and `--min-depth 4` should print nothing, exactly as for a regular file at the same place.\n\nThe depth should be computed relative to the search root through which the link was reached, like for any other entry:\n- it must also work with `--absolute-path` (output `/abs/path/to/t/one/two/broken_symlink` for `--min-depth 3`);\n- with overlapping search roots, `fd --follow --type symlink --min-depth 2 broken_symlink one one/two` should print the link once (it is at depth 2 under `one` but only depth 1 under `one/two`), while `--min-depth 1` with the same roots should print it twice;\n- if the same broken link is also reachable through a followed directory symlink (e.g. `symlink -> one/two`, so `symlink/broken_symlink` is at depth 2), `--exact-depth 2` should print only `symlink/broken_symlink` and `--exact-depth 3` only `one/two/broken_symlink`.\n\n`--max-depth` handling of broken symlinks should stay as it is.\n",
+  "hidden_paths": [
+    "tests/tests.rs"
+  ],
+  "fail_to_pass": [
+    {
+      "id": "test_min_depth_broken_symlink",
+      "command": "cargo test --test tests -- --exact test_min_depth_broken_symlink"
+    },
+    {
+      "id": "test_min_depth_broken_symlink_absolute_path",
+      "command": "cargo test --test tests -- --exact test_min_depth_broken_symlink_absolute_path"
+    },
+    {
+      "id": "test_min_depth_broken_symlink_overlapping_roots",
+      "command": "cargo test --test tests -- --exact test_min_depth_broken_symlink_overlapping_roots"
+    },
+    {
+      "id": "test_exact_depth_broken_symlink",
+      "command": "cargo test --test tests -- --exact test_exact_depth_broken_symlink"
+    }
+  ],
+  "pass_to_pass": [
+    {
+      "id": "all-other-tests",
+      "command": "cargo test -- --exact --skip test_min_depth_broken_symlink --skip test_min_depth_broken_symlink_absolute_path --skip test_min_depth_broken_symlink_overlapping_roots --skip test_exact_depth_broken_symlink"
+    }
+  ],
+  "test_timeout": 1800
+}
