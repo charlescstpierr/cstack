@@ -554,7 +554,8 @@ def append_result(path: Path, row: dict[str, Any]) -> None:
 
 
 def expected_runs(manifest: dict[str, Any]) -> set[str]:
-    names = [arm["name"] for arm in manifest["arms"]]
+    # Les manifestes de schéma 2 stockaient les bras comme de simples noms.
+    names = [arm["name"] if isinstance(arm, dict) else arm for arm in manifest["arms"]]
     tasks = [{"id": task_id} for task_id in manifest["tasks"]]
     return {run["run_id"] for run in plan_runs(tasks, manifest["repetitions"], manifest["seed"], names)}
 

@@ -487,6 +487,10 @@ class OutcomeBenchTests(unittest.TestCase):
         summary = json.loads((output / "summary.json").read_text())
         self.assertFalse(summary["complete"])
         self.assertEqual(len(summary["missing_runs"]), 3)
+        manifest["arms"] = ["vanilla", "cstack"]
+        (output / "manifest.json").write_text(json.dumps(manifest))
+        outcome_bench.main(["report", "--output", str(output)])
+        self.assertEqual(len(json.loads((output / "summary.json").read_text())["missing_runs"]), 3)
 
     def test_campaign_output_cannot_live_in_the_hidden_work_dir(self):
         with self.assertRaisesRegex(outcome_bench.BenchError, "hors de --work"):
