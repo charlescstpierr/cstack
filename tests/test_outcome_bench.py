@@ -142,26 +142,36 @@ class OutcomeBenchTests(unittest.TestCase):
         self.assertEqual(first, outcome_bench.plan_runs(tasks, 3, 7))
         self.assertNotEqual([run["run_id"] for run in first], [run["run_id"] for run in outcome_bench.plan_runs(tasks, 3, 8)])
         self.assertEqual(len(first), 12)
-        for arm in outcome_bench.ARMS:
+        for arm in outcome_bench.DEFAULT_ARMS:
             self.assertEqual(sum(run["arm"] == arm for run in first), 6)
+        three = outcome_bench.plan_runs(tasks, 3, 7, outcome_bench.ARMS)
+        self.assertEqual(len(three), 18)
+        self.assertEqual(sum(run["arm"] == "pstack" for run in three), 6)
 
-    def test_arms_share_the_request_and_only_cstack_gets_its_entry(self):
+    def test_arms_share_the_request_and_each_package_adds_only_its_entry(self):
         task = self.fixture.load()
-        bundle = ROOT / "plugins" / "cstack"
-        vanilla = outcome_bench.arm_prompt(task, "vanilla", bundle)
-        cstack = outcome_bench.arm_prompt(task, "cstack", bundle)
+        pstack = self.root / "pstack"
+        (pstack / "skills" / "poteto-mode").mkdir(parents=True)
+        bundles = {"cstack": ROOT / "plugins" / "cstack", "pstack": pstack}
+        vanilla = outcome_bench.arm_prompt(task, "vanilla", bundles)
+        cstack = outcome_bench.arm_prompt(task, "cstack", bundles)
+        poteto = outcome_bench.arm_prompt(task, "pstack", bundles)
         self.assertIn(task["prompt"], vanilla)
         self.assertIn(outcome_bench.SCOPE_NOTE, vanilla)
         self.assertNotIn("$cstack", vanilla)
-        self.assertIn(vanilla, cstack)
+        for prompt in (cstack, poteto):
+            self.assertIn(vanilla, prompt)
+            self.assertRegex(prompt, "(?i)d[ée]l[èe]gu|delegate")
         self.assertIn("$cstack:cstack", cstack)
-        self.assertIn(str(bundle / "skills" / "cstack" / "SKILL.md"), cstack)
+        self.assertIn(str(bundles["cstack"] / "skills" / "cstack" / "SKILL.md"), cstack)
+        self.assertIn(str(pstack / "skills" / "poteto-mode" / "SKILL.md"), poteto)
+        self.assertNotIn("$cstack", poteto)
 
     def run_with(self, edit):
         task = self.fixture.load()
         runner = FakeRunner(edit)
         context = {
-            "output": self.root / "out", "work": self.work, "bundle": ROOT / "plugins" / "cstack",
+            "output": self.root / "out", "work": self.work, "bundles": {"cstack": ROOT / "plugins" / "cstack"},
             "runner": runner, "command": [], "model": None, "effort": None, "turn_timeout": 10,
         }
         run = {"run_id": "calc-add--vanilla--r1", "task_id": "calc-add", "arm": "vanilla", "repetition": 1}
@@ -227,7 +237,53 @@ class OutcomeBenchTests(unittest.TestCase):
         self.assertEqual(summary["arms"]["cstack"]["runs"], 2)
         self.assertEqual(summary["arms"]["cstack"]["infra_errors"], 1)
         self.assertEqual(summary["arms"]["cstack"]["tokens_per_resolved"], 200)
-        self.assertEqual(summary["paired"], {"tasks": 2, "cstack_better": 1, "vanilla_better": 0, "ties": 1})
+        self.assertEqual(summary["paired"], {
+            "cstack_vs_vanilla": {"tasks": 2, "cstack_better": 1, "vanilla_better": 0, "ties": 1},
+        })
+
+    def test_summary_compares_every_pair_of_present_arms(self):
+        rows = [
+            {"task_id": "a", "arm": arm, "resolved": resolved, "agent_status": "completed", "tokens": 1,
+             "wall_seconds": 1, "diff": {"lines_added": 0, "lines_removed": 0, "hidden_paths_touched": []}}
+            for arm, resolved in (("vanilla", False), ("cstack", False), ("pstack", True))
+        ]
+        paired = outcome_bench.summarize(rows)["paired"]
+        self.assertEqual(sorted(paired), ["cstack_vs_vanilla", "pstack_vs_cstack", "pstack_vs_vanilla"])
+        self.assertEqual(paired["pstack_vs_cstack"]["pstack_better"], 1)
+
+    def test_pstack_fetch_accepts_only_the_pinned_inventory(self):
+        upstream = self.root / "plugins-upstream"
+        (upstream / "pstack" / "skills" / "poteto-mode").mkdir(parents=True)
+        (upstream / "pstack" / "skills" / "poteto-mode" / "SKILL.md").write_text("# Poteto mode\n")
+        (upstream / "other.txt").write_text("hors paquet\n")
+        git(upstream, "init", "-q", "-b", "main")
+        git(upstream, "add", ".")
+        git(upstream, "commit", "-q", "-m", "pstack")
+        commit = git(upstream, "rev-parse", "HEAD")
+        blob = git(upstream, "rev-parse", "HEAD:pstack/skills/poteto-mode/SKILL.md")
+        pin = {"repository": upstream.resolve().as_uri(), "commit": commit, "subdirectory": "pstack",
+               "blobs": {"pstack/skills/poteto-mode/SKILL.md": blob}}
+        with patch.object(outcome_bench, "upstream_pin", return_value=pin):
+            root = outcome_bench.fetch_pstack(self.work)
+            self.assertEqual(root, outcome_bench.default_pstack(self.work))
+            self.assertTrue((root / "skills" / "poteto-mode" / "SKILL.md").is_file())
+            pin["blobs"] = {"pstack/skills/poteto-mode/SKILL.md": "0" * 40}
+            with self.assertRaisesRegex(outcome_bench.BenchError, "UPSTREAM.json"):
+                outcome_bench.fetch_pstack(self.work)
+
+    def test_run_rejects_bad_arm_lists_and_missing_pstack_checkout(self):
+        common = ["run", "--tasks", str(self.fixture.tasks), "--work", str(self.work),
+                  "--output", str(self.root / "campaign"), "--seed", "1"]
+        for arms in ("cstack", "cstack,cstack", "vanilla,claude"):
+            with self.subTest(arms=arms), self.assertRaises(SystemExit):
+                outcome_bench.main([*common, "--arms", arms])
+        with self.assertRaisesRegex(outcome_bench.BenchError, "fetch-pstack"):
+            outcome_bench.main([*common, "--arms", "cstack,pstack"])
+
+    def test_pinned_upstream_inventory_names_the_pstack_entry(self):
+        pin = outcome_bench.upstream_pin()
+        self.assertIn("pstack/skills/poteto-mode/SKILL.md", pin["blobs"])
+        self.assertRegex(pin["commit"], "^[0-9a-f]{40}$")
 
     def test_run_refuses_unvalidated_tasks_and_foreign_campaigns(self):
         common = ["--tasks", str(self.fixture.tasks), "--work", str(self.work)]

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Compare Codex seul et cstack sur des correctifs open source réels, notés par des tests cachés."""
+"""Compare Codex seul, cstack et pstack sur des correctifs open source réels, notés par des tests cachés."""
 
 from __future__ import annotations
 
@@ -22,7 +22,12 @@ ROOT = Path(__file__).resolve().parents[1]
 RUNNER_PATH = Path(__file__).resolve().parent / "verify-behavior.py"
 DEFAULT_TASKS = ROOT / "evals" / "outcome"
 DEFAULT_PLUGIN = ROOT / "plugins" / "cstack"
-ARMS = ("vanilla", "cstack")
+ARMS = ("vanilla", "cstack", "pstack")
+DEFAULT_ARMS = ("vanilla", "cstack")
+UPSTREAM_INVENTORY = ROOT / "UPSTREAM.json"
+# Point d’entrée de chaque paquet évalué. pstack reste la source amont épinglée, non traduite.
+ARM_SKILLS = {"cstack": "cstack", "pstack": "poteto-mode"}
+PSTACK_PREAMBLE = "Use poteto mode for this task. Delegate independent work to native subagents in parallel."
 KINDS = {"bug", "regression", "feature", "refactor"}
 SAFE_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
 SHA = re.compile(r"^[0-9a-f]{40}$")
@@ -266,18 +271,21 @@ def default_prompt(plugin: Path) -> str:
     return match.group(1)
 
 
-def arm_prompt(task: dict[str, Any], arm: str, bundle: Path | None) -> str:
+def arm_prompt(task: dict[str, Any], arm: str, bundles: dict[str, Path]) -> str:
+    """Même demande pour tous les bras ; chaque paquet ajoute son entrée et sa demande de délégation."""
     body = task["prompt"].strip() + "\n\n" + SCOPE_NOTE
     if arm == "vanilla":
         return body
-    skill = bundle / "skills" / "cstack" / "SKILL.md"
-    return "\n\n".join([default_prompt(bundle), body, SOURCE_NOTE.format(path=skill)])
+    bundle = bundles[arm]
+    preamble = default_prompt(bundle) if arm == "cstack" else PSTACK_PREAMBLE
+    skill = bundle / "skills" / ARM_SKILLS[arm] / "SKILL.md"
+    return "\n\n".join([preamble, body, SOURCE_NOTE.format(path=skill)])
 
 
-def plan_runs(tasks: list[dict[str, Any]], repetitions: int, seed: int) -> list[dict[str, Any]]:
+def plan_runs(tasks: list[dict[str, Any]], repetitions: int, seed: int, arms=DEFAULT_ARMS) -> list[dict[str, Any]]:
     runs = [
         {"run_id": f"{task['id']}--{arm}--r{rep}", "task_id": task["id"], "arm": arm, "repetition": rep}
-        for task in tasks for arm in ARMS for rep in range(1, repetitions + 1)
+        for task in tasks for arm in arms for rep in range(1, repetitions + 1)
     ]
     random.Random(seed).shuffle(runs)
     return runs
@@ -358,7 +366,7 @@ def execute_run(run: dict[str, Any], task: dict[str, Any], image: str, context: 
     source = mirror(task, work)
     workspace = checkout(source, task["base_sha"], work / "workspaces" / run["run_id"], history=True)
     case = {"id": run["run_id"], "cwd": workspace, "sandbox": "workspace-write",
-            "prompts": [arm_prompt(task, run["arm"], context["bundle"])]}
+            "prompts": [arm_prompt(task, run["arm"], context["bundles"])]}
     agent = context["runner"].run_case(case, output / "agent", context["command"], context["model"],
                                        context["effort"], context["turn_timeout"])
     patch = output / "patches" / f"{run['run_id']}.diff"
@@ -392,7 +400,8 @@ def load_results(path: Path) -> list[dict[str, Any]]:
 def summarize(results: list[dict[str, Any]]) -> dict[str, Any]:
     arms: dict[str, Any] = {}
     counted = [row for row in results if row.get("agent_status") != "infra_error"]
-    for arm in ARMS:
+    present = [arm for arm in ARMS if any(row["arm"] == arm for row in results)]
+    for arm in present:
         rows = [row for row in counted if row["arm"] == arm]
         resolved = [row for row in rows if row.get("resolved")]
         tokens = [row["tokens"] for row in rows if isinstance(row.get("tokens"), int)]
@@ -417,20 +426,24 @@ def summarize(results: list[dict[str, Any]]) -> dict[str, Any]:
     per_task = {}
     for task_id in sorted({row["task_id"] for row in counted}):
         rates = {}
-        for arm in ARMS:
+        for arm in present:
             rows = [row for row in counted if row["task_id"] == task_id and row["arm"] == arm]
             rates[arm] = round(sum(1 for row in rows if row.get("resolved")) / len(rows), 3) if rows else None
         per_task[task_id] = rates
-    paired = [rates for rates in per_task.values() if None not in rates.values()]
+    paired = {}
+    for index, left in enumerate(present):
+        for right in present[index + 1:]:
+            both = [rates for rates in per_task.values() if rates.get(left) is not None and rates.get(right) is not None]
+            paired[f"{right}_vs_{left}"] = {
+                "tasks": len(both),
+                f"{right}_better": sum(1 for rates in both if rates[right] > rates[left]),
+                f"{left}_better": sum(1 for rates in both if rates[left] > rates[right]),
+                "ties": sum(1 for rates in both if rates[left] == rates[right]),
+            }
     return {
         "arms": arms,
         "per_task": per_task,
-        "paired": {
-            "tasks": len(paired),
-            "cstack_better": sum(1 for rates in paired if rates["cstack"] > rates["vanilla"]),
-            "vanilla_better": sum(1 for rates in paired if rates["vanilla"] > rates["cstack"]),
-            "ties": sum(1 for rates in paired if rates["vanilla"] == rates["cstack"]),
-        },
+        "paired": paired,
         "limits": [
             "Échantillon petit : l’écart doit être large et cohérent entre tâches pour être interprété.",
             "infra_error est exclu des dénominateurs et compté à part.",
@@ -462,15 +475,68 @@ def require_receipt(task: dict[str, Any], work: Path) -> str:
     return receipt["image"]
 
 
+def upstream_pin() -> dict[str, Any]:
+    inventory = read_json(UPSTREAM_INVENTORY)
+    return {
+        "repository": inventory["repository"], "commit": inventory["commit"],
+        "subdirectory": inventory["subdirectory"],
+        "blobs": {row["path"]: row["git_blob"] for row in inventory["files"]},
+    }
+
+
+def default_pstack(work: Path) -> Path:
+    pin = upstream_pin()
+    return work / "upstream" / pin["commit"] / pin["subdirectory"]
+
+
+def fetch_pstack(work: Path) -> Path:
+    """Récupère pstack au commit épinglé de UPSTREAM.json et vérifie chaque blob de l’inventaire."""
+    pin = upstream_pin()
+    checkout_root = work / "upstream" / pin["commit"]
+    if not (checkout_root / ".git").exists():
+        checkout_root.mkdir(parents=True, exist_ok=True)
+        git(checkout_root, "init", "--quiet")
+        git(checkout_root, "remote", "add", "origin", pin["repository"])
+        git(checkout_root, "fetch", "--quiet", "--depth", "1", "--filter=blob:none", "origin", pin["commit"])
+        git(checkout_root, "sparse-checkout", "set", pin["subdirectory"])
+        git(checkout_root, "checkout", "--quiet", "--detach", pin["commit"])
+    tree = {}
+    for line in git(checkout_root, "ls-tree", "-r", "HEAD", "--", pin["subdirectory"]).splitlines():
+        meta, path = line.split("\t", 1)
+        tree[path] = meta.split()[2]
+    if tree != pin["blobs"]:
+        raise BenchError("le checkout pstack ne correspond pas à l’inventaire de UPSTREAM.json")
+    return checkout_root / pin["subdirectory"]
+
+
+def arm_roots(args: argparse.Namespace) -> dict[str, Path]:
+    roots = {}
+    if "cstack" in args.arms:
+        roots["cstack"] = args.plugin.expanduser().resolve()
+    if "pstack" in args.arms:
+        roots["pstack"] = (args.pstack or default_pstack(args.work)).expanduser().resolve()
+    for arm, root in roots.items():
+        if not (root / "skills" / ARM_SKILLS[arm] / "SKILL.md").is_file():
+            hint = " ; lancez d’abord fetch-pstack" if arm == "pstack" else ""
+            raise BenchError(f"{arm}: point d’entrée absent sous {root}{hint}")
+    return roots
+
+
+def command_fetch_pstack(args: argparse.Namespace) -> int:
+    print(fetch_pstack(args.work))
+    return 0
+
+
 def command_run(args: argparse.Namespace) -> int:
     suite, tasks = load_suite(args.tasks, args.task_ids)
     output = args.output.expanduser().resolve()
     manifest_path = output / "manifest.json"
-    plugin = args.plugin.expanduser().resolve()
+    roots = arm_roots(args)
     manifest = {
-        "schema_version": 1, "suite_digest": tree_digest(args.tasks), "merged_after": suite["merged_after"],
+        "schema_version": 2, "suite_digest": tree_digest(args.tasks), "merged_after": suite["merged_after"],
         "tasks": [task["id"] for task in tasks], "task_digests": {task["id"]: task["digest"] for task in tasks},
-        "plugin_digest": tree_digest(plugin), "repetitions": args.repetitions, "seed": args.seed,
+        "arms": list(args.arms), "bundle_digests": {arm: tree_digest(root) for arm, root in roots.items()},
+        "repetitions": args.repetitions, "seed": args.seed,
         "model": args.model, "effort": args.effort, "turn_timeout": args.turn_timeout,
     }
     if manifest_path.exists():
@@ -483,19 +549,21 @@ def command_run(args: argparse.Namespace) -> int:
     output.mkdir(parents=True, exist_ok=True)
     if not manifest_path.exists():
         write_json(manifest_path, {**manifest, "started_at": datetime.now(timezone.utc).isoformat(timespec="seconds")})
-    bundle = output / "resources" / "cstack"
-    if not bundle.exists():
-        shutil.copytree(plugin, bundle, ignore=shutil.ignore_patterns("node_modules", "__pycache__", ".git"))
+    bundles = {}
+    for arm, root in roots.items():
+        bundles[arm] = output / "resources" / arm
+        if not bundles[arm].exists():
+            shutil.copytree(root, bundles[arm], ignore=shutil.ignore_patterns("node_modules", "__pycache__", ".git"))
     runner = load_runner()
     context = {
-        "output": output, "work": args.work, "bundle": bundle, "runner": runner,
+        "output": output, "work": args.work, "bundles": bundles, "runner": runner,
         "command": runner.build_command(), "model": args.model, "effort": args.effort,
         "turn_timeout": args.turn_timeout,
     }
     results_path = output / "results.jsonl"
     done = {row["run_id"] for row in load_results(results_path)}
     by_id = {task["id"]: task for task in tasks}
-    for run in plan_runs(tasks, args.repetitions, args.seed):
+    for run in plan_runs(tasks, args.repetitions, args.seed, args.arms):
         if run["run_id"] in done:
             continue
         print(f"[{run['run_id']}] démarrage", flush=True)
@@ -532,26 +600,39 @@ def main(argv: list[str] | None = None) -> int:
 
     validate = commands.add_parser("validate", help="vérifie chaque tâche sans modèle")
     common(validate)
-    run = commands.add_parser("run", help="exécute les deux bras puis note les diffs")
+    fetch = commands.add_parser("fetch-pstack", help="récupère pstack au commit épinglé et vérifie ses blobs")
+    fetch.add_argument("--work", type=Path, default=ROOT / ".cstack" / "outcome-bench", help="caches, miroirs et reçus locaux")
+    run = commands.add_parser("run", help="exécute les bras choisis puis note les diffs")
     common(run)
     run.add_argument("--output", type=Path, required=True, help="dossier de campagne ; une campagne identique reprend")
     run.add_argument("--plugin", type=Path, default=DEFAULT_PLUGIN, help="racine du plugin cstack évalué")
+    run.add_argument("--pstack", type=Path, help="racine pstack ; par défaut le checkout épinglé de fetch-pstack")
+    run.add_argument("--arms", default=",".join(DEFAULT_ARMS), help=f"bras séparés par des virgules parmi {', '.join(ARMS)}")
     run.add_argument("--repetitions", type=int, default=3)
     run.add_argument("--seed", type=int, required=True, help="graine de l’ordre entrelacé, enregistrée")
-    run.add_argument("--model", help="modèle natif commun aux deux bras")
-    run.add_argument("--effort", help="effort commun aux deux bras")
+    run.add_argument("--model", help="modèle natif commun à tous les bras")
+    run.add_argument("--effort", help="effort commun à tous les bras")
     run.add_argument("--turn-timeout", type=float, default=900.0)
     report = commands.add_parser("report", help="recalcule summary.json depuis results.jsonl")
     report.add_argument("--output", type=Path, required=True)
     args = parser.parse_args(argv)
+    if args.command == "run":
+        args.arms = tuple(arm.strip() for arm in args.arms.split(",") if arm.strip())
+        if len(args.arms) < 2 or len(set(args.arms)) != len(args.arms) or not set(args.arms) <= set(ARMS):
+            parser.error(f"--arms exige au moins deux bras distincts parmi {', '.join(ARMS)}")
     if args.command == "run" and not 1 <= args.repetitions <= 10:
         parser.error("--repetitions doit être compris entre 1 et 10")
     if args.command == "run" and not 0 < args.turn_timeout <= 900:
         parser.error("--turn-timeout doit être supérieur à 0 et inférieur ou égal à 900 secondes")
     if hasattr(args, "tasks"):
         args.tasks = args.tasks.expanduser().resolve()
+    if hasattr(args, "work"):
         args.work = args.work.expanduser().resolve()
-    return {"validate": command_validate, "run": command_run, "report": command_report}[args.command](args)
+    commands_by_name = {
+        "validate": command_validate, "fetch-pstack": command_fetch_pstack,
+        "run": command_run, "report": command_report,
+    }
+    return commands_by_name[args.command](args)
 
 
 if __name__ == "__main__":
