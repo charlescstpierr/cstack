@@ -212,6 +212,31 @@ exit 1
     }
   });
 
+  it("classe auth manquante même si le worker quitte avant de lire un long brief", async () => {
+    const h = await harness();
+    try {
+      // Le worker ferme stdin sans le lire puis reste vivant : l'écriture du brief, plus grand que le
+      // tampon du pipe, reçoit EPIPE avant la fin du processus, comme un CLI qui refuse l'auth tôt.
+      await writeFile(h.brief, `GOAL\n${"x".repeat(256 * 1024)}\n`);
+      await fake(h.bin, "claude", `
+if [[ "$1" == "--version" ]]; then echo "claude fake"; exit 0; fi
+if [[ "$1" == "--help" ]]; then echo "--print --output-format --json-schema --permission-mode --permission-prompts --restricted --safe-mode --strict-mcp-config --mcp-config --add-dir --tools"; exit 0; fi
+exec 0<&-
+sleep 0.3
+echo "login required" >&2
+exit 1
+`);
+      const code = await run(["run", "--request", await request(h, "claude-code")], h);
+      expect(code).toBe(2);
+      expect(parsedStdout(h)).toMatchObject({
+        execution: { status: "AUTH_REQUIRED" },
+        worker: { status: "BLOCKED" },
+      });
+    } finally {
+      await rm(h.root, { recursive: true, force: true });
+    }
+  });
+
   it("rejette une sortie JSON malformée", async () => {
     const h = await harness();
     try {

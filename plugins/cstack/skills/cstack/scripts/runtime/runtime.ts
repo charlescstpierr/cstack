@@ -713,7 +713,9 @@ async function runProcess(params: {
       cancelled = true;
       stopGroup(signal);
     };
-    child.stdin.on("error", (error) => {
+    child.stdin.on("error", (error: NodeJS.ErrnoException) => {
+      // Un worker peut quitter avant de lire son brief (auth absente) : son code de sortie décide.
+      if (error.code === "EPIPE") return;
       killProcessGroup(child, "SIGTERM");
       clearTimeout(timeout);
       process.off("SIGINT", onInterrupt);

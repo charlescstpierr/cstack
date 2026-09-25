@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import functools
 import hashlib
 import importlib.util
 import json
@@ -37,14 +38,14 @@ UPSTREAM_INVENTORY = ROOT / "UPSTREAM.json"
 ARM_SKILLS = {"cstack": "cstack", "pstack": "poteto-mode"}
 PSTACK_PREAMBLE = "Use poteto mode for this task. Delegate independent work to native subagents in parallel."
 KINDS = {"bug", "regression", "feature", "refactor"}
-SAFE_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
 SHA = re.compile(r"^[0-9a-f]{40}$")
 # Les consignes restent celles d’un ticket : aucun libellé ne signale une mesure.
 FORBIDDEN_PROMPT_LABELS = re.compile(r"\b(?:benchmark|eval(?:uation)?|judge|hidden tests?|tests? cachés?)\b", re.IGNORECASE)
 SCOPE_NOTE = "Travaille uniquement dans ce dépôt local. Ne crée ni commit, ni push, ni PR."
 SOURCE_NOTE = "La version source n’est pas installée. Lis directement ce fichier de compétence avant d’agir : {path}"
-GIT_IDENTITY = ["-c", "user.name=cstack outcome", "-c", "user.email=cstack-outcome@example.invalid"]
 EXCLUDED_FROM_DIFF = (".cstack",)
+# Le fichier info/exclude des checkouts ignore déjà .cstack ; la pathspec couvre aussi un `git add -f`.
+DIFF_PATHSPEC = ("--", ".", *(f":(exclude){name}" for name in EXCLUDED_FROM_DIFF))
 
 
 class BenchError(RuntimeError):
@@ -58,8 +59,13 @@ def load_module(name: str, path: Path):
     return module
 
 
+# Le runner natif fournit aussi les primitives partagées : identifiants sûrs, empreintes d’arbre, recherche de clés.
+RUNNER = load_module("verify_behavior", RUNNER_PATH)
+SAFE_ID = RUNNER.SAFE_ID
+
+
 def load_runner():
-    return load_module("verify_behavior", RUNNER_PATH)
+    return RUNNER
 
 
 def parse_arms(text: str) -> list[dict[str, Any]]:
@@ -98,7 +104,12 @@ def load_arm_models(arms: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
     return configs
 
 
-def possible_leak(task: dict[str, Any], commands: list[str], private: tuple[str, ...] = ()) -> bool:
+def private_paths(work: Path, output: Path) -> list[Path]:
+    """Chemins que l’agent ne doit pas lire : miroirs et reçus, patches, état et résultats des autres runs."""
+    return [work, output / "patches", output / "state", output / "results.jsonl"]
+
+
+def possible_leak(task: dict[str, Any], commands: list[str], private: list[Path] = ()) -> bool:
     """Signale un run qui a pu lire le correctif : dépôt distant, miroir de notation ou autres runs."""
     markers = [task["repo"].split("://", 1)[1].removesuffix(".git").lower(), task["fix_sha"], task["fix_sha"][:12]]
     markers += [str(path).lower() for path in private]
@@ -125,12 +136,16 @@ class hidden_from_agent:
         return False
 
 
+def threads(agent: dict[str, Any]) -> list[tuple[str, dict[str, Any]]]:
+    """Métadonnées du fil parent (une par tour) puis des enfants natifs, telles que les relève le runner."""
+    seen = [("parent", item) for item in agent.get("after_turn_actual_metadata", []) if isinstance(item, dict)]
+    return seen + [("child", item) for item in agent.get("child_metadata", []) if isinstance(item, dict)]
+
+
 def observed_settings(agent: dict[str, Any], model: str | None, effort: str | None) -> dict[str, Any]:
     """Compare le modèle et l’effort réellement exposés par l’hôte à ceux du manifeste."""
-    seen = [("parent", item) for item in agent.get("after_turn_actual_metadata", []) if isinstance(item, dict)]
-    seen += [("child", item) for item in agent.get("child_metadata", []) if isinstance(item, dict)]
     rows = [{"thread": kind, "model": item.get("model"), "reasoning_effort": item.get("reasoning_effort")}
-            for kind, item in seen]
+            for kind, item in threads(agent)]
     mismatch = any(
         (model and row["model"] and row["model"] != model)
         or (effort and row["reasoning_effort"] and row["reasoning_effort"] != effort)
@@ -152,11 +167,7 @@ def sha256_file(path: Path) -> str:
 
 
 def tree_digest(root: Path) -> str:
-    digest = hashlib.sha256()
-    for item in sorted(path for path in root.rglob("*") if path.is_file() and "node_modules" not in path.parts):
-        digest.update(item.relative_to(root).as_posix().encode() + b"\0")
-        digest.update(item.read_bytes())
-    return digest.hexdigest()
+    return RUNNER.tree_hash(root, None)["sha256"]
 
 
 def parse_time(value: str, label: str) -> datetime:
@@ -179,7 +190,7 @@ def write_json(path: Path, value: Any) -> None:
     path.write_text(json.dumps(value, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
 
-def check_commands(task_id: str, key: str, value: Any, required: bool) -> list[dict[str, str]]:
+def check_commands(task_id: str, key: str, value: Any, required: bool) -> None:
     if not isinstance(value, list) or (required and not value):
         raise BenchError(f"{task_id}: {key} doit être une liste{' non vide' if required else ''}")
     seen = set()
@@ -189,7 +200,6 @@ def check_commands(task_id: str, key: str, value: Any, required: bool) -> list[d
         if row["id"] in seen:
             raise BenchError(f"{task_id}: identifiant dupliqué dans {key}: {row['id']}")
         seen.add(row["id"])
-    return value
 
 
 def load_task(directory: Path, merged_after: datetime) -> dict[str, Any]:
@@ -219,14 +229,15 @@ def load_task(directory: Path, merged_after: datetime) -> dict[str, Any]:
     for path in hidden:
         if path.startswith("/") or ".." in Path(path).parts:
             raise BenchError(f"{task_id}: chemin caché hors du dépôt: {path}")
+    task.setdefault("pass_to_pass", [])
     check_commands(task_id, "fail_to_pass", task.get("fail_to_pass"), True)
-    check_commands(task_id, "pass_to_pass", task.get("pass_to_pass", []), False)
+    check_commands(task_id, "pass_to_pass", task["pass_to_pass"], False)
     timeout = task.get("test_timeout", 600)
     if not isinstance(timeout, (int, float)) or not 0 < timeout <= 3600:
         raise BenchError(f"{task_id}: test_timeout doit être compris entre 0 et 3600 secondes")
     if not (directory / "Dockerfile").is_file():
         raise BenchError(f"{task_id}: Dockerfile absent")
-    task = dict(task, pass_to_pass=task.get("pass_to_pass", []), test_timeout=timeout)
+    task["test_timeout"] = timeout
     task["dir"] = directory
     task["digest"] = tree_digest(directory)
     return task
@@ -306,17 +317,20 @@ def image_id(reference: str) -> str:
     return result.stdout.strip()
 
 
-def owned_command(command: str) -> str:
+def docker_run(image: str, workdir: Path, *command: str) -> list[str]:
+    return ["docker", "run", "--rm", "--network", "none", "-v", f"{workdir.resolve()}:/work", "-w", "/work",
+            image, *command]
+
+
+def release_workdir(image: str, workdir: Path) -> None:
     """Rend /work à l’utilisateur hôte après les tests, pour que le nettoyage reste possible hors root."""
-    uid, gid = os.getuid(), os.getgid()
-    if uid == 0:
-        return command
-    return f'( {command} ); status=$?; chown -R {uid}:{gid} /work 2>/dev/null; exit $status'
+    if os.getuid() != 0:
+        subprocess.run(docker_run(image, workdir, "chown", "-R", f"{os.getuid()}:{os.getgid()}", "/work"),
+                       capture_output=True)
 
 
 def run_test(image: str, workdir: Path, command: str, timeout: float) -> dict[str, Any]:
-    argv = ["docker", "run", "--rm", "--network", "none", "-v", f"{workdir.resolve()}:/work", "-w", "/work",
-            image, "sh", "-c", owned_command(command)]
+    argv = docker_run(image, workdir, "sh", "-c", command)
     try:
         result = subprocess.run(argv, capture_output=True, text=True, timeout=timeout)
     except subprocess.TimeoutExpired:
@@ -334,9 +348,12 @@ def run_test(image: str, workdir: Path, command: str, timeout: float) -> dict[st
 
 def run_tests(task: dict[str, Any], image: str, workdir: Path) -> dict[str, dict[str, Any]]:
     results = {}
-    for key in ("fail_to_pass", "pass_to_pass"):
-        for row in task[key]:
-            results[f"{key}:{row['id']}"] = run_test(image, workdir, row["command"], task["test_timeout"])
+    try:
+        for key in ("fail_to_pass", "pass_to_pass"):
+            for row in task[key]:
+                results[f"{key}:{row['id']}"] = run_test(image, workdir, row["command"], task["test_timeout"])
+    finally:
+        release_workdir(image, workdir)
     return results
 
 
@@ -373,6 +390,7 @@ def validate_task(task: dict[str, Any], work: Path) -> dict[str, Any]:
     }
 
 
+@functools.lru_cache(maxsize=None)
 def default_prompt(plugin: Path) -> str:
     text = (plugin / "skills" / "cstack" / "agents" / "openai.yaml").read_text(encoding="utf-8")
     match = re.search(r'^\s*default_prompt:\s*"(.*)"\s*$', text, re.MULTILINE)
@@ -402,17 +420,21 @@ def plan_runs(tasks: list[dict[str, Any]], repetitions: int, seed: int, arms=DEF
     return runs
 
 
+def staged_diff(workspace: Path, base_sha: str, *flags: str) -> str:
+    return git(workspace, "diff", "--cached", *flags, base_sha, *DIFF_PATHSPEC)
+
+
 def capture_diff(workspace: Path, base_sha: str) -> str:
+    """Indexe tout le travail de l’agent, commits compris, puis renvoie le patch depuis la base."""
     git(workspace, "add", "--all")
-    return git(workspace, "diff", "--cached", "--binary", base_sha, "--", ".",
-               *[f":(exclude){name}" for name in EXCLUDED_FROM_DIFF])
+    return staged_diff(workspace, base_sha, "--binary")
 
 
 def diff_stats(workspace: Path, base_sha: str, reference: set[str], hidden: set[str]) -> dict[str, Any]:
+    """Suppose l’index préparé par capture_diff."""
     added = removed = 0
     files = []
-    for line in git(workspace, "diff", "--cached", "--numstat", base_sha, "--", ".",
-                    *[f":(exclude){name}" for name in EXCLUDED_FROM_DIFF]).splitlines():
+    for line in staged_diff(workspace, base_sha, "--numstat").splitlines():
         plus, minus, path = line.split("\t", 2)
         added += int(plus) if plus.isdigit() else 0
         removed += int(minus) if minus.isdigit() else 0
@@ -425,28 +447,15 @@ def diff_stats(workspace: Path, base_sha: str, reference: set[str], hidden: set[
 
 
 def total_tokens(value: Any) -> int | None:
-    found = []
-
-    def walk(item: Any) -> None:
-        if isinstance(item, dict):
-            for key, child in item.items():
-                if re.sub(r"[^a-z]", "", key.lower()) == "totaltokens" and isinstance(child, int):
-                    found.append(child)
-                else:
-                    walk(child)
-        elif isinstance(item, list):
-            for child in item:
-                walk(child)
-
-    walk(value)
+    found = [item for item in RUNNER.found_values(value, ("totalTokens",)) if isinstance(item, int)]
     return max(found) if found else None
 
 
 def token_metrics(result: dict[str, Any]) -> dict[str, Any]:
     """Maximum cumulé par fil ; un fil sans métadonnées rend le total inconnu."""
-    threads = [result.get("after_turn_actual_metadata", [])]
-    threads += [child.get("token_usage", []) for child in result.get("child_metadata", [])]
-    per_thread = [total_tokens(thread) for thread in threads]
+    seen = threads(result)
+    per_thread = [total_tokens([item for kind, item in seen if kind == "parent"])]
+    per_thread += [total_tokens(item.get("token_usage", [])) for kind, item in seen if kind == "child"]
     missing = len(result.get("native_child_thread_ids", [])) - len(result.get("child_metadata", []))
     if all(value is not None for value in per_thread) and missing <= 0:
         return {"tokens": sum(per_thread), "tokens_source": "per_thread"}
@@ -484,7 +493,7 @@ def execute_run(run: dict[str, Any], task: dict[str, Any], image: str, context: 
         write_json(workspace / ".cstack" / "models.json", models)
     case = {"id": run["run_id"], "cwd": workspace, "sandbox": "workspace-write", "ephemeral": False,
             "prompts": [arm_prompt(task, base, context["bundles"])]}
-    private = [work, output / "patches", output / "state", output / "results.jsonl"]
+    private = private_paths(work, output)
     with hidden_from_agent(private):
         agent = context["runner"].run_case(case, output / "agent", context["command"], context["model"],
                                            context["effort"], context["turn_timeout"])
@@ -503,7 +512,7 @@ def execute_run(run: dict[str, Any], task: dict[str, Any], image: str, context: 
     return {
         **run,
         "base": base,
-        "possible_leak": possible_leak(task, commands, (work, output / "patches", output / "state")),
+        "possible_leak": possible_leak(task, commands, private),
         **observed_settings(agent, context["model"], context["effort"]),
         "cli_runtimes_seen": [name for name in CLI_RUNTIMES if any(name in command for command in commands)],
         "state_dir": str(state) if state.exists() else None,
@@ -545,6 +554,7 @@ def append_result(path: Path, row: dict[str, Any]) -> None:
 
 
 def expected_runs(manifest: dict[str, Any]) -> set[str]:
+    # Les manifestes de schéma 2 stockaient les bras comme de simples noms.
     names = [arm["name"] if isinstance(arm, dict) else arm for arm in manifest["arms"]]
     tasks = [{"id": task_id} for task_id in manifest["tasks"]]
     return {run["run_id"] for run in plan_runs(tasks, manifest["repetitions"], manifest["seed"], names)}
@@ -552,12 +562,19 @@ def expected_runs(manifest: dict[str, Any]) -> set[str]:
 
 def summarize(results: list[dict[str, Any]], expected: set[str] | None = None) -> dict[str, Any]:
     arms: dict[str, Any] = {}
-    counted = [row for row in results if row.get("agent_status") != "infra_error"
-               and not row.get("possible_leak") and not row.get("settings_mismatch")]
+    by_arm: dict[str, list[dict[str, Any]]] = {}
+    counted_by_arm: dict[str, list[dict[str, Any]]] = {}
+    by_task: dict[tuple[str, str], list[dict[str, Any]]] = {}
+    for row in results:
+        by_arm.setdefault(row["arm"], []).append(row)
+        if row.get("agent_status") != "infra_error" and not row.get("possible_leak") and not row.get("settings_mismatch"):
+            counted_by_arm.setdefault(row["arm"], []).append(row)
+            by_task.setdefault((row["task_id"], row["arm"]), []).append(row)
     order = {base: index for index, base in enumerate(ARMS)}
-    present = sorted({row["arm"] for row in results}, key=lambda name: (order.get(name, len(ARMS)), name))
+    present = sorted(by_arm, key=lambda name: (order.get(name, len(ARMS)), name))
     for arm in present:
-        rows = [row for row in counted if row["arm"] == arm]
+        rows = counted_by_arm.get(arm, [])
+        everything = by_arm[arm]
         resolved = [row for row in rows if row.get("resolved")]
         tokens = [row["tokens"] for row in rows if isinstance(row.get("tokens"), int)]
         walls = [row["wall_seconds"] for row in rows if isinstance(row.get("wall_seconds"), (int, float))]
@@ -565,9 +582,9 @@ def summarize(results: list[dict[str, Any]], expected: set[str] | None = None) -
             "runs": len(rows),
             "resolved": len(resolved),
             "resolved_rate": round(len(resolved) / len(rows), 3) if rows else None,
-            "infra_errors": sum(1 for row in results if row["arm"] == arm and row.get("agent_status") == "infra_error"),
-            "possible_leaks": sum(1 for row in results if row["arm"] == arm and row.get("possible_leak")),
-            "settings_mismatches": sum(1 for row in results if row["arm"] == arm and row.get("settings_mismatch")),
+            "infra_errors": sum(1 for row in everything if row.get("agent_status") == "infra_error"),
+            "possible_leaks": sum(1 for row in everything if row.get("possible_leak")),
+            "settings_mismatches": sum(1 for row in everything if row.get("settings_mismatch")),
             "settings_unobserved": sum(1 for row in rows if not row.get("settings_observed")),
             "needs_input": sum(1 for row in rows if row.get("agent_status") == "needs_input"),
             "median_tokens": statistics.median(tokens) if tokens else None,
@@ -582,10 +599,10 @@ def summarize(results: list[dict[str, Any]], expected: set[str] | None = None) -
             "runs_touching_hidden_paths": sum(1 for row in rows if row["diff"]["hidden_paths_touched"]),
         }
     per_task = {}
-    for task_id in sorted({row["task_id"] for row in counted}):
+    for task_id in sorted({task_id for task_id, _ in by_task}):
         rates = {}
         for arm in present:
-            rows = [row for row in counted if row["task_id"] == task_id and row["arm"] == arm]
+            rows = by_task.get((task_id, arm), [])
             rates[arm] = round(sum(1 for row in rows if row.get("resolved")) / len(rows), 3) if rows else None
         per_task[task_id] = rates
     paired = {}
@@ -744,8 +761,7 @@ def command_run(args: argparse.Namespace) -> int:
         try:
             row = execute_run(run, by_id[run["task_id"]], images[run["task_id"]], context)
         except (BenchError, OSError, subprocess.SubprocessError) as error:
-            row = {**run, "agent_status": "infra_error", "agent_error": str(error), "resolved": False,
-                   "diff": {"lines_added": 0, "lines_removed": 0, "hidden_paths_touched": []}}
+            row = {**run, "agent_status": "infra_error", "agent_error": str(error), "resolved": False}
         append_result(results_path, runner.scrub(row))
         print(f"[{run['run_id']}] {row['agent_status']} résolu={row.get('resolved')}", flush=True)
     write_json(output / "summary.json", summarize(load_results(results_path), expected_runs(manifest)))
@@ -771,17 +787,27 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("-h", "--help", action="help", help="affiche cette aide puis quitte")
     commands = parser.add_subparsers(dest="command", required=True)
 
-    def common(sub: argparse.ArgumentParser) -> None:
-        sub.add_argument("--tasks", type=Path, default=DEFAULT_TASKS, help="racine contenant suite.json et tasks/")
-        sub.add_argument("--work", type=Path, default=ROOT / ".cstack" / "outcome-bench", help="caches, miroirs et reçus locaux")
+    def resolved_path(value: str) -> Path:
+        return Path(value).expanduser().resolve()
+
+    def work_option(sub: argparse.ArgumentParser) -> None:
+        sub.add_argument("--work", type=resolved_path, default=resolved_path(str(ROOT / ".cstack" / "outcome-bench")),
+                         help="caches, miroirs et reçus locaux")
+
+    def task_options(sub: argparse.ArgumentParser) -> None:
+        sub.add_argument("--tasks", type=resolved_path, default=DEFAULT_TASKS, help="racine contenant suite.json et tasks/")
         sub.add_argument("--task-id", action="append", dest="task_ids", help="limite à cette tâche ; option répétable")
+        work_option(sub)
 
     validate = commands.add_parser("validate", help="vérifie chaque tâche sans modèle")
-    common(validate)
+    task_options(validate)
+    validate.set_defaults(handler=command_validate)
     fetch = commands.add_parser("fetch-pstack", help="récupère pstack au commit épinglé et vérifie ses blobs")
-    fetch.add_argument("--work", type=Path, default=ROOT / ".cstack" / "outcome-bench", help="caches, miroirs et reçus locaux")
+    work_option(fetch)
+    fetch.set_defaults(handler=command_fetch_pstack)
     run = commands.add_parser("run", help="exécute les bras choisis puis note les diffs")
-    common(run)
+    task_options(run)
+    run.set_defaults(handler=command_run)
     run.add_argument("--output", type=Path, required=True, help="dossier de campagne ; une campagne identique reprend")
     run.add_argument("--plugin", type=Path, default=DEFAULT_PLUGIN, help="racine du plugin cstack évalué")
     run.add_argument("--pstack", type=Path, help="racine pstack ; par défaut le checkout épinglé de fetch-pstack")
@@ -795,25 +821,18 @@ def main(argv: list[str] | None = None) -> int:
     run.add_argument("--turn-timeout", type=float, default=900.0)
     report = commands.add_parser("report", help="recalcule summary.json depuis results.jsonl")
     report.add_argument("--output", type=Path, required=True)
+    report.set_defaults(handler=command_report)
     args = parser.parse_args(argv)
     if args.command == "run":
         try:
             args.arms = parse_arms(args.arms)
         except BenchError as error:
             parser.error(str(error))
-    if args.command == "run" and not 1 <= args.repetitions <= 10:
-        parser.error("--repetitions doit être compris entre 1 et 10")
-    if args.command == "run" and not 0 < args.turn_timeout <= 900:
-        parser.error("--turn-timeout doit être supérieur à 0 et inférieur ou égal à 900 secondes")
-    if hasattr(args, "tasks"):
-        args.tasks = args.tasks.expanduser().resolve()
-    if hasattr(args, "work"):
-        args.work = args.work.expanduser().resolve()
-    commands_by_name = {
-        "validate": command_validate, "fetch-pstack": command_fetch_pstack,
-        "run": command_run, "report": command_report,
-    }
-    return commands_by_name[args.command](args)
+        if not 1 <= args.repetitions <= 10:
+            parser.error("--repetitions doit être compris entre 1 et 10")
+        if not 0 < args.turn_timeout <= 900:
+            parser.error("--turn-timeout doit être supérieur à 0 et inférieur ou égal à 900 secondes")
+    return args.handler(args)
 
 
 if __name__ == "__main__":

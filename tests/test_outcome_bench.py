@@ -12,6 +12,7 @@ MODULE_PATH = ROOT / "scripts" / "outcome-bench.py"
 SPEC = importlib.util.spec_from_file_location("outcome_bench", MODULE_PATH)
 outcome_bench = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(outcome_bench)
+RELEASE_WORKDIR = outcome_bench.release_workdir
 
 BUGGY = "def add(a, b):\n    return a - b\n\n\ndef neg(a):\n    return -a\n"
 FIXED = "def add(a, b):\n    return a + b\n\n\ndef neg(a):\n    return -a\n"
@@ -87,8 +88,15 @@ class FakeRunner:
                                 "token_usage": [{"total": {"totalTokens": 40}}]}],
         }
 
+    def build_command(self):
+        return ["codex", "app-server"]
+
+    def scrub(self, value):
+        return value
+
     def run_case(self, case, output, command, model, effort, timeout):
         self.cases.append(case)
+        self.command = command
         self.hidden_modes = {path: path.stat().st_mode & 0o777 for path in self.watch if path.exists()}
         models = Path(case["cwd"]) / ".cstack" / "models.json"
         self.seen_models.append(json.loads(models.read_text()) if models.exists() else None)
@@ -106,6 +114,14 @@ class OutcomeBenchTests(unittest.TestCase):
         self.root = Path(self.directory.name)
         self.fixture = Fixture(self.root)
         self.work = self.root / "work"
+        # Les faux tests tournent sur l’hôte : aucun conteneur ne doit rendre /work ici.
+        release = patch.object(outcome_bench, "release_workdir")
+        release.start()
+        self.addCleanup(release.stop)
+
+    def run_args(self, *extra, output="campaign"):
+        return ["run", "--tasks", str(self.fixture.tasks), "--work", str(self.work),
+                "--output", str(self.root / output if isinstance(output, str) else output), "--seed", "1", *extra]
 
     def tearDown(self):
         self.directory.cleanup()
@@ -317,8 +333,7 @@ class OutcomeBenchTests(unittest.TestCase):
         with self.assertRaisesRegex(outcome_bench.BenchError, "vide ou absente"):
             outcome_bench.load_arm_models(outcome_bench.parse_arms(f"cstack,none=cstack:{self.root / 'none.json'}"))
         with self.assertRaisesRegex(outcome_bench.BenchError, "invalide"):
-            outcome_bench.main(["run", "--tasks", str(self.fixture.tasks), "--work", str(self.work),
-                                "--output", str(self.root / "c"), "--seed", "1", "--arms", f"cstack,bad=cstack:{bad}"])
+            outcome_bench.main(self.run_args("--arms", f"cstack,bad=cstack:{bad}"))
 
     def test_arm_models_reach_the_workspace_but_not_the_diff(self):
         models = {"arena runners": [{"runtime": "claude-code"}]}
@@ -360,24 +375,11 @@ class OutcomeBenchTests(unittest.TestCase):
             outcome_bench.command_validate(outcome_bench.argparse.Namespace(
                 tasks=self.fixture.tasks, work=self.work, task_ids=None))
         output = self.root / "net"
-        seen = {}
-
-        class Runner(FakeRunner):
-            def build_command(self):
-                return ["codex", "app-server"]
-
-            def scrub(self, value):
-                return value
-
-            def run_case(self, case, output_dir, command, model, effort, timeout):
-                seen["command"] = command
-                return super().run_case(case, output_dir, command, model, effort, timeout)
-
-        with patch.object(outcome_bench, "load_runner", return_value=Runner(lambda cwd: None)), \
+        runner = FakeRunner(lambda cwd: None)
+        with patch.object(outcome_bench, "load_runner", return_value=runner), \
                 patch.object(outcome_bench, "run_test", local_test):
-            outcome_bench.main(["run", "--tasks", str(self.fixture.tasks), "--work", str(self.work),
-                                "--output", str(output), "--seed", "1", "--repetitions", "1", "--network"])
-        self.assertEqual(seen["command"][-2:], outcome_bench.NETWORK_FLAG)
+            outcome_bench.main(self.run_args("--repetitions", "1", "--network", output=output))
+        self.assertEqual(runner.command[-2:], outcome_bench.NETWORK_FLAG)
         manifest = json.loads((output / "manifest.json").read_text())
         self.assertTrue(manifest["network"])
         self.assertEqual([arm["name"] for arm in manifest["arms"]], ["vanilla", "cstack"])
@@ -421,15 +423,31 @@ class OutcomeBenchTests(unittest.TestCase):
         with patch.object(outcome_bench.subprocess, "run", return_value=Result()):
             self.assertFalse(outcome_bench.run_test("sha256:x", self.root, "true", 5)["passed"])
 
-    def test_non_root_operators_get_their_checkout_back(self):
-        with patch.object(outcome_bench.os, "getuid", return_value=1000), \
+    def test_non_root_operators_get_their_checkout_back_once_per_workdir(self):
+        task = self.fixture.load()
+        calls = []
+
+        def fake_run(argv, **_):
+            calls.append(argv)
+
+            class Result:
+                returncode, stdout, stderr = 0, "", ""
+            return Result()
+
+        with patch.object(outcome_bench, "release_workdir", RELEASE_WORKDIR), \
+                patch.object(outcome_bench.subprocess, "run", side_effect=fake_run), \
+                patch.object(outcome_bench.os, "getuid", return_value=1000), \
                 patch.object(outcome_bench.os, "getgid", return_value=1000):
-            wrapped = outcome_bench.owned_command("pytest -q")
-        self.assertIn("chown -R 1000:1000 /work", wrapped)
-        result = subprocess.run(["sh", "-c", wrapped.replace("pytest -q", "exit 3")], capture_output=True)
-        self.assertEqual(result.returncode, 3)
-        with patch.object(outcome_bench.os, "getuid", return_value=0):
-            self.assertEqual(outcome_bench.owned_command("pytest -q"), "pytest -q")
+            tests = outcome_bench.run_tests(task, "sha256:x", self.root)
+        self.assertEqual(len(tests), 2)
+        self.assertEqual(calls[-1][-4:], ["chown", "-R", "1000:1000", "/work"])
+        self.assertEqual(sum(1 for argv in calls if "chown" in argv), 1)
+        calls.clear()
+        with patch.object(outcome_bench, "release_workdir", RELEASE_WORKDIR), \
+                patch.object(outcome_bench.subprocess, "run", side_effect=fake_run), \
+                patch.object(outcome_bench.os, "getuid", return_value=0):
+            outcome_bench.run_tests(task, "sha256:x", self.root)
+        self.assertFalse(any("chown" in argv for argv in calls))
 
     def test_receipts_must_name_an_immutable_image(self):
         task = self.fixture.load()
@@ -469,20 +487,21 @@ class OutcomeBenchTests(unittest.TestCase):
         summary = json.loads((output / "summary.json").read_text())
         self.assertFalse(summary["complete"])
         self.assertEqual(len(summary["missing_runs"]), 3)
+        manifest["arms"] = ["vanilla", "cstack"]
+        (output / "manifest.json").write_text(json.dumps(manifest))
+        outcome_bench.main(["report", "--output", str(output)])
+        self.assertEqual(len(json.loads((output / "summary.json").read_text())["missing_runs"]), 3)
 
     def test_campaign_output_cannot_live_in_the_hidden_work_dir(self):
         with self.assertRaisesRegex(outcome_bench.BenchError, "hors de --work"):
-            outcome_bench.main(["run", "--tasks", str(self.fixture.tasks), "--work", str(self.work),
-                                "--output", str(self.work / "campaign"), "--seed", "1"])
+            outcome_bench.main(self.run_args(output=self.work / "campaign"))
 
     def test_run_rejects_bad_arm_lists_and_missing_pstack_checkout(self):
-        common = ["run", "--tasks", str(self.fixture.tasks), "--work", str(self.work),
-                  "--output", str(self.root / "campaign"), "--seed", "1"]
         for arms in ("cstack", "cstack,cstack", "vanilla,claude"):
             with self.subTest(arms=arms), self.assertRaises(SystemExit):
-                outcome_bench.main([*common, "--arms", arms])
+                outcome_bench.main(self.run_args("--arms", arms))
         with self.assertRaisesRegex(outcome_bench.BenchError, "fetch-pstack"):
-            outcome_bench.main([*common, "--arms", "cstack,pstack"])
+            outcome_bench.main(self.run_args("--arms", "cstack,pstack"))
 
     def test_pinned_upstream_inventory_names_the_pstack_entry(self):
         pin = outcome_bench.upstream_pin()
@@ -490,14 +509,13 @@ class OutcomeBenchTests(unittest.TestCase):
         self.assertRegex(pin["commit"], "^[0-9a-f]{40}$")
 
     def test_run_refuses_unvalidated_tasks_and_foreign_campaigns(self):
-        common = ["--tasks", str(self.fixture.tasks), "--work", str(self.work)]
         output = self.root / "campaign"
         with self.assertRaisesRegex(outcome_bench.BenchError, "validate"):
-            outcome_bench.main(["run", *common, "--output", str(output), "--seed", "1"])
+            outcome_bench.main(self.run_args())
         output.mkdir()
         (output / "other.txt").write_text("preuve")
         with self.assertRaisesRegex(outcome_bench.BenchError, "absent, vide"):
-            outcome_bench.main(["run", *common, "--output", str(output), "--seed", "1"])
+            outcome_bench.main(self.run_args())
         self.assertEqual((output / "other.txt").read_text(), "preuve")
 
 
