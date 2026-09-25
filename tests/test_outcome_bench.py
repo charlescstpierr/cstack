@@ -312,6 +312,7 @@ class OutcomeBenchTests(unittest.TestCase):
         row, runner = self.run_with(lambda cwd: (cwd / "calc.py").write_text(FIXED),
                                     arm="mixed", base="cstack", models=models)
         self.assertEqual(runner.seen_models, [models])
+        self.assertEqual(json.loads((Path(row["state_dir"]) / "models.json").read_text()), models)
         self.assertIn("$cstack:cstack", runner.cases[0]["prompts"][0])
         self.assertEqual((row["arm"], row["base"]), ("mixed", "cstack"))
         self.assertTrue(row["resolved"])
@@ -324,6 +325,10 @@ class OutcomeBenchTests(unittest.TestCase):
         row, _ = self.run_with(lambda cwd: (cwd / "calc.py").write_text(FIXED),
                                commands=["git log --oneline", "curl -s https://github.com/o/r/pull/1.diff"])
         self.assertTrue(row["possible_leak"])
+        self.assertEqual(row["cli_runtimes_seen"], [])
+        worker, _ = self.run_with(lambda cwd: None, commands=["bash run-tool.sh runtime.ts run --runtime claude-code"])
+        self.assertEqual(worker["cli_runtimes_seen"], ["claude-code"])
+        self.assertIsNone(worker["state_dir"])
         clean, _ = self.run_with(lambda cwd: None, commands=["git status", "python3 -m pytest"])
         self.assertFalse(clean["possible_leak"])
         task = self.fixture.load()

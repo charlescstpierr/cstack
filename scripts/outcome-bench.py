@@ -26,6 +26,7 @@ ARMS = ("vanilla", "cstack", "pstack")
 DEFAULT_ARMS = ("vanilla", "cstack")
 MODELS_HELPER = ROOT / "plugins" / "cstack" / "skills" / "setup-cstack" / "scripts" / "models.py"
 NETWORK_FLAG = ["-c", "sandbox_workspace_write.network_access=true"]
+CLI_RUNTIMES = ("codex-cli", "claude-code", "cursor-agent", "grok")
 # Signaux d’une récupération possible du correctif amont pendant un run avec réseau.
 LEAK_COMMAND = re.compile(r"\bgit\s+(?:fetch|clone|pull|ls-remote)\b|\b(?:curl|wget)\b[^\n]*github", re.IGNORECASE)
 UPSTREAM_INVENTORY = ROOT / "UPSTREAM.json"
@@ -428,12 +429,19 @@ def execute_run(run: dict[str, Any], task: dict[str, Any], image: str, context: 
     patch.write_text(capture_diff(workspace, task["base_sha"]), encoding="utf-8")
     reference = set(git(source, "diff", "--name-only", task["base_sha"], task["fix_sha"]).split())
     stats = diff_stats(workspace, task["base_sha"], reference, set(task["hidden_paths"]))
+    # L’état cstack (reçus de workers, points de reprise) reste une preuve de la campagne.
+    state = output / "state" / run["run_id"]
+    if (workspace / ".cstack").is_dir():
+        shutil.copytree(workspace / ".cstack", state, dirs_exist_ok=True)
     shutil.rmtree(workspace, ignore_errors=True)
+    commands = agent.get("actual_commands", [])
     graded = grade(task, image, source, patch, work)
     return {
         **run,
         "base": base,
-        "possible_leak": possible_leak(task, agent.get("actual_commands", [])),
+        "possible_leak": possible_leak(task, commands),
+        "cli_runtimes_seen": [name for name in CLI_RUNTIMES if any(name in command for command in commands)],
+        "state_dir": str(state) if state.exists() else None,
         "agent_status": agent.get("status"),
         "agent_error": agent.get("error"),
         "wall_seconds": agent.get("wall_seconds"),
