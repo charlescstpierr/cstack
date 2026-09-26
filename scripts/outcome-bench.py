@@ -115,18 +115,23 @@ def private_paths(work: Path, output: Path) -> list[Path]:
     return [work, output / "patches", output / "state", output / "results.jsonl"]
 
 
+@functools.lru_cache(maxsize=None)
+def project_helper():
+    return load_module("cstack_project", PROJECT_HELPER)
+
+
 def apply_project_setup(workspace: Path) -> str:
     """Applique le setup projet cstack (bloc AGENTS.md, agents natifs) puis le committe comme nouveau départ."""
-    project = load_module("cstack_project", PROJECT_HELPER)
+    project = project_helper()
     try:
-        plan = project._plan(workspace, SETUP_OPTIONS, None)
+        plan = project.preview_plan(workspace, SETUP_OPTIONS, None)
         result = project.apply_plan(workspace, plan, SETUP_OPTIONS, None, plan["plan_sha256"])
     except (OSError, ValueError) as error:
         raise BenchError(f"setup projet impossible: {error}") from error
     if result["status"] not in {"applied", "noop"}:
         raise BenchError(f"setup projet non appliqué: {result}")
     git(workspace, "add", "--all")
-    git(workspace, *GIT_IDENTITY, "commit", "--quiet", "--allow-empty", "-m", "cstack setup")
+    git(workspace, *GIT_IDENTITY, "commit", "--quiet", "-m", "cstack setup")
     return git(workspace, "rev-parse", "HEAD").strip()
 
 
@@ -508,12 +513,13 @@ def execute_run(run: dict[str, Any], task: dict[str, Any], image: str, context: 
     # Le workspace vit hors du dossier de travail, loin du miroir qui contient le correctif.
     workspace = checkout(source, task["base_sha"],
                          Path(tempfile.mkdtemp(prefix="cstack-outcome-")) / "repo", history=True)
-    base = context["arm_bases"][run["arm"]]
+    arm = context["arms"][run["arm"]]
+    base = arm["base"]
     models = context["arm_models"].get(run["arm"])
     if models is not None:
         write_json(workspace / ".cstack" / "models.json", models)
     # Le diff de l’agent part du setup committé, pour ne noter que son propre travail.
-    start = apply_project_setup(workspace) if context.get("arm_setup", {}).get(run["arm"]) else task["base_sha"]
+    start = apply_project_setup(workspace) if arm["setup"] else task["base_sha"]
     case = {"id": run["run_id"], "cwd": workspace, "sandbox": "workspace-write", "ephemeral": False,
             "prompts": [arm_prompt(task, base, context["bundles"])]}
     private = private_paths(work, output)
@@ -771,8 +777,7 @@ def command_run(args: argparse.Namespace) -> int:
     command = runner.build_command() + (NETWORK_FLAG if args.network else [])
     context = {
         "output": output, "work": args.work, "bundles": bundles, "runner": runner, "command": command,
-        "arm_bases": {arm["name"]: arm["base"] for arm in args.arms}, "arm_models": arm_models,
-        "arm_setup": {arm["name"]: arm["setup"] for arm in args.arms},
+        "arms": {arm["name"]: arm for arm in args.arms}, "arm_models": arm_models,
         "model": args.model, "effort": args.effort, "turn_timeout": args.turn_timeout,
     }
     results_path = output / "results.jsonl"

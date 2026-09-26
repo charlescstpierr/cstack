@@ -35,8 +35,11 @@ LEGACY_FALLBACKS = {"simple edits": "feature, refactoring",
                     "documentation": "judgment and prose"}
 RUNTIMES = {"codex-cli", "claude-code", "cursor-agent", "grok"}
 # Panels de jugement mixtes proposés quand Claude Code est présent et connecté ; toujours un choix explicite.
-MIXED_PANELS = {role: [{"runtime": "codex-cli"}, {"runtime": "claude-code"}]
-                for role in ("arena runners", "architect runners", "interrogate reviewers")}
+MIXED_PANEL_ROLES = ("arena runners", "architect runners", "interrogate reviewers")
+
+
+def mixed_panels():
+    return {role: [{"runtime": "codex-cli"}, {"runtime": "claude-code"}] for role in MIXED_PANEL_ROLES}
 CODEX_NATIVE = "codex-native"
 
 
@@ -204,8 +207,7 @@ def preview(config, digest, catalog, claude_ready=False):
             problem = str(error)
         recommendations[group] = {"choices": values, "unavailable": problem}
     if claude_ready:
-        validate(MIXED_PANELS)
-        recommendations["mixed review panels"] = {"choices": json.loads(json.dumps(MIXED_PANELS)), "unavailable": None}
+        recommendations["mixed review panels"] = {"choices": mixed_panels(), "unavailable": None}
     return {"recommendations": recommendations, "saved": config, "sha256": digest}
 
 

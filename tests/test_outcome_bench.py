@@ -207,8 +207,8 @@ class OutcomeBenchTests(unittest.TestCase):
         context = {
             "output": self.root / "out", "work": self.work, "bundles": {"cstack": ROOT / "plugins" / "cstack"},
             "runner": runner, "command": [], "model": model, "effort": effort, "turn_timeout": 10,
-            "arm_bases": {arm: base}, "arm_models": {arm: models} if models is not None else {},
-            "arm_setup": {arm: setup},
+            "arms": {arm: {"name": arm, "base": base, "models": None, "setup": setup}},
+            "arm_models": {arm: models} if models is not None else {},
         }
         run = {"run_id": f"calc-add--{arm}--r1", "task_id": "calc-add", "arm": arm, "repetition": 1}
         with patch.object(outcome_bench, "run_test", local_test):

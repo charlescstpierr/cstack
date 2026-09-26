@@ -149,8 +149,8 @@ class ModelSetupTests(unittest.TestCase):
         for entries in offer["choices"].values():
             self.assertEqual(entries, [{"runtime": "codex-cli"}, {"runtime": "claude-code"}])
         models.validate(offer["choices"])
-        offer["choices"]["arena runners"].append({"runtime": "grok"})
-        self.assertEqual(len(models.MIXED_PANELS["arena runners"]), 2, "la proposition ne partage pas l’état du module")
+        bench = json.loads((ROOT / "evals/outcome/models/mixed-panels.json").read_text())
+        self.assertEqual(offer["choices"], bench, "le banc mesure exactement le panel proposé par le setup")
 
     def test_runtime_selections_are_preserved_and_scoped_to_their_catalog(self):
         runtime_only = {"bug-fix": {"runtime": "claude-code"}}

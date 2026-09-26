@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import base64
+import functools
 import hashlib
 import importlib.util
 import json
@@ -20,10 +21,9 @@ START = b"<!-- cstack:managed:start -->"
 END = b"<!-- cstack:managed:end -->"
 PLAN_VERSION = 1
 AGENT_MARKER = b"# cstack:managed"
-# Agents natifs Codex du projet : nom, rôle de modèle repris de models.json, sandbox et consignes.
+# Agents natifs Codex du projet, par nom : rôle de modèle repris de models.json, sandbox et consignes.
 NATIVE_AGENTS = {
-    ".codex/agents/cstack-explorer.toml": {
-        "name": "cstack-explorer",
+    "cstack-explorer": {
         "role": "how explorer",
         "sandbox_mode": "read-only",
         "description": "Exploration cstack en lecture seule : un angle du code, du flux ou de l’historique, avec preuves citées.",
@@ -34,23 +34,17 @@ NATIVE_AGENTS = {
             "preuves et les questions ouvertes ; ne propose pas d’implémentation hors de ton angle."
         ),
     },
-    ".codex/agents/cstack-worker.toml": {
-        "name": "cstack-worker",
+    "cstack-worker": {
         "role": "feature, refactoring",
         "sandbox_mode": "workspace-write",
         "description": "Implémentation cstack d’une tranche bornée, avec preuve rouge puis vert et contrôles réels.",
         "instructions": (
-            "Tu es un délégué d’implémentation du coordinateur `$cstack:cstack`. Tu possèdes seulement la tranche et les "
-            "fichiers du brief. Inspecte le flux réel avant d’éditer et préserve les modifications des autres agents. Pour "
-            "un changement de comportement, applique la skill `$cstack:tdd` : preuve rouge puis vert, ou raison vérifiée "
-            "de s’en passer. Fais le plus petit changement qui résout la tranche, lance les contrôles pertinents et rapporte "
-            "leur sortie réelle. Ne lance aucun sous-agent sauf délégation explicite du parent. Ne publie, ne fusionne, ne "
-            "supprime aucun worktree et ne change aucune configuration globale. Retourne chemins modifiés, comportement "
-            "obtenu, contrôles et résultats, et préoccupations ouvertes."
+            "Tu es un délégué d’implémentation du coordinateur `$cstack:cstack`. Applique le prompt de délégué cstack "
+            "transmis par le parent (`agents/cstack-agent.md`) : tranche et fichiers du brief seulement, skill `$cstack:tdd` "
+            "pour tout changement de comportement, contrôles réels rapportés, aucun sous-agent sans délégation explicite."
         ),
     },
-    ".codex/agents/cstack-reviewer.toml": {
-        "name": "cstack-reviewer",
+    "cstack-reviewer": {
         "role": "judgment and prose",
         "sandbox_mode": "read-only",
         "description": "Revue indépendante cstack d’un diff : défauts, régressions, preuves manquantes, en lecture seule.",
@@ -63,9 +57,10 @@ NATIVE_AGENTS = {
         ),
     },
 }
-TARGET_PATHS = ("AGENTS.md", "docs/agents/cstack.md", "docs/agents/issue-tracker.md", ".gitignore", ".cstack/models.json", *NATIVE_AGENTS)
+AGENT_PATHS = {name: f".codex/agents/{name}.toml" for name in NATIVE_AGENTS}
+TARGET_PATHS = ("AGENTS.md", "docs/agents/cstack.md", "docs/agents/issue-tracker.md", ".gitignore", ".cstack/models.json", *AGENT_PATHS.values())
 ALLOWED_PATHS = TARGET_PATHS + ("CLAUDE.md",)
-OBSERVED_PATHS = ("AGENTS.md", "CLAUDE.md", "docs/agents/cstack.md", "docs/agents/issue-tracker.md", ".gitignore", ".cstack/models.json", *NATIVE_AGENTS)
+OBSERVED_PATHS = ALLOWED_PATHS
 TRACKER_MODES = {"keep", "local", "github"}
 TRACKER_KEYS = {"mode", "owner", "repo"}
 
@@ -92,6 +87,7 @@ class InterruptedApply(Exception):
         super().__init__("application interrompue; le plan accepté peut reprendre")
 
 
+@functools.lru_cache(maxsize=None)
 def _models():
     path = Path(__file__).with_name("models.py")
     spec = importlib.util.spec_from_file_location("cstack_setup_models", path)
@@ -273,7 +269,7 @@ def _agent_payload(snapshots: dict[str, bytes | None], native_agents: bool) -> b
         "Après une invocation explicite de `$cstack:cstack` dans une conversation, les demandes suivantes de cette conversation restent en mode cstack jusqu’à ce que l’utilisateur demande d’arrêter cstack.",
     ]
     if native_agents:
-        names = ", ".join(f"`{agent['name']}`" for agent in NATIVE_AGENTS.values())
+        names = ", ".join(f"`{name}`" for name in NATIVE_AGENTS)
         lines.append(f"En mode cstack, déléguer le travail indépendant aux agents du projet {names}, en parallèle quand les tranches sont disjointes.")
     else:
         lines.append("En mode cstack, déléguer le travail indépendant à des sous-agents natifs, en parallèle quand les tranches sont disjointes.")
@@ -311,9 +307,7 @@ def _tracker_payload(tracker: dict[str, str]) -> bytes:
     return ("\n".join(rows) + "\n").encode()
 
 
-def _models_content(old: bytes | None, choices: dict[str, Any], models: Any) -> bytes:
-    if old is not None and not choices:
-        return old
+def _models_config(old: bytes | None, choices: dict[str, Any], models: Any) -> dict[str, Any]:
     try:
         config = {} if old is None else json.loads(old)
         models.validate(config)
@@ -321,6 +315,12 @@ def _models_content(old: bytes | None, choices: dict[str, Any], models: Any) -> 
         raise ProjectError(f"models.json existant invalide: {error}") from error
     config.update(choices)
     models.validate(config)
+    return config
+
+
+def _models_content(old: bytes | None, config: dict[str, Any] | None, choices: dict[str, Any]) -> bytes:
+    if old is not None and not choices:
+        return old
     return (json.dumps(config, indent=2, ensure_ascii=False) + "\n").encode()
 
 
@@ -329,22 +329,21 @@ def _toml_string(value: str) -> str:
     return json.dumps(value, ensure_ascii=False)
 
 
-def _agent_content(relative: str, old: bytes | None, config: dict[str, Any]) -> bytes:
+def _agent_content(name: str, old: bytes | None, config: dict[str, Any], models: Any) -> bytes:
     if old is not None and not old.startswith(AGENT_MARKER):
-        raise ProjectError(f"refus d’écraser un agent non géré par cstack: {relative}")
-    agent = NATIVE_AGENTS[relative]
+        raise ProjectError(f"refus d’écraser un agent non géré par cstack: {AGENT_PATHS[name]}")
+    agent = NATIVE_AGENTS[name]
     lines = [
         f"{AGENT_MARKER.decode()} : généré par $cstack:setup-cstack ; retirer cette ligne pour le conserver tel quel.",
-        f"name = {_toml_string(agent['name'])}",
+        f"name = {_toml_string(name)}",
         f"description = {_toml_string(agent['description'])}",
         f"developer_instructions = {_toml_string(agent['instructions'])}",
         f"sandbox_mode = {_toml_string(agent['sandbox_mode'])}",
     ]
-    selected = config.get(agent["role"])
-    # Un choix natif explicite fixe le modèle ; l’héritage et les runtimes CLI laissent l’hôte décider.
-    if isinstance(selected, str) and selected != "inherit-parent":
-        selected = {"model": selected}
-    if isinstance(selected, dict) and "runtime" not in selected and "model" in selected:
+    role = agent["role"]
+    # Même lecture que models.resolve : l’héritage et les runtimes CLI laissent l’hôte choisir le modèle.
+    selected = models.selection(config.get(role, config.get(models.LEGACY_FALLBACKS.get(role), "inherit-parent")))
+    if "model" in selected and "runtime" not in selected:
         lines.append(f"model = {_toml_string(selected['model'])}")
         if "reasoning_effort" in selected:
             lines.append(f"model_reasoning_effort = {_toml_string(selected['reasoning_effort'])}")
@@ -382,18 +381,18 @@ def _payload(options: dict[str, Any], snapshots: dict[str, bytes | None], models
     elif tracker_old is not None:
         files.append(_entry("docs/agents/issue-tracker.md", tracker_old, tracker_old))
     old_models = snapshots[".cstack/models.json"]
-    models_content = None
-    if old_models is not None or options["model_choices"]:
-        models_content = _models_content(old_models, options["model_choices"], models)
-        files.append(_entry(".cstack/models.json", old_models, models_content))
+    choices = options["model_choices"]
+    # Sans choix ni agents, un models.json existant est repris tel quel, sans relecture.
+    config = _models_config(old_models, choices, models) if choices or options["native_agents"] else None
+    if old_models is not None or choices:
+        files.append(_entry(".cstack/models.json", old_models, _models_content(old_models, config, choices)))
     if options["native_agents"]:
-        config = json.loads(models_content) if models_content else {}
-        for relative in NATIVE_AGENTS:
-            files.append(_entry(relative, snapshots[relative], _agent_content(relative, snapshots[relative], config)))
+        for name, relative in AGENT_PATHS.items():
+            files.append(_entry(relative, snapshots[relative], _agent_content(name, snapshots[relative], config, models)))
     return {"files": files, "observed": {path: _record(snapshots[path]) for path in OBSERVED_PATHS}}
 
 
-def _plan(workspace: Path, raw_options: Any, catalog: dict[str, Any] | None) -> dict[str, Any]:
+def preview_plan(workspace: Path, raw_options: Any, catalog: dict[str, Any] | None) -> dict[str, Any]:
     workspace = _workspace(workspace)
     models = _models()
     options = _options(raw_options, models, catalog)
@@ -612,7 +611,7 @@ def main(argv: list[str] | None = None) -> int:
         raw_options = _json(args.options)
         catalog = _catalog(args.catalog, raw_options)
         if args.command == "preview":
-            result = _plan(args.workspace, raw_options, catalog)
+            result = preview_plan(args.workspace, raw_options, catalog)
             print(json.dumps(result, indent=2, ensure_ascii=False))
             return 0
         result = apply_plan(args.workspace, _json(args.plan), raw_options, catalog, args.expected_plan_sha256)
