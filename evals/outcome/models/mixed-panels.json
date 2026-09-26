@@ -1,5 +1,5 @@
 {
-  "arena runners": [{"runtime": "codex-cli"}, {"runtime": "claude-code"}],
-  "architect runners": [{"runtime": "codex-cli"}, {"runtime": "claude-code"}],
-  "interrogate reviewers": [{"runtime": "codex-cli"}, {"runtime": "claude-code"}]
+  "arena runners": ["inherit-parent", {"runtime": "claude-code"}, "inherit-parent"],
+  "architect runners": ["inherit-parent", {"runtime": "claude-code"}, "inherit-parent"],
+  "interrogate reviewers": ["inherit-parent", {"runtime": "claude-code"}, "inherit-parent"]
 }

@@ -5,7 +5,7 @@ Ce banc répond à deux questions : sur des correctifs open source réels, `$cst
 ## Principe
 
 - **Tâches** : correctifs fusionnés après la date plancher de `evals/outcome/suite.json`, pour limiter la contamination. Chaque dossier `evals/outcome/tasks/<id>/` contient `task.json` et un `Dockerfile` figé.
-- **Bras** : `vanilla` reçoit la demande du ticket et la limite de portée locale. `cstack` reçoit le `default_prompt` de la compétence, la même demande et le chemin de la source cstack copiée dans la campagne. `pstack`, facultatif, reçoit une demande anglaise équivalente de mode poteto et de délégation, la même demande et le chemin de `poteto-mode/SKILL.md` au commit épinglé de `UPSTREAM.json`. Même modèle, même effort, même sandbox. `--arms` choisit les bras, `vanilla,cstack` par défaut. Un bras `nom=cstack:<models.json>` ajoute une variante de cstack avec sa propre configuration de modèles, validée par le helper de `setup-cstack` puis écrite dans `.cstack/models.json` du workspace, hors diff.
+- **Bras** : `vanilla` reçoit la demande du ticket et la limite de portée locale. `cstack` reçoit le `default_prompt` de la compétence, la même demande et le chemin de la source cstack copiée dans la campagne. `pstack`, facultatif, reçoit une demande anglaise équivalente de mode poteto et de délégation, la même demande et le chemin de `poteto-mode/SKILL.md` au commit épinglé de `UPSTREAM.json`. Même modèle, même effort, même sandbox. `--arms` choisit les bras, `vanilla,cstack` par défaut. Un bras `nom=cstack:<models.json>` ajoute une variante de cstack avec sa propre configuration de modèles, validée par le helper de `setup-cstack` puis écrite dans `.cstack/models.json` du workspace, hors diff. Un bras `nom=cstack+setup[:models.json]` applique en plus le setup projet (bloc `AGENTS.md` en mode cstack et agents natifs `cstack-*` dans `.codex/agents/`), le committe dans le workspace, puis note seulement le diff de l’agent depuis ce commit.
 - **Réseau** : coupé par défaut. `--network` l’autorise pour tous les bras de la campagne, ce qu’exigent un worker Claude Code et l’installation des helpers. Un run dont les commandes récupèrent un dépôt distant ou visent le dépôt amont reçoit `possible_leak` et sort des taux.
 - **Espace de travail** : checkout neuf au commit de base dans un dossier temporaire hors de `--work`, avec son historique mais sans aucun objet du correctif ni remote. Pendant le tour de l’agent, `--work` (miroirs et reçus), les patches et l’état des autres runs perdent leurs droits de lecture ; ils les retrouvent ensuite. Une commande qui vise ces chemins, le SHA du correctif ou le dépôt distant marque le run `possible_leak`. Le fil Codex est persistant pour tous les bras, parce qu’un fil éphémère refuse les Goals natifs ; comme pour `scripts/verify-goal.py`, ces conversations restent dans l’historique du `CODEX_HOME` courant.
 - **Notation** : le diff de l’agent est appliqué sur une copie propre de la base, puis les `hidden_paths` du correctif l’écrasent. Les commandes `fail_to_pass` et `pass_to_pass` s’exécutent dans l’image de la tâche, sans réseau. Un run est résolu si toutes passent.
@@ -44,11 +44,12 @@ Prérequis : Docker, Codex CLI authentifié, Claude Code installé et connecté,
 python3 scripts/outcome-bench.py fetch-pstack
 python3 scripts/outcome-bench.py validate
 MIXED=cstack-mixed=cstack:evals/outcome/models/mixed-panels.json
+AGENTS=cstack-agents=cstack+setup
 
 # Pilote : vérifie le banc, ne conclut rien.
 python3 scripts/outcome-bench.py run --output .cstack/outcome-runs/65-pilot --seed 65 --repetitions 1 --network \
   --task-id tenacity-cyclic-cause --task-id chi-mount-collision \
-  --arms "vanilla,cstack,pstack,$MIXED" --model <modèle> --effort <effort>
+  --arms "vanilla,cstack,pstack,$MIXED,$AGENTS" --model <modèle> --effort <effort>
 
 # Campagne A : poids, traduction et délégation (90 runs).
 python3 scripts/outcome-bench.py run --output .cstack/outcome-runs/65-a --seed 65 --network \
@@ -59,7 +60,7 @@ python3 scripts/outcome-bench.py run --output .cstack/outcome-runs/65-b --seed 6
   --arms "cstack,$MIXED" --model <modèle> --effort <effort>
 ```
 
-Le pilote est accepté si aucun `infra_error` ne vient du banc lui-même, si les tokens sont relevés et si `cstack-mixed` montre au moins un appel Claude Code (`cli_runtimes_seen`, ou reçus de workers conservés sous `state/<run>/`). Sinon, corriger le banc avant A et B.
+Le pilote observe aussi si `cstack-agents` lance réellement ses agents natifs par leur nom (`children` et métadonnées des fils) grâce au bloc `AGENTS.md` et au mode cstack. Il est accepté si aucun `infra_error` ne vient du banc lui-même, si les tokens sont relevés et si `cstack-mixed` montre au moins un appel Claude Code (`cli_runtimes_seen`, ou reçus de workers conservés sous `state/<run>/`). Sinon, corriger le banc avant A et B.
 
 Règles de décision, sur les dix tâches appariées, hors `infra_error` et `possible_leak` :
 

@@ -4,6 +4,8 @@ Les versions suivent SemVer. Le format suit [Keep a Changelog](https://keepachan
 
 ## [Unreleased]
 
+- Agents natifs du projet : `$cstack:setup-cstack` propose `cstack-explorer`, `cstack-worker` et `cstack-reviewer` dans `.codex/agents/`, avec les modèles et efforts choisis ; cstack les lance par leur nom. Un rôle confié à un CLI n'a pas d'agent, `models.py apply` resynchronise les agents gérés, et `native_agents: false` les supprime. Le bloc `AGENTS.md` garde la conversation en mode cstack après une invocation explicite et demande la délégation du travail indépendant.
+- Panel mixte proposé d'office quand Claude Code est présent et connecté : deux positions natives Codex et une Claude Code dans `arena runners`, `architect runners` et `interrogate reviewers`, toujours sur acceptation.
 - Goal natif explicitement autorisé pour suivre une implémentation multi-phase jusqu’à sa livraison convenue, avec une PR testée et revue par défaut. La continuation utilise les outils natifs de Codex.
 - Exploration déléguée : minimum deux explorateurs, normalement trois angles utiles. Setup, How, audit et recherches Horizon partagent cette règle et conservent les modèles configurés.
 
