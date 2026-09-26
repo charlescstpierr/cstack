@@ -198,7 +198,7 @@ class OutcomeBenchTests(unittest.TestCase):
         self.assertNotIn("$cstack", poteto)
 
     def run_with(self, edit, arm="vanilla", base="vanilla", models=None, commands=(), model=None, effort=None,
-                 metadata=None):
+                 metadata=None, setup=False):
         task = self.fixture.load()
         runner = FakeRunner(edit, list(commands))
         runner.watch = [self.work, self.root / "out" / "patches"]
@@ -208,6 +208,7 @@ class OutcomeBenchTests(unittest.TestCase):
             "output": self.root / "out", "work": self.work, "bundles": {"cstack": ROOT / "plugins" / "cstack"},
             "runner": runner, "command": [], "model": model, "effort": effort, "turn_timeout": 10,
             "arm_bases": {arm: base}, "arm_models": {arm: models} if models is not None else {},
+            "arm_setup": {arm: setup},
         }
         run = {"run_id": f"calc-add--{arm}--r1", "task_id": "calc-add", "arm": arm, "repetition": 1}
         with patch.object(outcome_bench, "run_test", local_test):
@@ -320,6 +321,35 @@ class OutcomeBenchTests(unittest.TestCase):
         ):
             with self.subTest(text=text), self.assertRaisesRegex(outcome_bench.BenchError, message):
                 outcome_bench.parse_arms(text)
+
+    def test_setup_arm_variant_is_parsed_for_cstack_only(self):
+        arms = outcome_bench.parse_arms("cstack,cstack-agents=cstack+setup,mixed=cstack+setup:m.json")
+        self.assertEqual([(arm["base"], arm["setup"]) for arm in arms], [("cstack", False), ("cstack", True), ("cstack", True)])
+        self.assertEqual(arms[2]["models"], Path("m.json"))
+        with self.assertRaisesRegex(outcome_bench.BenchError, "setup projet"):
+            outcome_bench.parse_arms("cstack,p=pstack+setup")
+
+    def test_setup_arm_gets_native_agents_and_is_graded_on_its_own_work(self):
+        models = {"feature, refactoring": {"model": "m-worker", "reasoning_effort": "high"}}
+        seen = {}
+
+        def edit(cwd):
+            seen["agents"] = sorted(path.name for path in (cwd / ".codex" / "agents").iterdir())
+            seen["worker"] = (cwd / ".codex" / "agents" / "cstack-worker.toml").read_text()
+            seen["block"] = (cwd / "AGENTS.md").read_text()
+            seen["status"] = git(cwd, "status", "--porcelain")
+            (cwd / "calc.py").write_text(FIXED)
+
+        row, runner = self.run_with(edit, arm="cstack-agents", base="cstack", models=models, setup=True)
+        self.assertEqual(seen["agents"], ["cstack-explorer.toml", "cstack-reviewer.toml", "cstack-worker.toml"])
+        self.assertIn('model = "m-worker"', seen["worker"])
+        self.assertIn("restent en mode cstack", seen["block"])
+        self.assertEqual(seen["status"], "", "le setup est committé avant le tour de l’agent")
+        self.assertTrue(row["resolved"])
+        self.assertEqual(row["diff"]["files_changed"], 1)
+        patch_text = Path(row["patch"]).read_text()
+        self.assertNotIn("AGENTS.md", patch_text)
+        self.assertNotIn(".codex/agents", patch_text)
 
     def test_arm_models_are_validated_with_the_setup_helper(self):
         good = self.root / "mixed.json"

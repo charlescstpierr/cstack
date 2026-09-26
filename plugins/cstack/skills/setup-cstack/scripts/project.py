@@ -19,9 +19,53 @@ from typing import Any
 START = b"<!-- cstack:managed:start -->"
 END = b"<!-- cstack:managed:end -->"
 PLAN_VERSION = 1
-TARGET_PATHS = ("AGENTS.md", "docs/agents/cstack.md", "docs/agents/issue-tracker.md", ".gitignore", ".cstack/models.json")
+AGENT_MARKER = b"# cstack:managed"
+# Agents natifs Codex du projet : nom, rôle de modèle repris de models.json, sandbox et consignes.
+NATIVE_AGENTS = {
+    ".codex/agents/cstack-explorer.toml": {
+        "name": "cstack-explorer",
+        "role": "how explorer",
+        "sandbox_mode": "read-only",
+        "description": "Exploration cstack en lecture seule : un angle du code, du flux ou de l’historique, avec preuves citées.",
+        "instructions": (
+            "Tu es un explorateur délégué par le coordinateur `$cstack:cstack`. Explore seulement l’angle et les fichiers "
+            "du brief, en lecture seule. Lis le code réel avant de conclure ; cite chemin et ligne pour chaque affirmation "
+            "et étiquette mesuré, inféré ou supposition. Ne lance aucun sous-agent. Retourne une synthèse courte, les "
+            "preuves et les questions ouvertes ; ne propose pas d’implémentation hors de ton angle."
+        ),
+    },
+    ".codex/agents/cstack-worker.toml": {
+        "name": "cstack-worker",
+        "role": "feature, refactoring",
+        "sandbox_mode": "workspace-write",
+        "description": "Implémentation cstack d’une tranche bornée, avec preuve rouge puis vert et contrôles réels.",
+        "instructions": (
+            "Tu es un délégué d’implémentation du coordinateur `$cstack:cstack`. Tu possèdes seulement la tranche et les "
+            "fichiers du brief. Inspecte le flux réel avant d’éditer et préserve les modifications des autres agents. Pour "
+            "un changement de comportement, applique la skill `$cstack:tdd` : preuve rouge puis vert, ou raison vérifiée "
+            "de s’en passer. Fais le plus petit changement qui résout la tranche, lance les contrôles pertinents et rapporte "
+            "leur sortie réelle. Ne lance aucun sous-agent sauf délégation explicite du parent. Ne publie, ne fusionne, ne "
+            "supprime aucun worktree et ne change aucune configuration globale. Retourne chemins modifiés, comportement "
+            "obtenu, contrôles et résultats, et préoccupations ouvertes."
+        ),
+    },
+    ".codex/agents/cstack-reviewer.toml": {
+        "name": "cstack-reviewer",
+        "role": "judgment and prose",
+        "sandbox_mode": "read-only",
+        "description": "Revue indépendante cstack d’un diff : défauts, régressions, preuves manquantes, en lecture seule.",
+        "instructions": (
+            "Tu es le relecteur indépendant du coordinateur `$cstack:cstack`. Relis seulement le diff et les fichiers "
+            "assignés, en lecture seule, sans avoir écrit ce code. Cherche les défauts de comportement, les régressions, "
+            "les cas limites non testés et les affirmations sans preuve ; vérifie chaque constat dans le code voisin. "
+            "Retourne PASS ou ISSUES, puis des constats actionnables avec chemin, ligne, preuve et correction proposée. "
+            "N’invente aucun problème et ne prétends pas avoir appliqué de changement."
+        ),
+    },
+}
+TARGET_PATHS = ("AGENTS.md", "docs/agents/cstack.md", "docs/agents/issue-tracker.md", ".gitignore", ".cstack/models.json", *NATIVE_AGENTS)
 ALLOWED_PATHS = TARGET_PATHS + ("CLAUDE.md",)
-OBSERVED_PATHS = ("AGENTS.md", "CLAUDE.md", "docs/agents/cstack.md", "docs/agents/issue-tracker.md", ".gitignore", ".cstack/models.json")
+OBSERVED_PATHS = ("AGENTS.md", "CLAUDE.md", "docs/agents/cstack.md", "docs/agents/issue-tracker.md", ".gitignore", ".cstack/models.json", *NATIVE_AGENTS)
 TRACKER_MODES = {"keep", "local", "github"}
 TRACKER_KEYS = {"mode", "owner", "repo"}
 
@@ -171,8 +215,11 @@ def _tracker(raw: Any) -> dict[str, str]:
 def _options(raw: Any, models: Any, catalog: dict[str, Any] | None) -> dict[str, Any]:
     if raw is None:
         raw = {}
-    if not isinstance(raw, dict) or set(raw) - {"model_choices", "tracker"}:
-        raise ProjectError("options peut contenir seulement model_choices et tracker")
+    if not isinstance(raw, dict) or set(raw) - {"model_choices", "tracker", "native_agents"}:
+        raise ProjectError("options peut contenir seulement model_choices, tracker et native_agents")
+    native_agents = raw.get("native_agents", False)
+    if not isinstance(native_agents, bool):
+        raise ProjectError("native_agents doit être un booléen")
     choices = raw.get("model_choices", {})
     if not isinstance(choices, dict):
         raise ProjectError("model_choices doit être un objet")
@@ -182,7 +229,7 @@ def _options(raw: Any, models: Any, catalog: dict[str, Any] | None) -> dict[str,
             models.validate(choices, catalog, check_available=True)
     except (TypeError, ValueError) as error:
         raise ProjectError(f"model_choices invalide: {error}") from error
-    return {"model_choices": choices, "tracker": _tracker(raw.get("tracker"))}
+    return {"model_choices": choices, "tracker": _tracker(raw.get("tracker")), "native_agents": native_agents}
 
 
 def _managed(payload: bytes) -> bytes:
@@ -209,7 +256,7 @@ def _merge(old: bytes | None, payload: bytes, *, owned: bool) -> bytes:
     return old + separator + block + b"\n"
 
 
-def _agent_payload(snapshots: dict[str, bytes | None]) -> bytes:
+def _agent_payload(snapshots: dict[str, bytes | None], native_agents: bool) -> bytes:
     lines = [
         "## cstack",
         "",
@@ -221,6 +268,15 @@ def _agent_payload(snapshots: dict[str, bytes | None]) -> bytes:
     ]
     if snapshots.get("CLAUDE.md") and snapshots["CLAUDE.md"].strip():
         lines.append("2. Lire [CLAUDE.md](CLAUDE.md) pour les conventions partagées qui s’appliquent, seulement pendant cette tâche cstack.")
+    lines += [
+        "",
+        "Après une invocation explicite de `$cstack:cstack` dans une conversation, les demandes suivantes de cette conversation restent en mode cstack jusqu’à ce que l’utilisateur demande d’arrêter cstack.",
+    ]
+    if native_agents:
+        names = ", ".join(f"`{agent['name']}`" for agent in NATIVE_AGENTS.values())
+        lines.append(f"En mode cstack, déléguer le travail indépendant aux agents du projet {names}, en parallèle quand les tranches sont disjointes.")
+    else:
+        lines.append("En mode cstack, déléguer le travail indépendant à des sous-agents natifs, en parallèle quand les tranches sont disjointes.")
     lines += ["", "Sans invocation cstack explicite, ne pas charger ni appliquer ces fichiers comme instructions. Une demande utilisateur peut toujours demander de les lire ou de les modifier comme fichiers ordinaires."]
     return ("\n".join(lines) + "\n").encode()
 
@@ -268,6 +324,33 @@ def _models_content(old: bytes | None, choices: dict[str, Any], models: Any) -> 
     return (json.dumps(config, indent=2, ensure_ascii=False) + "\n").encode()
 
 
+def _toml_string(value: str) -> str:
+    # Les chaînes JSON sont des chaînes de base TOML valides pour ce texte (pas de `\/` émis).
+    return json.dumps(value, ensure_ascii=False)
+
+
+def _agent_content(relative: str, old: bytes | None, config: dict[str, Any]) -> bytes:
+    if old is not None and not old.startswith(AGENT_MARKER):
+        raise ProjectError(f"refus d’écraser un agent non géré par cstack: {relative}")
+    agent = NATIVE_AGENTS[relative]
+    lines = [
+        f"{AGENT_MARKER.decode()} : généré par $cstack:setup-cstack ; retirer cette ligne pour le conserver tel quel.",
+        f"name = {_toml_string(agent['name'])}",
+        f"description = {_toml_string(agent['description'])}",
+        f"developer_instructions = {_toml_string(agent['instructions'])}",
+        f"sandbox_mode = {_toml_string(agent['sandbox_mode'])}",
+    ]
+    selected = config.get(agent["role"])
+    # Un choix natif explicite fixe le modèle ; l’héritage et les runtimes CLI laissent l’hôte décider.
+    if isinstance(selected, str) and selected != "inherit-parent":
+        selected = {"model": selected}
+    if isinstance(selected, dict) and "runtime" not in selected and "model" in selected:
+        lines.append(f"model = {_toml_string(selected['model'])}")
+        if "reasoning_effort" in selected:
+            lines.append(f"model_reasoning_effort = {_toml_string(selected['reasoning_effort'])}")
+    return ("\n".join(lines) + "\n").encode()
+
+
 def _ignore_content(old: bytes | None) -> bytes:
     newline = b"\r\n" if old and b"\r\n" in old else b"\n"
     if old is None:
@@ -289,7 +372,7 @@ def _entry(relative: str, old: bytes | None, new: bytes) -> dict[str, Any]:
 def _payload(options: dict[str, Any], snapshots: dict[str, bytes | None], models: Any) -> dict[str, Any]:
     tracker = options["tracker"]
     files = [
-        _entry("AGENTS.md", snapshots["AGENTS.md"], _merge(snapshots["AGENTS.md"], _agent_payload(snapshots), owned=False)),
+        _entry("AGENTS.md", snapshots["AGENTS.md"], _merge(snapshots["AGENTS.md"], _agent_payload(snapshots, options["native_agents"]), owned=False)),
         _entry("docs/agents/cstack.md", snapshots["docs/agents/cstack.md"], _merge(snapshots["docs/agents/cstack.md"], _workflow_payload(tracker), owned=True)),
         _entry(".gitignore", snapshots[".gitignore"], _ignore_content(snapshots[".gitignore"])),
     ]
@@ -299,8 +382,14 @@ def _payload(options: dict[str, Any], snapshots: dict[str, bytes | None], models
     elif tracker_old is not None:
         files.append(_entry("docs/agents/issue-tracker.md", tracker_old, tracker_old))
     old_models = snapshots[".cstack/models.json"]
+    models_content = None
     if old_models is not None or options["model_choices"]:
-        files.append(_entry(".cstack/models.json", old_models, _models_content(old_models, options["model_choices"], models)))
+        models_content = _models_content(old_models, options["model_choices"], models)
+        files.append(_entry(".cstack/models.json", old_models, models_content))
+    if options["native_agents"]:
+        config = json.loads(models_content) if models_content else {}
+        for relative in NATIVE_AGENTS:
+            files.append(_entry(relative, snapshots[relative], _agent_content(relative, snapshots[relative], config)))
     return {"files": files, "observed": {path: _record(snapshots[path]) for path in OBSERVED_PATHS}}
 
 

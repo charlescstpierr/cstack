@@ -141,6 +141,17 @@ class ModelSetupTests(unittest.TestCase):
             models.resolve({"bug-fix": "gpt-6-astra"}, "bug-fix", None)
         self.assertEqual(models.resolve({"bug-fix": "inherit-parent"}, "bug-fix", None), [{}])
 
+    def test_mixed_review_panels_are_offered_only_when_claude_is_ready(self):
+        self.assertNotIn("mixed review panels", models.preview({}, "unused", CATALOG)["recommendations"])
+        offer = models.preview({}, "unused", CATALOG, claude_ready=True)["recommendations"]["mixed review panels"]
+        self.assertIsNone(offer["unavailable"])
+        self.assertEqual(set(offer["choices"]), {"arena runners", "architect runners", "interrogate reviewers"})
+        for entries in offer["choices"].values():
+            self.assertEqual(entries, [{"runtime": "codex-cli"}, {"runtime": "claude-code"}])
+        models.validate(offer["choices"])
+        offer["choices"]["arena runners"].append({"runtime": "grok"})
+        self.assertEqual(len(models.MIXED_PANELS["arena runners"]), 2, "la proposition ne partage pas l’état du module")
+
     def test_runtime_selections_are_preserved_and_scoped_to_their_catalog(self):
         runtime_only = {"bug-fix": {"runtime": "claude-code"}}
         models.validate(runtime_only, None, check_available=True)

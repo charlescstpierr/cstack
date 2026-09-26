@@ -448,5 +448,70 @@ class ProjectSetupTests(unittest.TestCase):
         self.assertFalse((self.root / "AGENTS.md").exists())
 
 
+    def _agent_fields(self, relative: str) -> dict:
+        text = (self.root / relative).read_text(encoding="utf-8")
+        try:
+            import tomllib
+        except ImportError:
+            # Python < 3.11 : les lignes générées sont `clé = "chaîne JSON"`.
+            return {key.strip(): json.loads(value) for key, _, value in (
+                line.partition(" = ") for line in text.splitlines() if " = " in line and not line.startswith("#"))}
+        return tomllib.loads(text)
+
+    def test_native_agents_are_opt_in_managed_and_take_native_model_choices(self) -> None:
+        options, plan = self._preview()
+        self.assertFalse(any(entry["path"].startswith(".codex/") for entry in plan["files"]))
+        choices = {
+            "how explorer": {"model": "gpt-5.6-luna", "reasoning_effort": "max"},
+            "feature, refactoring": "inherit-parent",
+            "judgment and prose": {"runtime": "claude-code"},
+        }
+        options, plan = self._preview({"native_agents": True, "model_choices": choices}, catalog=self._catalog())
+        paths = {entry["path"] for entry in plan["files"]}
+        agents = {".codex/agents/cstack-explorer.toml", ".codex/agents/cstack-worker.toml", ".codex/agents/cstack-reviewer.toml"}
+        self.assertLessEqual(agents, paths)
+        result = self._apply(options, plan, catalog=self._catalog())
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        explorer = self._agent_fields(".codex/agents/cstack-explorer.toml")
+        self.assertEqual(explorer["name"], "cstack-explorer")
+        self.assertEqual(explorer["sandbox_mode"], "read-only")
+        self.assertEqual((explorer["model"], explorer["model_reasoning_effort"]), ("gpt-5.6-luna", "max"))
+        worker = self._agent_fields(".codex/agents/cstack-worker.toml")
+        self.assertEqual(worker["sandbox_mode"], "workspace-write")
+        self.assertIn("$cstack:tdd", worker["developer_instructions"])
+        self.assertNotIn("model", worker)
+        reviewer = self._agent_fields(".codex/agents/cstack-reviewer.toml")
+        self.assertNotIn("model", reviewer)
+        for relative in agents:
+            self.assertTrue((self.root / relative).read_bytes().startswith(b"# cstack:managed"))
+        block = (self.root / "AGENTS.md").read_text()
+        self.assertIn("restent en mode cstack jusqu’à ce que l’utilisateur demande d’arrêter cstack", block)
+        self.assertIn("`cstack-explorer`, `cstack-worker`, `cstack-reviewer`", block)
+        self.assertIn("Les consignes cstack restent inactives pendant les tâches ordinaires", block)
+        again_options, again = self._preview({"native_agents": True, "model_choices": choices}, catalog=self._catalog())
+        self.assertTrue(all(entry["action"] == "unchanged" for entry in again["files"]))
+
+    def test_unmanaged_agent_file_is_never_overwritten(self) -> None:
+        target = self.root / ".codex" / "agents" / "cstack-worker.toml"
+        target.parent.mkdir(parents=True)
+        target.write_text('name = "cstack-worker"\ndescription = "mine"\n', encoding="utf-8")
+        result = self._cli("preview", options=self._options({"native_agents": True}))
+        self.assertEqual(result.returncode, 2)
+        self.assertIn("agent non géré", json.loads(result.stdout)["error"])
+        self.assertEqual(target.read_text(encoding="utf-8"), 'name = "cstack-worker"\ndescription = "mine"\n')
+        self.assertFalse((self.root / "AGENTS.md").exists())
+        bad = self._cli("preview", options=self._options({"native_agents": "yes"}))
+        self.assertEqual(bad.returncode, 2)
+        self.assertIn("booléen", json.loads(bad.stdout)["error"])
+
+    def test_mode_persists_without_native_agents_but_delegation_stays_generic(self) -> None:
+        options, plan = self._preview()
+        self.assertEqual(self._apply(options, plan).returncode, 0)
+        block = (self.root / "AGENTS.md").read_text()
+        self.assertIn("restent en mode cstack", block)
+        self.assertIn("déléguer le travail indépendant à des sous-agents natifs", block)
+        self.assertNotIn("cstack-worker", block)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -38,6 +38,8 @@ Pour Arena seulement, les entrées correspondantes dans `.cstack/models.json` so
 
 Ajoutez cette clé à votre fichier existant sans remplacer les autres rôles. Sans `runtime`, la sélection reste native Codex. Sans `model`, chaque CLI utilise son propre défaut. Un modèle explicite doit être validé dans le catalogue de son runtime ; `reasoning_effort` exige aussi un modèle explicite. Consultez le [contrat des workers](../../skills/cstack/references/runtime-workers.md) pour les autres formes de sélection.
 
+Quand Claude Code est présent et connecté, `$cstack:setup-cstack` propose d'office ce panel mixte pour `arena runners`, `architect runners` et `interrogate reviewers` : Codex et Claude y jugent côte à côte. La proposition reste un choix ; rien n'est appliqué sans votre accord.
+
 ## Ajouter Claude après la première configuration
 
 Relancez le setup depuis le projet concerné :

@@ -34,6 +34,9 @@ ROLES = {role for _, _, roles in GROUPS.values() for role in roles}
 LEGACY_FALLBACKS = {"simple edits": "feature, refactoring",
                     "documentation": "judgment and prose"}
 RUNTIMES = {"codex-cli", "claude-code", "cursor-agent", "grok"}
+# Panels de jugement mixtes proposés quand Claude Code est présent et connecté ; toujours un choix explicite.
+MIXED_PANELS = {role: [{"runtime": "codex-cli"}, {"runtime": "claude-code"}]
+                for role in ("arena runners", "architect runners", "interrogate reviewers")}
 CODEX_NATIVE = "codex-native"
 
 
@@ -188,7 +191,7 @@ def read_config(path):
     return config, hashlib.sha256(raw).hexdigest()
 
 
-def preview(config, digest, catalog):
+def preview(config, digest, catalog, claude_ready=False):
     recommendations = {}
     for group, (model, effort, roles) in GROUPS.items():
         chosen = {"model": model, "reasoning_effort": effort}
@@ -200,6 +203,9 @@ def preview(config, digest, catalog):
         except ValueError as error:
             problem = str(error)
         recommendations[group] = {"choices": values, "unavailable": problem}
+    if claude_ready:
+        validate(MIXED_PANELS)
+        recommendations["mixed review panels"] = {"choices": json.loads(json.dumps(MIXED_PANELS)), "unavailable": None}
     return {"recommendations": recommendations, "saved": config, "sha256": digest}
 
 
@@ -250,6 +256,8 @@ def main():
     commands = parser.add_subparsers(dest="command", required=True, title="commandes", parser_class=FrenchArgumentParser)
     show = commands.add_parser("show", add_help=False)
     show.add_argument("-h", "--help", action="help", help="afficher ce message d’aide et quitter")
+    show.add_argument("--claude-ready", action="store_true",
+                      help="Claude Code est détecté et connecté : proposer aussi les panels mixtes")
     resolver = commands.add_parser("resolve", add_help=False)
     resolver.add_argument("-h", "--help", action="help", help="afficher ce message d’aide et quitter")
     resolver.add_argument("role", choices=sorted(ROLES))
@@ -263,7 +271,7 @@ def main():
         catalog = read_catalog(args.catalog)
         config, digest = read_config(path)
         if args.command == "show":
-            result = preview(config, digest, catalog)
+            result = preview(config, digest, catalog, args.claude_ready)
         elif args.command == "resolve":
             result = resolve(config, args.role, catalog)
         else:

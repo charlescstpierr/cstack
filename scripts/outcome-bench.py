@@ -29,6 +29,10 @@ DEFAULT_PLUGIN = ROOT / "plugins" / "cstack"
 ARMS = ("vanilla", "cstack", "pstack")
 DEFAULT_ARMS = ("vanilla", "cstack")
 MODELS_HELPER = ROOT / "plugins" / "cstack" / "skills" / "setup-cstack" / "scripts" / "models.py"
+PROJECT_HELPER = MODELS_HELPER.with_name("project.py")
+SETUP_SUFFIX = "+setup"
+SETUP_OPTIONS = {"native_agents": True}
+GIT_IDENTITY = ["-c", "user.name=cstack outcome", "-c", "user.email=cstack-outcome@example.invalid"]
 NETWORK_FLAG = ["-c", "sandbox_workspace_write.network_access=true"]
 CLI_RUNTIMES = ("codex-cli", "claude-code", "cursor-agent", "grok")
 # Signaux d’une récupération possible du correctif amont pendant un run avec réseau.
@@ -69,18 +73,20 @@ def load_runner():
 
 
 def parse_arms(text: str) -> list[dict[str, Any]]:
-    """Lit `nom` ou `nom=base[:models.json]` ; seule une base cstack accepte une config de modèles."""
+    """Lit `nom` ou `nom=base[+setup][:models.json]` ; seule une base cstack accepte config et setup projet."""
     arms = []
     for item in (part.strip() for part in text.split(",")):
         if not item:
             continue
         name, _, spec = item.partition("=")
         base, _, models = (spec or name).partition(":")
+        setup = base.endswith(SETUP_SUFFIX)
+        base = base[: -len(SETUP_SUFFIX)] if setup else base
         if not SAFE_ID.fullmatch(name) or base not in ARMS:
             raise BenchError(f"bras invalide: {item!r} ; base parmi {', '.join(ARMS)}")
-        if models and base != "cstack":
-            raise BenchError(f"{name}: seule une base cstack lit .cstack/models.json")
-        arms.append({"name": name, "base": base, "models": Path(models) if models else None})
+        if (models or setup) and base != "cstack":
+            raise BenchError(f"{name}: seule une base cstack lit .cstack/models.json et le setup projet")
+        arms.append({"name": name, "base": base, "models": Path(models) if models else None, "setup": setup})
     names = [arm["name"] for arm in arms]
     if len(arms) < 2 or len(set(names)) != len(names):
         raise BenchError("--arms exige au moins deux bras de noms distincts")
@@ -107,6 +113,21 @@ def load_arm_models(arms: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
 def private_paths(work: Path, output: Path) -> list[Path]:
     """Chemins que l’agent ne doit pas lire : miroirs et reçus, patches, état et résultats des autres runs."""
     return [work, output / "patches", output / "state", output / "results.jsonl"]
+
+
+def apply_project_setup(workspace: Path) -> str:
+    """Applique le setup projet cstack (bloc AGENTS.md, agents natifs) puis le committe comme nouveau départ."""
+    project = load_module("cstack_project", PROJECT_HELPER)
+    try:
+        plan = project._plan(workspace, SETUP_OPTIONS, None)
+        result = project.apply_plan(workspace, plan, SETUP_OPTIONS, None, plan["plan_sha256"])
+    except (OSError, ValueError) as error:
+        raise BenchError(f"setup projet impossible: {error}") from error
+    if result["status"] not in {"applied", "noop"}:
+        raise BenchError(f"setup projet non appliqué: {result}")
+    git(workspace, "add", "--all")
+    git(workspace, *GIT_IDENTITY, "commit", "--quiet", "--allow-empty", "-m", "cstack setup")
+    return git(workspace, "rev-parse", "HEAD").strip()
 
 
 def possible_leak(task: dict[str, Any], commands: list[str], private: list[Path] = ()) -> bool:
@@ -491,6 +512,8 @@ def execute_run(run: dict[str, Any], task: dict[str, Any], image: str, context: 
     models = context["arm_models"].get(run["arm"])
     if models is not None:
         write_json(workspace / ".cstack" / "models.json", models)
+    # Le diff de l’agent part du setup committé, pour ne noter que son propre travail.
+    start = apply_project_setup(workspace) if context.get("arm_setup", {}).get(run["arm"]) else task["base_sha"]
     case = {"id": run["run_id"], "cwd": workspace, "sandbox": "workspace-write", "ephemeral": False,
             "prompts": [arm_prompt(task, base, context["bundles"])]}
     private = private_paths(work, output)
@@ -499,9 +522,9 @@ def execute_run(run: dict[str, Any], task: dict[str, Any], image: str, context: 
                                            context["effort"], context["turn_timeout"])
     patch = output / "patches" / f"{run['run_id']}.diff"
     patch.parent.mkdir(parents=True, exist_ok=True)
-    patch.write_text(capture_diff(workspace, task["base_sha"]), encoding="utf-8")
+    patch.write_text(capture_diff(workspace, start), encoding="utf-8")
     reference = set(git(source, "diff", "--name-only", task["base_sha"], task["fix_sha"]).split())
-    stats = diff_stats(workspace, task["base_sha"], reference, set(task["hidden_paths"]))
+    stats = diff_stats(workspace, start, reference, set(task["hidden_paths"]))
     # L’état cstack (reçus de workers, points de reprise) reste une preuve de la campagne.
     state = output / "state" / run["run_id"]
     if (workspace / ".cstack").is_dir():
@@ -720,7 +743,7 @@ def command_run(args: argparse.Namespace) -> int:
         "schema_version": 3, "suite_digest": tree_digest(args.tasks), "merged_after": suite["merged_after"],
         "tasks": [task["id"] for task in tasks], "task_digests": {task["id"]: task["digest"] for task in tasks},
         "arms": [
-            {"name": arm["name"], "base": arm["base"],
+            {"name": arm["name"], "base": arm["base"], "setup": arm["setup"],
              "models_sha256": hashlib.sha256(json.dumps(arm_models[arm["name"]], sort_keys=True).encode()).hexdigest()
              if arm["name"] in arm_models else None}
             for arm in args.arms
@@ -749,6 +772,7 @@ def command_run(args: argparse.Namespace) -> int:
     context = {
         "output": output, "work": args.work, "bundles": bundles, "runner": runner, "command": command,
         "arm_bases": {arm["name"]: arm["base"] for arm in args.arms}, "arm_models": arm_models,
+        "arm_setup": {arm["name"]: arm["setup"] for arm in args.arms},
         "model": args.model, "effort": args.effort, "turn_timeout": args.turn_timeout,
     }
     results_path = output / "results.jsonl"
