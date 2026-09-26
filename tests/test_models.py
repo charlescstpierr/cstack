@@ -146,11 +146,36 @@ class ModelSetupTests(unittest.TestCase):
         offer = models.preview({}, "unused", CATALOG, claude_ready=True)["recommendations"]["mixed review panels"]
         self.assertIsNone(offer["unavailable"])
         self.assertEqual(set(offer["choices"]), {"arena runners", "architect runners", "interrogate reviewers"})
-        for entries in offer["choices"].values():
-            self.assertEqual(entries, [{"runtime": "codex-cli"}, {"runtime": "claude-code"}])
+        for role, entries in offer["choices"].items():
+            # Taille des panels conservée ; le côté Codex hérite du runtime natif, sans binaire codex requis.
+            self.assertEqual(len(entries), models.PANELS[role])
+            self.assertEqual(entries, ["inherit-parent", {"runtime": "claude-code"}, "inherit-parent"])
         models.validate(offer["choices"])
         bench = json.loads((ROOT / "evals/outcome/models/mixed-panels.json").read_text())
         self.assertEqual(offer["choices"], bench, "le banc mesure exactement le panel proposé par le setup")
+
+    def test_model_updates_resynchronize_managed_native_agents(self):
+        project = models.project_helper()
+        with tempfile.TemporaryDirectory() as directory:
+            workspace = Path(directory)
+            options = {"native_agents": True}
+            plan = project.preview_plan(workspace, options, None)
+            self.assertEqual(project.apply_plan(workspace, plan, options, None)["status"], "applied")
+            self.assertEqual(len(project.managed_agents(workspace)), 3)
+            config = {"how explorer": {"model": "gpt-5.6-luna", "reasoning_effort": "max"},
+                      "judgment and prose": {"runtime": "claude-code"}}
+            result = project.sync_agents(workspace, config)
+            self.assertEqual(result, {"updated": [".codex/agents/cstack-explorer.toml"],
+                                      "removed": [".codex/agents/cstack-reviewer.toml"]})
+            explorer = (workspace / ".codex/agents/cstack-explorer.toml").read_text()
+            self.assertIn('model = "gpt-5.6-luna"', explorer)
+            self.assertIn('model_reasoning_effort = "max"', explorer)
+            self.assertEqual(project.sync_agents(workspace, config), {"updated": [], "removed": []})
+            unmanaged = workspace / ".codex/agents/cstack-reviewer.toml"
+            unmanaged.write_text('name = "cstack-reviewer"\n')
+            project.sync_agents(workspace, {})
+            self.assertEqual(unmanaged.read_text(), 'name = "cstack-reviewer"\n')
+            self.assertNotIn("model", (workspace / ".codex/agents/cstack-explorer.toml").read_text().split("sandbox_mode")[1])
 
     def test_runtime_selections_are_preserved_and_scoped_to_their_catalog(self):
         runtime_only = {"bug-fix": {"runtime": "claude-code"}}

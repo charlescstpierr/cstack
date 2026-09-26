@@ -10,6 +10,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest import mock
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -468,8 +469,10 @@ class ProjectSetupTests(unittest.TestCase):
         }
         options, plan = self._preview({"native_agents": True, "model_choices": choices}, catalog=self._catalog())
         paths = {entry["path"] for entry in plan["files"]}
-        agents = {".codex/agents/cstack-explorer.toml", ".codex/agents/cstack-worker.toml", ".codex/agents/cstack-reviewer.toml"}
+        # Le relecteur est confié à Claude Code : pas d’agent natif qui court-circuiterait ce choix.
+        agents = {".codex/agents/cstack-explorer.toml", ".codex/agents/cstack-worker.toml"}
         self.assertLessEqual(agents, paths)
+        self.assertNotIn(".codex/agents/cstack-reviewer.toml", paths)
         result = self._apply(options, plan, catalog=self._catalog())
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         explorer = self._agent_fields(".codex/agents/cstack-explorer.toml")
@@ -480,8 +483,7 @@ class ProjectSetupTests(unittest.TestCase):
         self.assertEqual(worker["sandbox_mode"], "workspace-write")
         self.assertIn("$cstack:tdd", worker["developer_instructions"])
         self.assertNotIn("model", worker)
-        reviewer = self._agent_fields(".codex/agents/cstack-reviewer.toml")
-        self.assertNotIn("model", reviewer)
+        self.assertFalse((self.root / ".codex/agents/cstack-reviewer.toml").exists())
         for relative in agents:
             self.assertTrue((self.root / relative).read_bytes().startswith(b"# cstack:managed"))
         block = (self.root / "AGENTS.md").read_text()
@@ -509,8 +511,70 @@ class ProjectSetupTests(unittest.TestCase):
         self.assertEqual(self._apply(options, plan).returncode, 0)
         block = (self.root / "AGENTS.md").read_text()
         self.assertIn("restent en mode cstack", block)
-        self.assertIn("déléguer le travail indépendant à des sous-agents natifs", block)
-        self.assertNotIn("cstack-worker", block)
+        self.assertIn("déclarés dans `.codex/agents/`, sinon à des sous-agents natifs", block)
+        self.assertFalse((self.root / ".codex").exists())
+
+    def _agents_setup(self, value: dict, *, catalog: Path | None = None) -> dict:
+        options, plan = self._preview(value, catalog=catalog)
+        result = self._apply(options, plan, catalog=catalog)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        return {entry["path"]: entry["action"] for entry in plan["files"] if entry["path"].startswith(".codex/")}
+
+    def test_native_agents_follow_later_setups_and_are_removed_on_opt_out(self) -> None:
+        agents = self.root / ".codex" / "agents"
+        self._agents_setup({"native_agents": True})
+        self.assertEqual(sorted(path.name for path in agents.iterdir()), ["cstack-explorer.toml", "cstack-reviewer.toml", "cstack-worker.toml"])
+        # Sans l’option, un setup relancé aligne les agents gérés existants sans en créer ni en effacer par surprise.
+        actions = self._agents_setup({"model_choices": {"how explorer": {"model": "gpt-5.6-luna", "reasoning_effort": "max"}}}, catalog=self._catalog())
+        self.assertEqual(actions[".codex/agents/cstack-explorer.toml"], "update")
+        self.assertEqual(self._agent_fields(".codex/agents/cstack-explorer.toml")["model"], "gpt-5.6-luna")
+        # Un rôle passé à un CLI perd son agent géré.
+        actions = self._agents_setup({"model_choices": {"feature, refactoring": {"runtime": "claude-code"}}})
+        self.assertEqual(actions[".codex/agents/cstack-worker.toml"], "delete")
+        self.assertFalse((agents / "cstack-worker.toml").exists())
+        # Un fichier sans marqueur survit à la désactivation ; les agents gérés sont supprimés.
+        (agents / "cstack-worker.toml").write_text('name = "cstack-worker"\n', encoding="utf-8")
+        actions = self._agents_setup({"native_agents": False})
+        self.assertEqual(actions, {".codex/agents/cstack-explorer.toml": "delete", ".codex/agents/cstack-reviewer.toml": "delete"})
+        self.assertEqual(sorted(path.name for path in agents.iterdir()), ["cstack-worker.toml"])
+        self.assertEqual(self._agents_setup({"native_agents": False}), {})
+
+    def test_failed_apply_restores_a_deleted_agent(self) -> None:
+        self._agents_setup({"native_agents": True})
+        explorer = self.root / ".codex/agents/cstack-explorer.toml"
+        before = explorer.read_bytes()
+        options, plan = self._preview({"native_agents": False})
+        original_unlink = Path.unlink
+
+        def fail_second_agent(path, *args, **kwargs):
+            if path.name == "cstack-worker.toml":
+                raise OSError("échec de suppression simulé")
+            return original_unlink(path, *args, **kwargs)
+
+        with mock.patch.object(Path, "unlink", fail_second_agent):
+            rolled = project.apply_plan(self.root, plan, json.loads(options.read_text()), None)
+        self.assertEqual(rolled["status"], "rolled_back", rolled)
+        self.assertEqual(explorer.read_bytes(), before)
+        self.assertIn(".codex/agents/cstack-explorer.toml", rolled["rolled_back"])
+
+    def test_delete_entries_cannot_target_other_files_or_carry_content(self) -> None:
+        self._agents_setup({"native_agents": True})
+        options, plan = self._preview({"native_agents": False})
+        for mutate in (lambda entry: entry.update(path="AGENTS.md"), lambda entry: entry.update(new_content="x")):
+            tampered = json.loads(json.dumps(plan))
+            mutate(next(entry for entry in tampered["files"] if entry["action"] == "delete"))
+            body = dict(tampered)
+            body.pop("plan_sha256")
+            tampered["plan_sha256"] = project._sha(project._canonical(body))
+            with self.assertRaises(project.ProjectError):
+                project.apply_plan(self.root, tampered, json.loads(options.read_text()), None)
+
+    def test_saved_models_of_the_wrong_type_are_a_structured_refusal(self) -> None:
+        (self.root / ".cstack").mkdir()
+        (self.root / ".cstack/models.json").write_text("[]\n", encoding="utf-8")
+        result = self._cli("preview", options=self._options({"native_agents": True}))
+        self.assertEqual(result.returncode, 2, result.stdout + result.stderr)
+        self.assertIn("models.json existant invalide", json.loads(result.stdout)["error"])
 
 
 if __name__ == "__main__":

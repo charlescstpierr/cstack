@@ -35,12 +35,28 @@ LEGACY_FALLBACKS = {"simple edits": "feature, refactoring",
                     "documentation": "judgment and prose"}
 RUNTIMES = {"codex-cli", "claude-code", "cursor-agent", "grok"}
 # Panels de jugement mixtes proposés quand Claude Code est présent et connecté ; toujours un choix explicite.
+# Trois entrées comme les panels par défaut : deux héritent du runtime natif, une passe par Claude Code.
 MIXED_PANEL_ROLES = ("arena runners", "architect runners", "interrogate reviewers")
+CODEX_NATIVE = "codex-native"
 
 
 def mixed_panels():
-    return {role: [{"runtime": "codex-cli"}, {"runtime": "claude-code"}] for role in MIXED_PANEL_ROLES}
-CODEX_NATIVE = "codex-native"
+    return {role: ["inherit-parent", {"runtime": "claude-code"}, "inherit-parent"] for role in MIXED_PANEL_ROLES}
+
+
+def project_helper():
+    """Charger project.py à la demande, pour les agents natifs gérés du projet."""
+    import importlib.util
+    path = Path(__file__).with_name("project.py")
+    spec = importlib.util.spec_from_file_location("cstack_setup_project", path)
+    module = importlib.util.module_from_spec(spec)
+    previous = sys.dont_write_bytecode
+    try:
+        sys.dont_write_bytecode = True
+        spec.loader.exec_module(module)
+    finally:
+        sys.dont_write_bytecode = previous
+    return module
 
 
 class FrenchArgumentParser(argparse.ArgumentParser):
@@ -269,16 +285,21 @@ def main():
     writer.add_argument("--expected-sha256", required=True)
     args = parser.parse_args()
     path = args.workspace / ".cstack" / "models.json"
+    has_agents = (args.workspace / ".codex" / "agents").is_dir()
     try:
         catalog = read_catalog(args.catalog)
         config, digest = read_config(path)
         if args.command == "show":
             result = preview(config, digest, catalog, args.claude_ready)
+            # Les agents natifs gérés suivent models.json : l’aperçu dit lesquels seront alignés.
+            result["managed_agents"] = project_helper().managed_agents(args.workspace) if has_agents else []
         elif args.command == "resolve":
             result = resolve(config, args.role, catalog)
         else:
-            result = apply_choices(path, json.loads(args.choices.read_text()),
-                                   args.expected_sha256, catalog)
+            saved = apply_choices(path, json.loads(args.choices.read_text()),
+                                  args.expected_sha256, catalog)
+            agents = project_helper().sync_agents(args.workspace, saved) if has_agents else {"updated": [], "removed": []}
+            result = {"saved": saved, "agents": agents}
     except (OSError, ValueError, KeyError, TypeError) as error:
         parser.exit(2, f"modèles cstack: {error}\n")
     print(json.dumps(result, indent=2, ensure_ascii=False))

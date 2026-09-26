@@ -168,14 +168,17 @@ def threads(agent: dict[str, Any]) -> list[tuple[str, dict[str, Any]]]:
     return seen + [("child", item) for item in agent.get("child_metadata", []) if isinstance(item, dict)]
 
 
-def observed_settings(agent: dict[str, Any], model: str | None, effort: str | None) -> dict[str, Any]:
-    """Compare le modèle et l’effort réellement exposés par l’hôte à ceux du manifeste."""
+def observed_settings(agent: dict[str, Any], model: str | None, effort: str | None, *, children: bool = True) -> dict[str, Any]:
+    """Compare le modèle et l’effort réellement exposés par l’hôte à ceux du manifeste.
+
+    Sans `children`, seuls les fils parents sont comparés : les enfants suivent alors la config de modèles du bras.
+    """
     rows = [{"thread": kind, "model": item.get("model"), "reasoning_effort": item.get("reasoning_effort")}
             for kind, item in threads(agent)]
     mismatch = any(
         (model and row["model"] and row["model"] != model)
         or (effort and row["reasoning_effort"] and row["reasoning_effort"] != effort)
-        for row in rows
+        for row in rows if children or row["thread"] == "parent"
     )
     observed = bool(rows) and all(row["model"] for row in rows)
     return {"observed_settings": rows, "settings_observed": observed, "settings_mismatch": mismatch}
@@ -542,7 +545,7 @@ def execute_run(run: dict[str, Any], task: dict[str, Any], image: str, context: 
         **run,
         "base": base,
         "possible_leak": possible_leak(task, commands, private),
-        **observed_settings(agent, context["model"], context["effort"]),
+        **observed_settings(agent, context["model"], context["effort"], children=not arm["models"]),
         "cli_runtimes_seen": [name for name in CLI_RUNTIMES if any(name in command for command in commands)],
         "state_dir": str(state) if state.exists() else None,
         "agent_status": agent.get("status"),

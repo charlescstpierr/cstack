@@ -443,6 +443,16 @@ class OutcomeBenchTests(unittest.TestCase):
         self.assertEqual(summary["arms"]["vanilla"]["runs"], 1)
         self.assertEqual(summary["arms"]["vanilla"]["settings_mismatches"], 1)
 
+    def test_children_follow_the_arm_model_config_not_the_campaign_model(self):
+        agent = {"after_turn_actual_metadata": [{"model": "m1", "reasoning_effort": "high"}],
+                 "child_metadata": [{"model": "m2", "reasoning_effort": "low"}]}
+        self.assertTrue(outcome_bench.observed_settings(agent, "m1", "high")["settings_mismatch"])
+        configured = outcome_bench.observed_settings(agent, "m1", "high", children=False)
+        self.assertFalse(configured["settings_mismatch"])
+        self.assertEqual([row["thread"] for row in configured["observed_settings"]], ["parent", "child"])
+        agent["after_turn_actual_metadata"][0]["model"] = "m3"
+        self.assertTrue(outcome_bench.observed_settings(agent, "m1", "high", children=False)["settings_mismatch"])
+
     def test_docker_launch_failures_are_infrastructure_errors(self):
         class Result:
             returncode, stdout, stderr = 125, "", "Unable to find image"

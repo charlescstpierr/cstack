@@ -213,8 +213,9 @@ def _options(raw: Any, models: Any, catalog: dict[str, Any] | None) -> dict[str,
         raw = {}
     if not isinstance(raw, dict) or set(raw) - {"model_choices", "tracker", "native_agents"}:
         raise ProjectError("options peut contenir seulement model_choices, tracker et native_agents")
-    native_agents = raw.get("native_agents", False)
-    if not isinstance(native_agents, bool):
+    # Absent : resynchroniser les agents gérés existants ; true : les écrire ; false : les supprimer.
+    native_agents = raw.get("native_agents")
+    if native_agents is not None and not isinstance(native_agents, bool):
         raise ProjectError("native_agents doit être un booléen")
     choices = raw.get("model_choices", {})
     if not isinstance(choices, dict):
@@ -252,7 +253,7 @@ def _merge(old: bytes | None, payload: bytes, *, owned: bool) -> bytes:
     return old + separator + block + b"\n"
 
 
-def _agent_payload(snapshots: dict[str, bytes | None], native_agents: bool) -> bytes:
+def _agent_payload(snapshots: dict[str, bytes | None]) -> bytes:
     lines = [
         "## cstack",
         "",
@@ -268,11 +269,8 @@ def _agent_payload(snapshots: dict[str, bytes | None], native_agents: bool) -> b
         "",
         "Après une invocation explicite de `$cstack:cstack` dans une conversation, les demandes suivantes de cette conversation restent en mode cstack jusqu’à ce que l’utilisateur demande d’arrêter cstack.",
     ]
-    if native_agents:
-        names = ", ".join(f"`{name}`" for name in NATIVE_AGENTS)
-        lines.append(f"En mode cstack, déléguer le travail indépendant aux agents du projet {names}, en parallèle quand les tranches sont disjointes.")
-    else:
-        lines.append("En mode cstack, déléguer le travail indépendant à des sous-agents natifs, en parallèle quand les tranches sont disjointes.")
+    names = ", ".join(f"`{name}`" for name in NATIVE_AGENTS)
+    lines.append(f"En mode cstack, déléguer le travail indépendant aux agents du projet {names} déclarés dans `.codex/agents/`, sinon à des sous-agents natifs, en parallèle quand les tranches sont disjointes.")
     lines += ["", "Sans invocation cstack explicite, ne pas charger ni appliquer ces fichiers comme instructions. Une demande utilisateur peut toujours demander de les lire ou de les modifier comme fichiers ordinaires."]
     return ("\n".join(lines) + "\n").encode()
 
@@ -329,9 +327,11 @@ def _toml_string(value: str) -> str:
     return json.dumps(value, ensure_ascii=False)
 
 
-def _agent_content(name: str, old: bytes | None, config: dict[str, Any], models: Any) -> bytes:
-    if old is not None and not old.startswith(AGENT_MARKER):
-        raise ProjectError(f"refus d’écraser un agent non géré par cstack: {AGENT_PATHS[name]}")
+def _managed_agent(old: bytes | None) -> bool:
+    return old is not None and old.startswith(AGENT_MARKER)
+
+
+def _agent_content(name: str, selected: dict[str, Any]) -> bytes:
     agent = NATIVE_AGENTS[name]
     lines = [
         f"{AGENT_MARKER.decode()} : généré par $cstack:setup-cstack ; retirer cette ligne pour le conserver tel quel.",
@@ -340,14 +340,61 @@ def _agent_content(name: str, old: bytes | None, config: dict[str, Any], models:
         f"developer_instructions = {_toml_string(agent['instructions'])}",
         f"sandbox_mode = {_toml_string(agent['sandbox_mode'])}",
     ]
-    role = agent["role"]
-    # Même lecture que models.resolve : l’héritage et les runtimes CLI laissent l’hôte choisir le modèle.
-    selected = models.selection(config.get(role, config.get(models.LEGACY_FALLBACKS.get(role), "inherit-parent")))
-    if "model" in selected and "runtime" not in selected:
+    if "model" in selected:
         lines.append(f"model = {_toml_string(selected['model'])}")
         if "reasoning_effort" in selected:
             lines.append(f"model_reasoning_effort = {_toml_string(selected['reasoning_effort'])}")
     return ("\n".join(lines) + "\n").encode()
+
+
+def _agent_changes(mode: bool | None, snapshots: dict[str, bytes | None], config: dict[str, Any] | None, models: Any) -> dict[str, bytes | None]:
+    """Nouveau contenu de chaque agent à changer ; None supprime un agent géré. Un fichier sans marqueur n’est jamais touché."""
+    changes: dict[str, bytes | None] = {}
+    for name, relative in AGENT_PATHS.items():
+        old = snapshots[relative]
+        managed = _managed_agent(old)
+        if old is not None and not managed:
+            if mode:
+                raise ProjectError(f"refus d’écraser un agent non géré par cstack: {relative}")
+            continue
+        if mode is False or (mode is None and not managed):
+            if managed:
+                changes[relative] = None
+            continue
+        role = NATIVE_AGENTS[name]["role"]
+        # Même lecture que models.resolve ; un rôle confié à un CLI n’a pas d’agent natif.
+        selected = models.selection((config or {}).get(role, (config or {}).get(models.LEGACY_FALLBACKS.get(role), "inherit-parent")))
+        if "runtime" in selected:
+            if managed:
+                changes[relative] = None
+            continue
+        changes[relative] = _agent_content(name, selected)
+    return changes
+
+
+def sync_agents(workspace: Path, config: dict[str, Any]) -> dict[str, list[str]]:
+    """Aligner les agents gérés existants sur models.json après une mise à jour des modèles seule."""
+    workspace = _workspace(workspace)
+    snapshots = {relative: _read(workspace, relative) for relative in AGENT_PATHS.values()}
+    result: dict[str, list[str]] = {"updated": [], "removed": []}
+    for relative, new in _agent_changes(None, snapshots, config, _models()).items():
+        target = _path(workspace, relative, write=True)
+        if new is None:
+            target.unlink()
+            result["removed"].append(relative)
+        elif new != snapshots[relative]:
+            temp = _temp(target.parent, new, stat.S_IMODE(target.stat().st_mode))
+            try:
+                os.replace(temp, target)
+            finally:
+                temp.unlink(missing_ok=True)
+            result["updated"].append(relative)
+    return result
+
+
+def managed_agents(workspace: Path) -> list[str]:
+    workspace = _workspace(workspace)
+    return [relative for relative in AGENT_PATHS.values() if _managed_agent(_read(workspace, relative))]
 
 
 def _ignore_content(old: bytes | None) -> bytes:
@@ -360,7 +407,9 @@ def _ignore_content(old: bytes | None) -> bytes:
     return old + separator + b".cstack/" + newline
 
 
-def _entry(relative: str, old: bytes | None, new: bytes) -> dict[str, Any]:
+def _entry(relative: str, old: bytes | None, new: bytes | None) -> dict[str, Any]:
+    if new is None:
+        return {"action": "delete", "current_sha256": _sha(old), "new_content": None, "new_sha256": None, "original_content_b64": _b64(old), "path": relative}
     try:
         text = new.decode()
     except UnicodeDecodeError as error:
@@ -371,7 +420,7 @@ def _entry(relative: str, old: bytes | None, new: bytes) -> dict[str, Any]:
 def _payload(options: dict[str, Any], snapshots: dict[str, bytes | None], models: Any) -> dict[str, Any]:
     tracker = options["tracker"]
     files = [
-        _entry("AGENTS.md", snapshots["AGENTS.md"], _merge(snapshots["AGENTS.md"], _agent_payload(snapshots, options["native_agents"]), owned=False)),
+        _entry("AGENTS.md", snapshots["AGENTS.md"], _merge(snapshots["AGENTS.md"], _agent_payload(snapshots), owned=False)),
         _entry("docs/agents/cstack.md", snapshots["docs/agents/cstack.md"], _merge(snapshots["docs/agents/cstack.md"], _workflow_payload(tracker), owned=True)),
         _entry(".gitignore", snapshots[".gitignore"], _ignore_content(snapshots[".gitignore"])),
     ]
@@ -381,14 +430,14 @@ def _payload(options: dict[str, Any], snapshots: dict[str, bytes | None], models
     elif tracker_old is not None:
         files.append(_entry("docs/agents/issue-tracker.md", tracker_old, tracker_old))
     old_models = snapshots[".cstack/models.json"]
-    choices = options["model_choices"]
-    # Sans choix ni agents, un models.json existant est repris tel quel, sans relecture.
-    config = _models_config(old_models, choices, models) if choices or options["native_agents"] else None
+    choices, mode = options["model_choices"], options["native_agents"]
+    # Sans choix ni agent à écrire, un models.json existant est repris tel quel, sans relecture.
+    writes_agents = mode or (mode is None and any(_managed_agent(snapshots[relative]) for relative in AGENT_PATHS.values()))
+    config = _models_config(old_models, choices, models) if choices or writes_agents else None
     if old_models is not None or choices:
         files.append(_entry(".cstack/models.json", old_models, _models_content(old_models, config, choices)))
-    if options["native_agents"]:
-        for name, relative in AGENT_PATHS.items():
-            files.append(_entry(relative, snapshots[relative], _agent_content(name, snapshots[relative], config, models)))
+    for relative, new in _agent_changes(mode, snapshots, config, models).items():
+        files.append(_entry(relative, snapshots[relative], new))
     return {"files": files, "observed": {path: _record(snapshots[path]) for path in OBSERVED_PATHS}}
 
 
@@ -418,12 +467,16 @@ def _shape(plan: Any) -> dict[str, Any]:
         if not isinstance(entry, dict) or set(entry) != fields or entry["path"] in paths:
             raise ProjectError("une entrée de fichier du plan est invalide ou répétée")
         paths.add(entry["path"])
-        if entry["path"] not in TARGET_PATHS or entry["action"] not in {"create", "update", "unchanged"}:
+        deleting = entry["action"] == "delete"
+        if entry["path"] not in TARGET_PATHS or entry["action"] not in {"create", "update", "unchanged", "delete"} or (deleting and entry["path"] not in AGENT_PATHS.values()):
             raise ProjectError(f"chemin ou action de plan invalide: {entry['path']}")
         old = _unb64(entry["original_content_b64"])
-        if entry["current_sha256"] != (None if old is None else _sha(old)) or not isinstance(entry["new_content"], str):
+        if entry["current_sha256"] != (None if old is None else _sha(old)) or (deleting and old is None):
             raise ProjectError(f"ancien instantané du plan invalide: {entry['path']}")
-        if entry["new_sha256"] != _sha(entry["new_content"].encode()):
+        if deleting:
+            if entry["new_content"] is not None or entry["new_sha256"] is not None:
+                raise ProjectError(f"une suppression du plan porte un contenu: {entry['path']}")
+        elif not isinstance(entry["new_content"], str) or entry["new_sha256"] != _sha(entry["new_content"].encode()):
             raise ProjectError(f"hash du nouveau contenu du plan invalide: {entry['path']}")
     _snapshots(plan["observed"])
     return plan
@@ -496,7 +549,8 @@ def _restore(path: Path, old: bytes | None, new_hash: str) -> bool:
         if old is None:
             path.unlink(missing_ok=True)
             return True
-        temp = _temp(path.parent, old, stat.S_IMODE(path.stat().st_mode))
+        # Un agent supprimé par le plan est recréé avec le mode par défaut.
+        temp = _temp(path.parent, old, stat.S_IMODE(path.stat().st_mode) if path.exists() else 0o644)
         try:
             os.replace(temp, path)
         finally:
@@ -537,7 +591,7 @@ def apply_plan(workspace: Path, supplied_plan: Any, raw_options: Any, catalog: d
         changes.append(entry)
     if not changes:
         return {"status": "noop", "changed": [], "plan_sha256": plan["plan_sha256"]}
-    staged: list[tuple[dict[str, Any], Path, bytes | None]] = []
+    staged: list[tuple[dict[str, Any], Path | None, bytes | None]] = []
     replaced: list[tuple[dict[str, Any], bytes | None]] = []
     created_dirs: list[Path] = []
     try:
@@ -545,6 +599,9 @@ def apply_plan(workspace: Path, supplied_plan: Any, raw_options: Any, catalog: d
             target = _path(workspace, entry["path"], write=True)
             _check(target, workspace)
             old = _unb64(entry["original_content_b64"])
+            if entry["action"] == "delete":
+                staged.append((entry, None, old))
+                continue
             mode = stat.S_IMODE(target.stat().st_mode) if target.exists() else 0o644
             created_dirs.extend(_missing_ancestors(target.parent))
             staged.append((entry, _temp(target.parent, entry["new_content"].encode(), mode), old))
@@ -555,7 +612,11 @@ def apply_plan(workspace: Path, supplied_plan: Any, raw_options: Any, catalog: d
                 continue
             if current_hash != entry["current_sha256"]:
                 raise ProjectError(f"fichier modifié pendant la préparation: {entry['path']}")
-            os.replace(temp, _path(workspace, entry["path"], write=True))
+            target = _path(workspace, entry["path"], write=True)
+            if temp is None:
+                target.unlink()
+            else:
+                os.replace(temp, target)
             replaced.append((entry, old))
         return {"status": "applied", "changed": [entry["path"] for entry, _ in replaced], "plan_sha256": plan["plan_sha256"]}
     except InterruptedApply:
@@ -571,7 +632,8 @@ def apply_plan(workspace: Path, supplied_plan: Any, raw_options: Any, catalog: d
         return {"status": "rolled_back" if not conflicts else "partial", "error": str(error), "rolled_back": rolled_back, "rollback_conflicts": conflicts, "plan_sha256": plan["plan_sha256"]}
     finally:
         for _, temp, _ in staged:
-            temp.unlink(missing_ok=True)
+            if temp is not None:
+                temp.unlink(missing_ok=True)
         _remove_empty_dirs(created_dirs)
 
 
