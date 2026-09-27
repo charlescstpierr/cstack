@@ -1262,6 +1262,34 @@
     {
       "path": "plugins/cstack/sources/pstack-claude.json",
       "reason": "Inventaire des adaptations pstack-claude épinglées et de leur licence MIT."
+    },
+    {
+      "path": "plugins/cstack/skills/setup-cstack/references/inventory.md",
+      "reason": "Setup runtime/CLI probe inventory, login-status rules and model catalog discovery, moved out of SKILL.md and read on demand."
+    },
+    {
+      "path": "plugins/cstack/skills/setup-cstack/references/claude-code.md",
+      "reason": "Procedure to add or update Claude Code or another CLI as a worker runtime, moved out of SKILL.md and read on demand."
+    },
+    {
+      "path": "plugins/cstack/skills/setup-cstack/references/models.md",
+      "reason": "Setup model proposals, mixed review panels, recommendations, roles with fallbacks and catalog formats, read on demand."
+    },
+    {
+      "path": "plugins/cstack/skills/setup-cstack/references/project-apply.md",
+      "reason": "Project preparation: AGENTS.md block, native agents, tracker, project.py preview/apply, partial-write recovery and model-only mode, read on demand."
+    },
+    {
+      "path": "plugins/cstack/skills/make-bot-ui/references/codex-exec.md",
+      "reason": "On-demand codex exec detail for the bot UI: login, server steps, exposure, stdin, flags, fork, connectors and Cursor limits."
+    },
+    {
+      "path": "plugins/cstack/skills/interrogate/references/scope-snapshot.md",
+      "reason": "Frozen-SHA scope snapshot procedure for interrogate, read on demand."
+    },
+    {
+      "path": "plugins/cstack/skills/interrogate/references/axes.md",
+      "reason": "Interrogate panel and runtime rules, Standards/Spec/Adversarial axes by panel size and axis-aware synthesis, read on demand."
     }
   ]
 }

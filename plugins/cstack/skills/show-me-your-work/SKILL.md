@@ -72,7 +72,7 @@ Avant de rendre, exécute une revue indépendante de la trace. Préfère un rele
 - Choix qui semblent risqués avec le recul (prématurés, élargissant la portée, masquant un symptôme).
 - Manques que l'utilisateur raterait autrement en lecture rapide.
 
-Chaque réponse pour une exécution qui a produit une trace se terminé par une section "Attention". Identifie un vrai relecteur délégué comme `independent native reviewer`, ou étiquette le fallback `single-agent audit`. Inclus un modèle seulement quand le contrat d’exécution le rapporte. Liste les signalements avec des lignes ou moments précis; ne traite pas une revue indépendante manquante comme un verdict indépendant propre.
+Chaque réponse pour une exécution qui a produit une trace se termine par une section "Attention". Identifie un vrai relecteur délégué comme `independent native reviewer`, ou étiquette le fallback `single-agent audit`, fait sur une relecture propre de la trace. Inclus un modèle seulement quand le contrat d’exécution le rapporte. Liste les signalements avec des lignes ou moments précis; ne traite pas une revue indépendante manquante comme un verdict indépendant propre.
 
 ## Relire la trace
 

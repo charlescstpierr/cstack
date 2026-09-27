@@ -11,8 +11,8 @@ const DIRECT_INVOCATION_ONLY: Record<string, string> = {
   "make-bot-ui": "Utilitaire d’interface de bot Grok invoqué directement, sans passer par le routeur.",
   "setup-cstack": "Utilitaire de configuration invoqué directement, sans passer par le routeur.",
 };
-// Plafond commun des SKILL.md : le plus long skill pstack (poteto-mode, 2 635 mots) plus la marge du français.
-const SKILL_WORD_CEILING = 3000;
+// Plafond commun des SKILL.md hors routeur : technical-writing, la plus longue skill pstack après poteto-mode (1 830 mots), plus la marge du français.
+const SKILL_WORD_CEILING = 2150;
 // `$cstack:cstack` lit seulement son SKILL.md d’avance ; le contrat se lit par parties, à la demande.
 const ENTRY_WORD_BUDGET = 2600;
 const EXECUTABLES = [
@@ -337,7 +337,8 @@ export function validate(root: string): { skills: number; sourceFiles: number } 
     // Une skill lie l’index du contrat ou directement les parties qu’elle déclenche.
     requireValue(/references\/(?:codex-runtime|runtime\/[a-z]+)\.md/.test(text), `${path}: lien vers le contrat d’exécution manquant`);
     const count = words(text);
-    requireValue(count <= SKILL_WORD_CEILING, `${name}: ${count} mots dépassent le plafond de ${SKILL_WORD_CEILING}`);
+    // Le routeur `cstack` a son propre budget de lecture initiale, vérifié plus bas.
+    requireValue(name === "cstack" || count <= SKILL_WORD_CEILING, `${name}: ${count} mots dépassent le plafond de ${SKILL_WORD_CEILING}`);
   }
   const entryWords = words(mainSkill);
   requireValue(entryWords <= ENTRY_WORD_BUDGET, `cstack: lecture initiale de ${entryWords} mots au-delà de ${ENTRY_WORD_BUDGET}`);
