@@ -63,9 +63,10 @@ FAKE_CODEX = textwrap.dedent("""\
         state["source"] = None
         save()
     elif args[:2] == ["plugin", "list"]:
-        if os.environ.get("FAKE_CODEX_LIST_FAILS"):
+        if os.environ.get("FAKE_CODEX_LIST_FAILS") or os.environ.get("FAKE_PLUGIN_LIST_FAILS"):
             fail("marketplace `cstack` is not configured")
-        entry = {"pluginId": "cstack@cstack", "installed": state["installed"], "enabled": state["installed"], "version": "0.6.0"}
+        enabled = state["installed"] and not state.get("disabled")
+        entry = {"pluginId": "cstack@cstack", "installed": state["installed"], "enabled": enabled, "version": "0.6.0"}
         listed = [entry] if state["source"] else []
         print(json.dumps({"installed": [e for e in listed if e["installed"]],
                           "available": [e for e in listed if not e["installed"]]}))
@@ -238,6 +239,24 @@ class InstallScriptTest(unittest.TestCase):
         self.assertEqual(result.returncode, 1)
         self.assertIn("https://***@github.com", result.stderr)
         self.assertNotIn("s3cret", result.stdout + result.stderr)
+
+    def test_disabled_plugin_is_not_silently_reenabled(self):
+        self.run_script("install")
+        self.set_state(disabled=True)
+        for args in (("update",), ("install", "--ref", "v1.0.0")):
+            result = self.run_script(*args)
+            self.assertEqual(result.returncode, 1, args)
+            self.assertIn("cstack est désactivé", result.stderr)
+        self.assertEqual(self.source(), "charlescstpierr/cstack")
+        self.assertNotIn("plugin marketplace remove cstack", self.calls())
+
+    def test_unreadable_plugin_state_stops_before_any_change(self):
+        self.run_script("install")
+        result = self.run_script("install", "--ref", "v1.0.0", FAKE_PLUGIN_LIST_FAILS="1")
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("état du plugin illisible", result.stderr)
+        self.assertEqual(self.source(), "charlescstpierr/cstack")
+        self.assertNotIn("plugin marketplace remove cstack", self.calls())
 
     def test_missing_codex_is_reported(self):
         result = self.run_script("install", CSTACK_CODEX="codex-absent")

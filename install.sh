@@ -146,16 +146,27 @@ add_marketplace() {
   switch_marketplace "$current" "${source[@]}"
 }
 
+# État du plugin avant une mise à jour ; arrêt s'il est illisible ou désactivé.
+# `plugin add` réactive un plugin désactivé et la CLI n'offre aucun moyen de le désactiver de nouveau.
+plugin_state_before_refresh() {
+  local status
+  status="$(codex_state plugin-status)" || die "état du plugin illisible (codex plugin list --json) ; l'installation actuelle est conservée."
+  [[ "$status" != "installed, disabled"* ]] ||
+    die "cstack est désactivé : une mise à jour le réactiverait. Réactivez-le dans Codex, ou retirez-le (install.sh uninstall), puis relancez."
+  printf '%s\n' "$status"
+}
+
 # Remplace le catalogue configuré (décrit par $1) par la source qui suit, plugin compris.
 # Toute étape ratée laisse ou remet l'installation précédente, à son commit exact.
 switch_marketplace() {
-  local current="$1" out trial trial_failed="" prev line was_installed=""
+  local current="$1" out trial trial_failed="" prev line was_installed="" status
   shift
   local -a source=("$@") previous
   prev="$(previous_source "$current")" || die "commit actuel illisible dans le clone de Codex ; l'installation actuelle est conservée."
   while IFS= read -r line; do previous+=("$line"); done <<<"$prev"
   # La restauration ne réinstalle le plugin que s'il l'était avant la commande.
-  [[ "$(codex_state plugin-status)" != installed* ]] || was_installed=1
+  status="$(plugin_state_before_refresh)"
+  [[ "$status" != installed* ]] || was_installed=1
   # Essai dans un CODEX_HOME jetable : une source invalide ne doit pas coûter l'installation actuelle.
   trial="$(mktemp -d)"
   # L'essai installe aussi le plugin : un catalogue valide sans cstack utilisable est refusé ici.
@@ -220,6 +231,7 @@ cmd_update() {
     echo "Mise à jour : $(redact "$url") --ref ${branch}"
     switch_marketplace "$current" "$url" --ref "$branch"
   else
+    plugin_state_before_refresh >/dev/null
     echo "Source locale : recopie depuis le clone, sans mise à jour Git."
     run_codex plugin add "$PLUGIN"
   fi
