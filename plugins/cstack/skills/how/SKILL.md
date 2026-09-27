@@ -17,13 +17,13 @@ Explore le codebase pour répondre aux questions "comment X fonctionne ?". Produ
 
 Suis le chemin d'héritage direct du contrat runtime quand rien n'est configuré; sinon résous chaque rôle nommé avec son helper et transmets à chaque spawn natif la sélection complète, effort de raisonnement compris. Signale les lacunes de capacité de l'hôte au lieu de supprimer un champ sélectionné.
 
-Pour une exploration déléguée, suis le [contrat d’exploration déléguée](../cstack/references/codex-runtime.md#exploration-déléguée). La demande de l'utilisateur, le mode courant ou les permissions de la session peuvent seuls exclure la délégation de cette question.
+Pour une exploration déléguée, suis le [contrat d’exploration déléguée](../cstack/references/runtime/exploration.md). La demande de l'utilisateur, le mode courant ou les permissions de la session peuvent seuls exclure la délégation de cette question.
 
 ## Étape 1. Poser les angles
 
 Si la portée est ambiguë, indique ton interprétation et explore. L'utilisateur peut rediriger.
 
-Écris les angles avant de choisir le chemin. Un angle est une tranche du sous-système avec sa propre liste de fichiers à lire. Vise normalement trois angles distincts utiles et suis le [contrat d’exploration déléguée](../cstack/references/codex-runtime.md#exploration-déléguée) pour le minimum et les vagues.
+Écris les angles avant de choisir le chemin. Un angle est une tranche du sous-système avec sa propre liste de fichiers à lire. Vise normalement trois angles distincts utiles et suis le [contrat d’exploration déléguée](../cstack/references/runtime/exploration.md) pour le minimum et les vagues.
 
 Deux angles ou plus : va à l'Étape 2a. C'est le chemin par défaut. Un recouvrement partiel entre leurs listes de fichiers ne change rien ; retire le fichier commun de toutes les tranches sauf une et garde les angles. Une portée large, une zone inconnue ou une première lecture produisent plusieurs angles ; elles ne justifient pas la passe unique.
 

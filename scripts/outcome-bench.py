@@ -31,6 +31,7 @@ DEFAULT_ARMS = ("vanilla", "cstack")
 MODELS_HELPER = ROOT / "plugins" / "cstack" / "skills" / "setup-cstack" / "scripts" / "models.py"
 PROJECT_HELPER = MODELS_HELPER.with_name("project.py")
 SETUP_SUFFIX = "+setup"
+GIT_REF = re.compile(r"[A-Za-z0-9][A-Za-z0-9._/-]*")
 SETUP_OPTIONS = {"native_agents": True}
 GIT_IDENTITY = ["-c", "user.name=cstack outcome", "-c", "user.email=cstack-outcome@example.invalid"]
 NETWORK_FLAG = ["-c", "sandbox_workspace_write.network_access=true"]
@@ -73,7 +74,7 @@ def load_runner():
 
 
 def parse_arms(text: str) -> list[dict[str, Any]]:
-    """Lit `nom` ou `nom=base[+setup][:models.json]` ; seule une base cstack accepte config et setup projet."""
+    """Lit `nom` ou `nom=base[@ref][+setup][:models.json]` ; seule une base cstack accepte ref, config et setup projet."""
     arms = []
     for item in (part.strip() for part in text.split(",")):
         if not item:
@@ -82,11 +83,15 @@ def parse_arms(text: str) -> list[dict[str, Any]]:
         base, _, models = (spec or name).partition(":")
         setup = base.endswith(SETUP_SUFFIX)
         base = base[: -len(SETUP_SUFFIX)] if setup else base
-        if not SAFE_ID.fullmatch(name) or base not in ARMS:
+        base, _, ref = base.partition("@")
+        if not SAFE_ID.fullmatch(name) or base not in ARMS or (ref and not GIT_REF.fullmatch(ref)):
             raise BenchError(f"bras invalide: {item!r} ; base parmi {', '.join(ARMS)}")
-        if (models or setup) and base != "cstack":
-            raise BenchError(f"{name}: seule une base cstack lit .cstack/models.json et le setup projet")
-        arms.append({"name": name, "base": base, "models": Path(models) if models else None, "setup": setup})
+        if (models or setup or ref) and base != "cstack":
+            raise BenchError(f"{name}: seule une base cstack lit .cstack/models.json, le setup projet et une ref du dépôt")
+        # Le setup projet vient du helper courant ; il ne s’applique pas à une version figée du plugin.
+        if ref and setup:
+            raise BenchError(f"{name}: une ref du plugin ne se combine pas avec +setup")
+        arms.append({"name": name, "base": base, "models": Path(models) if models else None, "setup": setup, "ref": ref or None})
     names = [arm["name"] for arm in arms]
     if len(arms) < 2 or len(set(names)) != len(names):
         raise BenchError("--arms exige au moins deux bras de noms distincts")
@@ -428,12 +433,11 @@ def default_prompt(plugin: Path) -> str:
     return match.group(1)
 
 
-def arm_prompt(task: dict[str, Any], arm: str, bundles: dict[str, Path]) -> str:
+def arm_prompt(task: dict[str, Any], arm: str, bundle: Path | None) -> str:
     """Même demande pour tous les bras ; chaque paquet ajoute son entrée et sa demande de délégation."""
     body = task["prompt"].strip() + "\n\n" + SCOPE_NOTE
     if arm == "vanilla":
         return body
-    bundle = bundles[arm]
     preamble = default_prompt(bundle) if arm == "cstack" else PSTACK_PREAMBLE
     skill = bundle / "skills" / ARM_SKILLS[arm] / "SKILL.md"
     return "\n\n".join([preamble, body, SOURCE_NOTE.format(path=skill)])
@@ -524,7 +528,7 @@ def execute_run(run: dict[str, Any], task: dict[str, Any], image: str, context: 
     # Le diff de l’agent part du setup committé, pour ne noter que son propre travail.
     start = apply_project_setup(workspace) if arm["setup"] else task["base_sha"]
     case = {"id": run["run_id"], "cwd": workspace, "sandbox": "workspace-write", "ephemeral": False,
-            "prompts": [arm_prompt(task, base, context["bundles"])]}
+            "prompts": [arm_prompt(task, base, context["bundles"].get(bundle_key(arm)))]}
     private = private_paths(work, output)
     with hidden_from_agent(private):
         agent = context["runner"].run_case(case, output / "agent", context["command"], context["model"],
@@ -721,17 +725,48 @@ def fetch_pstack(work: Path) -> Path:
     return checkout_root / pin["subdirectory"]
 
 
+def bundle_key(arm: dict[str, Any]) -> str:
+    """Un paquet par base, et un par commit pour une version figée du plugin (`cstack@<sha>`)."""
+    return f"{arm['base']}@{arm['ref']}" if arm.get("ref") else arm["base"]
+
+
+def plugin_at(ref: str, work: Path) -> tuple[str, Path]:
+    """Extrait `plugins/cstack` du dépôt à `ref`, une seule fois par commit, pour comparer avant et après."""
+    sha = git(ROOT, "rev-parse", "--verify", "--quiet", f"{ref}^{{commit}}", check=False).strip()
+    if not sha:
+        raise BenchError(f"ref du plugin introuvable dans le dépôt: {ref}")
+    target = work / "plugins" / sha
+    if not (target / "plugins" / "cstack").is_dir():
+        work.mkdir(parents=True, exist_ok=True)
+        staging = Path(tempfile.mkdtemp(prefix="cstack-plugin-", dir=work))
+        archive = subprocess.run(["git", "archive", "--format=tar", sha, "plugins/cstack"], cwd=ROOT, capture_output=True)
+        if archive.returncode != 0:
+            raise BenchError(f"git archive {sha} a échoué: {archive.stderr.decode(errors='replace').strip()}")
+        subprocess.run(["tar", "-x", "-C", str(staging)], input=archive.stdout, check=True)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.rmtree(target, ignore_errors=True)
+        staging.rename(target)
+    return sha, target / "plugins" / "cstack"
+
+
 def arm_roots(args: argparse.Namespace) -> dict[str, Path]:
+    """Racine du paquet de chaque bras ; une ref est résolue en commit et enregistrée sur son bras."""
     roots = {}
-    bases = {arm["base"] for arm in args.arms}
-    if "cstack" in bases:
-        roots["cstack"] = args.plugin.expanduser().resolve()
-    if "pstack" in bases:
-        roots["pstack"] = (args.pstack or default_pstack(args.work)).expanduser().resolve()
-    for arm, root in roots.items():
-        if not (root / "skills" / ARM_SKILLS[arm] / "SKILL.md").is_file():
-            hint = " ; lancez d’abord fetch-pstack" if arm == "pstack" else ""
-            raise BenchError(f"{arm}: point d’entrée absent sous {root}{hint}")
+    for arm in args.arms:
+        if arm["base"] == "cstack" and arm["ref"]:
+            arm["ref"], root = plugin_at(arm["ref"], args.work)
+        elif arm["base"] == "cstack":
+            root = args.plugin.expanduser().resolve()
+        elif arm["base"] == "pstack":
+            root = (args.pstack or default_pstack(args.work)).expanduser().resolve()
+        else:
+            continue
+        roots[bundle_key(arm)] = root
+    for key, root in roots.items():
+        base = key.partition("@")[0]
+        if not (root / "skills" / ARM_SKILLS[base] / "SKILL.md").is_file():
+            hint = " ; lancez d’abord fetch-pstack" if base == "pstack" else ""
+            raise BenchError(f"{key}: point d’entrée absent sous {root}{hint}")
     return roots
 
 
@@ -752,12 +787,12 @@ def command_run(args: argparse.Namespace) -> int:
         "schema_version": 3, "suite_digest": tree_digest(args.tasks), "merged_after": suite["merged_after"],
         "tasks": [task["id"] for task in tasks], "task_digests": {task["id"]: task["digest"] for task in tasks},
         "arms": [
-            {"name": arm["name"], "base": arm["base"], "setup": arm["setup"],
+            {"name": arm["name"], "base": arm["base"], "setup": arm["setup"], "ref": arm["ref"],
              "models_sha256": hashlib.sha256(json.dumps(arm_models[arm["name"]], sort_keys=True).encode()).hexdigest()
              if arm["name"] in arm_models else None}
             for arm in args.arms
         ],
-        "bundle_digests": {base: tree_digest(root) for base, root in roots.items()},
+        "bundle_digests": {key: tree_digest(root) for key, root in roots.items()},
         "network": args.network, "repetitions": args.repetitions, "seed": args.seed,
         "model": args.model, "effort": args.effort, "turn_timeout": args.turn_timeout,
     }
@@ -772,10 +807,10 @@ def command_run(args: argparse.Namespace) -> int:
     if not manifest_path.exists():
         write_json(manifest_path, {**manifest, "started_at": datetime.now(timezone.utc).isoformat(timespec="seconds")})
     bundles = {}
-    for arm, root in roots.items():
-        bundles[arm] = output / "resources" / arm
-        if not bundles[arm].exists():
-            shutil.copytree(root, bundles[arm], ignore=shutil.ignore_patterns("node_modules", "__pycache__", ".git"))
+    for key, root in roots.items():
+        bundles[key] = output / "resources" / key
+        if not bundles[key].exists():
+            shutil.copytree(root, bundles[key], ignore=shutil.ignore_patterns("node_modules", "__pycache__", ".git"))
     runner = load_runner()
     command = runner.build_command() + (NETWORK_FLAG if args.network else [])
     context = {
@@ -844,7 +879,7 @@ def main(argv: list[str] | None = None) -> int:
     run.add_argument("--plugin", type=Path, default=DEFAULT_PLUGIN, help="racine du plugin cstack évalué")
     run.add_argument("--pstack", type=Path, help="racine pstack ; par défaut le checkout épinglé de fetch-pstack")
     run.add_argument("--arms", default=",".join(DEFAULT_ARMS),
-                     help=f"bras `nom` ou `nom=base[:models.json]` séparés par des virgules ; bases : {', '.join(ARMS)}")
+                     help=f"bras `nom` ou `nom=base[@ref][+setup][:models.json]` séparés par des virgules ; bases : {', '.join(ARMS)}")
     run.add_argument("--network", action="store_true", help="autorise le réseau du sandbox pour tous les bras")
     run.add_argument("--repetitions", type=int, default=3)
     run.add_argument("--seed", type=int, required=True, help="graine de l’ordre entrelacé, enregistrée")

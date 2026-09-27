@@ -420,8 +420,7 @@ cat "$(dirname "$0")/response.json"
 it("préserve le handoff BLOCKED documenté après une exécution réussie", async () => {
   const h = await harness();
   try {
-    const contract = await readFile(join(import.meta.dir, "../../references/codex-runtime.md"), "utf8");
-    const section = contract.split("## Orchestration requise")[1];
+    const section = await readFile(join(import.meta.dir, "../../references/runtime/orchestration.md"), "utf8");
     const template = section?.match(/```json\n([\s\S]*?)\n```/)?.[1];
     if (!template) throw new Error("Handoff JSON absent du contrat");
     await writeFile(join(h.bin, "response.json"), template);

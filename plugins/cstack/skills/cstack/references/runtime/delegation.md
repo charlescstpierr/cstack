@@ -1,0 +1,21 @@
+# Outils et delegation
+
+Partie du [contrat d’exécution Codex](../codex-runtime.md), lue quand sa situation se présente.
+
+Utilise les vrais outils exposés dans la session courante. Les noms d’outils natifs diffèrent entre App et CLI ; inspecte le schéma disponible au lieu de construire un appel Cursor Task ou d’inventer un outil.
+
+- Lis/cherche avec les outils natifs de système de fichiers ou `rg` ; lance les commandes avec l’outil shell natif.
+- Pour des tranches indépendantes utiles, utilise les outils natifs Codex de lancement, message, attente et interruption. Envoie un prompt borné, les fichiers possédés, le prompt d’agent cstack et les contrôles d’acceptation. Quand le projet déclare les agents natifs `cstack-explorer`, `cstack-worker` ou `cstack-reviewer` (`.codex/agents/`, écrits par `$cstack:setup-cstack`), lance-les par leur nom pour l’exploration, l’implémentation et la revue indépendante : leur `model` et `model_reasoning_effort` font foi, et les [Modèles](modeles.md) ne résolvent alors que les rôles sans agent. Un rôle confié à un CLI n'a pas d'agent et passe par le helper CLI. Sinon, un agent custom nommé n’est pas requis : utilise un agent générique natif disponible avec ces instructions. Les prompts d’agent sont `../agents/cstack-agent.md` et `../agents/comment-reviewer.md`, relativement à ce document.
+- Laisse le parent intégrer les résultats et vérifier les vrais diffs. Les implémentations indépendantes utilisent des worktrees ou chemins de sortie séparés ; ne fais pas écrire les mêmes fichiers par des agents concurrents. Utilise la limite de concurrence de la session courante et mets l’excédent en file.
+- Une capacité manquante suit [Orchestration requise](orchestration.md). Elle n’en retire jamais une. Quand l'étape n'exige pas d'indépendance réelle et que la session courante possède l'orchestration, lance-la dans cette session comme passe séparée explicitement recadrée, étiquette le résultat comme passe single-agent et rapporte l’indépendance manquante. L’absence de capacité n’autorise jamais à sauter l’ancrage, la conception, la revue, la comparaison, le nettoyage ou la vérification. Ne décris pas une auto-revue comme revue indépendante et ne revendique pas une exécution parallèle.
+- Avant qu’un diff soit présenté comme prêt pour PR, prêt au merge ou vérifié, son verdict vient d’un acteur qui ne l’a pas écrit. Un parent qui relit le diff d’un délégué satisfait cela. Un parent qui a écrit le code a besoin d’un reviewer séparé. Si ce reviewer est requis mais indisponible dans la session courante, applique [Orchestration requise](orchestration.md) avec `route: Review`. Réutilise un verdict terminé seulement pour le même périmètre et un patch inchangé.
+- Une assignation en lecture seule reste en lecture seule même quand l’outil permettrait une mutation. L’accès MCP ne dépend pas de la définition d’un champ fictif `readonly: false`.
+- Utilise l’entrée utilisateur structurée quand elle est disponible pour les décisions produit manquantes ; sinon, une question concise. Les faits découvrables sont le travail de l’agent. Réutilise l’autorisation déjà donnée pour la tâche concrète.
+
+## Dispatch des workers
+
+Sans champ `runtime`, conserve le dispatch natif Codex décrit ci-dessus. Une sélection explicite `codex-cli`, `claude-code` ou `grok` utilise le [contrat des workers CLI](../runtime-workers.md). Cette règle vaut pour chaque rôle, candidat, reviewer et juge, y compris les panels fournis par un appelant. Ne transmets jamais le champ `runtime` à l’outil natif de lancement.
+
+Le coordinateur garde le brief, la file, les worktrees et la synthèse. Les workers CLI sont des processus externes ; ils ne deviennent pas des threads natifs de l’interface Codex. Ne demande pas à l’utilisateur de piloter les commandes : prépare les requêtes et collecte les résultats dans la tâche autorisée. N’ajoute ni moteur de coordination séparé ni intégration Google/Gemini.
+
+La sérialisation et les passes single-agent décrites pour le chemin natif ne remplacent jamais un runtime explicitement choisi. Un CLI absent, une capacité refusée ou un login requis bloque cette position du panel ; continue les autres positions et rapporte l’écart de diversité. Un modèle cité dans le prompt ne sélectionne jamais un fournisseur.

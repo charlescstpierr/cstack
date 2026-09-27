@@ -1,3 +1,4 @@
+import argparse
 import importlib.util
 import json
 import subprocess
@@ -183,9 +184,9 @@ class OutcomeBenchTests(unittest.TestCase):
         pstack = self.root / "pstack"
         (pstack / "skills" / "poteto-mode").mkdir(parents=True)
         bundles = {"cstack": ROOT / "plugins" / "cstack", "pstack": pstack}
-        vanilla = outcome_bench.arm_prompt(task, "vanilla", bundles)
-        cstack = outcome_bench.arm_prompt(task, "cstack", bundles)
-        poteto = outcome_bench.arm_prompt(task, "pstack", bundles)
+        vanilla = outcome_bench.arm_prompt(task, "vanilla", None)
+        cstack = outcome_bench.arm_prompt(task, "cstack", bundles["cstack"])
+        poteto = outcome_bench.arm_prompt(task, "pstack", bundles["pstack"])
         self.assertIn(task["prompt"], vanilla)
         self.assertIn(outcome_bench.SCOPE_NOTE, vanilla)
         self.assertNotIn("$cstack", vanilla)
@@ -207,7 +208,7 @@ class OutcomeBenchTests(unittest.TestCase):
         context = {
             "output": self.root / "out", "work": self.work, "bundles": {"cstack": ROOT / "plugins" / "cstack"},
             "runner": runner, "command": [], "model": model, "effort": effort, "turn_timeout": 10,
-            "arms": {arm: {"name": arm, "base": base, "models": None, "setup": setup}},
+            "arms": {arm: {"name": arm, "base": base, "models": None, "setup": setup, "ref": None}},
             "arm_models": {arm: models} if models is not None else {},
         }
         run = {"run_id": f"calc-add--{arm}--r1", "task_id": "calc-add", "arm": arm, "repetition": 1}
@@ -321,6 +322,31 @@ class OutcomeBenchTests(unittest.TestCase):
         ):
             with self.subTest(text=text), self.assertRaisesRegex(outcome_bench.BenchError, message):
                 outcome_bench.parse_arms(text)
+
+    def test_plugin_ref_arms_compare_a_frozen_cstack_with_the_current_one(self):
+        arms = outcome_bench.parse_arms("avant=cstack@HEAD,cstack,mixed=cstack@HEAD:m.json")
+        self.assertEqual([arm["ref"] for arm in arms], ["HEAD", None, "HEAD"])
+        for text, message in (("cstack,p=pstack@HEAD", "ref du dépôt"), ("cstack,a=cstack@HEAD+setup", "ne se combine pas"),
+                              ("cstack,a=cstack+setup@HEAD", "bras invalide"), ("cstack,a=cstack@-x", "bras invalide")):
+            with self.subTest(text=text), self.assertRaisesRegex(outcome_bench.BenchError, message):
+                outcome_bench.parse_arms(text)
+        args = argparse.Namespace(arms=arms[:2], work=self.work, plugin=ROOT / "plugins" / "cstack", pstack=None)
+        roots = outcome_bench.arm_roots(args)
+        sha = outcome_bench.git(ROOT, "rev-parse", "HEAD").strip()
+        self.assertEqual(arms[0]["ref"], sha)
+        self.assertEqual(set(roots), {f"cstack@{sha}", "cstack"})
+        frozen = roots[f"cstack@{sha}"]
+        self.assertEqual(frozen, self.work / "plugins" / sha / "plugins" / "cstack")
+        committed = outcome_bench.git(ROOT, "show", f"{sha}:plugins/cstack/skills/cstack/SKILL.md")
+        self.assertEqual((frozen / "skills" / "cstack" / "SKILL.md").read_text(), committed)
+        # Réutilisé tel quel au second appel, sans nouvelle extraction.
+        marker = frozen / "marker"
+        marker.write_text("x")
+        outcome_bench.arm_roots(argparse.Namespace(arms=outcome_bench.parse_arms("a=cstack@HEAD,cstack"), work=self.work,
+                                                   plugin=ROOT / "plugins" / "cstack", pstack=None))
+        self.assertTrue(marker.exists())
+        with self.assertRaisesRegex(outcome_bench.BenchError, "introuvable"):
+            outcome_bench.plugin_at("no-such-ref-xyz", self.work)
 
     def test_setup_arm_variant_is_parsed_for_cstack_only(self):
         arms = outcome_bench.parse_arms("cstack,cstack-agents=cstack+setup,mixed=cstack+setup:m.json")

@@ -1,0 +1,9 @@
+# Commits locaux
+
+Partie du [contrat d’exécution Codex](../codex-runtime.md), lue quand sa situation se présente.
+
+Une tâche autorisée d’implémentation ou d’édition de documentation inclut par défaut des commits Git locaux. Après que chaque unité cohérente passe ses contrôles pertinents, inspecte le diff, stage seulement les changements de cette tâche et committe sans demander une autre confirmation. Applique cette règle dans tous les playbooks d’implémentation, y compris les petits correctifs et éditions de suivi ; ouvrir une PR n’est pas un prérequis. Le coordinateur possède les commits sur une branche partagée ; les délégués commitent seulement sur leurs branches isolées assignées.
+
+Inspecte le worktree et l’index avant de stager. Préserve les changements préexistants stagés et non stagés ; n’inclus jamais le travail d’une autre tâche et n’utilise pas de staging global dans un workspace sale. Si la propriété ne peut pas être séparée sûrement, laisse ces changements intacts et rapporte le bloqueur. Respecte les instructions explicites no-commit, les règles du projet et le mode Plan/lecture seule. Hors d’un dépôt Git, rapporte que les commits sont indisponibles au lieu d’en initialiser un. Ne crée pas de commits vides et ne contourne pas les contrôles ou hooks échouants. Un commit de reproduction volontairement échouant est permis seulement quand le playbook TDD actif l’appelle ; vérifie l’échec attendu et termine avec le correctif passant avant de rapporter l’achèvement.
+
+Avant de terminer, inspecte le statut Git et le vrai historique de commits. Rapporte les SHA de commits créés et tout changement de tâche restant avec sa raison. Si le commit échoue, rapporte l’échec et garde le travail intact ; ne prétends pas qu’il a été commité. Les commits locaux ne suffisent pas pour terminer une demande `$cstack:cstack` d’implémentation quand la branche peut être poussée et ouverte en PR. Ils n’autorisent jamais le merge ni le déploiement.
