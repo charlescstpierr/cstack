@@ -54,7 +54,7 @@ Donnez ce message à Codex, dans une tâche ouverte sur n'importe quel dossier. 
 Installe le plugin cstack. Lis d'abord sa procédure pour agents dans le dépôt privé charlescstpierr/cstack (gh api repos/charlescstpierr/cstack/contents/INSTALL-AGENT.md -H "Accept: application/vnd.github.raw", ou sans gh : clone le dépôt avec git, en HTTPS ou en SSH, dans un dossier temporaire), puis suis-la.
 ```
 
-[INSTALL-AGENT.md](INSTALL-AGENT.md) guide l'agent pas à pas : prérequis, `install.sh install` ou `update`, vérification par `doctor`, lecture des codes de sortie et pannes connues. L'agent demande votre accord avant d'installer un outil global, ne lit pas vos credentials et ne laisse aucun fichier dans votre projet. Il ne modifie la configuration de Codex que par les commandes `codex plugin`, jamais à la main. Ouvrez ensuite une nouvelle tâche pour utiliser les compétences.
+La procédure et ses garde-fous sont dans [INSTALL-AGENT.md](INSTALL-AGENT.md) : l'agent demande votre accord avant d'installer un outil global et ne modifie la configuration de Codex que par `codex plugin`. Ouvrez ensuite une nouvelle tâche pour utiliser les compétences.
 
 ### Gérer l'installation
 

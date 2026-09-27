@@ -378,34 +378,35 @@ class InstallScriptTest(unittest.TestCase):
 class AgentRunbookTest(unittest.TestCase):
     """INSTALL-AGENT.md doit citer les messages que install.sh affiche réellement."""
 
+    @classmethod
+    def setUpClass(cls):
+        cls.runbook = (REPO / "INSTALL-AGENT.md").read_text()
+
     def test_known_failures_quote_real_messages(self):
-        runbook = (REPO / "INSTALL-AGENT.md").read_text()
         script = SCRIPT.read_text()
-        section = runbook.split("## Pannes connues", 1)[1]
-        quoted = [cell for line in section.splitlines() if line.startswith("| `")
-                  for cell in re.findall(r"`([^`]+)`", line.split(" | ")[0])]
+        quoted = []
+        for line in self.runbook.split("## Pannes connues", 1)[1].splitlines():
+            if line.startswith("| `"):
+                quoted += re.findall(r"`([^`]+)`", line.split("|")[1])
         self.assertGreaterEqual(len(quoted), 6)
         for message in quoted:
             with self.subTest(message=message):
                 self.assertIn(message.replace("charlescstpierr/cstack", "${REPO}"), script)
 
     def test_named_skills_exist(self):
-        runbook = (REPO / "INSTALL-AGENT.md").read_text()
-        names = set(re.findall(r"\$cstack:([a-z0-9-]+)", runbook))
+        names = set(re.findall(r"\$cstack:([a-z0-9-]+)", self.runbook))
         self.assertTrue(names)
         for name in names:
             with self.subTest(skill=name):
                 self.assertTrue((REPO / "plugins/cstack/skills" / name / "SKILL.md").is_file())
 
     def test_runbook_uses_the_readme_download_and_is_linked(self):
-        runbook = (REPO / "INSTALL-AGENT.md").read_text()
         readme = (REPO / "README.md").read_text()
         download = 'gh api repos/charlescstpierr/cstack/contents/install.sh -H "Accept: application/vnd.github.raw" > '
-        self.assertIn(download, runbook)
+        self.assertIn(download, self.runbook)
         self.assertIn(download, readme)
         self.assertIn("(INSTALL-AGENT.md)", readme)
         self.assertIn("contents/INSTALL-AGENT.md", readme)
-
 
 if __name__ == "__main__":
     unittest.main()
