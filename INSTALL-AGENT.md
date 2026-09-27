@@ -14,7 +14,7 @@ Ce fichier s'adresse à un agent de code (Codex CLI ou Codex App) à qui l'utili
 
 1. **Environnement.** Sous Windows, cstack s'installe depuis WSL, pas depuis PowerShell. Les autres prérequis (Codex CLI, Python, Git et l'accès au dépôt) sont vérifiés par `doctor` à l'étape 3.
 
-2. **Obtenir le script, hors du projet de l'utilisateur.** Si vous êtes dans un clone de `charlescstpierr/cstack`, ou si vous en avez cloné un pour lire ce fichier, utilisez son `install.sh`. Sinon, travaillez dans un dossier temporaire pour ne laisser aucun fichier dans le dépôt de l'utilisateur :
+2. **Obtenir le script, hors du projet de l'utilisateur.** Si vous lisez ce fichier depuis un clone de `charlescstpierr/cstack` (le dossier courant ou un clone fait pour le lire), utilisez l'`install.sh` de ce même clone : ce fichier et le script vont ensemble. Sinon, travaillez dans un dossier temporaire pour ne laisser aucun fichier dans le dépôt de l'utilisateur :
 
    ```sh
    tmp="$(mktemp -d)" && echo "$tmp" &&
@@ -27,7 +27,7 @@ Ce fichier s'adresse à un agent de code (Codex CLI ou Codex App) à qui l'utili
    Si cette commande échoue (`gh` absent ou non authentifié) : `git clone --depth 1 https://github.com/charlescstpierr/cstack.git "$tmp/cstack"` (ou l'URL SSH `git@github.com:charlescstpierr/cstack.git`), puis `$tmp/cstack/install.sh`. Dans la suite, `install.sh` désigne le script obtenu, lancé avec `bash`.
 
 3. **Voir l'état actuel.** Lancez `install.sh doctor`.
-   - La ligne du plugin commence par `✓ plugin cstack@cstack` : cstack est installé et fonctionne. Ne changez rien, sauf si l'utilisateur demande la dernière version (`install.sh update`) ou une version précise (`install.sh update --ref <ref>`, qui récupère réellement cette version).
+   - `doctor` affiche une ligne `✓ plugin cstack@cstack` (précédée d'espaces) : cstack est installé et fonctionne. Ne changez rien, sauf si l'utilisateur demande la dernière version (`install.sh update`) ou une version précise (`install.sh update --ref <ref>`, qui récupère réellement cette version).
    - Sinon : `install.sh install`, avec `--ref <ref>` si l'utilisateur demande une version précise (branche, tag ou commit).
 
 4. **Vérifier.** Si l'étape 3 a lancé une commande, relancez `install.sh doctor`. Le code de sortie doit être 0 et la ligne `✓ plugin cstack@cstack : installed, enabled <version>` doit apparaître.
