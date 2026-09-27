@@ -86,4 +86,4 @@ codex exec resume \
 
 ## Sonder avant d'annoncer que c'est en ligne
 
-Avant de dire à l'utilisateur que l'interface est en ligne, envoyez un POST depuis cette machine avec une charge que le prompt ignore ou à laquelle il répond en un mot. Attendez HTTP 200, un code de sortie 0 de `codex exec` et un fichier de dernier message non vide. Si la sonde échoue, l'interface n'est pas en ligne ; corrigez puis sondez à nouveau. Une réponse d'un mot ne prouve pas un tour long, en écriture, réseau ou MCP : voir les [limites](references/codex-exec.md#limites).
+Avant de dire à l'utilisateur que l'interface est en ligne, envoyez un POST depuis cette machine avec une charge utile que le prompt ignore ou à laquelle il répond en un mot. Attendez HTTP 200, un code de sortie 0 de `codex exec` et un fichier de dernier message non vide. Si la sonde échoue, l'interface n'est pas en ligne ; corrigez puis sondez à nouveau. Une réponse d'un mot ne prouve pas un tour long, en écriture, réseau ou MCP : voir les [limites](references/codex-exec.md#limites).

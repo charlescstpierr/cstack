@@ -44,7 +44,7 @@ Fermez le stdin de l'enfant. `codex exec` attend l'EOF de stdin sur un pipe non 
 - `--cd` / `-C` est la racine de travail.
 - `--skip-git-repo-check` est requis quand cette racine n'est pas un dépôt Git.
 - Lisez le fichier de prompt dans une chaîne, puis passez ce contenu à Codex. Ne passez pas le chemin du fichier de prompt comme prompt.
-- L'entrée du prompt est le texte de prompt positionnel. Si le prompt est volumineux, passez `-`, écrivez le texte du prompt sur stdin, puis fermez stdin. Un stdin redirigé plus un argument de prompt ajoute stdin comme contexte supplémentaire, donc un pipe ouvert bloque jusqu'à EOF. Il n'existe pas d'option `--prompt-file` pour `codex exec`.
+- L'entrée du prompt est le texte de prompt positionnel. Si le prompt est volumineux, passez `-`, écrivez le texte du prompt sur stdin, puis fermez stdin. Avec un stdin redirigé et un argument de prompt, stdin est ajouté comme contexte supplémentaire ; un pipe ouvert bloque donc jusqu'à EOF. Il n'existe pas d'option `--prompt-file` pour `codex exec`.
 - `--output-schema FILE` est optionnel. Utilisez-le quand la page a besoin d'un dernier message JSON conforme à un fichier de schéma détenu par le serveur.
 
 ## Forker un thread capturé

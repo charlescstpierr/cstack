@@ -132,6 +132,9 @@ class InstallScriptTest(unittest.TestCase):
     def source(self):
         return json.loads(self.state.read_text())["source"]
 
+    def installed(self):
+        return json.loads(self.state.read_text())["installed"]
+
     def test_install_adds_the_github_marketplace_then_the_plugin(self):
         result = self.run_script("install")
         self.assertEqual(result.returncode, 0, result.stderr)
@@ -171,7 +174,7 @@ class InstallScriptTest(unittest.TestCase):
         self.assertEqual(result.returncode, 1)
         self.assertIn("L'installation actuelle est conservée", result.stderr)
         self.assertEqual(self.source(), "charlescstpierr/cstack")
-        self.assertTrue(json.loads(self.state.read_text())["installed"])
+        self.assertTrue(self.installed())
         self.assertNotIn("plugin marketplace remove cstack", self.calls())
 
     def test_failed_switch_restores_the_previous_source(self):
@@ -241,7 +244,7 @@ class InstallScriptTest(unittest.TestCase):
         result = self.run_script("uninstall", FAKE_CODEX_LIST_FAILS="1")
         self.assertEqual(result.returncode, 1)
         self.assertIn("impossible de lire l'état de Codex", result.stderr)
-        self.assertTrue(json.loads(self.state.read_text())["installed"])
+        self.assertTrue(self.installed())
 
     def test_doctor_flags_a_bun_without_no_env_file(self):
         (self.bin / "bun").write_text("#!/bin/sh\n[ \"$1\" = --version ] && echo 1.0.0\nexit 0\n")
