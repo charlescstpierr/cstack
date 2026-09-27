@@ -1,6 +1,6 @@
 ---
 name: technical-writing
-description: "À utiliser pour $cstack:technical-writing ou pour écrire ou relire docs, RFC, readmes, descriptions de PR ou messages de commit. Standard de rédaction technique par couches : structure Diátaxis, phrases du style développeur Google, règles d'instructions STE, syntaxe Global English."
+description: "À utiliser pour $cstack:technical-writing ou pour écrire ou relire docs, RFC, readmes, descriptions de PR ou messages de commit. Applique un standard de rédaction technique par couches : structure Diátaxis, phrases du style développeur Google, règles d'instructions STE, syntaxe Global English."
 ---
 
 # Rédaction technique
