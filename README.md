@@ -48,13 +48,13 @@ Ouvrez ensuite une **nouvelle tâche** dans Codex App ou une nouvelle session CL
 
 ### Faire installer par un agent IA
 
-Donnez ce message à Codex, dans une tâche ouverte sur n'importe quel dossier. Le dépôt étant privé, l'agent lit la procédure avec `gh` plutôt que par le web :
+Donnez ce message à Codex, dans une tâche ouverte sur n'importe quel dossier. Le dépôt étant privé, l'agent lit la procédure avec `gh` ou Git plutôt que par le web :
 
 ```text
-Installe le plugin cstack. Lis d'abord sa procédure pour agents dans le dépôt privé charlescstpierr/cstack (gh api repos/charlescstpierr/cstack/contents/INSTALL-AGENT.md -H "Accept: application/vnd.github.raw"), puis suis-la.
+Installe le plugin cstack. Lis d'abord sa procédure pour agents dans le dépôt privé charlescstpierr/cstack (gh api repos/charlescstpierr/cstack/contents/INSTALL-AGENT.md -H "Accept: application/vnd.github.raw", ou sans gh : clone le dépôt avec git dans un dossier temporaire), puis suis-la.
 ```
 
-[INSTALL-AGENT.md](INSTALL-AGENT.md) guide l'agent pas à pas : prérequis, `install.sh install` ou `update`, vérification par `doctor`, lecture des codes de sortie et pannes connues. L'agent demande votre accord avant d'installer un outil global et ne touche ni à vos credentials ni à la configuration de Codex. Ouvrez ensuite une nouvelle tâche pour utiliser les compétences.
+[INSTALL-AGENT.md](INSTALL-AGENT.md) guide l'agent pas à pas : prérequis, `install.sh install` ou `update`, vérification par `doctor`, lecture des codes de sortie et pannes connues. L'agent demande votre accord avant d'installer un outil global, ne lit pas vos credentials et ne laisse aucun fichier dans votre projet. Il ne modifie la configuration de Codex que par les commandes `codex plugin`, jamais à la main. Ouvrez ensuite une nouvelle tâche pour utiliser les compétences.
 
 ### Gérer l'installation
 

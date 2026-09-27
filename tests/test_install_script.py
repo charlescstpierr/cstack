@@ -392,7 +392,7 @@ class AgentRunbookTest(unittest.TestCase):
     def test_runbook_uses_the_readme_download_and_is_linked(self):
         runbook = (REPO / "INSTALL-AGENT.md").read_text()
         readme = (REPO / "README.md").read_text()
-        download = 'gh api repos/charlescstpierr/cstack/contents/install.sh -H "Accept: application/vnd.github.raw" > install-cstack.sh'
+        download = 'gh api repos/charlescstpierr/cstack/contents/install.sh -H "Accept: application/vnd.github.raw" > '
         self.assertIn(download, runbook)
         self.assertIn(download, readme)
         self.assertIn("(INSTALL-AGENT.md)", readme)
