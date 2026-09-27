@@ -302,6 +302,7 @@ export function validate(root: string): { skills: number; sourceFiles: number } 
   }
   const makeBotUi = readFileSync(join(plugin, "skills/make-bot-ui/SKILL.md"), "utf8");
   requireValue(makeBotUi.includes("N'injectez pas le token de page dans le HTML servi"), "make-bot-ui: garde anti-injection du token de page manquante");
+  requireValue(!/(?:^|[^'’])\b[Ii]njectez(?:-le)? (?:le token de page )?dans le HTML/m.test(makeBotUi), "make-bot-ui: le token de page ne doit pas être injecté dans le HTML");
   requireValue(makeBotUi.includes("Affichez plutôt un champ de saisie du token"), "make-bot-ui: saisie explicite du token de page manquante");
   requireValue(makeBotUi.includes("thread_id") && makeBotUi.includes("thread.started"), "make-bot-ui: persistance du thread_id initial manquante");
   requireValue(!makeBotUi.includes("codex exec resume --last") && !makeBotUi.includes("Utilisez `resume --last`"), "make-bot-ui: reprise interdite avec resume --last");

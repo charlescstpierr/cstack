@@ -72,7 +72,8 @@ FAKE_CODEX = textwrap.dedent("""\
     elif args[:2] == ["plugin", "add"]:
         if not state["source"]:
             fail("marketplace `cstack` is not configured")
-        if state["source"].endswith("--ref no-plugin") or state["source"].endswith("--ref cache-full-fresh"):
+        broken = os.environ.get("FAKE_BROKEN_REF")
+        if state["source"].endswith(("--ref no-plugin", "--ref cache-full-fresh")) or (broken and state["source"].endswith("--ref " + broken)):
             fail("plugin `cstack` was not found in marketplace `cstack`")
         # Cache plein dans le vrai CODEX_HOME seulement : l'essai réussit, l'installation réelle échoue.
         if state["source"].endswith("--ref cache-full") and os.environ["CODEX_HOME"] == os.environ["FAKE_MAIN_HOME"]:
@@ -91,8 +92,14 @@ FAKE_CODEX = textwrap.dedent("""\
 # `git ls-remote <url> HEAD` : FAKE_GIT_DENY liste les transports refusés (https, ssh).
 FAKE_GIT = textwrap.dedent("""\
     #!/bin/sh
-    # `git -C <clone> rev-parse HEAD` : le commit du clone de Codex.
-    if [ "$1" = -C ]; then [ "$3" = rev-parse ] && echo 4ca420fb91c4b1a989072fd57e9aeb4da35ae044; exit 0; fi
+    # `git -C <clone> …` : clone de Codex sur main, sauf FAKE_GIT_DETACHED ; HEAD illisible avec FAKE_GIT_NO_HEAD.
+    if [ "$1" = -C ]; then
+      case "$3" in
+        symbolic-ref) [ -z "$FAKE_GIT_DETACHED" ] && echo main ;;
+        rev-parse) [ -z "$FAKE_GIT_NO_HEAD" ] && echo 4ca420fb91c4b1a989072fd57e9aeb4da35ae044 ;;
+      esac
+      exit
+    fi
     case "$3" in https://*) transport=https ;; *) transport=ssh ;; esac
     case " $FAKE_GIT_DENY " in *" $transport "*) exit 128 ;; esac
 """)
@@ -225,7 +232,8 @@ class InstallScriptTest(unittest.TestCase):
         self.run_script("install")
         result = self.run_script("update")
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertEqual(self.calls()[-2:], ["plugin marketplace upgrade cstack", "plugin add cstack@cstack"])
+        self.assertEqual(self.source(), "charlescstpierr/cstack --ref main")
+        self.assertEqual(self.calls()[-2:], ["plugin marketplace add charlescstpierr/cstack --ref main", "plugin add cstack@cstack"])
         self.run_script("install", "--local")
         result = self.run_script("update")
         self.assertEqual(result.returncode, 0, result.stderr)
@@ -234,9 +242,26 @@ class InstallScriptTest(unittest.TestCase):
 
     def test_update_of_a_pinned_commit_explains_how_to_move_on(self):
         self.run_script("install", "--ref", "4ca420f")
-        result = self.run_script("update")
+        result = self.run_script("update", FAKE_GIT_DETACHED="1")
         self.assertEqual(result.returncode, 1)
         self.assertIn("install.sh install --ref main", result.stderr)
+
+    def test_update_to_a_broken_branch_tip_keeps_the_current_installation(self):
+        self.run_script("install")
+        result = self.run_script("update", FAKE_BROKEN_REF="main")
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("L'installation actuelle est conservée", result.stderr)
+        self.assertEqual(self.source(), "charlescstpierr/cstack")
+        self.assertTrue(self.installed())
+        self.assertNotIn("plugin marketplace remove cstack", self.calls())
+
+    def test_unreadable_current_commit_stops_before_any_change(self):
+        self.run_script("install")
+        result = self.run_script("install", "--ref", "v1.0.0", FAKE_GIT_NO_HEAD="1")
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("commit actuel illisible", result.stderr)
+        self.assertEqual(self.source(), "charlescstpierr/cstack")
+        self.assertNotIn("plugin marketplace remove cstack", self.calls())
 
     def test_uninstall_removes_plugin_and_source_and_can_repeat(self):
         self.run_script("install")

@@ -75,6 +75,8 @@ test("le paquet charge 29 skills et rejette les distributions dangereuses ou inc
       ["plugins/cstack/skills/cstack/SKILL.md", (text: string) => text.replace("deux lectures raisonnables", "une seule lecture raisonnable"), /porte de clarification d’alignement manquante/],
       ["plugins/cstack/skills/cstack/SKILL.md", (text: string) => text.replace("avant toute addition de fonctionnalité ou modification", "après toute addition de fonctionnalité ou modification"), /porte de clarification d’alignement manquante/],
       ["plugins/cstack/skills/make-bot-ui/SKILL.md", (text: string) => text.replace("N'injectez pas le token de page dans le HTML servi", "Injectez le token de page dans le HTML servi"), /garde anti-injection du token de page manquante/],
+      ["plugins/cstack/skills/make-bot-ui/SKILL.md", (text: string) => `${text}\nInjectez le token de page dans le HTML servi.\n`, /le token de page ne doit pas être injecté dans le HTML/],
+      ["plugins/cstack/skills/make-bot-ui/SKILL.md", (text: string) => `${text}\nInjectez-le dans le HTML.\n`, /le token de page ne doit pas être injecté dans le HTML/],
       ["plugins/cstack/skills/make-bot-ui/SKILL.md", (text: string) => text.replace("N'utilisez pas `resume --last`", "Utilisez `resume --last`"), /reprise interdite avec resume --last/],
       ["plugins/cstack/skills/make-bot-ui/SKILL.md", (text: string) => text.replaceAll('PROMPT_TEXT=$(<"$PROMPT_FILE")', 'PROMPT_PATH="$PROMPT_FILE"').replaceAll('"$PROMPT_TEXT"', '"$PROMPT"'), /lecture du contenu du prompt file manquante/],
       ["plugins/cstack/skills/cstack/playbooks/feature.md", (text: string) => text.replace(/^### /, "## "), /le guide opérationnel doit commencer par un titre ###/],
