@@ -9,48 +9,29 @@ description: >-
 
 # Interrogate
 
-Runtime : [`../cstack/references/codex-runtime.md`](../cstack/references/codex-runtime.md).
-
-Pour chaque sélection avec `runtime`, applique le [dispatch CLI](../cstack/references/runtime-workers.md) à la place du lancement natif. Conserve la taille et l’ordre du panel, le rôle spécialisé et les étapes de vérification. Les replis single-agent de ce document concernent seulement les sélections natives ; une position CLI bloquée n’est jamais remplacée silencieusement par Codex.
+Runtime : [délégation](../cstack/references/runtime/delegation.md), [modèles](../cstack/references/runtime/modeles.md), [orchestration](../cstack/references/runtime/orchestration.md) · rôles : `interrogate reviewers`.
 
 Lance exactement le nombre configuré de reviewers indépendants pour relire adversarialement des changements de code. Chaque reviewer reçoit le même instantané de portée, les mêmes preuves d'exigences approuvées, le même prompt et la même rubrique, avec un axe principal assigné. Le signal adversarial vient des passes indépendantes et, quand des surcharges de modèles vérifiées sont disponibles, de la diversité des modèles. N'ajoute pas de reviewers au-delà du panneau configuré.
 
 Le livrable est un verdict synthétisé. N'applique PAS automatiquement les changements.
-
-Suis le chemin d'héritage direct du contrat runtime quand rien n'est configuré; sinon résous chaque rôle nommé avec son helper et transmets à chaque dispatch la sélection complète, effort de raisonnement compris. Signale les lacunes de capacité de l'hôte au lieu de supprimer un champ sélectionné.
 
 ## Étape 1, Déterminer la portée
 
 Identifie ce qui doit être relu depuis le contexte :
 
 - Si l'utilisateur pointe vers des fichiers ou un diff précis, utilise cela.
-- Si l'utilisateur demande le travail courant ou en cours, fige une seule fois les SHA exacts de base et de `HEAD`. Capture `git diff <base-sha>...<head-sha>`, `git diff --cached` et `git diff` pour les changements commités, staged et unstaged suivis, puis liste les fichiers non suivis avec `git ls-files --others --exclude-standard` et instantane leur contenu avec des lectures natives. Ne lance jamais `git add`, `git stash`, `git checkout`, `git reset` ni une autre commande qui change le worktree. Enregistre l'heure de l'instantané; si le worktree change pendant sa lecture, indique que l'instantané de contenu peut ne pas être atomique.
-- Si l'utilisateur demande une branche, une plage de commits ou une revue de PR, fige une seule fois les SHA base et head résolus et relis seulement cette portée commit-à-commit. N'inclus pas silencieusement les changements sales du worktree.
+- Pour le travail courant, une branche, une plage de commits ou une PR, fige une seule fois les SHA base et head selon [l'instantané de portée figée](references/scope-snapshot.md). Ne lance jamais de commande qui change le worktree et n'inclus pas silencieusement les changements sales hors de la portée demandée.
 - Si le message utilisateur référence un travail récent, rassemble les fichiers pertinents et préserve la portée demandée.
-
-Emballe la portée figée (ou l'instantané de contenu) plus seulement les fichiers de contexte environnants dont les reviewers ont besoin pour comprendre le code. Une comparaison à trois points est valide seulement pour les SHA de commits figés; elle ne prouve pas la couverture du travail staged, unstaged ou non suivi.
 
 ## Étape 2, Énoncer l'intention
 
 Avant de lancer les reviewers, énonce explicitement l'intention et les preuves d'exigences. Les exigences viennent seulement d'une spec approuvée par l'utilisateur, d'une issue ou d'un énoncé de conversation. N'infère pas d'exigences depuis l'implémentation, les messages de commit ou le comportement apparent du code. Si aucune source d'exigences approuvée n'existe, enregistre un écart de preuve Spec et poursuis la revue Standards et adversariale sans inventer ni bloquer sur les exigences.
 
-Dérive l'intention depuis :
-
-- Le message de l'utilisateur
-- Une spec ou issue approuvée fournie par l'utilisateur
-- Une description de PR ou un énoncé de conversation approuvé
-
-Écris un paragraphe clair et nomme chaque source d'exigences fournie. Si la source approuvée est incomplète, rapporte l'écart au lieu de le combler depuis le code.
+Dérive l'intention depuis le message de l'utilisateur, une spec ou issue approuvée fournie par l'utilisateur, ou une description de PR ou un énoncé de conversation approuvé. Écris un paragraphe clair et nomme chaque source d'exigences fournie. Si la source approuvée est incomplète, rapporte l'écart au lieu de le combler depuis le code.
 
 ## Étape 3, Lancer les reviewers
 
-Résous `interrogate reviewers` une fois selon le contrat runtime. La longueur de son panneau est le nombre exact de reviewers, borné seulement par la concurrence native; mets les tentatives excédentaires en vagues. Préserve la sélection complète du modèle et de l'effort de raisonnement pour chaque position. Si la capacité de revue manque, applique [Orchestration requise](../cstack/references/runtime/orchestration.md) avec `route: Review`. L'absence de capacité ne supprime jamais un reviewer ni un axe. Le panneau par défaut contient trois reviewers avec ces responsabilités :
-
-- Reviewer 1 : Standards, en utilisant les sources de standards fournies par le dépôt.
-- Reviewer 2 : Spec, en utilisant seulement les preuves d'exigences approuvées. Sans source approuvée, rapporte l'écart de preuve et n'invente pas d'exigences.
-- Reviewer 3 : Adversarial, couvrant exactitude, sécurité, cause racine, vérification et maintenabilité.
-
-Pour un panneau à deux reviewers, combine Adversarial avec Standards et garde Spec séparé. Pour un panneau à un reviewer, couvre tous les axes en une passe et divulgue qu'il n'y a pas de revues d'axes indépendantes. Pour un panneau plus grand que trois, garde ces trois premières affectations et donne une couverture complète à chaque reviewer additionnel. Chaque reviewer peut rapporter une finding à fort impact d'un autre axe quand les preuves le soutiennent, tout en gardant l'axe assigné comme principal. Cela préserve le compte configuré; n'ajoute pas un second panneau "Matt".
+Résous `interrogate reviewers` une fois; la longueur du panneau est le nombre exact de reviewers, dans l'ordre, et l'absence de capacité ne supprime jamais un reviewer ni un axe. Par défaut : Standards, Spec, Adversarial. Affecte les axes selon la taille du panel avec [les règles d'axes](references/axes.md).
 
 Lis `references/reviewer-prompt.md` et remplis le modèle avec :
 1. L'intention énoncée
@@ -65,15 +46,7 @@ Le même modèle rempli va à tous les reviewers, donc chaque passe applique la 
 
 ## Étape 4, Synthétiser
 
-À mesure que les résultats reviennent, construis une image unifiée :
-
-1. **Analyse toutes les findings** des reviewers et conserve l'axe principal de chaque finding.
-2. **Garde séparés les résultats Standards et Spec.** Le consensus est une preuve dans un axe, pas une raison de rétrograder une finding d'exigence Spec unique parce qu'un seul reviewer avait l'affectation Spec.
-3. **Identifie le consensus**. Les findings soulevées indépendamment par au moins deux reviewers sont le signal le plus fort dans leur axe.
-4. **Identifie les findings d'un seul reviewer**. Elles valent encore lecture, surtout les findings Spec, sécurité ou exactitude concrètes; pondère-les par preuve, pas seulement par nombre de reviewers.
-5. **Déduplique**. Les reviewers peuvent décrire le même problème différemment. Fusionne seulement quand elles partagent le même axe et mécanisme, et note quels reviewers les ont soulevées.
-6. **Note les désaccords**. Si un reviewer signale quelque chose et qu'un autre dit explicitement l'inverse, garde le désaccord sous l'axe pertinent.
-7. **Rejette la dérive de portée**. Écarte les findings fondées sur des fichiers ou exigences hors de l'instantané figé, et signale toute affirmation non vérifiée sur un worktree changeant.
+Synthétise par axe selon [les règles d'axes](references/axes.md#synthèse-par-axe) : garde Standards et Spec séparés, pondère par preuve et non par nombre, déduplique seulement à axe et mécanisme égaux, garde les désaccords et rejette la dérive hors de l'instantané figé.
 
 ## Étape 5, Jugement du lead
 
