@@ -13,7 +13,7 @@ REPO = Path(__file__).resolve().parents[1]
 SCRIPT = REPO / "install.sh"
 BASH = shutil.which("bash")
 
-# Reproduit les sorties et erreurs de `codex plugin` observées avec codex-cli 0.157.1.
+# Reproduit les sorties JSON et les erreurs de `codex plugin` observées avec codex-cli 0.157.1.
 FAKE_CODEX = textwrap.dedent("""\
     import json, os, sys
     state_path = os.path.join(os.environ["CODEX_HOME"], "state.json")
@@ -26,21 +26,27 @@ FAKE_CODEX = textwrap.dedent("""\
     def fail(message):
         print("Error: " + message, file=sys.stderr)
         sys.exit(1)
+    def source_type():
+        return "local" if state["source"].startswith("/") else "git"
     if args == ["--version"]:
         print("codex-cli 0.157.1")
     elif args[:3] == ["plugin", "marketplace", "list"]:
-        print("MARKETPLACE  ROOT\\ncstack       /root" if state["source"] else "No plugin marketplaces in scope.")
+        entries = [{"name": "cstack", "marketplaceSource": {"sourceType": source_type()}}] if state["source"] else []
+        print(json.dumps({"marketplaces": entries}))
     elif args[:3] == ["plugin", "marketplace", "add"]:
+        source = " ".join(args[3:])
         # Hypothèse la plus défavorable : le conflit de source est signalé avant la validation de la ref.
-        if state["source"] not in (None, args[3]):
+        if state["source"] not in (None, source):
             fail("marketplace 'cstack' is already added from a different source; remove it before adding this source")
-        if args[3].endswith("@missing"):
+        if source.endswith("--ref missing"):
             fail("git checkout missing failed with status exit status: 1")
-        state["source"] = args[3]
+        state["source"] = source
         save()
-        print("Added marketplace `cstack` from " + args[3] + ".")
+        print("Added marketplace `cstack` from " + source + ".")
     elif args[:3] == ["plugin", "marketplace", "upgrade"]:
-        if state["source"] and state["source"].startswith("/"):
+        if "--ref 4ca420f" in (state["source"] or ""):
+            fail("git ls-remote returned empty output for marketplace source")
+        if state["source"] and source_type() == "local":
             fail("marketplace `cstack` is not configured as a Git marketplace")
     elif args[:3] == ["plugin", "marketplace", "remove"]:
         if not state["source"]:
@@ -50,9 +56,10 @@ FAKE_CODEX = textwrap.dedent("""\
     elif args[:2] == ["plugin", "list"]:
         if os.environ.get("FAKE_CODEX_LIST_FAILS"):
             fail("marketplace `cstack` is not configured")
-        status = "installed, enabled  0.6.0" if state["installed"] else "not installed"
-        print("PLUGIN         STATUS              VERSION  SOURCE")
-        print("cstack@cstack  " + status + "    /root/plugins/cstack")
+        entry = {"pluginId": "cstack@cstack", "installed": state["installed"], "enabled": state["installed"], "version": "0.6.0"}
+        listed = [entry] if state["source"] else []
+        print(json.dumps({"installed": [e for e in listed if e["installed"]],
+                          "available": [e for e in listed if not e["installed"]]}))
     elif args[:2] == ["plugin", "add"]:
         if not state["source"]:
             fail("marketplace `cstack` is not configured")
@@ -67,7 +74,14 @@ FAKE_CODEX = textwrap.dedent("""\
         fail("unexpected arguments: " + " ".join(args))
 """)
 
-FAKE_GIT = "#!/bin/sh\n[ -z \"$FAKE_GIT_DENIED\" ]\n"
+# `git ls-remote <url> HEAD` : FAKE_GIT_DENY liste les transports refusés (https, ssh).
+FAKE_GIT = textwrap.dedent("""\
+    #!/bin/sh
+    case "$3" in https://*) transport=https ;; *) transport=ssh ;; esac
+    case " $FAKE_GIT_DENY " in *" $transport "*) exit 128 ;; esac
+""")
+
+FAKE_BUN = "#!/bin/sh\n[ \"$1\" = --version ] && echo 1.4.0 || echo '  --no-env-file'\n"
 
 
 class InstallScriptTest(unittest.TestCase):
@@ -76,11 +90,10 @@ class InstallScriptTest(unittest.TestCase):
         root = Path(self.temp.name)
         self.bin = root / "bin"
         self.bin.mkdir()
-        codex = self.bin / "codex"
-        codex.write_text("#!{}\n{}".format(sys.executable, FAKE_CODEX))
-        git = self.bin / "git"
-        git.write_text(FAKE_GIT)
-        for tool in (codex, git):
+        for name, body in [("codex", "#!{}\n{}".format(sys.executable, FAKE_CODEX)), ("git", FAKE_GIT),
+                           ("bun", FAKE_BUN), ("gh", "#!/bin/sh\nexit 0\n")]:
+            tool = self.bin / name
+            tool.write_text(body)
             tool.chmod(0o755)
         self.home = root / "codex-home"
         self.home.mkdir()
@@ -102,7 +115,7 @@ class InstallScriptTest(unittest.TestCase):
         return subprocess.run([BASH, str(SCRIPT), *args], capture_output=True, text=True, env=environment)
 
     def calls(self):
-        return self.log.read_text().splitlines()
+        return [call for call in self.log.read_text().splitlines() if "--json" not in call]
 
     def source(self):
         return json.loads(self.state.read_text())["source"]
@@ -119,12 +132,23 @@ class InstallScriptTest(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertNotIn("Changement de source", result.stdout)
 
+    def test_ssh_is_used_when_https_is_denied(self):
+        result = self.run_script("install", "--ref", "main", FAKE_GIT_DENY="https")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(self.source(), "git@github.com:charlescstpierr/cstack.git --ref main")
+
+    def test_install_stops_before_codex_when_the_private_repo_is_unreachable(self):
+        result = self.run_script("install", FAKE_GIT_DENY="https ssh")
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("gh auth setup-git", result.stderr)
+        self.assertEqual(self.calls(), [])
+
     def test_ref_or_local_replaces_the_existing_source(self):
         self.run_script("install")
         result = self.run_script("install", "--ref", "v1.0.0")
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("Changement de source", result.stdout)
-        self.assertEqual(self.source(), "charlescstpierr/cstack@v1.0.0")
+        self.assertEqual(self.source(), "charlescstpierr/cstack --ref v1.0.0")
         result = self.run_script("install", "--local")
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(self.source(), str(REPO))
@@ -137,12 +161,6 @@ class InstallScriptTest(unittest.TestCase):
         self.assertEqual(self.source(), "charlescstpierr/cstack")
         self.assertTrue(json.loads(self.state.read_text())["installed"])
         self.assertNotIn("plugin marketplace remove cstack", self.calls())
-
-    def test_install_stops_before_codex_when_the_private_repo_is_unreachable(self):
-        result = self.run_script("install", FAKE_GIT_DENIED="1")
-        self.assertEqual(result.returncode, 1)
-        self.assertIn("gh auth setup-git", result.stderr)
-        self.assertEqual(self.calls(), [])
 
     def test_missing_codex_is_reported(self):
         result = self.run_script("install", CSTACK_CODEX="codex-absent")
@@ -163,6 +181,13 @@ class InstallScriptTest(unittest.TestCase):
         result = self.run_script("update")
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("Source locale", result.stdout)
+        self.assertNotIn("plugin marketplace upgrade cstack", self.calls()[-2:])
+
+    def test_update_of_a_pinned_commit_explains_how_to_move_on(self):
+        self.run_script("install", "--ref", "4ca420f")
+        result = self.run_script("update")
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("install.sh install --ref main", result.stderr)
 
     def test_uninstall_removes_plugin_and_source_and_can_repeat(self):
         self.run_script("install")
@@ -175,21 +200,28 @@ class InstallScriptTest(unittest.TestCase):
     def test_doctor_reports_the_plugin_status(self):
         missing = self.run_script("doctor")
         self.assertEqual(missing.returncode, 1)
-        self.assertIn("✗ plugin cstack@cstack : not installed", missing.stdout)
+        self.assertIn("✗ plugin cstack@cstack : absent", missing.stdout)
         self.run_script("install")
         installed = self.run_script("doctor")
         self.assertEqual(installed.returncode, 0, installed.stdout)
         self.assertIn("✓ plugin cstack@cstack : installed, enabled 0.6.0", installed.stdout)
+        self.assertIn("✓ Bun : 1.4.0", installed.stdout)
 
     def test_doctor_reports_a_failing_plugin_list(self):
         result = self.run_script("doctor", FAKE_CODEX_LIST_FAILS="1")
         self.assertEqual(result.returncode, 1)
         self.assertIn("✗ plugin cstack@cstack : absent", result.stdout)
 
+    def test_doctor_flags_a_bun_without_no_env_file(self):
+        (self.bin / "bun").write_text("#!/bin/sh\n[ \"$1\" = --version ] && echo 1.0.0\nexit 0\n")
+        result = self.run_script("doctor")
+        self.assertIn("! Bun 1.0.0 trop ancien", result.stdout)
+
     def test_invalid_arguments_are_rejected(self):
         self.assertEqual(self.run_script("bogus").returncode, 2)
         self.assertEqual(self.run_script("install", "--ref").returncode, 1)
         self.assertEqual(self.run_script("install", "--ref", "main", "--local").returncode, 1)
+        self.assertEqual(self.run_script("update", "--local").returncode, 1)
         self.assertEqual(self.calls(), [])
 
 

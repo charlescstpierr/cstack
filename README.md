@@ -2,11 +2,7 @@
 
 **Des workflows d'ingénierie vérifiés pour Codex App et CLI.** cstack apprend à Codex à investiguer avant de coder, à concevoir avant d'implémenter, à faire relire par des sous-agents indépendants et à prouver le résultat avant de livrer.
 
-C'est le portage des processus de [pstack](https://github.com/cursor/plugins/tree/889ec4b68fa5aab0e867dad71ec3fdf386ae48f3/pstack) vers les outils natifs de Codex, sans moteur d'orchestration supplémentaire. Rien ne change dans vos projets tant que vous n'invoquez pas `$cstack:cstack`.
-
-```sh
-gh api repos/charlescstpierr/cstack/contents/install.sh -H "Accept: application/vnd.github.raw" | bash -s -- install
-```
+C'est le portage des processus de [pstack](https://github.com/cursor/plugins/tree/889ec4b68fa5aab0e867dad71ec3fdf386ae48f3/pstack) vers les outils natifs de Codex, sans moteur d'orchestration supplémentaire. Rien ne change dans vos projets tant que vous n'invoquez pas `$cstack:cstack`. [Installation en une commande](#installer).
 
 ## Ce que cstack apporte
 
@@ -23,19 +19,19 @@ gh api repos/charlescstpierr/cstack/contents/install.sh -H "Accept: application/
 | Outil | Rôle | Obligatoire |
 | --- | --- | --- |
 | [Codex CLI](https://github.com/openai/codex) (`npm install -g @openai/codex`) | Installe et exécute le plugin | Oui |
-| `git` connecté à GitHub | Cloner ce dépôt privé | Oui |
+| `git` connecté à GitHub, en HTTPS ou en SSH | Cloner ce dépôt privé | Oui |
 | [`gh`](https://cli.github.com) authentifié | Installation en une ligne, suivi de PR | Recommandé |
-| Python 3.9 ou plus récent | Lanceur des assistants | Recommandé |
+| Python 3.9 ou plus récent | Script d'installation et lanceur des assistants | Oui |
 | [Bun](https://bun.sh) | Suivi de PR et orchestration | Facultatif |
 
 Le dépôt est privé : votre compte GitHub doit y avoir accès. Si Git n'est pas encore connecté, lancez `gh auth login` puis `gh auth setup-git`.
 
 ### Installer
 
-En une ligne :
+En une ligne, qui télécharge le script puis le lance (un téléchargement refusé arrête tout) :
 
 ```sh
-gh api repos/charlescstpierr/cstack/contents/install.sh -H "Accept: application/vnd.github.raw" | bash -s -- install
+gh api repos/charlescstpierr/cstack/contents/install.sh -H "Accept: application/vnd.github.raw" > install-cstack.sh && bash install-cstack.sh install
 ```
 
 Ou depuis un clone :
@@ -59,9 +55,9 @@ Ouvrez ensuite une **nouvelle tâche** dans Codex App ou une nouvelle session CL
 | `./install.sh doctor` | Vérifie Codex, l'accès au dépôt, Python, Bun, `gh` et l'état du plugin. |
 | `./install.sh uninstall` | Retire le plugin et sa source. Les dossiers `.cstack/` des projets restent. |
 
-Sans clone, gardez la commande en une ligne et changez seulement son dernier mot : `… | bash -s -- update`.
+Sans clone, utilisez le fichier téléchargé : `bash install-cstack.sh update`.
 
-Le script passe uniquement par `codex plugin` : il ne modifie jamais `~/.codex` à la main. Après une mise à jour, ouvrez une nouvelle conversation pour charger les compétences.
+Le script passe uniquement par `codex plugin` : il ne modifie jamais `~/.codex` à la main. Il essaie HTTPS puis SSH pour joindre le dépôt, et teste une nouvelle source à part avant de remplacer l'ancienne. Après une mise à jour, ouvrez une nouvelle conversation pour charger les compétences.
 
 <details>
 <summary>Installation manuelle, sans le script</summary>
@@ -112,7 +108,7 @@ Le catalogue contient 29 compétences. Chacune s'invoque par `$cstack:<nom>`.
 
 Les 23 principes sont des [références internes](plugins/cstack/docs/guide/08-principles.md), lues seulement quand elles servent le travail ou que vous en nommez un : `$cstack:cstack applique le principe « Discipline aux frontières » à cette validation`.
 
-`$cstack:cstack` appelle les préparations seulement si la demande l'exige : `clarify` pour une ambiguïté réelle, `horizon` pour un objectif vraiment long ou multi-phase. Une tâche claire part directement vers son guide d'exécution, avec revue et vérification ; plusieurs fichiers ne suffisent pas à déclencher Horizon. Une question d'architecture part en exploration parallèle puis synthèse ; une question sur une seule fonction reste sur une passe unique. Voir le [guide de conception](plugins/cstack/docs/guide/04-design.md).
+`$cstack:cstack` appelle les préparations seulement si la demande l'exige : `clarify` pour une ambiguïté réelle, `horizon` pour un objectif vraiment long ou multi-phase. Une tâche claire part directement vers son guide d'exécution, avec revue et vérification ; plusieurs fichiers ne suffisent pas à déclencher Horizon. Une question d'architecture ou de flux de code part en exploration parallèle, avec au moins deux explorateurs même pour une seule cible, puis une synthèse. Voir le [guide de conception](plugins/cstack/docs/guide/04-design.md).
 
 ## Configurer un projet
 
