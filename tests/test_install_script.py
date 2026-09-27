@@ -72,7 +72,7 @@ FAKE_CODEX = textwrap.dedent("""\
     elif args[:2] == ["plugin", "add"]:
         if not state["source"]:
             fail("marketplace `cstack` is not configured")
-        if state["source"].endswith("--ref no-plugin"):
+        if state["source"].endswith("--ref no-plugin") or state["source"].endswith("--ref cache-full-fresh"):
             fail("plugin `cstack` was not found in marketplace `cstack`")
         # Cache plein dans le vrai CODEX_HOME seulement : l'essai réussit, l'installation réelle échoue.
         if state["source"].endswith("--ref cache-full") and os.environ["CODEX_HOME"] == os.environ["FAKE_MAIN_HOME"]:
@@ -91,8 +91,8 @@ FAKE_CODEX = textwrap.dedent("""\
 # `git ls-remote <url> HEAD` : FAKE_GIT_DENY liste les transports refusés (https, ssh).
 FAKE_GIT = textwrap.dedent("""\
     #!/bin/sh
-    # `git -C <clone> symbolic-ref` : le clone de Codex est sur la branche main.
-    if [ "$1" = -C ]; then [ "$3" = symbolic-ref ] && echo main; exit 0; fi
+    # `git -C <clone> rev-parse HEAD` : le commit du clone de Codex.
+    if [ "$1" = -C ]; then [ "$3" = rev-parse ] && echo 4ca420fb91c4b1a989072fd57e9aeb4da35ae044; exit 0; fi
     case "$3" in https://*) transport=https ;; *) transport=ssh ;; esac
     case " $FAKE_GIT_DENY " in *" $transport "*) exit 128 ;; esac
 """)
@@ -195,15 +195,21 @@ class InstallScriptTest(unittest.TestCase):
         result = self.run_script("install", "--ref", "flaky")
         self.assertEqual(result.returncode, 1)
         self.assertIn("est restaurée", result.stderr)
-        self.assertEqual(self.source(), "charlescstpierr/cstack --ref main")
+        self.assertEqual(self.source(), "charlescstpierr/cstack --ref 4ca420fb91c4b1a989072fd57e9aeb4da35ae044")
 
     def test_failed_plugin_install_after_switch_restores_the_previous_source(self):
         self.run_script("install")
         result = self.run_script("install", "--ref", "cache-full")
         self.assertEqual(result.returncode, 1)
         self.assertIn("est restaurée", result.stderr)
-        self.assertEqual(self.source(), "charlescstpierr/cstack --ref main")
+        self.assertEqual(self.source(), "charlescstpierr/cstack --ref 4ca420fb91c4b1a989072fd57e9aeb4da35ae044")
         self.assertTrue(self.installed())
+
+    def test_failed_fresh_install_removes_the_marketplace_it_added(self):
+        result = self.run_script("install", "--ref", "cache-full-fresh")
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("installation du plugin impossible", result.stderr)
+        self.assertIsNone(self.source())
 
     def test_missing_codex_is_reported(self):
         result = self.run_script("install", CSTACK_CODEX="codex-absent")

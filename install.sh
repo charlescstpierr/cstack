@@ -89,8 +89,8 @@ previous_source() {
   IFS=$'\t' read -r type source root <<<"$1"
   printf '%s\n' "$source"
   [[ "$type" == git ]] || return 0
-  # Le clone de Codex garde la ref : une branche, sinon le commit détaché.
-  ref="$(git -C "$root" symbolic-ref -q --short HEAD 2>/dev/null || git -C "$root" rev-parse HEAD 2>/dev/null)" || return 0
+  # Le commit exact du clone de Codex : une branche aurait pu avancer depuis la dernière mise à jour.
+  ref="$(git -C "$root" rev-parse HEAD 2>/dev/null)" || return 0
   printf '%s\n' --ref "$ref"
 }
 
@@ -120,13 +120,17 @@ add_marketplace() {
     source=("$remote")
     [[ -z "$ref" ]] || source+=(--ref "$ref")
   fi
+  current="$(current_marketplace)"
   if out="$(run_codex plugin marketplace add "${source[@]}" 2>&1)"; then
     printf '%s\n' "$out"
-    run_codex plugin add "$PLUGIN"
+    if ! run_codex plugin add "$PLUGIN"; then
+      # Un catalogue créé par cet appel ne survit pas à l'échec de l'installation du plugin.
+      [[ -n "$current" ]] || run_codex plugin marketplace remove "$MARKETPLACE" >/dev/null 2>&1 || true
+      die "installation du plugin impossible."
+    fi
     return
   fi
   # Codex refuse de changer la source (ref ou clone) d'un catalogue déjà configuré.
-  current="$(current_marketplace)"
   [[ -n "$current" ]] || die_with "$out"
   echo "Changement de source : ${source[*]}"
   # Essai dans un CODEX_HOME jetable : une source invalide ne doit pas coûter l'installation actuelle.
@@ -145,7 +149,7 @@ add_marketplace() {
     run_codex plugin marketplace remove "$MARKETPLACE" >/dev/null 2>&1 || true
     { run_codex plugin marketplace add "${previous[@]}" && run_codex plugin add "$PLUGIN"; } >/dev/null 2>&1 ||
       die "échec du changement de source, et l'ancienne (${previous[*]}) n'a pas pu être restaurée : relancez install.sh install."
-    die "échec du changement de source ; l'ancienne source (${previous[*]}) est restaurée."
+    die "échec du changement de source ; l'ancienne source (${previous[*]}) est restaurée à son commit précédent. Pour suivre de nouveau une branche : install.sh install --ref <branche>"
   fi
   printf '%s\n' "$out"
 }
