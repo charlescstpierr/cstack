@@ -1301,6 +1301,14 @@
       "path": "plugins/cstack/skills/interrogate/references/axes.md",
       "reason": "Interrogate panel and runtime rules, Standards/Spec/Adversarial axes by panel size and axis-aware synthesis, read on demand; extracted from the ported interrogate SKILL.md, derived from pstack/skills/interrogate/SKILL.md.",
       "derived_from": "pstack/skills/interrogate/SKILL.md"
+    },
+    {
+      "path": "plugins/cstack/hooks/hooks.json",
+      "reason": "Codex plugin hooks declaring the cstack mode reminder (UserPromptSubmit and SessionStart compact/resume), the Codex equivalent of pstack's Cursor `reminder:`; not present in pstack."
+    },
+    {
+      "path": "plugins/cstack/hooks/mode.py",
+      "reason": "Mode reminder hook script: silent outside conversations that invoked $cstack:cstack, stores only hashed session ids under PLUGIN_DATA; not present in pstack."
     }
   ]
 }

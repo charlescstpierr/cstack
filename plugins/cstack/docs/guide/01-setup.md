@@ -78,6 +78,10 @@ Une demande de configuration des modèles seulement conserve ce périmètre. Une
 
 Si le projet n'a pas encore de moyen fiable de vérifier le comportement réel, utilisez [`$cstack:create-verification-skill`](../../skills/create-verification-skill/SKILL.md). Cette compétence produit des instructions locales pour lancer, piloter et inspecter l'application. Elle est facultative et reste limitée au dépôt courant.
 
+## Rappel du mode sur les longues sessions (une fois)
+
+Comme pstack dans Cursor, cstack rappelle son mode à chaque message et après chaque résumé de conversation, mais seulement dans les conversations où vous avez tapé `$cstack:cstack`. Codex exige d'approuver une fois les hooks d'un plugin tiers : dans Codex CLI, lancez `/hooks` et approuvez les deux hooks cstack (`UserPromptSubmit` et `SessionStart`). Faites-le avant votre première tâche cstack : l'approbation vaut pour tous vos projets, et un `$cstack:cstack` tapé avant elle n'active pas le rappel ; retapez-le dans la conversation après avoir approuvé. L'App Codex ne propose pas encore cette approbation ; sans elle, cstack fonctionne sans rappel. Dites « arrête cstack » pour couper le rappel dans une conversation.
+
 ## Lancer une première tâche
 
 Décrivez le résultat et la preuve attendue :
