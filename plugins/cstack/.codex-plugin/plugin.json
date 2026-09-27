@@ -1,7 +1,7 @@
 {
   "name": "cstack",
   "version": "0.6.0",
-  "description": "Portage des workflows pstack pour Codex App et CLI. Investigation, implémentation, revue et livraison vérifiée.",
+  "description": "Workflows d'ingénierie vérifiés pour Codex : investiguer, concevoir, implémenter, relire par des sous-agents indépendants et prouver le résultat avant de livrer. Portage de pstack.",
   "author": {
     "name": "charlescstpierr",
     "url": "https://github.com/charlescstpierr"
@@ -19,8 +19,8 @@
   "skills": "./skills/",
   "interface": {
     "displayName": "cstack",
-    "shortDescription": "Du code vérifié avec Codex App et CLI",
-    "longDescription": "Portage indépendant de pstack pour Codex. Activez $cstack:cstack dans une tâche pour utiliser ses workflows et ses sous-agents natifs. Les intégrations facultatives et leurs limites sont documentées.",
+    "shortDescription": "Investiguer, construire et livrer du code vérifié",
+    "longDescription": "Invoquez $cstack:cstack dans une tâche : il choisit le guide d'exécution adapté (bug, fonctionnalité, revue, livraison), délègue aux sous-agents natifs de Codex ou à des workers Codex CLI et Claude Code, exige une preuve (TDD, revue indépendante) et annonce ses limites au lieu de simuler un résultat. 29 compétences spécialisées, sans activation automatique.",
     "developerName": "charlescstpierr",
     "websiteURL": "https://github.com/charlescstpierr/cstack",
     "category": "Developer Tools",

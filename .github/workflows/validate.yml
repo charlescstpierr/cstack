@@ -24,7 +24,7 @@ jobs:
       - run: bun run typecheck
         working-directory: plugins/cstack/skills/cstack/scripts
       - run: plugins/cstack/skills/cstack/scripts/node_modules/.bin/tsc -p tsconfig.json
-      - run: bash -n plugins/cstack/scripts/run-tool.sh plugins/cstack/skills/cstack/scripts/worktree-audit.sh plugins/cstack/skills/show-me-your-work/scripts/log.sh
+      - run: bash -n plugins/cstack/scripts/run-tool.sh plugins/cstack/skills/cstack/scripts/worktree-audit.sh plugins/cstack/skills/show-me-your-work/scripts/log.sh install.sh
       - name: ShellCheck
         run: |
           docker run --rm -v "$PWD:/repo:ro" -w /repo \
@@ -32,7 +32,8 @@ jobs:
             --severity=warning \
             plugins/cstack/scripts/run-tool.sh \
             plugins/cstack/skills/cstack/scripts/worktree-audit.sh \
-            plugins/cstack/skills/show-me-your-work/scripts/log.sh
+            plugins/cstack/skills/show-me-your-work/scripts/log.sh \
+            install.sh
       - name: Actionlint
         run: |
           docker run --rm -v "$PWD:/repo:ro" -w /repo \
