@@ -26,6 +26,8 @@ report();
       const env = { ...process.env };
       delete env.CSTACK_BOOTSTRAP_ONLY;
       delete env.CSTACK_BOOTSTRAP_TEST_ENV;
+      // BUN_OPTIONS ajoute ses drapeaux à process.execArgv et fausserait la comparaison.
+      delete env.BUN_OPTIONS;
       const flags = ["--no-env-file", `--config=${join(directory, "neutral.toml")}`];
       for (const expectedReports of [3, 2]) {
         const result = Bun.spawnSync([process.execPath, ...flags, "entry.ts", "argument littéral", "--option-utilisateur"], { cwd: directory, env });

@@ -19,6 +19,8 @@ LAUNCHER = REPO / "plugins/cstack/scripts/run-tool.sh"
 PY_LAUNCHER = REPO / "plugins/cstack/scripts/run_tool.py"
 BASH = shutil.which("bash")
 STAGE_PREFIX = "cstack-run-"
+# root ignore chmod 000 : les tests qui provoquent une erreur de permission ne peuvent pas la voir.
+AS_ROOT = hasattr(os, "geteuid") and os.geteuid() == 0
 
 
 class RunToolTest(unittest.TestCase):
@@ -397,6 +399,7 @@ class RunToolTest(unittest.TestCase):
         self.assertNotIn("Traceback", result.stderr)
         self.assertIn(f"{STAGE_PREFIX}huge", {path.name for path in self.stage_tmp.iterdir()})
 
+    @unittest.skipIf(AS_ROOT, "root ignore chmod 000")
     def test_cleanup_failure_does_not_replace_helper_exit_code(self):
         (self.source / "tool.ts").write_text("trusted")
         result = self.run_tool(
@@ -470,6 +473,7 @@ class RunToolTest(unittest.TestCase):
         self.assertIn(f"{STAGE_PREFIX}binary", names)
         self.assertIn(f"{STAGE_PREFIX}superscript", names)
 
+    @unittest.skipIf(AS_ROOT, "root ignore chmod 000")
     def test_unreadable_stage_directory_does_not_abort_the_sweep(self):
         (self.source / "tool.ts").write_text("trusted")
         locked = self.stage_tmp / f"{STAGE_PREFIX}locked"

@@ -134,7 +134,8 @@ describe("worker skill bundles", () => {
     }
   });
 
-  it("ne masque pas les erreurs de permissions du dossier references", async () => {
+  // root ignore chmod 000 : l'erreur de permission ne peut pas être provoquée.
+  it.skipIf(process.getuid?.() === 0)("ne masque pas les erreurs de permissions du dossier references", async () => {
     const root = await pluginFixture();
     try {
       await mkdir(join(root, "skills/locked/references"), { recursive: true });
