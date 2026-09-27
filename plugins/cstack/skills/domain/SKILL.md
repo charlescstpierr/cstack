@@ -1,6 +1,6 @@
 ---
 name: domain
-description: "À utiliser pour $cstack:domain, sélectionné directement ou routé pendant une tâche cstack explicite. Tranche le vocabulaire du projet et consigne les entrées de glossaire ou ADR épars autorisés."
+description: "À utiliser pour $cstack:domain, sélectionné directement ou routé par cstack. Tranche le vocabulaire du projet et consigne les entrées de glossaire ou ADR épars autorisés."
 ---
 
 # Domaine
