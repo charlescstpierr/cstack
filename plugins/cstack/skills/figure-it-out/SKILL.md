@@ -1,6 +1,6 @@
 ---
 name: figure-it-out
-description: "À utiliser pour $cstack:figure-it-out, « figure it out », une grande migration ou quand aucun playbook plus étroit ne s'applique. Conçoit un playbook auditable pour une grande migration, un changement ambitieux en plusieurs parties ou un travail qu'un humain relit après s'être absenté. Ajuste la rigueur à la tâche, exécute une boucle d'hypothèses et journalise les décisions via show-me-your-work."
+description: "À utiliser pour $cstack:figure-it-out, « figure it out », une grande migration ou quand aucun playbook plus étroit ne s'applique. Conçoit un playbook auditable pour un changement ambitieux en plusieurs parties ou un travail qu'un humain relit après s'être absenté. Ajuste la rigueur à la tâche, exécute une boucle d'hypothèses et journalise les décisions via show-me-your-work."
 ---
 
 # Figure it out

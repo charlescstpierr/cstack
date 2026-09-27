@@ -322,6 +322,9 @@ export function validate(root: string): { skills: number; sourceFiles: number } 
     requireValue(!names.has(name), `skill dupliqué ${name}`);
     names.add(name);
     requireValue(typeof metadata.description === "string" && metadata.description.trim().length > 0 && metadata.description.length <= 1024, `${path}: description invalide`);
+    requireValue(metadata.description.includes(`$cstack:${name}`), `${path}: la description doit citer son invocation canonique $cstack:${name}`);
+    // make-bot-ui garde la formulation anglaise que ses gardes ci-dessous épinglent.
+    requireValue(name === "make-bot-ui" || /^À utiliser (?:pour|seulement quand) /.test(metadata.description), `${path}: la description doit commencer par « À utiliser pour »`);
     requireValue(Object.keys(metadata).every((key) => ["name", "description", "license", "allowed-tools", "metadata"].includes(key)), `${path}: en-tête YAML du skill non pris en charge`);
     const policyPath = join(dirname(path), "agents/openai.yaml");
     const policy: unknown = Bun.YAML.parse(readFileSync(policyPath, "utf8"));
