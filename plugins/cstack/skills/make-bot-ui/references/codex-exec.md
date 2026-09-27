@@ -65,7 +65,7 @@ codex exec fork \
 
 ## Connecteurs
 
-Les connecteurs sont des serveurs MCP. Ils ne réveillent pas le bot. Si l'exécution en a besoin d'un, l'utilisateur l'enregistre avec `codex mcp add` et il vit sous `[mcp_servers.<name>]` dans `$CODEX_HOME/config.toml`. Le serveur local ne parle pas MCP.
+Les connecteurs sont des serveurs MCP. Ils ne réveillent pas le bot. Si l'exécution a besoin d'un connecteur, l'utilisateur l'enregistre avec `codex mcp add` et il vit sous `[mcp_servers.<name>]` dans `$CODEX_HOME/config.toml`. Le serveur local ne parle pas MCP.
 
 ## Limites
 
