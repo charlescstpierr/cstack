@@ -243,7 +243,7 @@ class InstallScriptTest(unittest.TestCase):
     def test_disabled_plugin_is_not_silently_reenabled(self):
         self.run_script("install")
         self.set_state(disabled=True)
-        for args in (("update",), ("install", "--ref", "v1.0.0")):
+        for args in (("update",), ("install", "--ref", "v1.0.0"), ("install",)):
             result = self.run_script(*args)
             self.assertEqual(result.returncode, 1, args)
             self.assertIn("cstack est désactivé", result.stderr)

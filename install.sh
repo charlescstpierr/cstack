@@ -131,6 +131,8 @@ add_marketplace() {
     [[ -z "$ref" ]] || source+=(--ref "$ref")
   fi
   current="$(current_marketplace)"
+  # Même relancée à l'identique, l'installation ne doit pas réactiver un plugin désactivé.
+  [[ -z "$current" ]] || plugin_state_before_refresh >/dev/null
   if out="$(run_codex plugin marketplace add "${source[@]}" 2>&1)"; then
     redact "$out"
     if ! run_codex plugin add "$PLUGIN"; then

@@ -63,7 +63,7 @@ Le script passe uniquement par `codex plugin` : il ne modifie jamais `~/.codex` 
 <summary>Installation manuelle, sans le script</summary>
 
 ```sh
-codex plugin marketplace add charlescstpierr/cstack   # ou charlescstpierr/cstack@<ref>, ou /chemin/absolu/vers/cstack
+codex plugin marketplace add charlescstpierr/cstack   # ou : charlescstpierr/cstack --ref <ref>, ou /chemin/absolu/vers/cstack
 codex plugin add cstack@cstack
 ```
 
