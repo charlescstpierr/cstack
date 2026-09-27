@@ -1,6 +1,6 @@
 ---
 name: maintain-verification-skill
-description: "Passe périodique qui garde fidèle la skill de vérification d'un projet et sa carte de fonctionnalités : lecteurs source parallèles par fonctionnalité, une session live pilotant chaque fonctionnalité, et un ensemble de corrections prouvées. Utiliser pour $cstack:maintain-verification-skill ou \"audite la skill de vérification\"."
+description: "À utiliser pour $cstack:maintain-verification-skill ou « audite la skill de vérification ». Garde fidèles la skill de vérification d'un projet et sa carte de fonctionnalités par une passe périodique : lecteurs source parallèles par fonctionnalité, une session live pilotant chaque fonctionnalité, et un ensemble de corrections prouvées."
 ---
 
 # Maintenir une skill de vérification

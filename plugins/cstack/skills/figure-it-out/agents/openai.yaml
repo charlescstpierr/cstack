@@ -1,6 +1,6 @@
 interface:
   display_name: "figure-it-out"
-  short_description: "Concevoir un flux de travail verifiable complexe"
+  short_description: "Concevoir un flux de travail vérifiable complexe"
   default_prompt: "Utilise $cstack:figure-it-out pour cette tâche. Délègue le travail indépendant à des sous-agents natifs en parallèle."
 policy:
   allow_implicit_invocation: false

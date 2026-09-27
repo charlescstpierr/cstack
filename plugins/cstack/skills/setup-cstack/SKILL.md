@@ -1,6 +1,6 @@
 ---
 name: setup-cstack
-description: "Guider la configuration de projet cstack : préserver les consignes de projet, configurer ou mettre à jour les runtimes et choix facultatifs de modèle/effort et expliquer les workflows de préparation. Utiliser pour $cstack:setup-cstack ou les changements de configuration cstack."
+description: "À utiliser pour $cstack:setup-cstack ou les changements de configuration cstack. Guide la configuration de projet cstack : préserve les consignes de projet, configure ou met à jour les runtimes et choix facultatifs de modèle/effort, et explique les workflows de préparation."
 ---
 
 # Configurer cstack

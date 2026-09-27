@@ -1,6 +1,6 @@
 ---
 name: blast-radius
-description: "Trouve ce qu'un changement pourrait casser ailleurs avant livraison, au-delà du diff, et prouve par du vrai code le fait qui le rend sûr. Utiliser pour $cstack:blast-radius, 'rayon d’impact de X', 'qu’est-ce que cela pourrait casser', ou la revue d'un petit diff douteux."
+description: "À utiliser pour $cstack:blast-radius, « rayon d'impact de X », « qu'est-ce que cela pourrait casser » ou la revue d'un petit diff douteux. Trouve ce qu'un changement pourrait casser ailleurs avant livraison, au-delà du diff, et prouve par du vrai code le fait qui le rend sûr."
 ---
 
 # Rayon d'impact

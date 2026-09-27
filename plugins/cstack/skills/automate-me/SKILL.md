@@ -1,6 +1,6 @@
 ---
 name: automate-me
-description: "Utiliser pour $cstack:automate-me, \"automate me\", \"create/update/refresh my -mode skill\", ou pour transformer les préférences et le style de travail de l'utilisateur en skill. Redige ou révise une skill personnelle -mode avec $cstack:unslop, en utilisant facultativement l'historique récent borné au projet."
+description: "À utiliser pour $cstack:automate-me, « automate me », « create/update/refresh my -mode skill » ou pour transformer les préférences et le style de travail de l'utilisateur en skill. Rédige ou révise une skill personnelle -mode avec $cstack:unslop, en utilisant facultativement l'historique récent borné au projet."
 ---
 
 # Automate me

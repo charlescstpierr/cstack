@@ -1,6 +1,6 @@
 interface:
   display_name: "unslop"
-  short_description: "Reécrire la prose pour clarté et naturel"
+  short_description: "Réécrire la prose pour clarté et naturel"
   default_prompt: "Utilise $cstack:unslop pour cette tâche."
 policy:
   allow_implicit_invocation: false

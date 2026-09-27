@@ -322,6 +322,11 @@ export function validate(root: string): { skills: number; sourceFiles: number } 
     requireValue(!names.has(name), `skill dupliqué ${name}`);
     names.add(name);
     requireValue(typeof metadata.description === "string" && metadata.description.trim().length > 0 && metadata.description.length <= 1024, `${path}: description invalide`);
+    // Le nom suivi d'un autre caractère de nom (`$cstack:brother` pour `bro`) ne cite pas l'invocation.
+    const invocation = `\\$cstack:${name}(?![a-z0-9-])`;
+    requireValue(new RegExp(invocation).test(metadata.description), `${path}: la description doit citer son invocation canonique $cstack:${name}`);
+    // make-bot-ui est rédigé en anglais, comme son corps que les gardes plus haut épinglent.
+    requireValue(name === "make-bot-ui" || new RegExp(`^À utiliser pour ${invocation}`).test(metadata.description), `${path}: la description doit commencer par « À utiliser pour $cstack:${name} »`);
     requireValue(Object.keys(metadata).every((key) => ["name", "description", "license", "allowed-tools", "metadata"].includes(key)), `${path}: en-tête YAML du skill non pris en charge`);
     const policyPath = join(dirname(path), "agents/openai.yaml");
     const policy: unknown = Bun.YAML.parse(readFileSync(policyPath, "utf8"));

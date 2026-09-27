@@ -1,6 +1,6 @@
 ---
 name: architect
-description: "Ébauche les types, signatures et structure de modules avant le code, puis reste dans la boucle pendant que l'implémentation remplit le tout. À utiliser pour $cstack:architect, « architecturer ceci », « concevoir ceci », ou un travail non trivial où passer directement au code figerait la mauvaise forme."
+description: "À utiliser pour $cstack:architect, « architecturer ceci », « concevoir ceci » ou un travail non trivial où passer directement au code figerait la mauvaise forme. Ébauche les types, signatures et structure de modules avant le code, puis reste dans la boucle pendant que l'implémentation remplit le tout."
 ---
 
 # Architecte

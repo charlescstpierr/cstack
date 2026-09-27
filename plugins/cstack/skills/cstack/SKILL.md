@@ -1,6 +1,6 @@
 ---
 name: cstack
-description: "Routeur explicite de flux de travail cstack pour une prose concise, des sous-agents Codex natifs délibérés, du code simple et du travail vérifié. À utiliser seulement quand l’utilisateur invoque $cstack:cstack."
+description: "À utiliser pour $cstack:cstack, seulement sur invocation explicite de l'utilisateur. Route le travail vers une prose concise, des sous-agents Codex natifs délibérés, du code simple et du travail vérifié."
 ---
 
 # cstack

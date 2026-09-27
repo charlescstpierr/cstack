@@ -1,10 +1,6 @@
 ---
 name: interrogate
-description: >-
-  À utiliser pour $cstack:interrogate, « revue adversariale », « revue
-  multi-modèle », « conteste ceci », « mets ce code à l'épreuve », « trouve les
-  angles morts » ou « démonte ceci ». Des reviewers indépendants contestent les
-  changements sous plusieurs angles.
+description: "À utiliser pour $cstack:interrogate, « revue adversariale », « revue multi-modèle », « conteste ceci », « mets ce code à l'épreuve », « trouve les angles morts » ou « démonte ceci ». Fait contester les changements par des reviewers indépendants, sous plusieurs angles."
 ---
 
 # Interrogate

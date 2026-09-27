@@ -1,6 +1,6 @@
 ---
 name: recall
-description: "Utiliser pour $cstack:recall, 'retrouve mon travail sur X', 'remets-moi à niveau', 'sur quoi ai-je travaillé' ou 'où en étais-je'. Reconstruit l'historique récent des tâches bornées au projet, l'état live et les preuves connectées en une capsule serrée de l'état courant."
+description: "À utiliser pour $cstack:recall, « retrouve mon travail sur X », « remets-moi à niveau », « sur quoi ai-je travaillé » ou « où en étais-je ». Reconstruit l'historique récent des tâches bornées au projet, l'état live et les preuves connectées en une capsule serrée de l'état courant."
 ---
 
 # Recall
