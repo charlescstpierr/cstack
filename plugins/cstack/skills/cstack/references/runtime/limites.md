@@ -1,7 +1,5 @@
 # Limites de plateforme
 
-Partie du [contrat d’exécution Codex](../codex-runtime.md), lue quand sa situation se présente.
-
 Les webhooks Grok Bot et le pack Benny événementiel de Cursor n’ont pas d’implémentation de remplacement direct ici. Leurs notices pointent vers la source originale ; ils ne sont pas activés silencieusement. Une investigation manuelle équivalente de bug peut utiliser les outils Codex disponibles sans revendiquer un service webhook.
 
 Un plugin Codex ne livre pas d’agents : les agents custom se déclarent en TOML par projet (`.codex/agents/`) ou par utilisateur. `$cstack:setup-cstack` peut écrire les trois agents projet `cstack-*` avec les choix acceptés ; il n’installe jamais de rôle global. Un agent déclaré n’est pas la condition d’une délégation ; les types génériques exposés par l’hôte suffisent. La documentation Codex affirme que l’hôte respecte les consignes de délégation d’`AGENTS.md` ou d’une compétence : c’est non mesuré ici, et le bloc `AGENTS.md` du setup porte cette demande en attendant un essai natif.

@@ -1,7 +1,5 @@
 # Outils et delegation
 
-Partie du [contrat d’exécution Codex](../codex-runtime.md), lue quand sa situation se présente.
-
 Utilise les vrais outils exposés dans la session courante. Les noms d’outils natifs diffèrent entre App et CLI ; inspecte le schéma disponible au lieu de construire un appel Cursor Task ou d’inventer un outil.
 
 - Lis/cherche avec les outils natifs de système de fichiers ou `rg` ; lance les commandes avec l’outil shell natif.

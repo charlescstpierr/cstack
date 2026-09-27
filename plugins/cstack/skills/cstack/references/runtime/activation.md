@@ -1,7 +1,5 @@
 # Activation et routage
 
-Partie du [contrat d’exécution Codex](../codex-runtime.md), lue quand sa situation se présente.
-
 Codex enregistre les compétences de plugin sous la forme `cstack:<skill-name>`. Le texte littéral d’un prompt doit utiliser l’identifiant complet, par exemple `$cstack:cstack` ou `$cstack:architect`. Dans un sélecteur interactif de compétences, taper `$cstack` et sélectionner la compétence **cstack** affichée fournit une sélection structurée avec son vrai nom et chemin. Un raccourci non sélectionné dans du texte brut n’est pas équivalent à cette sélection.
 
 `$cstack:cstack` active le flux principal dans cette tâche jusqu’à ce que l’utilisateur dise d’arrêter cstack. Un `$skill` spécifique lance seulement cette capacité. Chaque compétence fournie a `policy.allow_implicit_invocation: false` dans son `agents/openai.yaml` ; l’installation seule n’active pas le mode. Si l’interface exige une désambiguïsation, sélectionne la compétence depuis le plugin cstack.

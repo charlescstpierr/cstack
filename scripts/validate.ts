@@ -11,40 +11,10 @@ const DIRECT_INVOCATION_ONLY: Record<string, string> = {
   "make-bot-ui": "Utilitaire d’interface de bot Grok invoqué directement, sans passer par le routeur.",
   "setup-cstack": "Utilitaire de configuration invoqué directement, sans passer par le routeur.",
 };
-// Plafonds de mots des SKILL.md : un skill lu à chaque invocation ne doit pas regrossir (pstack ×1,15 visé).
-const SKILL_WORD_BUDGETS: Record<string, number> = {
-  "architect": 1129,
-  "arena": 1005,
-  "audit-architecture": 687,
-  "automate-me": 1225,
-  "blast-radius": 861,
-  "bro": 48,
-  "clarify": 727,
-  "create-verification-skill": 1032,
-  "cstack": 2600,
-  "deslop": 1102,
-  "domain": 674,
-  "figure-it-out": 888,
-  "horizon": 2258,
-  "how": 681,
-  "interrogate": 1478,
-  "maintain-verification-skill": 967,
-  "make-bot-ui": 1589,
-  "no-comments": 455,
-  "recall": 775,
-  "reflect": 776,
-  "setup-cstack": 2908,
-  "show-me-your-work": 1060,
-  "swarm": 594,
-  "tdd": 678,
-  "teach": 986,
-  "technical-writing": 2098,
-  "typescript-best-practices": 501,
-  "unslop": 1067,
-  "why": 1804,
-};
-// Lecture initiale de `$cstack:cstack` : son SKILL.md et l’index du contrat, le reste se lit à la demande.
-const ENTRY_WORD_BUDGET = 2950;
+// Plafond commun des SKILL.md : le plus long skill pstack (poteto-mode, 2 635 mots) plus la marge du français.
+const SKILL_WORD_CEILING = 3000;
+// `$cstack:cstack` lit seulement son SKILL.md d’avance ; le contrat se lit par parties, à la demande.
+const ENTRY_WORD_BUDGET = 2600;
 const EXECUTABLES = [
   "scripts/run-tool.sh",
   "skills/cstack/scripts/worktree-audit.sh",
@@ -365,11 +335,10 @@ export function validate(root: string): { skills: number; sourceFiles: number } 
     requireValue(!/(?:[,;:]|\b(?:a|an|the|and|or|with|for|to|of|in|your|et|ou|avec|pour|de|du|des|le|la|les|un|une))$/i.test(summary), `${path}: description d’interface du skill tronquée`);
     requireValue(typeof policy.interface.default_prompt === "string" && policy.interface.default_prompt.includes(`$cstack:${name}`), `${path}: le prompt par défaut doit utiliser son invocation canonique`);
     requireValue(text.includes("codex-runtime.md"), `${path}: lien vers le contrat d’exécution manquant`);
-    const budget = SKILL_WORD_BUDGETS[name];
-    requireValue(budget !== undefined, `${name}: plafond de mots manquant dans SKILL_WORD_BUDGETS`);
-    requireValue(words(text) <= budget, `${name}: ${words(text)} mots dépassent le plafond de ${budget}`);
+    const count = words(text);
+    requireValue(count <= SKILL_WORD_CEILING, `${name}: ${count} mots dépassent le plafond de ${SKILL_WORD_CEILING}`);
   }
-  const entryWords = words(mainSkill) + words(readFileSync(join(plugin, "skills/cstack/references/codex-runtime.md"), "utf8"));
+  const entryWords = words(mainSkill);
   requireValue(entryWords <= ENTRY_WORD_BUDGET, `cstack: lecture initiale de ${entryWords} mots au-delà de ${ENTRY_WORD_BUDGET}`);
   const seenDisplay = new Set<string>();
   for (const item of skillUi) {

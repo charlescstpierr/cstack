@@ -1,7 +1,5 @@
 # Intégrations externes et autorisation
 
-Partie du [contrat d’exécution Codex](../codex-runtime.md), lue quand sa situation se présente.
-
 Aucune intégration externe n’est requise pour le travail de code de base. Découvre GitHub, tracker d’issues, documentation, navigateur et autres outils connectés seulement quand la tâche en a besoin. Les connecteurs manquants sont des écarts de preuve explicites ; n’installe pas automatiquement de plugins et ne demande pas de comptes non liés.
 
 Utilise les outils navigateur/ordinateur disponibles pour la vérification UI, ou le harnais existant d’un projet. Si aucun outil UI n’est disponible, rapporte la preuve d’exécution manquante. Ne revendique pas une capture d’écran ou un test qui n’a pas été produit. La rédaction de compétence peut utiliser le skill-creator système s’il est disponible ; sinon, écris un SKILL.md autonome et valide directement ses métadonnées et son comportement. Le nettoyage de code est fourni et n’exige aucun plugin externe : `../../../deslop/SKILL.md` retire le slop d’un diff avant commit, `../../../no-comments/SKILL.md` confie les commentaires à un reviewer qui ne les a pas écrits, et le formatter ainsi que le linter propres au dépôt gèrent le style.

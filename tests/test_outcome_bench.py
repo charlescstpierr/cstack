@@ -183,10 +183,9 @@ class OutcomeBenchTests(unittest.TestCase):
         task = self.fixture.load()
         pstack = self.root / "pstack"
         (pstack / "skills" / "poteto-mode").mkdir(parents=True)
-        bundles = {"cstack": ROOT / "plugins" / "cstack", "pstack": pstack}
         vanilla = outcome_bench.arm_prompt(task, "vanilla", None)
-        cstack = outcome_bench.arm_prompt(task, "cstack", bundles["cstack"])
-        poteto = outcome_bench.arm_prompt(task, "pstack", bundles["pstack"])
+        cstack = outcome_bench.arm_prompt(task, "cstack", ROOT / "plugins" / "cstack")
+        poteto = outcome_bench.arm_prompt(task, "pstack", pstack)
         self.assertIn(task["prompt"], vanilla)
         self.assertIn(outcome_bench.SCOPE_NOTE, vanilla)
         self.assertNotIn("$cstack", vanilla)
@@ -194,7 +193,7 @@ class OutcomeBenchTests(unittest.TestCase):
             self.assertIn(vanilla, prompt)
             self.assertRegex(prompt, "(?i)d[ée]l[èe]gu|delegate")
         self.assertIn("$cstack:cstack", cstack)
-        self.assertIn(str(bundles["cstack"] / "skills" / "cstack" / "SKILL.md"), cstack)
+        self.assertIn(str(ROOT / "plugins" / "cstack" / "skills" / "cstack" / "SKILL.md"), cstack)
         self.assertIn(str(pstack / "skills" / "poteto-mode" / "SKILL.md"), poteto)
         self.assertNotIn("$cstack", poteto)
 
@@ -326,8 +325,8 @@ class OutcomeBenchTests(unittest.TestCase):
     def test_plugin_ref_arms_compare_a_frozen_cstack_with_the_current_one(self):
         arms = outcome_bench.parse_arms("avant=cstack@HEAD,cstack,mixed=cstack@HEAD:m.json")
         self.assertEqual([arm["ref"] for arm in arms], ["HEAD", None, "HEAD"])
-        for text, message in (("cstack,p=pstack@HEAD", "ref du dépôt"), ("cstack,a=cstack@HEAD+setup", "ne se combine pas"),
-                              ("cstack,a=cstack+setup@HEAD", "bras invalide"), ("cstack,a=cstack@-x", "bras invalide")):
+        self.assertTrue(outcome_bench.parse_arms("cstack,a=cstack@HEAD+setup")[1]["setup"])
+        for text, message in (("cstack,p=pstack@HEAD", "ref du dépôt"), ("cstack,a=cstack+setup@HEAD", "bras invalide"), ("cstack,a=cstack@-x", "bras invalide")):
             with self.subTest(text=text), self.assertRaisesRegex(outcome_bench.BenchError, message):
                 outcome_bench.parse_arms(text)
         args = argparse.Namespace(arms=arms[:2], work=self.work, plugin=ROOT / "plugins" / "cstack", pstack=None)

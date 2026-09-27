@@ -28,8 +28,6 @@ DEFAULT_TASKS = ROOT / "evals" / "outcome"
 DEFAULT_PLUGIN = ROOT / "plugins" / "cstack"
 ARMS = ("vanilla", "cstack", "pstack")
 DEFAULT_ARMS = ("vanilla", "cstack")
-MODELS_HELPER = ROOT / "plugins" / "cstack" / "skills" / "setup-cstack" / "scripts" / "models.py"
-PROJECT_HELPER = MODELS_HELPER.with_name("project.py")
 SETUP_SUFFIX = "+setup"
 GIT_REF = re.compile(r"[A-Za-z0-9][A-Za-z0-9._/-]*")
 SETUP_OPTIONS = {"native_agents": True}
@@ -84,13 +82,11 @@ def parse_arms(text: str) -> list[dict[str, Any]]:
         setup = base.endswith(SETUP_SUFFIX)
         base = base[: -len(SETUP_SUFFIX)] if setup else base
         base, _, ref = base.partition("@")
+        # `cstack+setup@ref` : le suffixe se lit après la ref, pas avant.
         if not SAFE_ID.fullmatch(name) or base not in ARMS or (ref and not GIT_REF.fullmatch(ref)):
             raise BenchError(f"bras invalide: {item!r} ; base parmi {', '.join(ARMS)}")
         if (models or setup or ref) and base != "cstack":
             raise BenchError(f"{name}: seule une base cstack lit .cstack/models.json, le setup projet et une ref du dépôt")
-        # Le setup projet vient du helper courant ; il ne s’applique pas à une version figée du plugin.
-        if ref and setup:
-            raise BenchError(f"{name}: une ref du plugin ne se combine pas avec +setup")
         arms.append({"name": name, "base": base, "models": Path(models) if models else None, "setup": setup, "ref": ref or None})
     names = [arm["name"] for arm in arms]
     if len(arms) < 2 or len(set(names)) != len(names):
@@ -98,12 +94,21 @@ def parse_arms(text: str) -> list[dict[str, Any]]:
     return arms
 
 
-def load_arm_models(arms: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
-    helper = load_module("cstack_models", MODELS_HELPER)
+@functools.lru_cache(maxsize=None)
+def setup_helper(bundle: Path, name: str):
+    """Helper `models` ou `project` du paquet évalué : un bras `@ref` garde ses propres règles de setup."""
+    path = bundle / "skills" / "setup-cstack" / "scripts" / f"{name}.py"
+    if not path.is_file():
+        raise BenchError(f"helper {name}.py absent du paquet {bundle}")
+    return load_module(f"cstack_{name}", path)
+
+
+def load_arm_models(arms: list[dict[str, Any]], roots: dict[str, Path] | None = None) -> dict[str, dict[str, Any]]:
     configs = {}
     for arm in arms:
         if arm["models"] is None:
             continue
+        helper = setup_helper((roots or {}).get(bundle_key(arm), DEFAULT_PLUGIN), "models")
         path = arm["models"].expanduser().resolve()
         try:
             config, _ = helper.read_config(path)
@@ -120,14 +125,9 @@ def private_paths(work: Path, output: Path) -> list[Path]:
     return [work, output / "patches", output / "state", output / "results.jsonl"]
 
 
-@functools.lru_cache(maxsize=None)
-def project_helper():
-    return load_module("cstack_project", PROJECT_HELPER)
-
-
-def apply_project_setup(workspace: Path) -> str:
-    """Applique le setup projet cstack (bloc AGENTS.md, agents natifs) puis le committe comme nouveau départ."""
-    project = project_helper()
+def apply_project_setup(workspace: Path, bundle: Path) -> str:
+    """Applique le setup projet du paquet évalué (bloc AGENTS.md, agents natifs) puis le committe comme nouveau départ."""
+    project = setup_helper(bundle, "project")
     try:
         plan = project.preview_plan(workspace, SETUP_OPTIONS, None)
         result = project.apply_plan(workspace, plan, SETUP_OPTIONS, None, plan["plan_sha256"])
@@ -526,7 +526,7 @@ def execute_run(run: dict[str, Any], task: dict[str, Any], image: str, context: 
     if models is not None:
         write_json(workspace / ".cstack" / "models.json", models)
     # Le diff de l’agent part du setup committé, pour ne noter que son propre travail.
-    start = apply_project_setup(workspace) if arm["setup"] else task["base_sha"]
+    start = apply_project_setup(workspace, context["bundles"][bundle_key(arm)]) if arm["setup"] else task["base_sha"]
     case = {"id": run["run_id"], "cwd": workspace, "sandbox": "workspace-write", "ephemeral": False,
             "prompts": [arm_prompt(task, base, context["bundles"].get(bundle_key(arm)))]}
     private = private_paths(work, output)
@@ -737,14 +737,11 @@ def plugin_at(ref: str, work: Path) -> tuple[str, Path]:
         raise BenchError(f"ref du plugin introuvable dans le dépôt: {ref}")
     target = work / "plugins" / sha
     if not (target / "plugins" / "cstack").is_dir():
-        work.mkdir(parents=True, exist_ok=True)
-        staging = Path(tempfile.mkdtemp(prefix="cstack-plugin-", dir=work))
-        archive = subprocess.run(["git", "archive", "--format=tar", sha, "plugins/cstack"], cwd=ROOT, capture_output=True)
-        if archive.returncode != 0:
-            raise BenchError(f"git archive {sha} a échoué: {archive.stderr.decode(errors='replace').strip()}")
-        subprocess.run(["tar", "-x", "-C", str(staging)], input=archive.stdout, check=True)
         target.parent.mkdir(parents=True, exist_ok=True)
-        shutil.rmtree(target, ignore_errors=True)
+        staging = Path(tempfile.mkdtemp(prefix="cstack-plugin-", dir=target.parent))
+        git(ROOT, "archive", "--output", str(staging / "plugin.tar"), sha, "plugins/cstack")
+        shutil.unpack_archive(staging / "plugin.tar", staging, "tar")
+        (staging / "plugin.tar").unlink()
         staging.rename(target)
     return sha, target / "plugins" / "cstack"
 
@@ -752,21 +749,17 @@ def plugin_at(ref: str, work: Path) -> tuple[str, Path]:
 def arm_roots(args: argparse.Namespace) -> dict[str, Path]:
     """Racine du paquet de chaque bras ; une ref est résolue en commit et enregistrée sur son bras."""
     roots = {}
-    for arm in args.arms:
-        if arm["base"] == "cstack" and arm["ref"]:
+    for arm in (arm for arm in args.arms if arm["base"] in ARM_SKILLS):
+        if arm["ref"]:
             arm["ref"], root = plugin_at(arm["ref"], args.work)
         elif arm["base"] == "cstack":
             root = args.plugin.expanduser().resolve()
-        elif arm["base"] == "pstack":
-            root = (args.pstack or default_pstack(args.work)).expanduser().resolve()
         else:
-            continue
+            root = (args.pstack or default_pstack(args.work)).expanduser().resolve()
+        if not (root / "skills" / ARM_SKILLS[arm["base"]] / "SKILL.md").is_file():
+            hint = " ; lancez d’abord fetch-pstack" if arm["base"] == "pstack" else ""
+            raise BenchError(f"{bundle_key(arm)}: point d’entrée absent sous {root}{hint}")
         roots[bundle_key(arm)] = root
-    for key, root in roots.items():
-        base = key.partition("@")[0]
-        if not (root / "skills" / ARM_SKILLS[base] / "SKILL.md").is_file():
-            hint = " ; lancez d’abord fetch-pstack" if base == "pstack" else ""
-            raise BenchError(f"{key}: point d’entrée absent sous {root}{hint}")
     return roots
 
 
@@ -782,7 +775,7 @@ def command_run(args: argparse.Namespace) -> int:
     if output == args.work or args.work in output.parents:
         raise BenchError("--output doit être hors de --work, masqué pendant le tour de l’agent")
     roots = arm_roots(args)
-    arm_models = load_arm_models(args.arms)
+    arm_models = load_arm_models(args.arms, roots)
     manifest = {
         "schema_version": 3, "suite_digest": tree_digest(args.tasks), "merged_after": suite["merged_after"],
         "tasks": [task["id"] for task in tasks], "task_digests": {task["id"]: task["digest"] for task in tasks},
