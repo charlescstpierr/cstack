@@ -97,11 +97,6 @@
       "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
     }
   ],
-  "skipped_under_root": [
-    "test_run_tool.RunToolTest.test_unreadable_stage_directory_does_not_abort_the_sweep",
-    "test_run_tool.RunToolTest.test_cleanup_failure_does_not_replace_helper_exit_code",
-    "worker-skills: ne masque pas les erreurs de permissions du dossier references"
-  ],
   "installer_trials": {
     "codex_cli": "0.157.1",
     "observations": [
@@ -118,5 +113,31 @@
   },
   "not_measured": [
     "outcome bench campaign A/B from issue #65"
+  ],
+  "skipped": [
+    {
+      "test": "test_run_tool.RunToolTest.test_unreadable_stage_directory_does_not_abort_the_sweep",
+      "reason": "root ignore chmod 000",
+      "passes_as_nobody": true
+    },
+    {
+      "test": "test_run_tool.RunToolTest.test_cleanup_failure_does_not_replace_helper_exit_code",
+      "reason": "root ignore chmod 000",
+      "passes_as_nobody": true
+    },
+    {
+      "test": "tests/sync-upstream.test.ts: un échec de manifeste restaure la cible déjà écrite et nettoie les temporaires",
+      "reason": "root ignore chmod 000",
+      "passes_as_nobody": true
+    },
+    {
+      "test": "worker-skills.test.ts: ne masque pas les erreurs de permissions du dossier references",
+      "reason": "root ignore chmod 000",
+      "passes_as_nobody": true
+    },
+    {
+      "test": "test_behavior_runner.BehaviorRunnerTests.test_python39_requires_tomllib_to_parse_config",
+      "reason": "propre à Python 3.9 ; l'interpréteur 3.11 lit le TOML"
+    }
   ]
 }
