@@ -55,6 +55,7 @@ test("le paquet charge 29 skills et rejette les distributions dangereuses ou inc
       ["plugins/cstack/.codex-plugin/plugin.json", (text: string) => text.replace('"name": "cstack"', '"name": "other"'), /identité du manifeste/],
       ["plugins/cstack/skills/cstack/agents/openai.yaml", (text: string) => text.replace("allow_implicit_invocation: false", "allow_implicit_invocation: true"), /invocation explicite/],
       ["plugins/cstack/skills/tdd/SKILL.md", (text: string) => text + " mot".repeat(3000), /tdd: \d+ mots dépassent le plafond/],
+      ["PORTING.json", (text: string) => text.replace('"derived_from": "pstack/skills/interrogate/SKILL.md"', '"derived_from": "pstack/skills/absent/SKILL.md"'), /source amont dérivée inconnue/],
       ["plugins/cstack/skills/cstack/SKILL.md", (text: string) => text + " mot".repeat(300), /cstack: \d+ mots dépassent le budget de lecture initiale/],
       ["plugins/cstack/skills/cstack/agents/openai.yaml", (text: string) => text.replace("$cstack:cstack", "$cstack"), /invocation canonique/],
       ["plugins/cstack/skills/cstack/agents/openai.yaml", (text: string) => text.replace(/short_description: .*/, 'short_description: "Organiser le travail et le vérifier avec"'), /description d’interface du skill tronquée/],

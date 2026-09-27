@@ -226,6 +226,8 @@ export function validate(root: string): { skills: number; sourceFiles: number } 
     requireValue(item.path.startsWith("plugins/cstack/") && !originalPaths.has(item.path), `chemin original invalide ou dupliqué: ${item.path}`);
     const target = resolve(root, item.path);
     requireValue(existsSync(target) && inside(plugin, target), `le chemin original n’existe pas: ${item.path}`);
+    // Un fichier extrait d’un texte porté garde la source amont dont il dérive.
+    requireValue(!("derived_from" in item) || (typeof item.derived_from === "string" && sourcePaths.has(item.derived_from)), `source amont dérivée inconnue pour ${item.path}`);
     originalPaths.add(item.path);
   }
 
