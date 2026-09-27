@@ -731,18 +731,21 @@ def bundle_key(arm: dict[str, Any]) -> str:
 
 
 def plugin_at(ref: str, work: Path) -> tuple[str, Path]:
-    """Extrait `plugins/cstack` du dépôt à `ref`, une seule fois par commit, pour comparer avant et après."""
+    """Extrait `plugins/cstack` du dépôt à `ref` pour comparer avant et après.
+
+    L’extraction est refaite à chaque campagne : un arbre existant sous ce SHA a pu être modifié.
+    """
     sha = git(ROOT, "rev-parse", "--verify", "--quiet", f"{ref}^{{commit}}", check=False).strip()
     if not sha:
         raise BenchError(f"ref du plugin introuvable dans le dépôt: {ref}")
     target = work / "plugins" / sha
-    if not (target / "plugins" / "cstack").is_dir():
-        target.parent.mkdir(parents=True, exist_ok=True)
-        staging = Path(tempfile.mkdtemp(prefix="cstack-plugin-", dir=target.parent))
-        git(ROOT, "archive", "--output", str(staging / "plugin.tar"), sha, "plugins/cstack")
-        shutil.unpack_archive(staging / "plugin.tar", staging, "tar")
-        (staging / "plugin.tar").unlink()
-        staging.rename(target)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    staging = Path(tempfile.mkdtemp(prefix="cstack-plugin-", dir=target.parent))
+    git(ROOT, "archive", "--output", str(staging / "plugin.tar"), sha, "plugins/cstack")
+    shutil.unpack_archive(staging / "plugin.tar", staging, "tar")
+    (staging / "plugin.tar").unlink()
+    shutil.rmtree(target, ignore_errors=True)
+    staging.rename(target)
     return sha, target / "plugins" / "cstack"
 
 

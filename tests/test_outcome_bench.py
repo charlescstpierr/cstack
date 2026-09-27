@@ -338,12 +338,13 @@ class OutcomeBenchTests(unittest.TestCase):
         self.assertEqual(frozen, self.work / "plugins" / sha / "plugins" / "cstack")
         committed = outcome_bench.git(ROOT, "show", f"{sha}:plugins/cstack/skills/cstack/SKILL.md")
         self.assertEqual((frozen / "skills" / "cstack" / "SKILL.md").read_text(), committed)
-        # Réutilisé tel quel au second appel, sans nouvelle extraction.
-        marker = frozen / "marker"
-        marker.write_text("x")
+        # Un arbre modifié sous ce SHA n’est jamais réutilisé : il est extrait de nouveau.
+        (frozen / "skills" / "cstack" / "SKILL.md").write_text("modifié")
+        (frozen / "marker").write_text("x")
         outcome_bench.arm_roots(argparse.Namespace(arms=outcome_bench.parse_arms("a=cstack@HEAD,cstack"), work=self.work,
                                                    plugin=ROOT / "plugins" / "cstack", pstack=None))
-        self.assertTrue(marker.exists())
+        self.assertFalse((frozen / "marker").exists())
+        self.assertEqual((frozen / "skills" / "cstack" / "SKILL.md").read_text(), committed)
         with self.assertRaisesRegex(outcome_bench.BenchError, "introuvable"):
             outcome_bench.plugin_at("no-such-ref-xyz", self.work)
 
