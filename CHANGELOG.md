@@ -4,6 +4,8 @@ Les versions suivent SemVer. Le format suit [Keep a Changelog](https://keepachan
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-09-27
+
 - `make-bot-ui` passe en français, comme les autres compétences : le validateur épingle ses gardes de sécurité en français et ne l'exempte plus de la forme « À utiliser pour $cstack:<nom> ».
 - Installation en une commande : `install.sh` installe, met à jour (`--ref` pour une branche, un tag ou un commit, `--local` pour un clone), diagnostique (`doctor`) et retire cstack, uniquement par `codex plugin`. README refondu autour de l'installation, des premiers pas et d'un tableau des compétences ; descriptions du plugin réécrites.
 - Rappel du mode sur les longues sessions, comme le `reminder:` de pstack : deux hooks du plugin réinjectent un rappel court à chaque message et après chaque résumé, seulement après `$cstack:cstack` ; approbation unique avec `/hooks` en CLI. Pause propre avant un résumé imminent et relecture des règles après un résumé.

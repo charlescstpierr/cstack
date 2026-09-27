@@ -2,6 +2,16 @@
 
 Ce fichier distingue le catalogue courant des campagnes datées. Les nombres historiques restent ceux de leur campagne.
 
+## État 0.7.0
+
+Le catalogue 0.7.0 contient 29 skills, 23 références de principes et 23 guides d'exécution. La couverture conserve 158 fichiers source.
+
+Les [preuves 0.7.0](evidence/0.7.0.json) enregistrent **391 tests réussis et cinq ignorés** : 183 tests Python réussis sur 186 collectés, 28 tests Bun racine et 180 tests des assistants. Le validateur du paquet, les faits générés, les deux vérifications de types, la syntaxe Bash, ShellCheck 0.10.0, Actionlint 1.7.12 et l'espacement passent. Les contrôles ont tourné en root dans un conteneur : les trois tests qui provoquent une erreur de permission par `chmod 000` y sont ignorés, et passent sous l'utilisateur `nobody`. ShellCheck et Actionlint ont été lancés depuis leurs binaires publiés aux mêmes versions que les images de la CI, faute de Docker.
+
+`install.sh` a été exercé avec `codex-cli 0.157.1` dans des `CODEX_HOME` isolés : installation et réinstallation, `--ref`, `--local`, mises à jour sur une branche, un commit épinglé et une source locale, changement de source refusé ou restauré, plugin désactivé conservé, `doctor`, `uninstall` et chemin SSH par un faux `ssh` qui sert le dépôt local. Ce sont des observations uniques, pas un benchmark.
+
+La campagne de mesure du ticket #65 (bras `vanilla`, `cstack` et `pstack` du [banc de résultat](OUTCOME-BENCH.md)) n'a pas encore été exécutée : aucun gain face à pstack n'est revendiqué pour cette version.
+
 ## État 0.6.0
 
 Le catalogue 0.6.0 contient 29 skills, 23 références de principes et 23 guides d'exécution. La couverture conserve 158 fichiers source.
