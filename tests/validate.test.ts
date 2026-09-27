@@ -58,6 +58,8 @@ test("le paquet charge 29 skills et rejette les distributions dangereuses ou inc
       ["plugins/cstack/hooks/hooks.json", (text: string) => text.replace('"SessionStart"', '"Stop"'), /seuls UserPromptSubmit et SessionStart/],
       ["plugins/cstack/hooks/hooks.json", (text: string) => text.replace('hooks/mode.py', 'hooks/other.py'), /seule la commande du rappel de mode/],
       ["plugins/cstack/hooks/hooks.json", (text: string) => text.replace('"compact|resume"', '"startup"'), /SessionStart doit viser seulement compact\|resume/],
+      ["plugins/cstack/hooks/hooks.json", (text: string) => JSON.stringify({ hooks: { ...JSON.parse(text).hooks, UserPromptSubmit: [] } }), /un seul groupe par événement/],
+      ["plugins/cstack/hooks/hooks.json", (text: string) => { const config = JSON.parse(text); config.hooks.UserPromptSubmit[0].hooks = []; return JSON.stringify(config); }, /une seule commande par groupe/],
       ["PORTING.json", (text: string) => text.replace('"derived_from": "pstack/skills/interrogate/SKILL.md"', '"derived_from": "pstack/skills/absent/SKILL.md"'), /source amont dérivée inconnue/],
       ["plugins/cstack/skills/cstack/SKILL.md", (text: string) => text + " mot".repeat(300), /cstack: \d+ mots dépassent le budget de lecture initiale/],
       ["plugins/cstack/skills/cstack/agents/openai.yaml", (text: string) => text.replace("$cstack:cstack", "$cstack"), /invocation canonique/],

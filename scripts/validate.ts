@@ -421,14 +421,13 @@ export function validate(root: string): { skills: number; sourceFiles: number } 
   requireValue(record(hooks.hooks) && Object.keys(hooks.hooks).sort().join(",") === "SessionStart,UserPromptSubmit", "hooks: seuls UserPromptSubmit et SessionStart sont permis");
   const sessionStart = (hooks.hooks as Record<string, unknown[]>).SessionStart;
   requireValue(sessionStart.every((group) => record(group) && group.matcher === "compact|resume"), "hooks: SessionStart doit viser seulement compact|resume");
+  // Chaque événement porte exactement un groupe et une commande : aucun rappel ne peut disparaître en silence.
   for (const groups of Object.values(hooks.hooks)) {
-    requireValue(Array.isArray(groups), "hooks: groupes invalides");
-    for (const group of groups) {
-      requireValue(record(group) && Array.isArray(group.hooks), "hooks: groupe invalide");
-      for (const hook of group.hooks) {
-        requireValue(record(hook) && hook.type === "command" && hook.command === 'python3 "${PLUGIN_ROOT}/hooks/mode.py"', "hooks: seule la commande du rappel de mode est permise");
-      }
-    }
+    requireValue(Array.isArray(groups) && groups.length === 1, "hooks: un seul groupe par événement");
+    const [group] = groups;
+    requireValue(record(group) && Array.isArray(group.hooks) && group.hooks.length === 1, "hooks: une seule commande par groupe");
+    const [hook] = group.hooks;
+    requireValue(record(hook) && hook.type === "command" && hook.command === 'python3 "${PLUGIN_ROOT}/hooks/mode.py"', "hooks: seule la commande du rappel de mode est permise");
   }
   for (const rel of EXECUTABLES) {
     const path = join(plugin, rel);

@@ -12,6 +12,8 @@ import sys
 
 ACTIVATE = "$cstack:cstack"
 STOP_VERBS = ("arrête", "arrete", "stop", "stoppe", "désactive", "desactive", "quitte")
+# « n'arrête pas cstack », « don't stop cstack » : une négation juste avant le verbe garde le mode.
+NEGATIONS = ("n", "ne", "t", "not", "never", "jamais")
 # Un pointeur vers les règles, pas une copie : `references/runtime/base.md` reste la source.
 REMINDER = "Mode cstack actif : tâche nouvelle ou en cours → applique `$cstack:cstack` ; tour anodin ou arrêt demandé → non."
 AFTER_SUMMARY = "Mode cstack actif et contexte résumé : relis `references/runtime/base.md` de `$cstack:cstack` avant de continuer."
@@ -20,7 +22,8 @@ AFTER_SUMMARY = "Mode cstack actif et contexte résumé : relis `references/runt
 def _stop_requested(prompt: str) -> bool:
     # « arrête cstack », « stop cstack »… : le verbe juste avant « cstack », pas une négation plus loin.
     words = prompt.lower().translate(str.maketrans(",.;:!?«»\"'", "          ")).split()
-    return any(word == "cstack" and index and words[index - 1] in STOP_VERBS for index, word in enumerate(words))
+    return any(word == "cstack" and index and words[index - 1] in STOP_VERBS
+               and (index < 2 or words[index - 2] not in NEGATIONS) for index, word in enumerate(words))
 
 
 def reminder(raw: str, data: str) -> str:
