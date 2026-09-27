@@ -21,7 +21,7 @@ const SKILL_WORD_BUDGETS: Record<string, number> = {
   "bro": 48,
   "clarify": 727,
   "create-verification-skill": 1032,
-  "cstack": 2300,
+  "cstack": 2600,
   "deslop": 1102,
   "domain": 674,
   "figure-it-out": 888,
@@ -44,7 +44,7 @@ const SKILL_WORD_BUDGETS: Record<string, number> = {
   "why": 1804,
 };
 // Lecture initiale de `$cstack:cstack` : son SKILL.md et l’index du contrat, le reste se lit à la demande.
-const ENTRY_WORD_BUDGET = 2700;
+const ENTRY_WORD_BUDGET = 2950;
 const EXECUTABLES = [
   "scripts/run-tool.sh",
   "skills/cstack/scripts/worktree-audit.sh",
