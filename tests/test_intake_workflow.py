@@ -71,6 +71,8 @@ def run_workflow_script(
         ["bash", "-c", script],
         cwd=payload_path.parents[2],
         env=env,
+        # Les shims lisent stdin : sans DEVNULL, ils attendent l'entrée du lanceur de tests.
+        stdin=subprocess.DEVNULL,
         text=True,
         capture_output=True,
         check=False,
