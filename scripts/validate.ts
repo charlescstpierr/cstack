@@ -392,6 +392,8 @@ export function validate(root: string): { skills: number; sourceFiles: number } 
       const part = decodeURIComponent(filePart?.split("?")[0] ?? "");
       const target = part ? resolve(dirname(path), part) : path;
       requireValue(existsSync(target) && inside(plugin, target), `${relative(root, path)}: lien cassé ou situé hors du périmètre ${href}`);
+      // Les paquets de workers CLI n'emportent que skills/ : un lien qui en sort casse leur chargement.
+      requireValue(!inside(join(plugin, "skills"), path) || inside(join(plugin, "skills"), target), `${relative(root, path)}: lien hors de skills/ ${href}`);
       if (fragment && target.endsWith(".md")) {
         const slugs = headingSlugs(readFileSync(target, "utf8"));
         requireValue(slugs.has(fragment.toLowerCase()), `${relative(root, path)}: titre manquant pour le fragment ${href}`);
