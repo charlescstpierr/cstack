@@ -13,8 +13,8 @@
     "user": "root",
     "python": "3.11",
     "bun": "1.3.11",
-    "shellcheck": "0.10.0 (release binary)",
-    "actionlint": "1.7.12 (release binary)"
+    "shellcheck": "0.10.0 (release binary locally; pinned Docker image in CI)",
+    "actionlint": "1.7.12 (release binary locally; pinned Docker image in CI)"
   },
   "tests": {
     "python": {
@@ -139,5 +139,15 @@
       "test": "test_behavior_runner.BehaviorRunnerTests.test_python39_requires_tomllib_to_parse_config",
       "reason": "propre à Python 3.9 ; l'interpréteur 3.11 lit le TOML"
     }
-  ]
+  ],
+  "ci": {
+    "commit": "0e759929801f009a3e936877709afaa0e93c639b",
+    "workflow": ".github/workflows/validate.yml",
+    "job_id": 108629154811,
+    "run_id": 36322585098,
+    "conclusion": "success",
+    "python": "3.9.25",
+    "shellcheck_image": "koalaman/shellcheck:v0.10.0@sha256:2097951f02e735b613f4a34de20c40f937a6c8f18ecb170612c88c34517221fb",
+    "actionlint_image": "rhysd/actionlint:1.7.12@sha256:b1934ee5f1c509618f2508e6eb47ee0d3520686341fec936f3b79331f9315667"
+  }
 }
