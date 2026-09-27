@@ -24,7 +24,7 @@ Les assistants TypeScript utilisent Bun et leurs dépendances verrouillées. Leu
 
 La [livraison des PR](skills/cstack/playbooks/shipping.md) impose le head vérifié à GitHub et relit les merges en attente avant une réécriture. L’assistant `watch-pr/ship-pr` inspecte ou annule ces demandes ; il ne fusionne aucune PR. Les limites du contrôle de destination et des files de merge sont précisées dans [la référence de sécurité](skills/cstack/references/merge-safety.md).
 
-Mise à jour depuis GitHub : `codex plugin marketplace upgrade cstack`, puis `codex plugin add cstack@cstack`. Ouvrez ensuite une nouvelle conversation.
+Installation, mise à jour, diagnostic et retrait : `install.sh install`, `update`, `doctor` et `uninstall`, à la racine du dépôt. Voir [l'installation](https://github.com/charlescstpierr/cstack#installation). Ouvrez ensuite une nouvelle conversation.
 
 Installation et sources : [charlescstpierr/cstack](https://github.com/charlescstpierr/cstack). Le dépôt est privé.
 

@@ -99,7 +99,7 @@ Tests mesurés. `python3 -m unittest discover -s tests -p 'test_*.py'` lance 51 
 
 Python 3.9 ou plus récent exécute les assistants et toute la suite de tests. L'analyse du `config.toml` de Codex dans `scripts/verify-behavior.py` exige Python 3.11 ou plus récent.
 
-Le processus `.github/workflows/validate.yml` fixe `actions/checkout` à `11d5960a326750d5838078e36cf38b85af677262`, `oven-sh/setup-bun` à `0c5077e51419868618aeaa5fe8019c62421857d6`, `actions/setup-python` à `a26af69be951a213d495a4c3e4e4022e16d87065` avec `python-version: "3.9"`. Il exécute `bash -n` sur `plugins/cstack/scripts/run-tool.sh`, `plugins/cstack/skills/cstack/scripts/worktree-audit.sh` et `plugins/cstack/skills/show-me-your-work/scripts/log.sh`, puis `git diff --check`. Les campagnes antérieures qui affirmaient que `git diff --check` passait ne l'avaient pas lancé. Cette garde existe maintenant dans le processus.
+Le processus `.github/workflows/validate.yml` fixe `actions/checkout` à `11d5960a326750d5838078e36cf38b85af677262`, `oven-sh/setup-bun` à `0c5077e51419868618aeaa5fe8019c62421857d6`, `actions/setup-python` à `a26af69be951a213d495a4c3e4e4022e16d87065` avec `python-version: "3.9"`. Il exécute `bash -n` sur `plugins/cstack/scripts/run-tool.sh`, `plugins/cstack/skills/cstack/scripts/worktree-audit.sh`, `plugins/cstack/skills/show-me-your-work/scripts/log.sh` et `install.sh`, puis `git diff --check`. Les campagnes antérieures qui affirmaient que `git diff --check` passait ne l'avaient pas lancé. Cette garde existe maintenant dans le processus.
 
 `deslop` est original à cstack. Il n'est pas un port. pstack livrait `/deslop` dans `cursor-team-kit`.
 
