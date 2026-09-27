@@ -18,10 +18,10 @@ Ce fichier s'adresse à un agent de code (Codex CLI ou Codex App) à qui l'utili
 
    ```sh
    tmp="$(mktemp -d)" && echo "$tmp"
-   gh api repos/charlescstpierr/cstack/contents/install.sh -H "Accept: application/vnd.github.raw" > "$tmp/install.sh"
+   gh api repos/charlescstpierr/cstack/contents/install.sh -H "Accept: application/vnd.github.raw" > "$tmp/install.sh" && test -s "$tmp/install.sh"
    ```
 
-   Sans `gh` authentifié : `git clone --depth 1 https://github.com/charlescstpierr/cstack.git "$tmp/cstack"` (ou l'URL SSH `git@github.com:charlescstpierr/cstack.git`), puis `$tmp/cstack/install.sh`. Notez le chemin affiché : si vos commandes tournent dans des shells séparés, `$tmp` n'existe plus au suivant, alors réutilisez ce chemin en toutes lettres jusqu'au nettoyage. Dans la suite, `install.sh` désigne le script obtenu, lancé avec `bash`.
+   Si cette commande échoue (`gh` absent ou non authentifié) : `git clone --depth 1 https://github.com/charlescstpierr/cstack.git "$tmp/cstack"` (ou l'URL SSH `git@github.com:charlescstpierr/cstack.git`), puis `$tmp/cstack/install.sh`. Notez le chemin affiché : si vos commandes tournent dans des shells séparés, `$tmp` n'existe plus au suivant, alors réutilisez ce chemin en toutes lettres jusqu'au nettoyage. Dans la suite, `install.sh` désigne le script obtenu, lancé avec `bash`.
 
 3. **Voir l'état actuel.** Lancez `install.sh doctor`.
    - La ligne du plugin commence par `✓ plugin cstack@cstack` : cstack est installé et fonctionne. Ne changez rien, sauf si l'utilisateur demande la dernière version (`install.sh update`) ou une version précise (`install.sh update --ref <ref>`, qui récupère réellement cette version).
@@ -29,7 +29,7 @@ Ce fichier s'adresse à un agent de code (Codex CLI ou Codex App) à qui l'utili
 
 4. **Vérifier.** Si l'étape 3 a lancé une commande, relancez `install.sh doctor`. Le code de sortie doit être 0 et la ligne `✓ plugin cstack@cstack : installed, enabled <version>` doit apparaître.
 
-5. **Conclure.** Supprimez le dossier temporaire s'il existe (`rm -rf "$tmp"`) : l'installation n'en dépend pas. Donnez la version installée et dites à l'utilisateur d'ouvrir une **nouvelle tâche** Codex, puis de taper `$cstack:cstack`. La tâche en cours, y compris la vôtre, ne voit pas les compétences ajoutées.
+5. **Conclure.** Supprimez les dossiers temporaires que vous avez créés, à l'étape 2 ou pour lire ce fichier, mais jamais un clone qui existait avant vous : l'installation n'en dépend pas. Donnez la version installée et dites à l'utilisateur d'ouvrir une **nouvelle tâche** Codex, puis de taper `$cstack:cstack`. La tâche en cours, y compris la vôtre, ne voit pas les compétences ajoutées.
 
 ## Lire les résultats
 
