@@ -109,6 +109,7 @@ export function verifyDocumentationFacts(root, facts) {
     ["Source", `${upstream.repository.replace(/\.git$/, "")}/tree/${facts.upstreamCommit}/${upstream.subdirectory}`],
     ["Upstream commit", `\`${facts.upstreamCommit}\``],
     ["Upstream manifest version", `\`${facts.upstreamVersion}\``],
+    ["cstack plugin version", `\`${facts.pluginVersion}\``],
   ]) {
     assertContains(notice, "plugins/cstack/NOTICE.md", new RegExp(`^- ${field}: ${escapeRegExp(value)}$`, "m"), field);
   }
@@ -124,6 +125,12 @@ export function verifyDocumentationFacts(root, facts) {
     "plugins/cstack/README.md",
     new RegExp("Version amont épinglée `" + commit + "`"),
     "commit amont",
+  );
+  assertContains(
+    read("plugins/cstack/README.md"),
+    "plugins/cstack/README.md",
+    new RegExp("Plugin `" + escapeRegExp(facts.pluginVersion) + "`"),
+    "version du plugin",
   );
   assertContains(
     read("plugins/cstack/docs/guide/README.md"),

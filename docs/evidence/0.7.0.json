@@ -13,8 +13,8 @@
     "user": "root",
     "python": "3.11",
     "bun": "1.3.11",
-    "shellcheck": "0.10.0 (release binary locally; pinned Docker image in CI)",
-    "actionlint": "1.7.12 (release binary locally; pinned Docker image in CI)"
+    "shellcheck": "0.10.0",
+    "actionlint": "1.7.12"
   },
   "tests": {
     "python": {
@@ -116,28 +116,20 @@
   ],
   "skipped": [
     {
-      "test": "test_run_tool.RunToolTest.test_unreadable_stage_directory_does_not_abort_the_sweep",
       "reason": "root ignore chmod 000",
-      "passes_as_nobody": true
+      "passes_as_nobody": true,
+      "tests": [
+        "test_run_tool.RunToolTest.test_unreadable_stage_directory_does_not_abort_the_sweep",
+        "test_run_tool.RunToolTest.test_cleanup_failure_does_not_replace_helper_exit_code",
+        "tests/sync-upstream.test.ts: un échec de manifeste restaure la cible déjà écrite et nettoie les temporaires",
+        "worker-skills.test.ts: ne masque pas les erreurs de permissions du dossier references"
+      ]
     },
     {
-      "test": "test_run_tool.RunToolTest.test_cleanup_failure_does_not_replace_helper_exit_code",
-      "reason": "root ignore chmod 000",
-      "passes_as_nobody": true
-    },
-    {
-      "test": "tests/sync-upstream.test.ts: un échec de manifeste restaure la cible déjà écrite et nettoie les temporaires",
-      "reason": "root ignore chmod 000",
-      "passes_as_nobody": true
-    },
-    {
-      "test": "worker-skills.test.ts: ne masque pas les erreurs de permissions du dossier references",
-      "reason": "root ignore chmod 000",
-      "passes_as_nobody": true
-    },
-    {
-      "test": "test_behavior_runner.BehaviorRunnerTests.test_python39_requires_tomllib_to_parse_config",
-      "reason": "propre à Python 3.9 ; l'interpréteur 3.11 lit le TOML"
+      "reason": "propre à Python 3.9 ; l'interpréteur 3.11 lit le TOML",
+      "tests": [
+        "test_behavior_runner.BehaviorRunnerTests.test_python39_requires_tomllib_to_parse_config"
+      ]
     }
   ],
   "ci": {
