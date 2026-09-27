@@ -5,11 +5,9 @@ description: "Lance trois subagents de revue parallèles sur l'historique de la 
 
 # Reflect
 
-Runtime : [`../cstack/references/codex-runtime.md`](../cstack/references/codex-runtime.md).
+Runtime : [délégation](../cstack/references/runtime/delegation.md), [modèles](../cstack/references/runtime/modeles.md), [orchestration](../cstack/references/runtime/orchestration.md), [état](../cstack/references/runtime/etat.md) · rôles : `reflect tooling` (reviewer tooling), `reflect judgment, divergent, synthesizer` (autres reviewers et synthétiseur).
 
 Extrait de la tâche courante les apprentissages durables, puis route-les vers des modifications de skills ou une proposition locale.
-
-Suis le chemin d'héritage direct du contrat runtime quand rien n'est configuré; sinon résous chaque rôle nommé avec son helper et transmets à chaque spawn natif la sélection complète, effort de raisonnement compris. Signale les lacunes de capacité de l'hôte au lieu de supprimer un champ sélectionné.
 
 ## Quand invoquer
 
@@ -23,7 +21,7 @@ Utilise les outils natifs d'historique de tâches, bornés au projet et à la t�
 
 ### 2. Lancer trois reviewers en parallèle
 
-Lance trois subagents reviewers natifs en parallèle, un par lentille. Ils héritent du modèle parent par défaut. `.cstack/models.json` peut définir `reflect tooling` pour le reviewer tooling et `reflect judgment, divergent, synthesizer` pour les autres reviewers. Suis le contrat runtime et ne substitue pas silencieusement une surcharge explicite indisponible. La concurrence native borne le nombre exécuté à la fois. Mets les lentilles restantes dans des vagues ultérieures. Quand aucun slot de subagent n'est disponible, exécute chaque lentille dans la même session comme passe séparée et explicitement recadrée, étiquette le résultat `single-agent` et signale l'indépendance manquante. L'absence de capacité ne supprime jamais une lentille.
+Lance trois subagents reviewers natifs en parallèle, un par lentille.
 
 | Lentille | Modèle de prompt |
 |---|---|
@@ -35,7 +33,7 @@ Passe chaque modèle verbatim, en substituant l'enregistrement ou le digest de t
 
 ### 3. Synthétiser
 
-Quand toutes les revues sont terminées, lance un synthétiseur natif. Il hérite du modèle parent par défaut; `reflect judgment, divergent, synthesizer` est sa clé de configuration optionnelle. Suis le contrat runtime pour une surcharge explicite. Utilise `references/synthesizer.md` verbatim avec la sortie complète de chaque reviewer intégrée. Le synthétiseur retourne des listes Accepté / Rejeté / Carnet. Quand aucun slot de subagent n'est disponible, exécute le prompt du synthétiseur dans cette session comme passe séparée, étiquette le résultat `single-agent` et signale l'indépendance manquante.
+Quand toutes les revues sont terminées, lance un synthétiseur natif. Utilise `references/synthesizer.md` verbatim avec la sortie complète de chaque reviewer intégrée. Le synthétiseur retourne des listes Accepté / Rejeté / Carnet.
 
 ### 4. Vérifier l'application structurelle
 
