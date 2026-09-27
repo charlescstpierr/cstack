@@ -26,8 +26,8 @@ report();
       const env = { ...process.env };
       delete env.CSTACK_BOOTSTRAP_ONLY;
       delete env.CSTACK_BOOTSTRAP_TEST_ENV;
-      // BUN_OPTIONS ajoute ses drapeaux à process.execArgv et fausserait la comparaison.
-      delete env.BUN_OPTIONS;
+      // BUN_OPTIONS ajoute ses drapeaux à process.execArgv ; le redémarrage ne doit pas les doubler.
+      env.BUN_OPTIONS = "--smol";
       const flags = ["--no-env-file", `--config=${join(directory, "neutral.toml")}`];
       for (const expectedReports of [3, 2]) {
         const result = Bun.spawnSync([process.execPath, ...flags, "entry.ts", "argument littéral", "--option-utilisateur"], { cwd: directory, env });
@@ -35,7 +35,7 @@ report();
         const reports = result.stdout.toString().trim().split("\n").filter(line => line.startsWith("{"));
         expect(reports).toHaveLength(expectedReports);
         for (const report of reports) {
-          expect(JSON.parse(report)).toEqual({ flags, args: ["argument littéral", "--option-utilisateur"], env: null });
+          expect(JSON.parse(report)).toEqual({ flags: ["--smol", ...flags], args: ["argument littéral", "--option-utilisateur"], env: null });
         }
       }
     } finally {

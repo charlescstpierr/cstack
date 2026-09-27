@@ -49,10 +49,11 @@ read -r -d '' STATE_PARSER <<'PY' || true
 import json, sys
 query, marketplace, plugin = sys.argv[1:]
 data = json.load(sys.stdin)
-if query == "marketplace-type":
+if query == "marketplace":
     for entry in data.get("marketplaces", []):
         if entry.get("name") == marketplace:
-            print(entry.get("marketplaceSource", {}).get("sourceType", ""))
+            source = entry.get("marketplaceSource", {})
+            print("\t".join([source.get("sourceType", ""), source.get("source", ""), entry.get("root", "")]))
 else:
     for entry in data.get("installed", []) + data.get("available", []):
         if entry.get("pluginId") == plugin:
@@ -65,15 +66,32 @@ else:
 PY
 
 # Lit l'état de Codex dans sa sortie JSON plutôt que dans ses tableaux texte.
-#   marketplace-type : « git » ou « local » si le catalogue cstack est configuré, rien sinon.
-#   plugin-status    : « installed, enabled 0.6.0 », « not installed » ou rien.
+#   marketplace   : « type<TAB>source<TAB>racine » si le catalogue cstack est configuré, rien sinon.
+#   plugin-status : « installed, enabled 0.6.0 », « not installed » ou rien.
+# Échoue si Codex ou sa sortie sont illisibles : un état inconnu n'est jamais pris pour « absent ».
 codex_state() {
   local query="$1" json
   case "$query" in
-    marketplace-type) json="$(run_codex plugin marketplace list --json 2>/dev/null)" || return 0 ;;
-    plugin-status) json="$(run_codex plugin list --json --available 2>/dev/null)" || return 0 ;;
+    marketplace) json="$(run_codex plugin marketplace list --json 2>/dev/null)" || return 1 ;;
+    plugin-status) json="$(run_codex plugin list --json --available 2>/dev/null)" || return 1 ;;
   esac
-  python3 -c "$STATE_PARSER" "$query" "$MARKETPLACE" "$PLUGIN" <<<"$json" 2>/dev/null || true
+  python3 -c "$STATE_PARSER" "$query" "$MARKETPLACE" "$PLUGIN" <<<"$json" 2>/dev/null
+}
+
+# Catalogue cstack configuré, ou arrêt si l'état de Codex est illisible.
+current_marketplace() {
+  codex_state marketplace || die "impossible de lire l'état de Codex (codex plugin marketplace list --json)."
+}
+
+# Arguments `marketplace add` qui recréent le catalogue décrit par current_marketplace.
+previous_source() {
+  local type source root ref
+  IFS=$'\t' read -r type source root <<<"$1"
+  printf '%s\n' "$source"
+  [[ "$type" == git ]] || return 0
+  # Le clone de Codex garde la ref : une branche, sinon le commit détaché.
+  ref="$(git -C "$root" symbolic-ref -q --short HEAD 2>/dev/null || git -C "$root" rev-parse HEAD 2>/dev/null)" || return 0
+  printf '%s\n' --ref "$ref"
 }
 
 reachable() { GIT_TERMINAL_PROMPT=0 GIT_SSH_COMMAND="ssh -o BatchMode=yes" git ls-remote --exit-code "$1" HEAD >/dev/null 2>&1; }
@@ -91,8 +109,8 @@ remote_source() {
 }
 
 add_marketplace() {
-  local ref="$1" local_source="$2" out trial remote trial_failed=""
-  local -a source
+  local ref="$1" local_source="$2" out trial remote trial_failed="" current
+  local -a source previous
   if [[ -n "$local_source" ]]; then
     source=("$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)")
     [[ -f "${source[0]}/.agents/plugins/marketplace.json" ]] || die "--local exige un clone de ${REPO} ; ${source[0]} n'en est pas un."
@@ -103,15 +121,23 @@ add_marketplace() {
   fi
   out="$(run_codex plugin marketplace add "${source[@]}" 2>&1)" && { printf '%s\n' "$out"; return; }
   # Codex refuse de changer la source (ref ou clone) d'un catalogue déjà configuré.
-  [[ -n "$(codex_state marketplace-type)" ]] || die_with "$out"
+  current="$(current_marketplace)"
+  [[ -n "$current" ]] || die_with "$out"
   echo "Changement de source : ${source[*]}"
   # Essai dans un CODEX_HOME jetable : une source invalide ne doit pas coûter l'installation actuelle.
   trial="$(mktemp -d)"
   out="$(CODEX_HOME="$trial" run_codex plugin marketplace add "${source[@]}" 2>&1)" || trial_failed=1
   rm -rf "$trial"
   [[ -z "$trial_failed" ]] || die_with "${out}"$'\n'"cstack : source inutilisable. L'installation actuelle est conservée."
+  local line
+  while IFS= read -r line; do previous+=("$line"); done < <(previous_source "$current")
   run_codex plugin marketplace remove "$MARKETPLACE" >/dev/null
-  out="$(run_codex plugin marketplace add "${source[@]}" 2>&1)" || die_with "$out"
+  if ! out="$(run_codex plugin marketplace add "${source[@]}" 2>&1)"; then
+    printf '%s\n' "$out" >&2
+    run_codex plugin marketplace add "${previous[@]}" >/dev/null 2>&1 ||
+      die "échec du changement de source, et l'ancienne (${previous[*]}) n'a pas pu être restaurée : relancez install.sh install."
+    die "échec du changement de source ; l'ancienne source (${previous[*]}) est restaurée."
+  fi
   printf '%s\n' "$out"
 }
 
@@ -142,15 +168,15 @@ cmd_install() {
 }
 
 cmd_update() {
-  local ref="" local_source="" type
+  local ref="" local_source="" current
   parse_options "$@"
   [[ -z "$local_source" ]] || die "update ne prend pas --local ; utilisez install --local."
   require_tools
-  type="$(codex_state marketplace-type)"
-  [[ -n "$type" ]] || die "cstack n'est pas installé. Lancez : install.sh install"
+  current="$(current_marketplace)"
+  [[ -n "$current" ]] || die "cstack n'est pas installé. Lancez : install.sh install"
   if [[ -n "$ref" ]]; then
     add_marketplace "$ref" ""
-  elif [[ "$type" == git ]]; then
+  elif [[ "$current" == git$'\t'* ]]; then
     # Un commit épinglé n'avance pas : Codex échoue, on indique comment revenir sur une branche.
     run_codex plugin marketplace upgrade "$MARKETPLACE" ||
       die "mise à jour impossible. Si cstack est épinglé sur un commit, passez sur une branche : install.sh install --ref main"
@@ -163,10 +189,12 @@ cmd_update() {
 cmd_doctor() {
   local problems=0 version status
   echo "Diagnostic cstack"
-  if has_codex; then
-    ok "Codex CLI : $(run_codex --version 2>/dev/null | tail -n 1)"
-  else
+  if ! has_codex; then
     fail "Codex CLI introuvable (npm install -g @openai/codex)"; problems=1
+  elif version="$(run_codex --version 2>&1)"; then
+    ok "Codex CLI : $(tail -n 1 <<<"$version")"
+  else
+    fail "Codex CLI inutilisable : $(tail -n 1 <<<"$version")"; problems=1
   fi
   if python_ok; then
     ok "Python : $(python3 -c 'import platform; print(platform.python_version())')"
@@ -191,7 +219,7 @@ cmd_doctor() {
     warn "gh absent ou non authentifié : opérations GitHub indisponibles"
   fi
   if has_codex && python_ok; then
-    status="$(codex_state plugin-status)"
+    status="$(codex_state plugin-status)" || status="état illisible"
     if [[ "$status" == installed,\ enabled* ]]; then
       ok "plugin ${PLUGIN} : ${status}"
     else
@@ -203,9 +231,11 @@ cmd_doctor() {
 
 cmd_uninstall() {
   (($# == 0)) || { usage >&2; exit 2; }
+  local current
   require_tools
+  current="$(current_marketplace)"
   run_codex plugin remove "$PLUGIN"
-  if [[ -n "$(codex_state marketplace-type)" ]]; then
+  if [[ -n "$current" ]]; then
     run_codex plugin marketplace remove "$MARKETPLACE"
   fi
   echo "cstack est retiré. Les dossiers .cstack/ de vos projets sont conservés."

@@ -29,9 +29,15 @@ FAKE_CODEX = textwrap.dedent("""\
     def source_type():
         return "local" if state["source"].startswith("/") else "git"
     if args == ["--version"]:
+        if os.environ.get("FAKE_CODEX_VERSION_FAILS"):
+            fail("error while loading shared libraries")
         print("codex-cli 0.157.1")
     elif args[:3] == ["plugin", "marketplace", "list"]:
-        entries = [{"name": "cstack", "marketplaceSource": {"sourceType": source_type()}}] if state["source"] else []
+        if os.environ.get("FAKE_CODEX_LIST_FAILS"):
+            fail("failed to read config.toml")
+        url = state["source"].split(" ")[0] if state["source"] else None
+        entries = [{"name": "cstack", "root": "/codex/marketplaces/cstack",
+                    "marketplaceSource": {"sourceType": source_type(), "source": url}}] if url else []
         print(json.dumps({"marketplaces": entries}))
     elif args[:3] == ["plugin", "marketplace", "add"]:
         source = " ".join(args[3:])
@@ -40,6 +46,9 @@ FAKE_CODEX = textwrap.dedent("""\
             fail("marketplace 'cstack' is already added from a different source; remove it before adding this source")
         if source.endswith("--ref missing"):
             fail("git checkout missing failed with status exit status: 1")
+        # Réussit dans le CODEX_HOME d'essai, échoue dans le vrai : une panne entre l'essai et l'ajout.
+        if source.endswith("--ref flaky") and os.environ["CODEX_HOME"] == os.environ["FAKE_MAIN_HOME"]:
+            fail("failed to clone: connection reset")
         state["source"] = source
         save()
         print("Added marketplace `cstack` from " + source + ".")
@@ -77,6 +86,8 @@ FAKE_CODEX = textwrap.dedent("""\
 # `git ls-remote <url> HEAD` : FAKE_GIT_DENY liste les transports refusés (https, ssh).
 FAKE_GIT = textwrap.dedent("""\
     #!/bin/sh
+    # `git -C <clone> symbolic-ref` : le clone de Codex est sur la branche main.
+    if [ "$1" = -C ]; then [ "$3" = symbolic-ref ] && echo main; exit 0; fi
     case "$3" in https://*) transport=https ;; *) transport=ssh ;; esac
     case " $FAKE_GIT_DENY " in *" $transport "*) exit 128 ;; esac
 """)
@@ -109,6 +120,7 @@ class InstallScriptTest(unittest.TestCase):
             **os.environ,
             "PATH": "{}{}{}".format(self.bin, os.pathsep, os.environ["PATH"]),
             "CODEX_HOME": str(self.home),
+            "FAKE_MAIN_HOME": str(self.home),
             "FAKE_CODEX_LOG": str(self.log),
             **env,
         }
@@ -162,6 +174,13 @@ class InstallScriptTest(unittest.TestCase):
         self.assertTrue(json.loads(self.state.read_text())["installed"])
         self.assertNotIn("plugin marketplace remove cstack", self.calls())
 
+    def test_failed_switch_restores_the_previous_source(self):
+        self.run_script("install")
+        result = self.run_script("install", "--ref", "flaky")
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("est restaurée", result.stderr)
+        self.assertEqual(self.source(), "charlescstpierr/cstack --ref main")
+
     def test_missing_codex_is_reported(self):
         result = self.run_script("install", CSTACK_CODEX="codex-absent")
         self.assertEqual(result.returncode, 1)
@@ -210,7 +229,19 @@ class InstallScriptTest(unittest.TestCase):
     def test_doctor_reports_a_failing_plugin_list(self):
         result = self.run_script("doctor", FAKE_CODEX_LIST_FAILS="1")
         self.assertEqual(result.returncode, 1)
-        self.assertIn("✗ plugin cstack@cstack : absent", result.stdout)
+        self.assertIn("✗ plugin cstack@cstack : état illisible", result.stdout)
+
+    def test_doctor_reports_an_unusable_codex(self):
+        result = self.run_script("doctor", FAKE_CODEX_VERSION_FAILS="1")
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("✗ Codex CLI inutilisable : Error: error while loading shared libraries", result.stdout)
+
+    def test_uninstall_stops_when_codex_state_is_unreadable(self):
+        self.run_script("install")
+        result = self.run_script("uninstall", FAKE_CODEX_LIST_FAILS="1")
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("impossible de lire l'état de Codex", result.stderr)
+        self.assertTrue(json.loads(self.state.read_text())["installed"])
 
     def test_doctor_flags_a_bun_without_no_env_file(self):
         (self.bin / "bun").write_text("#!/bin/sh\n[ \"$1\" = --version ] && echo 1.0.0\nexit 0\n")

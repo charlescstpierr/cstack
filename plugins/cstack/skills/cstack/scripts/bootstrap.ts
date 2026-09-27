@@ -66,9 +66,11 @@ export function ensureDependenciesInstalled(): void {
     return;
   }
 
+  // execArgv porte déjà les drapeaux de BUN_OPTIONS : les retransmettre les doublerait.
+  const { BUN_OPTIONS: _alreadyInExecArgv, ...env } = process.env;
   const restarted = Bun.spawnSync([process.execPath, ...process.execArgv, ...process.argv.slice(1)], {
     cwd: process.cwd(),
-    env: process.env,
+    env,
     stdin: "inherit",
     stdout: "inherit",
     stderr: "inherit",

@@ -18,7 +18,7 @@ Répondez à ces points depuis la demande et le dépôt. Ne demandez que ce que 
 - **Actions.** Quels boutons existent, et quels champs JSON ils envoient. Gardez la liste de champs courte. Nommez les mêmes champs dans la page, le serveur et le prompt.
 - **Racine de travail.** Quel répertoire `codex exec --cd` doit utiliser. Un checkout de projet, ou un répertoire dédié que l'utilisateur a nommé.
 - **Sandbox.** `-s read-only` sauf si l'utilisateur a demandé au bot d'écrire des fichiers, alors `workspace-write`. Ne partez pas de `danger-full-access`. Ne passez pas `--dangerously-bypass-approvals-and-sandbox`.
-- **Liaison.** `127.0.0.1` et un port choisi par l'utilisateur (8765 s'il n'en a pas choisi). Liez `0.0.0.0` seulement quand il a explicitement demandé d'exposer la page au-delà de cette machine, puis suivez [les étapes d'exposition](references/codex-exec.md#exposer-au-delà-de-localhost) ; aucun tunnel ni proxy sauf s'il est nommé.
+- **Adresse d'écoute.** `127.0.0.1` et un port choisi par l'utilisateur (8765 s'il n'en a pas choisi). Écoutez sur `0.0.0.0` seulement quand il a explicitement demandé d'exposer la page au-delà de cette machine, puis suivez [les étapes d'exposition](references/codex-exec.md#exposer-au-delà-de-localhost) ; aucun tunnel ni proxy sauf s'il est nommé.
 
 N'ajoutez pas de fichiers sous le répertoire de cette compétence. Écrivez la page, le serveur et sa configuration dans le projet de l'utilisateur.
 
@@ -26,9 +26,9 @@ N'ajoutez pas de fichiers sous le répertoire de cette compétence. Écrivez la 
 
 `codex exec` utilise la connexion déjà présente sur cette machine. Vérifiez d'abord `codex login status` ; le processus serveur doit s'exécuter sous cet utilisateur pour hériter de `CODEX_HOME`. Si le statut échoue, arrêtez-vous et dites à l'utilisateur de [se connecter sur cette machine](references/codex-exec.md#connexion). Il ne colle rien dans le chat. Vous ne journalisez jamais la clé.
 
-Stockez la configuration de l'interface (liaison, port, racine `--cd`, sandbox, délai, token de page optionnel) dans un fichier que le serveur lit et ne sert pas. Le navigateur ne reçoit jamais d'identifiants Codex.
+Stockez la configuration de l'interface (adresse d'écoute, port, racine `--cd`, sandbox, délai, token de page optionnel) dans un fichier que le serveur lit et ne sert pas. Le navigateur ne reçoit jamais d'identifiants Codex.
 
-Si l'utilisateur a demandé d'exposer la page au-delà de localhost, générez un token de page aléatoire et stockez seulement son hash ou sa valeur brute dans la configuration serveur non servie. Refusez de démarrer sur une liaison non loopback quand aucun token de page n'est configuré.
+Si l'utilisateur a demandé d'exposer la page au-delà de localhost, générez un token de page aléatoire et stockez seulement son hash ou sa valeur brute dans la configuration serveur non servie. Refusez de démarrer sur une adresse d'écoute non loopback quand aucun token de page n'est configuré.
 
 N'injectez pas le token de page dans le HTML servi, le JavaScript inline, les query strings ou le stockage navigateur défini par le serveur. Affichez plutôt un champ de saisie du token. Le navigateur peut conserver le token seulement après que l'utilisateur l'a saisi, puis envoyer `Authorization: Bearer <page-token>` sur POST. Un token absent ou erroné renvoie 401 et ne lance pas `codex`.
 
@@ -40,7 +40,7 @@ Affichez l'état inactif, en cours, la dernière réponse et la dernière erreur
 
 ## Le serveur
 
-Liez l'adresse choisie plus haut. Servez la page sur `GET /`. Acceptez `POST /` (ou `/wake`) avec un corps JSON.
+Écoutez sur l'adresse choisie plus haut. Servez la page sur `GET /`. Acceptez `POST /` (ou `/wake`) avec un corps JSON.
 
 À chaque POST (étapes complètes dans [`references/codex-exec.md`](references/codex-exec.md#étapes-du-serveur)) :
 
@@ -86,4 +86,4 @@ codex exec resume \
 
 ## Sonder avant d'annoncer que c'est en ligne
 
-Avant de dire à l'utilisateur que l'interface est en ligne, envoyez un POST depuis cette machine avec une charge que le prompt ignore ou à laquelle il répond en un mot. Attendez HTTP 200, un code de sortie 0 de `codex exec` et un fichier de dernier message non vide. Une sonde échouée n'est pas en ligne ; corrigez et sondez à nouveau. Une réponse d'un mot ne prouve pas un tour long, en écriture, réseau ou MCP : voir les [limites](references/codex-exec.md#limites).
+Avant de dire à l'utilisateur que l'interface est en ligne, envoyez un POST depuis cette machine avec une charge que le prompt ignore ou à laquelle il répond en un mot. Attendez HTTP 200, un code de sortie 0 de `codex exec` et un fichier de dernier message non vide. Si la sonde échoue, l'interface n'est pas en ligne ; corrigez puis sondez à nouveau. Une réponse d'un mot ne prouve pas un tour long, en écriture, réseau ou MCP : voir les [limites](references/codex-exec.md#limites).
