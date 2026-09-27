@@ -334,7 +334,8 @@ export function validate(root: string): { skills: number; sourceFiles: number } 
     // Détecte les séparateurs et mots de liaison sans suite ; la prose nécessite aussi une relecture.
     requireValue(!/(?:[,;:]|\b(?:a|an|the|and|or|with|for|to|of|in|your|et|ou|avec|pour|de|du|des|le|la|les|un|une))$/i.test(summary), `${path}: description d’interface du skill tronquée`);
     requireValue(typeof policy.interface.default_prompt === "string" && policy.interface.default_prompt.includes(`$cstack:${name}`), `${path}: le prompt par défaut doit utiliser son invocation canonique`);
-    requireValue(text.includes("codex-runtime.md"), `${path}: lien vers le contrat d’exécution manquant`);
+    // Une skill lie l’index du contrat ou directement les parties qu’elle déclenche.
+    requireValue(/references\/(?:codex-runtime|runtime\/[a-z]+)\.md/.test(text), `${path}: lien vers le contrat d’exécution manquant`);
     const count = words(text);
     requireValue(count <= SKILL_WORD_CEILING, `${name}: ${count} mots dépassent le plafond de ${SKILL_WORD_CEILING}`);
   }
