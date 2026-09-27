@@ -12,7 +12,7 @@ Ce fichier s'adresse à un agent de code (Codex CLI ou Codex App) à qui l'utili
 
 ## Étapes
 
-1. **Environnement.** Sous Windows, cstack s'installe depuis WSL, pas depuis PowerShell. Les autres prérequis (Codex CLI, Python, Git et l'accès au dépôt) sont vérifiés par `doctor` à l'étape 3.
+1. **Environnement.** `bash --version` doit réussir : `install.sh` et `doctor` en ont besoin. Sous Windows, cstack s'installe depuis WSL, pas depuis PowerShell. Sans Bash, arrêtez-vous et dites-le à l'utilisateur. Les autres prérequis (Codex CLI, Python, Git et l'accès au dépôt) sont vérifiés par `doctor` à l'étape 3.
 
 2. **Obtenir le script, hors du projet de l'utilisateur.** Si vous lisez ce fichier depuis un clone de `charlescstpierr/cstack` (le dossier courant ou un clone fait pour le lire), utilisez l'`install.sh` de ce même clone : ce fichier et le script vont ensemble. Sinon, travaillez dans un dossier temporaire pour ne laisser aucun fichier dans le dépôt de l'utilisateur :
 
