@@ -72,6 +72,8 @@ FAKE_CODEX = textwrap.dedent("""\
     elif args[:2] == ["plugin", "add"]:
         if not state["source"]:
             fail("marketplace `cstack` is not configured")
+        if state["source"].endswith("--ref no-plugin"):
+            fail("plugin `cstack` was not found in marketplace `cstack`")
         state["installed"] = True
         save()
         print("Added plugin `cstack` from marketplace `cstack`.")
@@ -176,6 +178,14 @@ class InstallScriptTest(unittest.TestCase):
         self.assertEqual(self.source(), "charlescstpierr/cstack")
         self.assertTrue(self.installed())
         self.assertNotIn("plugin marketplace remove cstack", self.calls())
+
+    def test_source_without_the_plugin_keeps_the_current_installation(self):
+        self.run_script("install")
+        result = self.run_script("install", "--ref", "no-plugin")
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("L'installation actuelle est conservée", result.stderr)
+        self.assertEqual(self.source(), "charlescstpierr/cstack")
+        self.assertTrue(self.installed())
 
     def test_failed_switch_restores_the_previous_source(self):
         self.run_script("install")

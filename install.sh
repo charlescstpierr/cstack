@@ -126,7 +126,9 @@ add_marketplace() {
   echo "Changement de source : ${source[*]}"
   # Essai dans un CODEX_HOME jetable : une source invalide ne doit pas coûter l'installation actuelle.
   trial="$(mktemp -d)"
-  out="$(CODEX_HOME="$trial" run_codex plugin marketplace add "${source[@]}" 2>&1)" || trial_failed=1
+  # L'essai installe aussi le plugin : un catalogue valide sans cstack utilisable est refusé ici.
+  out="$({ CODEX_HOME="$trial" run_codex plugin marketplace add "${source[@]}" &&
+    CODEX_HOME="$trial" run_codex plugin add "$PLUGIN"; } 2>&1)" || trial_failed=1
   rm -rf "$trial"
   [[ -z "$trial_failed" ]] || die_with "${out}"$'\n'"cstack : source inutilisable. L'installation actuelle est conservée."
   local line
