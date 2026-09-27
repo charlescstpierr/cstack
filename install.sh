@@ -142,9 +142,7 @@ add_marketplace() {
   # Catalogue et plugin forment une seule transaction : tout échec restaure l'ancienne source.
   if ! out="$({ run_codex plugin marketplace add "${source[@]}" && run_codex plugin add "$PLUGIN"; } 2>&1)"; then
     printf '%s\n' "$out" >&2
-    if [[ -n "$(current_marketplace)" ]]; then
-      run_codex plugin marketplace remove "$MARKETPLACE" >/dev/null 2>&1 || true
-    fi
+    run_codex plugin marketplace remove "$MARKETPLACE" >/dev/null 2>&1 || true
     { run_codex plugin marketplace add "${previous[@]}" && run_codex plugin add "$PLUGIN"; } >/dev/null 2>&1 ||
       die "échec du changement de source, et l'ancienne (${previous[*]}) n'a pas pu être restaurée : relancez install.sh install."
     die "échec du changement de source ; l'ancienne source (${previous[*]}) est restaurée."
