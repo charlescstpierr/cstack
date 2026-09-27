@@ -183,6 +183,8 @@ switch_marketplace() {
     run_codex plugin marketplace remove "$MARKETPLACE" >/dev/null 2>&1 || true
     { run_codex plugin marketplace add "${previous[@]}" && { [[ -z "$was_installed" ]] || run_codex plugin add "$PLUGIN"; }; } >/dev/null 2>&1 ||
       die "échec, et l'ancienne source ($(redact "${previous[@]}")) n'a pas pu être restaurée : relancez install.sh install."
+    [[ "$current" == git$'\t'* ]] ||
+      die "échec ; l'ancienne source locale ($(redact "${previous[@]}")) est restaurée, recopiée depuis l'état actuel du clone."
     die "échec ; l'ancienne source ($(redact "${previous[@]}")) est restaurée à son commit précédent. Pour suivre de nouveau une branche : install.sh install --ref <branche>"
   fi
   redact "$out"
@@ -242,6 +244,7 @@ cmd_update() {
 
 cmd_doctor() {
   local problems=0 version status
+  (($# == 0)) || { usage >&2; exit 2; }
   echo "Diagnostic cstack"
   if ! has_codex; then
     fail "Codex CLI introuvable (npm install -g @openai/codex)"; problems=1
@@ -255,7 +258,9 @@ cmd_doctor() {
   else
     fail "Python 3.9 ou plus récent introuvable"; problems=1
   fi
-  if (remote_source >/dev/null 2>&1); then
+  if ! command -v git >/dev/null 2>&1; then
+    fail "git introuvable : Codex en a besoin pour cloner ${REPO}"; problems=1
+  elif (remote_source >/dev/null 2>&1); then
     ok "accès Git à ${REPO}"
   else
     fail "accès Git refusé à ${REPO} (gh auth login && gh auth setup-git)"; problems=1

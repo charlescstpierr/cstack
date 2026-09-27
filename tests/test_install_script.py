@@ -346,6 +346,18 @@ class InstallScriptTest(unittest.TestCase):
         self.assertIn("impossible de lire l'état de Codex", result.stderr)
         self.assertTrue(self.installed())
 
+    def test_doctor_reports_a_missing_git(self):
+        (self.bin / "git").unlink()
+        bare = Path(self.temp.name) / "bare"
+        bare.mkdir()
+        for tool in ("python3", "bash", "awk", "sed", "grep", "tail", "mktemp", "rm", "cat", "dirname"):
+            found = shutil.which(tool)
+            if found:
+                (bare / tool).symlink_to(found)
+        result = self.run_script("doctor", PATH="{}{}{}".format(self.bin, os.pathsep, bare))
+        self.assertIn("✗ git introuvable", result.stdout)
+        self.assertNotIn("gh auth login", result.stdout)
+
     def test_doctor_flags_a_bun_without_no_env_file(self):
         (self.bin / "bun").write_text("#!/bin/sh\n[ \"$1\" = --version ] && echo 1.0.0\nexit 0\n")
         result = self.run_script("doctor")
@@ -358,6 +370,7 @@ class InstallScriptTest(unittest.TestCase):
         self.assertEqual(self.run_script("update", "--ref", "").returncode, 1)
         self.assertEqual(self.run_script("install", "--ref", "main", "--local").returncode, 1)
         self.assertEqual(self.run_script("update", "--local").returncode, 1)
+        self.assertEqual(self.run_script("doctor", "--local").returncode, 2)
         self.assertEqual(self.calls(), [])
 
 
