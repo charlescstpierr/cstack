@@ -54,6 +54,7 @@ Dans `doctor`, `✓` est vérifié, `!` est facultatif (Bun, `gh`) et n'empêche
 | `impossible de lire l'état de Codex` ou `état du plugin illisible` | Codex CLI ne répond pas correctement. Faites vérifier `codex --version` et la mise à jour de Codex ; ne touchez pas à ses fichiers. |
 | `épinglé sur un commit` | L'installation suit un commit fixe, souvent voulu. Demandez à l'utilisateur avant `install.sh install --ref main`. |
 | `n'a pas pu être restaurée` | Le changement de source a échoué et l'ancienne n'a pas pu être remise : cstack n'est peut-être plus installé. Relancez `install.sh doctor`, puis `install.sh install` si la ligne du plugin n'est pas `✓`, et dites-le à l'utilisateur. |
+| `sans mise à jour Git` | Réussite, mais l'installation vient d'un clone local (`install --local`) et `update` l'a seulement recopié : ce n'est pas forcément la dernière version. Dites-le, et demandez à l'utilisateur s'il veut mettre son clone à jour lui-même ou passer à GitHub avec `install.sh install --ref main`. |
 | `cstack n'est pas installé` | Vous avez lancé `update` trop tôt : lancez `install.sh install`. |
 
 Pour tout autre échec, montrez le message tel quel à l'utilisateur.
