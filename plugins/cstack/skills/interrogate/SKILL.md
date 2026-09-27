@@ -9,7 +9,7 @@ description: >-
 
 # Interrogate
 
-Runtime : [délégation](../cstack/references/runtime/delegation.md), [modèles](../cstack/references/runtime/modeles.md), [orchestration](../cstack/references/runtime/orchestration.md) · rôles : `interrogate reviewers`.
+Runtime : [règles communes](../cstack/references/runtime/base.md), [délégation](../cstack/references/runtime/delegation.md), [modèles](../cstack/references/runtime/modeles.md), [orchestration](../cstack/references/runtime/orchestration.md) · rôles : `interrogate reviewers`.
 
 Lance exactement le nombre configuré de reviewers indépendants pour relire adversarialement des changements de code. Chaque reviewer reçoit le même instantané de portée, les mêmes preuves d'exigences approuvées, le même prompt et la même rubrique, avec un axe principal assigné. Le signal adversarial vient des passes indépendantes et, quand des surcharges de modèles vérifiées sont disponibles, de la diversité des modèles. N'ajoute pas de reviewers au-delà du panneau configuré.
 
@@ -19,7 +19,7 @@ Le livrable est un verdict synthétisé. N'applique PAS automatiquement les chan
 
 Identifie ce qui doit être relu depuis le contexte :
 
-- Si l'utilisateur pointe vers des fichiers ou un diff précis, utilise cela.
+- Si l'utilisateur pointe vers des fichiers ou un diff précis, utilise cela, emballé selon [l'instantané figé](references/scope-snapshot.md).
 - Pour le travail courant, une branche, une plage ou une PR, fige une seule fois les SHA base et head selon [l'instantané figé](references/scope-snapshot.md), sans jamais changer le worktree.
 - Si le message utilisateur référence un travail récent, rassemble les fichiers pertinents et préserve la portée demandée.
 

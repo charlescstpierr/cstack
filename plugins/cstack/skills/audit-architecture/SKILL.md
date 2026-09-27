@@ -5,7 +5,7 @@ description: "Mène un audit d'architecture brownfield borné et en lecture seul
 
 # Auditer l'architecture
 
-Runtime : [exploration](../cstack/references/runtime/exploration.md), [délégation](../cstack/references/runtime/delegation.md), [modèles](../cstack/references/runtime/modeles.md) · rôle : `how explorer` (explorateurs).
+Runtime : [règles communes](../cstack/references/runtime/base.md), [exploration](../cstack/references/runtime/exploration.md), [délégation](../cstack/references/runtime/delegation.md), [modèles](../cstack/references/runtime/modeles.md) · rôle : `how explorer` (explorateurs).
 
 Examine le code existant pour trouver des améliorations architecturales utiles. Cette skill trouve et compare des candidats; elle ne reconçoit pas et ne refactore pas le code.
 

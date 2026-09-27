@@ -5,7 +5,7 @@ description: "Garde une trace de décisions relisible pour les travaux longs ou 
 
 # Montrer ton travail
 
-Runtime : [délégation](../cstack/references/runtime/delegation.md), [modèles](../cstack/references/runtime/modeles.md), [orchestration](../cstack/references/runtime/orchestration.md), [état](../cstack/references/runtime/etat.md) · rôle : `judgment and prose`.
+Runtime : [règles communes](../cstack/references/runtime/base.md), [délégation](../cstack/references/runtime/delegation.md), [modèles](../cstack/references/runtime/modeles.md), [orchestration](../cstack/references/runtime/orchestration.md), [état](../cstack/references/runtime/etat.md) · rôle : `judgment and prose`.
 
 Garde un journal canonique unique.
 

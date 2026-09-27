@@ -5,7 +5,7 @@ description: "Passe périodique qui garde fidèle la skill de vérification d'un
 
 # Maintenir une skill de vérification
 
-Runtime : [délégation](../cstack/references/runtime/delegation.md), [orchestration](../cstack/references/runtime/orchestration.md), [intégrations](../cstack/references/runtime/integrations.md).
+Runtime : [règles communes](../cstack/references/runtime/base.md), [délégation](../cstack/references/runtime/delegation.md), [orchestration](../cstack/references/runtime/orchestration.md), [intégrations](../cstack/references/runtime/integrations.md).
 
 Une carte de fonctionnalités pourrit des que l'app change. Cette skill est la boucle d'entretien d'une skill générée par `$cstack:create-verification-skill` (ou de toute skill de vérification locale au projet avec une carte de fonctionnalités). L'unité de rigueur est la fonctionnalité, pas chaque phrase : couvrir chaque fichier de fonctionnalité depuis la source et exercer chaque fonctionnalité en live, sans terminaliser chaque puce.
 

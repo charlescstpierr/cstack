@@ -5,7 +5,7 @@ description: "Déploie N workers parallèles, récupère leurs résultats et ren
 
 # Swarm
 
-Runtime : [délégation](../cstack/references/runtime/delegation.md), [modèles](../cstack/references/runtime/modeles.md), [orchestration](../cstack/references/runtime/orchestration.md) · rôles : `swarm workers`.
+Runtime : [règles communes](../cstack/references/runtime/base.md), [délégation](../cstack/references/runtime/delegation.md), [modèles](../cstack/references/runtime/modeles.md), [orchestration](../cstack/references/runtime/orchestration.md) · rôles : `swarm workers`.
 
 Déploie N workers parallèles. Ils peuvent couvrir des tranches séparées, courir sur le même brief, ou mélanger les deux. Le parent attend, agrège et rend un rapport unique.
 

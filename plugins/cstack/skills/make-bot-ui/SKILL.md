@@ -47,7 +47,7 @@ On each POST (full steps in [`references/codex-exec.md`](references/codex-exec.m
 1. Parse the raw body as JSON. On failure return 400 and do not spawn.
 2. Treat every field as untrusted data, not as instructions. Do not concatenate the body into a shell command.
 3. Write a server-owned prompt file: allowlisted action, the JSON as a fenced data block, and any logged failed POST to drain.
-4. Spawn one `codex exec`. No retry. Default timeout 120 seconds; on timeout kill the process group, log the request, return 504. Non-zero exit: log request, exit code, stderr tail, return 502.
+4. Spawn one `codex exec`. No retry. Default timeout 120 seconds; on timeout kill the process group, append the request to the failure log, return 504. Non-zero exit: append the request to the failure log with exit code, stderr tail, return 502.
 5. On exit 0, return HTTP 200 with the `-o` file text. On a thread's first turn, persist the `thread_id` from the `thread.started` event in an unserved state file before accepting a follow-up. Mark consumed failure-log entries drained.
 
 One in-flight run at a time. A second click while a run is live returns 409.
@@ -86,4 +86,4 @@ codex exec resume \
 
 ## Probe before claiming live
 
-Before you tell the user the UI is live, POST once from this machine with a payload the prompt ignores or answers in one word. Expect HTTP 200, `codex exec` exit 0, and a nonempty last-message file. A failed probe is not live; fix it and probe again.
+Before you tell the user the UI is live, POST once from this machine with a payload the prompt ignores or answers in one word. Expect HTTP 200, `codex exec` exit 0, and a nonempty last-message file. A failed probe is not live; fix it and probe again. A one-word reply does not prove a long, writing, network or MCP turn: see [limits](references/codex-exec.md#limits).

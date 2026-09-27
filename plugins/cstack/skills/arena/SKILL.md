@@ -5,7 +5,7 @@ description: "Lance N candidats en parallèle sur la même tâche, choisit une b
 
 # Arena
 
-Runtime : [délégation](../cstack/references/runtime/delegation.md), [modèles](../cstack/references/runtime/modeles.md), [orchestration](../cstack/references/runtime/orchestration.md) · rôles : `arena runners`, `arena cross-judge pool`.
+Runtime : [règles communes](../cstack/references/runtime/base.md), [délégation](../cstack/references/runtime/delegation.md), [modèles](../cstack/references/runtime/modeles.md), [orchestration](../cstack/references/runtime/orchestration.md) · rôles : `arena runners`, `arena cross-judge pool`.
 
 Déploie N tentatives parallèles sur la même tâche. Lis chaque candidat de bout en bout. Choisis le plus solide comme base. Greffe-y les meilleures idées des autres. Vérifie le résultat synthétisé.
 
@@ -69,4 +69,4 @@ Si la vérification révèle un problème que l'arena n'a pas attrapé, soit la 
 
 ## Sorties
 
-Un artefact synthétisé. Une courte note de synthèse à côté, nommant la base, les greffes (avec le candidat source), les rejets, les abandons s'il y en a et le résultat de vérification. Chaque affirmation porte sa preuve ou son étiquette : mesuré, inféré ou supposition (toute prédiction ou cause non observée) ; ne laisse à l'humain aucune vérification exécutable.
+Un artefact synthétisé. Une courte note de synthèse à côté, nommant la base, les greffes (avec le candidat source), les rejets, les abandons s'il y en a et le résultat de vérification. Chaque affirmation porte sa preuve ou son étiquette : mesuré, inféré ou supposition (toute prédiction ou cause non observée) ; Ne donne jamais à l'humain une vérification que tu pourrais exécuter.

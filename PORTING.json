@@ -1028,6 +1028,10 @@
       "reason": "Short index of the Codex runtime contract, not present in pstack; each part lives under runtime/ and is read on demand."
     },
     {
+      "path": "plugins/cstack/skills/cstack/references/runtime/base.md",
+      "reason": "Codex runtime contract part (precedence and always-on rules linked by every skill), not present in pstack; read on demand."
+    },
+    {
       "path": "plugins/cstack/skills/cstack/references/runtime/activation.md",
       "reason": "Codex runtime contract part (activation, routing and delivery scope), not present in pstack; read on demand."
     },

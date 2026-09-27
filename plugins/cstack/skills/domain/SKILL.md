@@ -5,7 +5,7 @@ description: "Utiliser quand $cstack:domain est sélectionne explicitement ou ro
 
 # Domaine
 
-Runtime : [activation](../cstack/references/runtime/activation.md), [exploration](../cstack/references/runtime/exploration.md), [modèles](../cstack/references/runtime/modeles.md) · rôles : `how explorer` (explorateurs), `documentation` (brouillon), `judgment and prose` (jugement).
+Runtime : [règles communes](../cstack/references/runtime/base.md), [activation](../cstack/references/runtime/activation.md), [exploration](../cstack/references/runtime/exploration.md), [délégation](../cstack/references/runtime/delegation.md), [modèles](../cstack/references/runtime/modeles.md) · rôles : `how explorer` (explorateurs), `documentation` (brouillon), `judgment and prose` (jugement).
 
 Utilise cette skill quand l'utilisateur sélectionne explicitement `$cstack:domain`, ou quand le coordinateur `$cstack:cstack` actif ou ses skills de préparation routent ici une décision terminologique matérielle. Elle sert au travail de domaine actif : résoudre le vocabulaire, vérifier les frontières de modèle et consigner un petit nombre de décisions durables. Lire simplement un glossaire n'est pas cette skill.
 

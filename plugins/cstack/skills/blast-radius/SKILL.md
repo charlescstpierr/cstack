@@ -5,7 +5,7 @@ description: "Trouve ce qu'un changement pourrait casser ailleurs avant livraiso
 
 # Rayon d'impact
 
-Runtime : [intégrations](../cstack/references/runtime/integrations.md).
+Runtime : [règles communes](../cstack/references/runtime/base.md), [intégrations](../cstack/references/runtime/integrations.md).
 
 Trouve ce qu'un changement casse ailleurs avant qu'il parte en livraison. Utilise pour "rayon d’impact de X", "qu’est-ce que cela pourrait casser", ou la revue d'un petit diff auquel tu ne fais pas encore confiance.
 

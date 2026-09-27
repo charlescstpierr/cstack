@@ -5,7 +5,7 @@ description: "À utiliser pour $cstack:why, « pourquoi X fonctionne-t-il ainsi 
 
 # Why
 
-Runtime : [délégation](../cstack/references/runtime/delegation.md), [modèles](../cstack/references/runtime/modeles.md), [orchestration](../cstack/references/runtime/orchestration.md) · rôles : `why investigators`, `why synthesizer`.
+Runtime : [règles communes](../cstack/references/runtime/base.md), [délégation](../cstack/references/runtime/delegation.md), [modèles](../cstack/references/runtime/modeles.md), [orchestration](../cstack/references/runtime/orchestration.md) · rôles : `why investigators`, `why synthesizer`.
 
 Enquête sur la motivation et l'intention derrière le code.
 
@@ -129,7 +129,7 @@ Le synthétiseur reçoit :
 
 ## Étape 5. Présenter
 
-Prends la sortie du synthétiseur et présente-la à l'utilisateur. Tu peux retoucher légèrement pour la clarté ou ajouter le contexte de conversation, mais **ne réécris pas le langage de confiance**. Chaque affirmation porte sa preuve ou son étiquette : mesuré, inféré ou supposition (toute prédiction ou cause non observée) ; ne laisse à l'humain aucune vérification exécutable.
+Prends la sortie du synthétiseur et présente-la à l'utilisateur. Tu peux retoucher légèrement pour la clarté ou ajouter le contexte de conversation, mais **ne réécris pas le langage de confiance**. Chaque affirmation porte sa preuve ou son étiquette : mesuré, inféré ou supposition (toute prédiction ou cause non observée) ; Ne donne jamais à l'humain une vérification que tu pourrais exécuter.
 
 ## Format de sortie
 

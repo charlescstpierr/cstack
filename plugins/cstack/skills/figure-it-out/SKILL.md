@@ -5,13 +5,13 @@ description: "Conçoit un playbook auditable quand aucun plus étroit ne convien
 
 # Figure it out
 
-Runtime : [délégation](../cstack/references/runtime/delegation.md), [orchestration](../cstack/references/runtime/orchestration.md).
+Runtime : [règles communes](../cstack/references/runtime/base.md), [délégation](../cstack/references/runtime/delegation.md), [orchestration](../cstack/references/runtime/orchestration.md).
 
 Quand la tâche ne correspond à aucun playbook, conçois-en un. Le livrable avant tout code est le flux de travail lui-même : une séquence de phases qui ajuste la rigueur à la tâche, applique la méthode scientifique et laisse une trace de décisions qu'un humain peut auditer après s'être absenté. Biaise vers plus de rigueur. Le coût de construire la mauvaise chose écrase le coût d'être prudent.
 
 ## Démarrage
 
-Commence la liste de tâches par la lecture des règles communes et routes de principes de la [skill cstack](../cstack/SKILL.md) et des références dont les déclencheurs s'appliquent, puis ajoute les phases ci-dessous. Un handoff Horizon et des décisions vérifiées existants peuvent établir le cadrage ; les portes de revue et de vérification restent.
+Commence la liste de tâches par la lecture des règles communes et routes de principes de la [skill cstack](../cstack/SKILL.md) et des références dont les déclencheurs s'appliquent, puis ajoute les phases ci-dessous. Réutilise un handoff Horizon et les décisions vérifiées existants pour le cadrage ; les portes de revue et de vérification restent.
 
 ## Phase A : Cadrer
 

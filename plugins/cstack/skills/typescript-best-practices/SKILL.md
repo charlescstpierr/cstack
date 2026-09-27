@@ -16,7 +16,7 @@ Applique d'abord la référence de principe [discipline du système de types](..
 | Modélisation constructive | Construis la forme pour que la valeur illégale ne puisse pas être construite. `[T, ...T[]]` pour non vide, `[T, T][]` pour longueur paire, `start` plus `duration` pour une plage. Pas une garde runtime, pas un souhait de types de raffinement. |
 | Type total le plus simple | Garde `T[]` tant que chaque opération dessus reste totale. Renforce vers `NonEmpty<T>` seulement là où le type souple force `!`, un cast ou un throw "cela ne devrait jamais arriver". |
 | `unknown` plutôt que `any` | Les données externes sont `unknown`. |
-| Schémas avant gardes | Au lieu d'écrire une garde de type propriété par propriété, utilise la bibliothèque de schémas runtime du dépôt et infère le type du schéma, comme `z.infer`. |
+| Schémas avant gardes | Avant d'écrire à la main une garde de type propriété par propriété, utilise la bibliothèque de schémas runtime du dépôt et infère le type du schéma, comme `z.infer`. |
 | Aucun cast `as` | Chaque `as` est un crash d’exécution en attente. Caste seulement après validation. |
 | Hiérarchie de narrowing | Switch discriminant > opérateur `in` > `typeof`/`instanceof` > garde de type définie par l'utilisateur > `as`. |
 | Gardes de type | Elles doivent vérifier l'affirmation. Une garde menteuse est pire que `as` : son nom rassurant cache le bug. Nomme-les `isX` ou `hasX`. |

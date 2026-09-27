@@ -5,7 +5,7 @@ description: "Utiliser pour $cstack:no-comments lors d'une revue indépendante d
 
 # No comments
 
-Runtime : [délégation](../cstack/references/runtime/delegation.md), [orchestration](../cstack/references/runtime/orchestration.md).
+Runtime : [règles communes](../cstack/references/runtime/base.md), [délégation](../cstack/references/runtime/delegation.md), [orchestration](../cstack/references/runtime/orchestration.md).
 
 Exécute une revue indépendante des commentaires, puis agis sur les constats acceptés. `deslop` (`../deslop/SKILL.md`) nettoie le slop du code, `unslop` (`../unslop/SKILL.md`) le nettoie de la prose, et `no-comments` confie les commentaires à un relecteur qui ne les a pas écrits.
 

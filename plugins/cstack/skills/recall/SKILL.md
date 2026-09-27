@@ -5,7 +5,7 @@ description: "Utiliser pour $cstack:recall, 'retrouve mon travail sur X', 'remet
 
 # Recall
 
-Runtime : [délégation](../cstack/references/runtime/delegation.md), [modèles](../cstack/references/runtime/modeles.md), [orchestration](../cstack/references/runtime/orchestration.md), [état](../cstack/references/runtime/etat.md), [intégrations](../cstack/references/runtime/integrations.md).
+Runtime : [règles communes](../cstack/references/runtime/base.md), [délégation](../cstack/references/runtime/delegation.md), [modèles](../cstack/references/runtime/modeles.md), [orchestration](../cstack/references/runtime/orchestration.md), [état](../cstack/references/runtime/etat.md), [intégrations](../cstack/references/runtime/integrations.md).
 
 **Avant de commencer ou reprendre le travail, tu reconstruis le contexte de travail récent de l'utilisateur et rends une capsule serrée de l'état actuel et de la prochaine chose à faire.**
 

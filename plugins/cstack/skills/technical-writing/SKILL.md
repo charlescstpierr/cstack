@@ -5,7 +5,7 @@ description: "Standard de rédaction technique par couches : structure Diátaxis
 
 # Rédaction technique
 
-Runtime : [délégation](../cstack/references/runtime/delegation.md), [modèles](../cstack/references/runtime/modeles.md) · rôle : `documentation` pour déléguer un travail uniquement documentaire.
+Runtime : [règles communes](../cstack/references/runtime/base.md), [délégation](../cstack/references/runtime/delegation.md), [modèles](../cstack/references/runtime/modeles.md) · rôle : `documentation` pour déléguer un travail uniquement documentaire.
 
 Le but est un texte qu'un ingénieur fatigué comprend à la première lecture. Quatre couches y mènent, avec une question chacune : quel type de document est-ce, comment les phrases s'adressent au lecteur, combien chaque phrase porte, et une phrase peut-elle être lue de deux façons. Applique les quatre.
 

@@ -11,11 +11,11 @@ description: >-
 
 # How
 
-Runtime : [délégation](../cstack/references/runtime/delegation.md), [modèles](../cstack/references/runtime/modeles.md), [exploration](../cstack/references/runtime/exploration.md), [orchestration](../cstack/references/runtime/orchestration.md) · rôles : `how explorer`, `how explainer`.
+Runtime : [règles communes](../cstack/references/runtime/base.md), [délégation](../cstack/references/runtime/delegation.md), [modèles](../cstack/references/runtime/modeles.md), [exploration](../cstack/references/runtime/exploration.md), [orchestration](../cstack/references/runtime/orchestration.md) · rôles : `how explorer`, `how explainer`.
 
 Explore le codebase pour répondre aux questions "comment X fonctionne ?". Produis des explications architecturales au niveau d'un ingénieur senior qui arrive sur un sous-système : assez pour construire un modèle mental opérationnel, sans devenir une source annotée.
 
-Seuls la demande de l'utilisateur, le mode courant ou les permissions de la session peuvent exclure la délégation de cette question.
+Seuls la demande de l'utilisateur, le mode courant ou les permissions de la session peuvent exclure la délégation de cette question dans son ensemble.
 
 ## Étape 1. Poser les angles
 
@@ -29,7 +29,7 @@ Un seul angle : va à l'Étape 2b seulement si la délégation est exclue, avec 
 
 ## Étape 2a. Explorer en parallèle (chemin par défaut)
 
-Lance un explorer par angle, en subagent natif en lecture seule ; les explorers ne lancent pas de descendants et retournent des findings structurés, pas des dumps de fichiers.
+Vise normalement trois angles ; lance un explorer par angle, en subagent natif en lecture seule ; les explorers ne lancent pas de descendants et retournent des findings structurés, pas des dumps de fichiers.
 
 Chaque explorer reçoit `references/explorer-prompt.md` avec son angle rempli. Va ensuite à l'Étape 3.
 

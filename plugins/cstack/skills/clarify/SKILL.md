@@ -5,7 +5,7 @@ description: "Utiliser quand $cstack:clarify est sélectionne explicitement ou r
 
 # Clarifier
 
-Runtime : [activation](../cstack/references/runtime/activation.md), [exploration](../cstack/references/runtime/exploration.md), [modèles](../cstack/references/runtime/modeles.md) · rôles : `how explorer` (explorateurs), `judgment and prose` (synthèse).
+Runtime : [règles communes](../cstack/references/runtime/base.md), [activation](../cstack/references/runtime/activation.md), [exploration](../cstack/references/runtime/exploration.md), [délégation](../cstack/references/runtime/delegation.md), [modèles](../cstack/references/runtime/modeles.md) · rôles : `how explorer` (explorateurs), `judgment and prose` (synthèse).
 
 Utilise cette skill quand l'utilisateur sélectionne explicitement `$cstack:clarify`, ou quand le coordinateur cstack actif ou ses skills de préparation routent ici. Ne l'active pas hors d'une tâche cstack ou demande de préparation explicitement sélectionnée. Une trace d'ambiguïté suffit : utilise-la s'il reste deux lectures raisonnables du résultat, du périmètre, du comportement ou de l'acceptation après avoir établi les faits. Si tu ne peux pas dire ce que tu livreras sans choisir une hypothèse à la place de l'utilisateur, route ici. Une demande courte ou un terme familier ne justifie pas à lui seul une question quand le dépôt et la conversation donnent une seule lecture ; si un fait ou une courte expérience tranche l'incertitude, fais-le et retourne au flux de travail de l'appelant.
 

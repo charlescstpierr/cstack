@@ -5,7 +5,7 @@ description: "Utiliser pour $cstack:teach, « apprends-moi ceci », « aide-moi 
 
 # Teach
 
-Runtime : [délégation](../cstack/references/runtime/delegation.md).
+Runtime : [règles communes](../cstack/references/runtime/base.md), [délégation](../cstack/references/runtime/delegation.md).
 
 **Tu expliques ce qu'est une chose, comment elle marche et pourquoi elle est construite ainsi, dans un récit simple au rythme de la personne. Le but est qu'elle comprenne, pas que tu changes quoi que ce soit.**
 

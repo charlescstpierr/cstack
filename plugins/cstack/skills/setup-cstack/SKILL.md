@@ -7,7 +7,7 @@ description: "Guider la configuration de projet cstack : préserver les consigne
 
 L'usage de base de cstack n'exige aucune configuration. La configuration prépare seulement le projet courant; elle n'active jamais un flux de travail et ne change jamais la configuration globale.
 
-Runtime : [suivi](../cstack/references/runtime/suivi.md), [exploration](../cstack/references/runtime/exploration.md), [modèles](../cstack/references/runtime/modeles.md).
+Runtime : [règles communes](../cstack/references/runtime/base.md), [suivi](../cstack/references/runtime/suivi.md), [exploration](../cstack/references/runtime/exploration.md), [modèles](../cstack/references/runtime/modeles.md).
 
 ## Portée
 
@@ -18,9 +18,9 @@ Avant la première inspection, affiche une todo courte adaptée au périmètre :
 ## Étapes
 
 1. **Découvrir.** Localise le workspace cible, normalement sa racine Git où le répertoire courant hors Git. Lis les `AGENTS.md`, `CLAUDE.md`, `docs/agents/cstack.md`, `docs/agents/issue-tracker.md`, conventions de domaine et `.cstack/models.json` existants quand ils sont presents. Inspecte seulement les fichiers de projet pertinents. Résous le chemin absolu de ce bundle installe. Fais l'[inventaire](references/inventory.md) des runtimes, connexions et catalogues de modèles/efforts avant de proposer des runtimes.
-2. **Proposer.** Exécute `show` ([modèles, rôles et recommandations](references/models.md)). Commence la présentation des modèles par un tableau « Propositions de modèles d’agents » qui montre chaque rôle, chaque position de panel, le modèle/effort recommandé vérifié et sa raison. Pour Claude Code ou un autre CLI, suis d'abord [Claude Code](references/claude-code.md). Pour la préparation de projet, explique les flux de préparation et propose le bloc `AGENTS.md`, les agents natifs et le tracker ([préparation](references/project-apply.md)).
+2. **Proposer.** Exécute `show` ([commandes](references/project-apply.md#configuration-modèle-seule) ; [modèles, rôles et recommandations](references/models.md)). Commence la présentation des modèles par un tableau « Propositions de modèles d’agents » qui montre chaque rôle, chaque position de panel, le modèle/effort recommandé vérifié et sa raison. Pour Claude Code ou un autre CLI, suis d'abord [Claude Code](references/claude-code.md). Pour la préparation de projet, explique les flux de préparation et propose le bloc `AGENTS.md`, les agents natifs et le tracker ([préparation](references/project-apply.md)).
 3. **Montrer l'actuel.** Seulement après ces propositions, affiche la configuration actuelle. Ne commence jamais la réponse par « les agents héritent du parent » quand le catalogue permet de proposer des modèles.
-4. **Appliquer avec empreinte.** `project.py apply` reçoit la prévisualisation exacte acceptée et son `plan_sha256` ; `models.py apply` reçoit l'empreinte relue de `show` ([commandes](references/project-apply.md#prévisualiser-et-appliquer-avec-projectpy)). Ne reconstruis jamais un plan à la main. Une prévisualisation périmée ou conflictuelle est rejetée et refaite ; un résultat `partial` suit la [reprise](references/project-apply.md#écriture-partielle).
+4. **Appliquer avec empreinte.** `project.py apply` reçoit la prévisualisation exacte acceptée et son `plan_sha256` ; `models.py apply` reçoit l'empreinte relue de `show` ([commandes](references/project-apply.md#configuration-modèle-seule)). Ne reconstruis jamais un plan à la main. Une prévisualisation périmée ou conflictuelle est rejetée et refaite ; un résultat `partial` suit la [reprise](references/project-apply.md#écriture-partielle).
 5. **Relire et vérifier.** Lis les vrais fichiers générés, résous les rôles modifiés et rapporte les réglages effectifs et quand ils prennent effet ([vérification](references/project-apply.md#relire-et-vérifier)).
 
 ## Acceptation explicite
@@ -36,6 +36,6 @@ Avant la première inspection, affiche une todo courte adaptée au périmètre :
 - Lancer un login, une génération, `claude -p`, des sondes payantes de modèle ou des travaux de test payants.
 - Écrire la configuration globale ou `~/.codex` ; les seuls agents écrits sont les agents projet acceptés dans `.codex/agents/`.
 - Modifier le cache de plugin installé ou exécuter une copie du helper locale au projet.
-- Créer des étiquettes, tickets ou état distant, un `CONTEXT.md` vide ou des répertoires ADR.
+- Créer des étiquettes, tickets ou état distant, des objectifs natifs, un `CONTEXT.md` vide ou des répertoires ADR.
 - Remplacer un contenu non géré, un bloc mal formé ou un agent sans `# cstack:managed` : ce sont des conflits à expliquer.
 - Rapporter un succès depuis une sortie échouée ou partielle, ou affirmer qu'un modèle a été exécuté.

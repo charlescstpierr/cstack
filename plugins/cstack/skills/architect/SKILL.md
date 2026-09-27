@@ -5,7 +5,7 @@ description: "Ébauche les types, signatures et structure de modules avant le co
 
 # Architecte
 
-Runtime : [délégation](../cstack/references/runtime/delegation.md), [modèles](../cstack/references/runtime/modeles.md), [orchestration](../cstack/references/runtime/orchestration.md) · rôles : `architect runners`.
+Runtime : [règles communes](../cstack/references/runtime/base.md), [délégation](../cstack/references/runtime/delegation.md), [modèles](../cstack/references/runtime/modeles.md), [orchestration](../cstack/references/runtime/orchestration.md) · rôles : `architect runners`.
 
 Conçois avant d'implémenter. Ébauche les types, signatures de fonctions, formes de classes et frontières de modules avec des corps `not implemented` et du pseudocode. Synthétise plusieurs perspectives de modèles, puis remplis le code selon l'ébauche choisie. Si l'implémentation prouve que l'ébauche est mauvaise, jette-la et reconçois.
 
@@ -31,7 +31,7 @@ Saute la Phase A seulement pour un travail réellement nouveau, sans système en
 
 Exécute la compétence **arena** avec la tâche d'ébauche et les artefacts d'ancrage de la Phase A, et `references/runner-prompt.md` comme prompt de chaque exécuteur. Chaque candidat produit un dossier de conception conforme à `references/rationale-template.md`.
 
-Résous le panel `architect runners` ; configuré, il compte au moins deux entrées, sinon c'est une erreur de configuration à signaler. Passe ce panel exact à Arena, où il prime sur `arena runners` même si les deux clés sont configurées.
+Résous le panel `architect runners` ; configuré, il compte au moins deux entrées, sinon c'est une erreur de configuration à signaler au lieu de modifier silencieusement son compte. Passe ce panel exact à Arena, où il prime sur `arena runners` même si les deux clés sont configurées.
 
 Conçois-le deux fois. Exige au moins deux candidats structurellement distincts avant la synthèse, même si le premier semble suffisant. C'est [Épuiser l’espace de conception](../cstack/references/principles/exhaust-the-design-space.md) rendu concret. Des alternatives de forme globale, pas des corrections ponctuelles dans une forme.
 
