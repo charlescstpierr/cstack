@@ -5,7 +5,7 @@ description: "Build a local page whose server holds credentials and wakes a Code
 
 # Make a bot UI
 
-Runtime: [`../cstack/references/codex-runtime.md`](../cstack/references/codex-runtime.md).
+Runtime: [shared rules](../cstack/references/runtime/base.md).
 
 Build a page the user clicks. A server on this computer holds the credentials and starts `codex exec`. The bot is that Codex run. Keep credentials on the server. Do not put them in the browser, in chat, or in this skill.
 

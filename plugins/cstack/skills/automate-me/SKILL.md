@@ -5,7 +5,7 @@ description: "Utiliser pour $cstack:automate-me, \"automate me\", \"create/updat
 
 # Automate me
 
-Runtime : [règles communes](../cstack/references/runtime/base.md), [délégation](../cstack/references/runtime/delegation.md), [état](../cstack/references/runtime/etat.md), [intégrations](../cstack/references/runtime/integrations.md).
+Runtime : [règles communes](../cstack/references/runtime/base.md), [délégation](../cstack/references/runtime/delegation.md), [intégrations](../cstack/references/runtime/integrations.md).
 
 Un flux guide pour transformer les conventions de travail de l'utilisateur en skill que les agents suivront. La sortie est une skill `-mode` adaptee à lui (par exemple `jay-mode`, `priya-mode`).
 

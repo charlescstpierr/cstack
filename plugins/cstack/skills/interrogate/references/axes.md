@@ -2,13 +2,9 @@
 
 Lis ce document aux Étapes 3 et 4 de [interrogate](../SKILL.md) pour affecter les axes selon la taille du panel et synthétiser par axe.
 
-## Panel et runtime
+## Panel
 
-Résous `interrogate reviewers` une fois selon le contrat runtime. La longueur de son panneau est le nombre exact de reviewers, borné seulement par la concurrence native; mets les tentatives excédentaires en vagues. Préserve la sélection complète du modèle et de l'effort de raisonnement pour chaque position. Si la capacité de revue manque, applique [Orchestration requise](../../cstack/references/runtime/orchestration.md) avec `route: Review`. L'absence de capacité ne supprime jamais un reviewer ni un axe.
-
-Pour chaque sélection avec `runtime`, applique le [dispatch CLI](../../cstack/references/runtime-workers.md) à la place du lancement natif. Conserve la taille et l'ordre du panel, le rôle spécialisé et les étapes de vérification. Les replis single-agent concernent seulement les sélections natives ; une position CLI bloquée n'est jamais remplacée silencieusement par Codex.
-
-Suis le chemin d'héritage direct du contrat runtime quand rien n'est configuré; sinon résous chaque rôle nommé avec son helper et transmets à chaque dispatch la sélection complète, effort de raisonnement compris. Signale les lacunes de capacité de l'hôte au lieu de supprimer un champ sélectionné.
+La longueur du panneau `interrogate reviewers` est le nombre exact de reviewers ; une revue impossible suit [Orchestration requise](../../cstack/references/runtime/orchestration.md) avec `route: Review`.
 
 ## Affectation des axes
 

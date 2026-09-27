@@ -5,7 +5,7 @@ description: "Retire le slop d'un diff de code avant commit ou revue. Utiliser p
 
 # Deslop
 
-Runtime : [règles communes](../cstack/references/runtime/base.md), [commits](../cstack/references/runtime/commits.md).
+Runtime : [règles communes](../cstack/references/runtime/base.md).
 
 Le slop est du code qui survit à la revue parce que personne ne peut pointer la ligne fausse. Ce n'est pas une question de style. Les commentaires narratifs et le poids mort défensif donnent une impression d'inachevé, et le code en trop est l'endroit où se cache le prochain bug.
 

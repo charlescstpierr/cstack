@@ -5,7 +5,7 @@ description: "Lance trois subagents de revue parallèles sur l'historique de la 
 
 # Reflect
 
-Runtime : [règles communes](../cstack/references/runtime/base.md), [délégation](../cstack/references/runtime/delegation.md), [modèles](../cstack/references/runtime/modeles.md), [orchestration](../cstack/references/runtime/orchestration.md), [état](../cstack/references/runtime/etat.md) · rôles : `reflect tooling` (reviewer tooling), `reflect judgment, divergent, synthesizer` (autres reviewers et synthétiseur).
+Runtime : [règles communes](../cstack/references/runtime/base.md), [délégation](../cstack/references/runtime/delegation.md), [modèles](../cstack/references/runtime/modeles.md), [orchestration](../cstack/references/runtime/orchestration.md) · rôles : `reflect tooling` (reviewer tooling), `reflect judgment, divergent, synthesizer` (autres reviewers et synthétiseur).
 
 Extrait de la tâche courante les apprentissages durables, puis route-les vers des modifications de skills ou une proposition locale.
 

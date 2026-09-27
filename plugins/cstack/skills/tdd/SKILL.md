@@ -5,7 +5,7 @@ description: "Utiliser $cstack:tdd pour les bugs et les nouvelles fonctionnalit�
 
 # Bugs et fonctionnalités en TDD
 
-Runtime : [règles communes](../cstack/references/runtime/base.md), [délégation](../cstack/references/runtime/delegation.md), [commits](../cstack/references/runtime/commits.md).
+Runtime : [règles communes](../cstack/references/runtime/base.md), [délégation](../cstack/references/runtime/delegation.md).
 
 Pour chaque bug ou comportement nouveau ou modifié, écris et exécute un test qui échoue pour la raison attendue avant de modifier le code de production. Fais-le ensuite passer avec le plus petit changement utile.
 

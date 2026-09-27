@@ -53,7 +53,7 @@ Roles de panel :
 
 Le pool de juge croisé fournit un juge, de préférence différent de l'auteur quand c'est disponible. Sans pool, utilise un juge indépendant avec modèle hérité. Les autres longueurs de listes de panel fixent le nombre demandé de tentatives. Ne prétends jamais à des familles de modèles différentes quand chaque passe a utilisé le même modèle.
 
-Les valeurs peuvent être des chaînes de modèle legacy, `inherit-parent`, ou `{ "model": "confirmed-slug", "reasoning_effort": "supported-effort" }`; les panels contiennent ces valeurs. `simple edits` manquant retombe sur `feature, refactoring`; `documentation` manquant retombe sur `judgment and prose`. Les autres rôles manquants héritent. Les panels manquants utilisent trois tentatives, sauf le pool de juge croisé qui en utilise une.
+Formats de valeur, replis et défauts de panel : [modèles du contrat](../../cstack/references/runtime/modeles.md).
 
 Exemple n'exigeant aucun modèle particulier :
 
@@ -69,7 +69,5 @@ Une configuration sauvegardée ne prouve pas qu'un modèle peut tourner. Gère l
 ## Catalogues et sélections CLI
 
 Les anciennes sélections et recommandations restent natives Codex. Pour un worker externe demandé, utilise le [contrat des workers CLI](../../cstack/references/runtime-workers.md) : `codex-cli`, `claude-code`, `cursor-agent` ou `grok`. Les panels peuvent mélanger ces sélections et l’héritage natif. Le coordinateur prépare les commandes et rend une synthèse unique ; l’utilisateur ne pilote pas chaque CLI manuellement.
-
-Une entrée `{ "runtime": "claude-code" }` utilise le défaut du CLI et ne nécessite aucun catalogue. Elle ne prouve pas que le CLI est installé, connecté ou disponible. Une entrée avec `model` exige une confirmation dans le catalogue de ce runtime ; `reasoning_effort` exige aussi `model`. N’utilise pas les recommandations OpenAI ni son catalogue pour valider Claude ou Grok. Le helper accepte le catalogue historique natif et la forme `{"runtimes":{"codex-native":{},"codex-cli":{},"claude-code":{},"cursor-agent":{},"grok":{}}}`, chaque objet associant des slugs confirmés à leurs efforts.
 
 Applique seulement les choix de runtime acceptés, via `models.py show`, `apply` et `resolve` ([commandes](project-apply.md#configuration-modèle-seule)). Le parcours `project.py preview/apply` reste celui de la préparation des documents de projet. Ne change pas la configuration globale, ne copie aucun credential et ne lance ni login ni génération pendant le setup. La présence d’une commande officielle de login ne prouve pas les droits d’abonnement Grok Build.

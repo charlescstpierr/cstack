@@ -334,14 +334,14 @@ export function validate(root: string): { skills: number; sourceFiles: number } 
     // Détecte les séparateurs et mots de liaison sans suite ; la prose nécessite aussi une relecture.
     requireValue(!/(?:[,;:]|\b(?:a|an|the|and|or|with|for|to|of|in|your|et|ou|avec|pour|de|du|des|le|la|les|un|une))$/i.test(summary), `${path}: description d’interface du skill tronquée`);
     requireValue(typeof policy.interface.default_prompt === "string" && policy.interface.default_prompt.includes(`$cstack:${name}`), `${path}: le prompt par défaut doit utiliser son invocation canonique`);
-    // Une skill lie l’index du contrat ou directement les parties qu’elle déclenche.
-    requireValue(/references\/(?:codex-runtime|runtime\/[a-z]+)\.md/.test(text), `${path}: lien vers le contrat d’exécution manquant`);
+    // Chaque skill atteint les règles communes ; le routeur les porte en ligne et lie l’index du contrat.
+    const contract = name === "cstack" ? "references/codex-runtime.md" : "../cstack/references/runtime/base.md";
+    requireValue(text.includes(`](${contract})`), `${path}: lien vers le contrat d’exécution manquant (${contract})`);
+    // Le routeur est lu à chaque invocation de `$cstack:cstack` : son plafond est le budget de lecture initiale.
     const count = words(text);
-    // Le routeur `cstack` a son propre budget de lecture initiale, vérifié plus bas.
-    requireValue(name === "cstack" || count <= SKILL_WORD_CEILING, `${name}: ${count} mots dépassent le plafond de ${SKILL_WORD_CEILING}`);
+    const [ceiling, label] = name === "cstack" ? [ENTRY_WORD_BUDGET, "le budget de lecture initiale"] : [SKILL_WORD_CEILING, "le plafond"];
+    requireValue(count <= ceiling, `${name}: ${count} mots dépassent ${label} de ${ceiling}`);
   }
-  const entryWords = words(mainSkill);
-  requireValue(entryWords <= ENTRY_WORD_BUDGET, `cstack: lecture initiale de ${entryWords} mots au-delà de ${ENTRY_WORD_BUDGET}`);
   const seenDisplay = new Set<string>();
   for (const item of skillUi) {
     requireValue(!seenDisplay.has(item.display), `display_name de skill dupliqué ${item.display}`);

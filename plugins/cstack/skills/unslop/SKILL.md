@@ -5,7 +5,7 @@ description: "Utiliser pour $cstack:unslop afin de retirer les tics IA de la pro
 
 # Unslop
 
-Runtime : [`../cstack/references/codex-runtime.md`](../cstack/references/codex-runtime.md).
+Runtime : [règles communes](../cstack/references/runtime/base.md).
 
 Modifie le texte pour retirer les motifs IA. `deslop` (`../deslop/SKILL.md`) nettoie le slop du code, `unslop` le nettoie de la prose, et `no-comments` confie les commentaires à un relecteur qui ne les a pas écrits.
 

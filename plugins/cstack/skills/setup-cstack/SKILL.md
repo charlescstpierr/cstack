@@ -7,7 +7,7 @@ description: "Guider la configuration de projet cstack : préserver les consigne
 
 L'usage de base de cstack n'exige aucune configuration. La configuration prépare seulement le projet courant; elle n'active jamais un flux de travail et ne change jamais la configuration globale.
 
-Runtime : [règles communes](../cstack/references/runtime/base.md), [suivi](../cstack/references/runtime/suivi.md), [exploration](../cstack/references/runtime/exploration.md), [modèles](../cstack/references/runtime/modeles.md).
+Runtime : [règles communes](../cstack/references/runtime/base.md), [exploration](../cstack/references/runtime/exploration.md), [modèles](../cstack/references/runtime/modeles.md).
 
 ## Portée
 

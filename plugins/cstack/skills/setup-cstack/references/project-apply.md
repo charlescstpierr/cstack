@@ -10,7 +10,7 @@ Applique le [suivi visible commun](../../cstack/references/runtime/suivi.md) : c
 
 ## Expliquer les flux de préparation
 
-Explique chaque flux de travail de préparation avec les données `workflows` du preview de projet et le [contrat de flux de travail](../../cstack/references/codex-runtime.md) : `clarify` et `domain` n'ont aucun délégué par défaut; une exploration déléguée suit le [contrat d’exploration déléguée](../../cstack/references/runtime/exploration.md); Horizon utilise au moins deux explorateurs par recherche, normalement trois, en vagues si nécessaire. Nomme le rôle existant et son modèle/effort effectif pour chaque phase. L'implémentation ordinaire et les tailles de panels existantes restent inchangées. Ce sont des règles de dispatch, pas de nouveaux rôles de modèle.
+Explique chaque flux de travail de préparation avec les données `workflows` du preview de projet et le [contrat de flux de travail](../../cstack/references/codex-runtime.md) : `clarify` et `domain` n'ont aucun délégué par défaut; une exploration déléguée suit le [contrat d’exploration déléguée](../../cstack/references/runtime/exploration.md), recherches Horizon comprises. Nomme le rôle existant et son modèle/effort effectif pour chaque phase. L'implémentation ordinaire et les tailles de panels existantes restent inchangées. Ce sont des règles de dispatch, pas de nouveaux rôles de modèle.
 
 ## Bloc AGENTS.md et agents natifs
 

@@ -62,9 +62,7 @@ class ModelSetupTests(unittest.TestCase):
                              [{"model": "gpt-6-astra", "reasoning_effort": "medium"}])
 
     def test_setup_presents_agent_models_before_inheritance(self):
-        setup = ROOT / "plugins/cstack/skills/setup-cstack"
-        skill = "\n".join(path.read_text() for path in
-                          [setup / "SKILL.md", *sorted((setup / "references").glob("*.md"))])
+        skill = (ROOT / "plugins/cstack/skills/setup-cstack/SKILL.md").read_text()
         proposal = skill.index("Propositions de modèles d’agents")
         inheritance = skill.index("affiche la configuration actuelle")
         self.assertLess(proposal, inheritance)

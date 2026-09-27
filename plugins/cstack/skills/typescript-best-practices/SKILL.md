@@ -5,7 +5,7 @@ description: "Utiliser pour $cstack:typescript-best-practices. Cstack y route qu
 
 # Bonnes pratiques TypeScript
 
-Runtime : [`../cstack/references/codex-runtime.md`](../cstack/references/codex-runtime.md).
+Runtime : [règles communes](../cstack/references/runtime/base.md).
 
 Applique d'abord la référence de principe [discipline du système de types](../cstack/references/principles/type-system-discipline.md).
 

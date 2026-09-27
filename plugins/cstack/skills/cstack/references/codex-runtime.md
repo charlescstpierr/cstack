@@ -1,12 +1,11 @@
 # Contrat d’exécution Codex natif
 
-Index du contrat, pour une compétence cstack explicitement invoquée : chaque partie se lit au moment où sa situation se présente. Il s’applique à la tâche courante et à ses délégués, pas à chaque projet ni aux futures tâches. Les instructions utilisateur, l’AGENTS.md du projet, le mode Codex et les permissions d’outil priment. Cet index et ses parties sont la définition partagée du comportement d’exécution ; les fichiers compagnons ne doivent pas l’affaiblir.
+Index du contrat, pour une compétence cstack explicitement invoquée : chaque partie se lit au moment où sa situation se présente. Cet index et ses parties sont la définition partagée du comportement d’exécution ; les fichiers compagnons ne doivent pas l’affaiblir.
 
-Les [règles communes](runtime/base.md) valent toujours ; pour le reste, ouvre seulement la partie de la situation en cours.
+Les [règles communes](runtime/base.md) (précédence, données externes, capacité manquante, annonces, commits, état) valent toujours ; pour le reste, ouvre seulement la partie de la situation en cours.
 
 ## Parties
 
-- [Règles communes](runtime/base.md) : précédence, données externes, capacité manquante, annonces de délégués, commits et état.
 - [Activation et routage](runtime/activation.md) : invocation, sœurs et principes, bloc de setup passif, porte `clarify`, portée de livraison par défaut et worktree de tâche.
 - [Suivi visible](runtime/suivi.md) : annonce du playbook, todo cochée en direct, annonce et preuves de chaque appel de délégué, relance unique.
 - [Goal global](runtime/goal.md) : implémentation multi-phase avec demande explicite de Goal.
