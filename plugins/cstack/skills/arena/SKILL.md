@@ -5,9 +5,7 @@ description: "Lance N candidats en parallèle sur la même tâche, choisit une b
 
 # Arena
 
-Contrat d’exécution : [`../cstack/references/codex-runtime.md`](../cstack/references/codex-runtime.md).
-
-Pour chaque sélection avec `runtime`, applique le [dispatch CLI](../cstack/references/runtime-workers.md) à la place du lancement natif. Conserve la taille et l’ordre du panel, le rôle spécialisé et les étapes de vérification. Les replis single-agent de ce document concernent seulement les sélections natives ; une position CLI bloquée n’est jamais remplacée silencieusement par Codex.
+Runtime : [délégation](../cstack/references/runtime/delegation.md), [modèles](../cstack/references/runtime/modeles.md), [orchestration](../cstack/references/runtime/orchestration.md) · rôles : `arena runners`, `arena cross-judge pool`.
 
 Déploie N tentatives parallèles sur la même tâche. Lis chaque candidat de bout en bout. Choisis le plus solide comme base. Greffe-y les meilleures idées des autres. Vérifie le résultat synthétisé.
 
@@ -28,12 +26,12 @@ Les N candidats recevront le même prompt; le prompt est donc le contrat.
 
 1. Nomme l'artefact que chaque candidat doit produire.
 2. Derive la grille. Dis à quoi ressemble la réussite pour *cette* tâche, puis transforme-la en 3 à 6 critères concrets et notables. La grille est l'outil de sélection en phase D. Les candidats ne voient que la tâche.
-3. Choisis les concurrents. Un panel explicite fourni par l'appelant a priorité, y compris celui résolu par Architect. Sinon, utilise `arena runners` dans `.cstack/models.json`, ou trois tentatives avec le modèle hérité s'il est absent. Résous les sélections complètes selon le contrat d’exécution et conserve le modèle ainsi que l'effort de raisonnement à chaque dispatch de concurrent; ne remplace pas silencieusement une sélection explicite indisponible. La taille du panel sélectionné fixe N. La capacité disponible limite seulement les exécutions simultanées, jamais le nombre total de candidats.
+3. Choisis les concurrents. Un panel explicite fourni par l'appelant a priorité, y compris celui résolu par Architect. Sinon, utilise `arena runners`. La taille du panel fixe N ; la capacité limite seulement les exécutions simultanées, jamais le nombre de candidats.
 4. Assigne les chemins de sortie. Chaque candidat écrit dans son propre emplacement (un worktree git quand c'est possible, sinon `/tmp/arena-<slug>/candidate-<n>/`), selon la référence de principe [séparer avant de sérialiser l'état partagé](../cstack/references/principles/separate-before-serializing-shared-state.md).
 
 ## Phase B : Déployer
 
-Lance les N workers en parallèle, selon leur sélection native ou CLI, chacun avec la tâche, le chemin vers le contexte partagé, son propre chemin de sortie et les consignes pour produire à la fois l'artefact et un court raisonnement. Donne à chaque agent rédacteur la propriété exclusive de son chemin de sortie. La concurrence native limite le nombre d'exécutions simultanées. Mets les candidats restants en file pour des vagues ultérieures. Pour les replis, délégués sans descendants et capacités manquantes, applique [Orchestration requise](../cstack/references/runtime/orchestration.md). Le manque de capacité ne supprime jamais un candidat.
+Lance les N workers en parallèle, chacun avec la tâche, le chemin du contexte partagé, son propre chemin de sortie en propriété exclusive et la consigne de produire l'artefact et un court raisonnement.
 
 Chaque raisonnement nomme les alternatives envisagées par le candidat et ce qu'il a rejeté.
 
@@ -41,7 +39,7 @@ Si un candidat ne produit rien, continue avec N-1 et note l'abandon dans le regi
 
 ## Phase C : Juger croisé
 
-Une fois tous les candidats de la phase B terminés, lance un worker de revue seule comme juge, selon sa sélection native ou CLI. Il hérite par défaut du modèle parent. Si `.cstack/models.json` définit `arena cross-judge pool`, suis le contrat d’exécution et ne remplace pas silencieusement une surcharge explicite indisponible. Le juge voit la grille et les candidats par étiquette de chemin, note chaque critère et recommande une base avec son raisonnement. Il peut tourner pendant la lecture du parent en phase D. Ne le lance pas pendant que les candidats écrivent encore. Si aucun emplacement de sous-agent n'est disponible, applique [Orchestration requise](../cstack/references/runtime/orchestration.md) avec `route: Review`. La comparaison ne disparaît jamais.
+Une fois tous les candidats de la phase B terminés, lance un juge en revue seule (`arena cross-judge pool`). Il voit la grille et les candidats par étiquette de chemin, note chaque critère et recommande une base avec son raisonnement. Il peut tourner pendant la lecture du parent en phase D. Ne le lance pas pendant que les candidats écrivent encore.
 
 ## Phase D : Choisir une base
 
@@ -71,4 +69,4 @@ Si la vérification révèle un problème que l'arena n'a pas attrapé, soit la 
 
 ## Sorties
 
-Un artefact synthétisé. Une courte note de synthèse à côté, nommant la base, les greffes (avec le candidat source), les rejets, les abandons s'il y en a et le résultat de vérification. Chaque affirmation porte sa preuve ou son étiquette dans la même phrase. Mesure, inférence ou supposition. Une prédiction ou une cause non observée est une supposition. Ne donne jamais à l'humain une vérification que tu pourrais exécuter.
+Un artefact synthétisé. Une courte note de synthèse à côté, nommant la base, les greffes (avec le candidat source), les rejets, les abandons s'il y en a et le résultat de vérification. Chaque affirmation porte sa preuve ou son étiquette : mesuré, inféré ou supposition (toute prédiction ou cause non observée) ; ne laisse à l'humain aucune vérification exécutable.

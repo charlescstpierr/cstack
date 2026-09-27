@@ -20,7 +20,7 @@ Le livrable est un verdict synthétisé. N'applique PAS automatiquement les chan
 Identifie ce qui doit être relu depuis le contexte :
 
 - Si l'utilisateur pointe vers des fichiers ou un diff précis, utilise cela.
-- Pour le travail courant, une branche, une plage de commits ou une PR, fige une seule fois les SHA base et head selon [l'instantané de portée figée](references/scope-snapshot.md). Ne lance jamais de commande qui change le worktree et n'inclus pas silencieusement les changements sales hors de la portée demandée.
+- Pour le travail courant, une branche, une plage ou une PR, fige une seule fois les SHA base et head selon [l'instantané figé](references/scope-snapshot.md), sans jamais changer le worktree.
 - Si le message utilisateur référence un travail récent, rassemble les fichiers pertinents et préserve la portée demandée.
 
 ## Étape 2, Énoncer l'intention
@@ -33,16 +33,7 @@ Dérive l'intention depuis le message de l'utilisateur, une spec ou issue approu
 
 Résous `interrogate reviewers` une fois; la longueur du panneau est le nombre exact de reviewers, dans l'ordre, et l'absence de capacité ne supprime jamais un reviewer ni un axe. Par défaut : Standards, Spec, Adversarial. Affecte les axes selon la taille du panel avec [les règles d'axes](references/axes.md).
 
-Lis `references/reviewer-prompt.md` et remplis le modèle avec :
-1. L'intention énoncée
-2. L'instantané de portée figée, avec ses SHA base et head et l'indication d'inclusion ou non des fichiers sales du worktree
-3. Les preuves d'exigences approuvées, ou l'écart explicite de preuve Spec
-4. L'axe principal du reviewer et les autres axes qu'il peut rapporter quand l'impact est fort
-5. Le diff ou les contenus de fichiers
-6. La rubrique de revue depuis `references/rubric.md`
-7. La lentille de qualité de code depuis `references/code-quality-review.md`
-
-Le même modèle rempli va à tous les reviewers, donc chaque passe applique la lentille de qualité de code.
+Remplis `references/reviewer-prompt.md` avec l'intention, l'instantané figé (SHA base et head, fichiers sales inclus ou non), les preuves d'exigences ou l'écart Spec, l'axe principal et les axes rapportables à fort impact, le diff ou les fichiers, `references/rubric.md` et `references/code-quality-review.md`. Le même modèle rempli va à tous les reviewers, donc chaque passe applique la lentille de qualité de code.
 
 ## Étape 4, Synthétiser
 

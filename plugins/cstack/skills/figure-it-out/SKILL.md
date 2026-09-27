@@ -5,42 +5,42 @@ description: "Conçoit un playbook auditable quand aucun plus étroit ne convien
 
 # Figure it out
 
-Contrat d’exécution : [`../cstack/references/codex-runtime.md`](../cstack/references/codex-runtime.md).
+Runtime : [délégation](../cstack/references/runtime/delegation.md), [orchestration](../cstack/references/runtime/orchestration.md).
 
 Quand la tâche ne correspond à aucun playbook, conçois-en un. Le livrable avant tout code est le flux de travail lui-même : une séquence de phases qui ajuste la rigueur à la tâche, applique la méthode scientifique et laisse une trace de décisions qu'un humain peut auditer après s'être absenté. Biaise vers plus de rigueur. Le coût de construire la mauvaise chose écrase le coût d'être prudent.
 
 ## Démarrage
 
-Commence la liste de tâches en lisant les règles communes et routes de principes dans la [skill cstack](../cstack/SKILL.md). Lis les références individuelles dont les déclencheurs s'appliquent, puis ajoute les phases ci-dessous à la liste de tâches. Réutilise un handoff Horizon existant et les décisions vérifiées quand ils établissent déjà le cadrage; conserve les portes de revue et de vérification du playbook.
+Commence la liste de tâches par la lecture des règles communes et routes de principes de la [skill cstack](../cstack/SKILL.md) et des références dont les déclencheurs s'appliquent, puis ajoute les phases ci-dessous. Un handoff Horizon et des décisions vérifiées existants peuvent établir le cadrage ; les portes de revue et de vérification restent.
 
 ## Phase A : Cadrer
 
 Ancre d'abord, puis engage-toi. Ne démarre pas l'exécution tant que tu ne peux pas énoncer :
 
-- La définition de terminé comme prédicat falsifiable (référence de principe [prouver que ça marche](../cstack/references/principles/prove-it-works.md)).
+- La définition de terminé comme prédicat falsifiable ([prouver que ça marche](../cstack/references/principles/prove-it-works.md)).
 - La portée, quantifiée : unités et effort approximatifs, plus les bloqueurs révélés par l'ancrage.
 - Le niveau de rigueur, avec biais haut. Les portes à sens unique et forts rayons d'impact en reçoivent plus. Les étapes réversibles à faible enjeu en reçoivent moins. La rigueur, ce sont des portes et des artefacts, pas "try harder".
 
-Présente le cadrage et les compromis avant de t'engager dans une longue exécution. Le travail réversible avance (référence de principe [ne jamais bloquer sur l'humain](../cstack/references/principles/never-block-on-the-human.md)), mais une exécution de plusieurs heures mérite un checkpoint.
+Présente le cadrage et les compromis avant de t'engager dans une longue exécution. Le travail réversible avance ([ne jamais bloquer sur l'humain](../cstack/references/principles/never-block-on-the-human.md)), mais une exécution de plusieurs heures mérite un checkpoint.
 
 ## Phase B : Concevoir le flux de travail
 
-Décompose en unités atomiques et livrables indépendamment. Séquence les inconnues les plus risquées d'abord. L'échafaudage et la vérification viennent avant les fonctionnalités (référence de principe [pensée fondatrice](../cstack/references/principles/foundational-thinking.md)).
+Décompose en unités atomiques et livrables indépendamment. Séquence les inconnues les plus risquées d'abord. L'échafaudage et la vérification viennent avant les fonctionnalités ([pensée fondatrice](../cstack/references/principles/foundational-thinking.md)).
 
 - Construis le harnais de vérification avant le travail, avec la baseline capturée depuis l'état pré-changement, pour que la vérification se lise comme "ancienne valeur vs nouvelle valeur".
-- Pour les décisions de conception à portée à sens unique, exécute la skill **architect** (elle exécute **arena**). Saute-la pour le travail mécanique dont la forme est déjà concrète. Une seconde arena sur une conception tranchée est de la suringénierie (référence de principe [Laziness Protocol](../cstack/references/principles/laziness-protocol.md)).
-- Décide ce qui se déploie en parallèle. Parallélise seulement entre frontières, et donne à chaque worker son propre worktree ou sa propre branche (référence de principe [séparer avant de sérialiser l'état partagé](../cstack/references/principles/separate-before-serializing-shared-state.md)). Ne déploie pas trop.
-- Écris la liste de phases conçue. Cette liste est ce que l'humain relit.
+- Pour les décisions de conception à portée à sens unique, exécute la skill **architect** (elle exécute **arena**). Saute-la pour le travail mécanique dont la forme est déjà concrète. Une seconde arena sur une conception tranchée est de la suringénierie ([Laziness Protocol](../cstack/references/principles/laziness-protocol.md)).
+- Décide ce qui se déploie en parallèle. Parallélise seulement entre frontières, et donne à chaque worker son propre worktree ou sa propre branche ([séparer avant de sérialiser l'état partagé](../cstack/references/principles/separate-before-serializing-shared-state.md)). Ne déploie pas trop.
+- Écris la liste de phases conçue. L'humain relit cette liste.
 
-Ensuite, exécute la conception. Ajoute ses étapes à la liste de tâches courante après la phase C et avant la phase D. Exécute chacune selon la discipline de boucle de la phase C, et tisse le journal de phase D à travers elles à mesure que chaque étape atterrit.
+Ensuite, exécute la conception. Ajoute ses étapes à la liste de tâches, entre les phases C et D. Exécute chacune selon la discipline de boucle de la phase C, et tisse le journal de phase D à travers elles à mesure que chaque étape atterrit.
 
 ## Phase C : Exécuter la boucle
 
 Chaque unité est une expérience. Énonce l'hypothèse, fais le plus petit changement, mesure contre le prédicat sur le vrai artefact, garde-le s'il a fait avancer, revert s'il ne l'a pas fait.
-Applique la référence de principe [séquencer le travail en unités vérifiables](../cstack/references/principles/sequence-verifiable-units.md), en vérifiant chaque unité avant de démarrer la suivante au lieu de regrouper les checks à la fin.
+Applique [séquencer le travail en unités vérifiables](../cstack/references/principles/sequence-verifiable-units.md) : vérifie chaque unité avant la suivante au lieu de regrouper les checks à la fin.
 
 - Vérifie en inspectant l'artefact, jamais un auto-rapport. Quand quelque chose passe trop facilement, soupçonne la méthode d'observation avant le système.
-- Associe le travail délégué à un juge et audite toi-même les artefacts des délégués avant de leur faire confiance. Si un worker manipule la porte, réinitialise et durcis le contrat. Si la porte elle-même est fausse, corrige la porte dans son propre changement au lieu de la contourner. Si aucun emplacement de sous-agent n'est disponible, la même session exécute une passe de revue séparée sur une relecture propre des artefacts, l'étiquette `single-agent review`, puis signale l'indépendance manquante. Le juge ne disparaît jamais.
+- Associe le travail délégué à un juge et audite toi-même les artefacts des délégués avant de leur faire confiance. Si un worker manipule la porte, réinitialise et durcis le contrat. Si la porte elle-même est fausse, corrige la porte dans son propre changement au lieu de la contourner.
 - Un verdict est VERIFIED, NOT VERIFIED ou INCONCLUSIVE. Inconclusive n'est pas un succès. Ne cache pas un négatif.
 
 ## Phase D : Garder la trace d'audit
@@ -49,6 +49,6 @@ Journalise l'exécution via la skill **show-me-your-work**, dans un TSV canoniqu
 
 ## Phase E : Vérifier et remettre
 
-Vérifie l'ensemble contre le prédicat de phase A sur le vrai produit, pas seulement le harnais. Encode toute correction récurrente comme porte, règle de lint, check ou script (référence de principe [encoder les leçons dans la structure](../cstack/references/principles/encode-lessons-in-structure.md)).
+Vérifie l'ensemble contre le prédicat de phase A sur le vrai produit, pas seulement le harnais. Encode toute correction récurrente comme porte, règle de lint, check ou script ([encoder les leçons dans la structure](../cstack/references/principles/encode-lessons-in-structure.md)).
 
 **Réponse :** le playbook que tu as conçu, le niveau de rigueur et pourquoi, le chemin de la trace de décision, ce qui est vérifié contre le prédicat et ce qui reste ouvert.

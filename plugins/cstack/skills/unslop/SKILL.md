@@ -5,7 +5,7 @@ description: "Utiliser pour $cstack:unslop afin de retirer les tics IA de la pro
 
 # Unslop
 
-Contrat d'exécution : [`../cstack/references/codex-runtime.md`](../cstack/references/codex-runtime.md).
+Runtime : [`../cstack/references/codex-runtime.md`](../cstack/references/codex-runtime.md).
 
 Modifie le texte pour retirer les motifs IA. `deslop` (`../deslop/SKILL.md`) nettoie le slop du code, `unslop` le nettoie de la prose, et `no-comments` confie les commentaires à un relecteur qui ne les a pas écrits.
 
@@ -36,7 +36,7 @@ Les numéros de règle sont des ID stables que d'autres skills citent. Une règl
 ### Style
 
 13. **Abus de tirets cadratins.** Évite entièrement les tirets cadratins. Utilise seulement des points ou des virgules (pas de parenthèses, pas de tirets demi-cadratins, pas de substituts par trait d'union). Si une idée doit être séparée, termine la phrase ou utilise une virgule.
-14. **Abus de deux-points.** Les deux-points vont bien avant une liste ou un exemple. Pas comme connecteurs en milieu de phrase. "Si tu viens de l'automatisation classique : au lieu d'enregistrer des gestionnaires d'événements, tu décris des conditions" ne gagne rien avec le deux-points. Réécris pour laisser le point tenir seul sans cadrage comparatif. "Décrire quand le scheduler doit se déclencher fonctionne mieux en langage simple." Même sens, pas de ponctuation béquille.
+14. **Abus de deux-points.** Les deux-points vont bien avant une liste ou un exemple. Pas comme connecteurs en milieu de phrase. "Si tu viens de l'automatisation classique : au lieu d'enregistrer des gestionnaires d'événements, tu décris des conditions" ne gagne rien avec le deux-points. Réécris pour laisser le point tenir seul sans cadrage comparatif. "Décrire quand le scheduler doit se déclencher fonctionne mieux en langage simple."
 15. **Abus du gras.** Ne mets pas chaque nom propre ou acronyme en gras.
 16. **Listes à en-têtes inline.** Le tic est un libellé gras suivi de deux-points qui répète la ligne : "**Performance :** la performance s'améliore...". Convertis en prose. Une attaque en gras qui finit par un point, nomme l'élément et est suivie d'un détail vraiment nouveau ("**Schéma en TypeScript.** Les tables vivent dans un seul fichier.") est correcte, pas un tic.
 17. **Titres en title case.** Utilise la casse de phrase.

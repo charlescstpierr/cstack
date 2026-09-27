@@ -11,48 +11,40 @@ description: >-
 
 # How
 
-Runtime : [`../cstack/references/codex-runtime.md`](../cstack/references/codex-runtime.md).
+Runtime : [délégation](../cstack/references/runtime/delegation.md), [modèles](../cstack/references/runtime/modeles.md), [exploration](../cstack/references/runtime/exploration.md), [orchestration](../cstack/references/runtime/orchestration.md) · rôles : `how explorer`, `how explainer`.
 
 Explore le codebase pour répondre aux questions "comment X fonctionne ?". Produis des explications architecturales au niveau d'un ingénieur senior qui arrive sur un sous-système : assez pour construire un modèle mental opérationnel, sans devenir une source annotée.
 
-Suis le chemin d'héritage direct du contrat runtime quand rien n'est configuré; sinon résous chaque rôle nommé avec son helper et transmets à chaque spawn natif la sélection complète, effort de raisonnement compris. Signale les lacunes de capacité de l'hôte au lieu de supprimer un champ sélectionné.
-
-Pour une exploration déléguée, suis le [contrat d’exploration déléguée](../cstack/references/runtime/exploration.md). La demande de l'utilisateur, le mode courant ou les permissions de la session peuvent seuls exclure la délégation de cette question.
+Seuls la demande de l'utilisateur, le mode courant ou les permissions de la session peuvent exclure la délégation de cette question.
 
 ## Étape 1. Poser les angles
 
 Si la portée est ambiguë, indique ton interprétation et explore. L'utilisateur peut rediriger.
 
-Écris les angles avant de choisir le chemin. Un angle est une tranche du sous-système avec sa propre liste de fichiers à lire. Vise normalement trois angles distincts utiles et suis le [contrat d’exploration déléguée](../cstack/references/runtime/exploration.md) pour le minimum et les vagues.
+Écris les angles avant de choisir le chemin. Un angle est une tranche du sous-système avec sa propre liste de fichiers à lire.
 
-Deux angles ou plus : va à l'Étape 2a. C'est le chemin par défaut. Un recouvrement partiel entre leurs listes de fichiers ne change rien ; retire le fichier commun de toutes les tranches sauf une et garde les angles. Une portée large, une zone inconnue ou une première lecture produisent plusieurs angles ; elles ne justifient pas la passe unique.
+Deux angles ou plus : va à l'Étape 2a, le chemin par défaut. Un recouvrement partiel ne change rien : garde le fichier commun dans une tranche. Une portée large, une zone inconnue ou une première lecture produisent plusieurs angles, pas une passe unique.
 
-Un seul angle : va à l'Étape 2b seulement quand la demande de l'utilisateur, le mode courant ou les permissions de la session interdisent la délégation de cette question dans son ensemble. Nomme alors la raison `single-pass: Délégation exclue`. Sinon, va à l'Étape 2a et décompose cet angle en explorations distinctes. Une impression de simplicité n'est pas une raison de rester seul.
+Un seul angle : va à l'Étape 2b seulement si la délégation est exclue, avec la raison `single-pass: Délégation exclue`. Sinon, va à l'Étape 2a et décompose cet angle. Une impression de simplicité n'est pas une raison de rester seul.
 
 ## Étape 2a. Explorer en parallèle (chemin par défaut)
 
-Décompose la question en angles d'exploration distincts et utiles, chacun étant une tranche du sous-système. Lance les subagents natifs en lecture seule. Ils héritent du modèle parent par défaut. Si `.cstack/models.json` définit `how explorer`, suis le contrat runtime et ne substitue pas silencieusement une surcharge explicite indisponible. Les explorers ne lancent pas de descendants et retournent des findings structurés, pas des dumps de fichiers.
+Lance un explorer par angle, en subagent natif en lecture seule ; les explorers ne lancent pas de descendants et retournent des findings structurés, pas des dumps de fichiers.
 
-Chaque explorer reçoit le prompt dans `references/explorer-prompt.md` avec son angle rempli. Va ensuite à l'Étape 3.
+Chaque explorer reçoit `references/explorer-prompt.md` avec son angle rempli. Va ensuite à l'Étape 3.
 
 ## Étape 2b. Expliquer en une passe (délégation exclue)
 
-Quand le test `Délégation exclue` t'a envoyé ici, exécute cette passe dans la session courante, étiquette le résultat `single-agent` et signale l'indépendance manquante. Ne lance aucun subagent dans ce cas.
-
-Suis la structure de `references/explainer-prompt.md` pour cette passe, sans la section des résultats d'explorers. Va à l'Étape 4.
+Exécute cette passe dans la session courante, sans subagent, étiquetée `single-agent` avec l'indépendance manquante signalée. Suis `references/explainer-prompt.md` sans la section des résultats d'explorers. Va à l'Étape 4.
 
 ## Étape 3. Synthétiser (après l'Étape 2a)
 
-Une fois tous les explorers revenus, lance un subagent natif en lecture seule pour synthétiser leurs résultats en une seule explication. Il hérite du modèle parent par défaut. Si `.cstack/models.json` définit `how explainer`, suis le contrat runtime et ne substitue pas silencieusement une surcharge explicite indisponible.
-
-Construis son prompt depuis `references/explainer-prompt.md` avec les résultats de chaque explorer remplis.
+Une fois tous les explorers revenus, lance un subagent natif en lecture seule qui synthétise leurs résultats en une explication, avec le prompt de `references/explainer-prompt.md` rempli des résultats de chaque explorer.
 
 ## Étape 4. Présenter
 
-Présente la sortie de l'explainer à l'utilisateur. De légères retouches pour la clarté ou le contexte de conversation sont acceptables. Ne la réécris pas substantiellement.
+Présente la sortie de l'explainer à l'utilisateur, avec au plus de légères retouches de clarté ou de contexte ; ne la réécris pas substantiellement.
 
 ## Format de sortie
 
-L'explication utilise les sections définies dans `references/explainer-prompt.md`, en supprimant celles qui ne s'appliquent pas : Vue d'ensemble, Concepts clés, Fonctionnement, Où vivent les choses, Pièges.
-
-Chaque affirmation porte sa preuve ou son étiquette dans la même phrase. Mesuré, inféré ou supposition. Une prédiction ou une cause non observée est une supposition. Ne donne jamais à l'humain une vérification que tu pourrais exécuter.
+L'explication utilise les sections définies dans `references/explainer-prompt.md`, en supprimant celles qui ne s'appliquent pas : Vue d'ensemble, Concepts clés, Fonctionnement, Où vivent les choses, Pièges. Étiquette chaque affirmation selon [Rédiger le rapport](../cstack/SKILL.md#rédiger-le-rapport).
