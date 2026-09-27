@@ -1,6 +1,6 @@
 ---
 name: create-verification-skill
-description: "Génère une skill de vérification locale au projet qui pilote l'app comme un utilisateur le ferait, quels que soient le langage, le framework ou la plateforme. Utiliser pour $cstack:create-verification-skill, \"crée une skill de contrôle pour ce dépôt\", ou quand un projet n'a aucun moyen scriptable de prouver le comportement UI/CLI/service."
+description: "À utiliser pour $cstack:create-verification-skill, « crée une skill de contrôle pour ce dépôt », ou quand un projet n'a aucun moyen scriptable de prouver le comportement UI/CLI/service. Génère une skill de vérification locale au projet qui pilote l'app comme un utilisateur le ferait, quels que soient le langage, le framework ou la plateforme."
 ---
 
 # Créer une skill de vérification

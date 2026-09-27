@@ -1,6 +1,6 @@
 ---
 name: unslop
-description: "Utiliser pour $cstack:unslop afin de retirer les tics IA de la prose. Applique à tout artefact de prose quand cstack est actif, et sinon sur demandé."
+description: "À utiliser pour $cstack:unslop afin de retirer les tics IA de la prose. S'applique à tout artefact de prose quand cstack est actif, et sinon sur demande."
 ---
 
 # Unslop

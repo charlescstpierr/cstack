@@ -1,6 +1,6 @@
 ---
 name: deslop
-description: "Retire le slop d'un diff de code avant commit ou revue. Utiliser pour $cstack:deslop, 'deslop it', 'clean this diff', et comme passe pré-commit requise dans chaque playbook d'implémentation cstack. Utiliser $cstack:unslop pour la prose et $cstack:no-comments pour une revue déléguée des commentaires."
+description: "À utiliser pour $cstack:deslop, « deslop it », « clean this diff », et comme passe pré-commit requise dans chaque playbook d'implémentation cstack. Retire le slop d'un diff de code avant commit ou revue. Utiliser $cstack:unslop pour la prose et $cstack:no-comments pour une revue déléguée des commentaires."
 ---
 
 # Deslop

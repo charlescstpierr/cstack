@@ -1,6 +1,6 @@
 ---
 name: swarm
-description: "Déploie N workers parallèles, récupère leurs résultats et rend un rapport unique. Utiliser pour $cstack:swarm, 'lance un swarm sur ceci', ou la couverture parallèle, les courses, gauntlets et explorations."
+description: "À utiliser pour $cstack:swarm, « lance un swarm sur ceci », ou la couverture parallèle, les courses, gauntlets et explorations. Déploie N workers parallèles, récupère leurs résultats et rend un rapport unique."
 ---
 
 # Swarm

@@ -1,6 +1,6 @@
 ---
 name: tdd
-description: "Utiliser $cstack:tdd pour les bugs et les nouvelles fonctionnalités qui ajoutent ou modifient un comportement, même petites. Exempter les changements sans effet comportemental ; toute impossibilité réelle exige une exception motivée et une vérification alternative exécutée."
+description: "À utiliser pour $cstack:tdd sur les bugs et les nouvelles fonctionnalités qui ajoutent ou modifient un comportement, même petites. Exempter les changements sans effet comportemental ; toute impossibilité réelle exige une exception motivée et une vérification alternative exécutée."
 ---
 
 # Bugs et fonctionnalités en TDD

@@ -1,6 +1,6 @@
 ---
 name: typescript-best-practices
-description: "Utiliser pour $cstack:typescript-best-practices. Cstack y route quand le changement touché des fichiers .ts ou .tsx."
+description: "À utiliser pour $cstack:typescript-best-practices. Cstack y route quand le changement touche des fichiers .ts ou .tsx."
 ---
 
 # Bonnes pratiques TypeScript

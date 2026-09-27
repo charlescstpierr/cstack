@@ -1,6 +1,6 @@
 ---
 name: arena
-description: "Lance N candidats en parallèle sur la même tâche, choisit une base et y greffe les meilleures parties des autres. Utiliser pour $cstack:arena, « passe ceci dans l'arène », « mets ceci dans l'arène », une comparaison concurrentielle, une course ou un choix entre N implémentations ou conceptions concurrentes."
+description: "À utiliser pour $cstack:arena, « passe ceci dans l'arène », « mets ceci dans l'arène », une comparaison concurrentielle, une course ou un choix entre N implémentations ou conceptions concurrentes. Lance N candidats en parallèle sur la même tâche, choisit une base et y greffe les meilleures parties des autres."
 ---
 
 # Arena

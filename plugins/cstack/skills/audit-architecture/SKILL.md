@@ -1,6 +1,6 @@
 ---
 name: audit-architecture
-description: "Mène un audit d'architecture brownfield borné et en lecture seule, qui trouve des pistes d'approfondissement étayées sans refactorer. Utiliser pour $cstack:audit-architecture ou quand l'utilisateur demande quelle architecture devrait être améliorée."
+description: "À utiliser pour $cstack:audit-architecture ou quand l'utilisateur demande quelle architecture devrait être améliorée. Mène un audit d'architecture brownfield borné et en lecture seule, qui trouve des pistes d'approfondissement étayées sans refactorer."
 ---
 
 # Auditer l'architecture

@@ -1,12 +1,6 @@
 ---
 name: how
-description: >-
-  À utiliser pour $cstack:how, « comment X fonctionne-t-il ? », les parcours de
-  code avant de changer quelque chose, et les questions de placement /
-  propriété / couches (« où cela doit-il vivre ? », « quel package possède ceci
-  ? », « est-ce la bonne couche ? »). Explique l'architecture du sous-système,
-  le flux runtime et les modèles mentaux d'accueil. Utilise $cstack:why pour la
-  motivation.
+description: "À utiliser pour $cstack:how, « comment X fonctionne-t-il ? », les parcours de code avant de changer quelque chose, et les questions de placement, de propriété ou de couches (« où cela doit-il vivre ? », « quel package possède ceci ? », « est-ce la bonne couche ? »). Explique l'architecture du sous-système, le flux runtime et les modèles mentaux d'accueil. Utilise $cstack:why pour la motivation."
 ---
 
 # How

@@ -1,6 +1,6 @@
 ---
 name: teach
-description: "Utiliser pour $cstack:teach, « apprends-moi ceci », « aide-moi à vraiment comprendre X » ou « explique-moi ce changement ou ce sous-système ». Exécute $cstack:how et $cstack:why puis tisse leurs constats en une explication claire."
+description: "À utiliser pour $cstack:teach, « apprends-moi ceci », « aide-moi à vraiment comprendre X » ou « explique-moi ce changement ou ce sous-système ». Exécute $cstack:how et $cstack:why puis tisse leurs constats en une explication claire."
 ---
 
 # Teach

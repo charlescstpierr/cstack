@@ -1,6 +1,6 @@
 ---
 name: show-me-your-work
-description: "Garde une trace de décisions relisible pour les travaux longs ou sans surveillance : un journal TSV avec une ligne par décision (quoi, pourquoi, preuve, résultat). Local par défaut; committe-le quand un relecteur a besoin de la trace pour faire confiance au résultat. Utiliser pour $cstack:show-me-your-work, les exécutions autonomes ou multi-phases, ou le travail qu'un humain relit après s'être absenté."
+description: "À utiliser pour $cstack:show-me-your-work, les exécutions autonomes ou multi-phases, ou le travail qu'un humain relit après s'être absenté. Garde une trace de décisions relisible pour les travaux longs ou sans surveillance : un journal TSV avec une ligne par décision (quoi, pourquoi, preuve, résultat). Local par défaut ; committe-le quand un relecteur a besoin de la trace pour faire confiance au résultat."
 ---
 
 # Montrer ton travail

@@ -1,6 +1,6 @@
 ---
 name: horizon
-description: "À utiliser pour $cstack:horizon afin de planifier un objectif vaste ou incertain sous forme de décisions et d'unités d'implémentation, lorsqu'il est sélectionné directement ou routé par cstack. Retourne un handoff cohérent sans modifier le code produit."
+description: "À utiliser pour $cstack:horizon, sélectionné directement ou routé par cstack, afin de planifier un objectif vaste ou incertain sous forme de décisions et d'unités d'implémentation. Retourne un handoff cohérent sans modifier le code produit."
 ---
 
 # Horizon

@@ -1,6 +1,6 @@
 ---
 name: reflect
-description: "Lance trois subagents de revue parallèles sur l'historique de la tâche active, fait émerger les apprentissages durables et route chacun vers une modification concrète de skill ou une proposition locale. À utiliser pour $cstack:reflect ou quand l'utilisateur demande une réflexion."
+description: "À utiliser pour $cstack:reflect ou quand l'utilisateur demande une réflexion. Lance trois subagents de revue parallèles sur l'historique de la tâche active, fait émerger les apprentissages durables et route chacun vers une modification concrète de skill ou une proposition locale."
 ---
 
 # Reflect

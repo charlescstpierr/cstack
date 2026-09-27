@@ -1,6 +1,6 @@
 ---
 name: bro
-description: "Utiliser pour $cstack:bro afin de reformuler le dernier message en langage humain simple, sans jargon."
+description: "À utiliser pour $cstack:bro. Reformule le dernier message en langage humain simple, sans jargon."
 ---
 
 Runtime : [règles communes](../cstack/references/runtime/base.md).

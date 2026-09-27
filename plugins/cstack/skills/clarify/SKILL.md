@@ -1,6 +1,6 @@
 ---
 name: clarify
-description: "Utiliser quand $cstack:clarify est sélectionne explicitement ou route pendant une tâche cstack explicite afin de résoudre les ambiguïtés d'alignement ou d'exigences avec les faits du dépôt et des tours de décision sur la frontière."
+description: "À utiliser quand $cstack:clarify est sélectionné explicitement ou routé pendant une tâche cstack explicite. Résout les ambiguïtés d'alignement ou d'exigences avec les faits du dépôt et des tours de décision sur la frontière."
 ---
 
 # Clarifier
