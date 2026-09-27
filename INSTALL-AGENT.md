@@ -17,15 +17,18 @@ Ce fichier s'adresse à un agent de code (Codex CLI ou Codex App) à qui l'utili
 2. **Obtenir le script, hors du projet de l'utilisateur.** Travaillez dans un dossier temporaire pour ne laisser aucun fichier dans son dépôt :
 
    ```sh
-   tmp="$(mktemp -d)"
+   tmp="$(mktemp -d)" && echo "$tmp"
    gh api repos/charlescstpierr/cstack/contents/install.sh -H "Accept: application/vnd.github.raw" > "$tmp/install.sh"
    ```
 
-   Sans `gh` authentifié, clonez plutôt le dépôt privé avec Git : `git clone --depth 1 https://github.com/charlescstpierr/cstack.git "$tmp/cstack"`, puis utilisez `$tmp/cstack/install.sh`. Si vous êtes déjà dans un clone de `charlescstpierr/cstack`, `./install.sh` suffit. Dans la suite, `install.sh` désigne le script obtenu, lancé avec `bash`.
+   Notez le chemin affiché : si vos commandes tournent dans des shells séparés, `$tmp` n'existe plus au suivant, alors réutilisez ce chemin en toutes lettres jusqu'au nettoyage.
+
+   Sans `gh` authentifié, clonez plutôt le dépôt privé avec Git : `git clone --depth 1 https://github.com/charlescstpierr/cstack.git "$tmp/cstack"`, ou en SSH `git clone --depth 1 git@github.com:charlescstpierr/cstack.git "$tmp/cstack"`. Utilisez ensuite `$tmp/cstack/install.sh`. Si vous êtes déjà dans un clone de `charlescstpierr/cstack`, `./install.sh` suffit. Dans la suite, `install.sh` désigne le script obtenu, lancé avec `bash`.
 
 3. **Voir l'état actuel.** Lancez `install.sh doctor`.
-   - La ligne du plugin commence par `✓ plugin cstack@cstack` : cstack est déjà installé et fonctionne. Ne changez rien. Lancez `install.sh update` seulement si l'utilisateur demande la dernière version.
-   - Sinon, lancez `install.sh install`. N'ajoutez `--ref` que si l'utilisateur demande une version précise.
+   - L'utilisateur demande une version précise (branche, tag ou commit) : lancez `install.sh install --ref <ref>`, que cstack soit déjà installé ou non.
+   - Sinon, si la ligne du plugin commence par `✓ plugin cstack@cstack` : cstack est déjà installé et fonctionne. Ne changez rien. Lancez `install.sh update` seulement si l'utilisateur demande la dernière version.
+   - Sinon, lancez `install.sh install`.
 
 4. **Vérifier.** Relancez `install.sh doctor`. Le code de sortie doit être 0 et la ligne `✓ plugin cstack@cstack : installed, enabled <version>` doit apparaître.
 
@@ -36,7 +39,7 @@ Ce fichier s'adresse à un agent de code (Codex CLI ou Codex App) à qui l'utili
 | Code de sortie | Sens |
 | --- | --- |
 | 0 | Réussite. Pour `doctor` : aucune ligne `✗`. |
-| 1 | Échec. Le message qui commence par `cstack :` en donne la cause. |
+| 1 | Échec. Pour `doctor`, les lignes `✗` en donnent la cause (avant une première installation, `✗ plugin cstack@cstack : absent` est attendu). Pour les autres commandes, c'est le message qui commence par `cstack :`. |
 | 2 | Commande ou option inconnue. Relisez la commande. |
 
 Dans `doctor`, `✓` est vérifié, `!` est facultatif (Bun, `gh`) et n'empêche pas l'usage, `✗` est bloquant.
