@@ -12,7 +12,7 @@ Ce fichier s'adresse à un agent de code (Codex CLI ou Codex App) à qui l'utili
 
 ## Étapes
 
-1. **Vérifier les prérequis.** `bash --version` et `git --version` doivent réussir ; `doctor` contrôlera Codex CLI et Python à l'étape 3. Sous Windows, cstack s'installe depuis WSL, pas depuis PowerShell. S'il manque quelque chose, arrêtez-vous et dites à l'utilisateur quoi.
+1. **Environnement.** Sous Windows, cstack s'installe depuis WSL, pas depuis PowerShell. Les autres prérequis (Codex CLI, Python, Git et l'accès au dépôt) sont vérifiés par `doctor` à l'étape 3.
 
 2. **Obtenir le script, hors du projet de l'utilisateur.** Si vous êtes dans un clone de `charlescstpierr/cstack`, ou si vous en avez cloné un pour lire ce fichier, utilisez son `install.sh`. Sinon, travaillez dans un dossier temporaire pour ne laisser aucun fichier dans le dépôt de l'utilisateur :
 
@@ -36,8 +36,7 @@ Ce fichier s'adresse à un agent de code (Codex CLI ou Codex App) à qui l'utili
 | Code de sortie | Sens |
 | --- | --- |
 | 0 | Réussite. Pour `doctor` : aucune ligne `✗`. |
-| 1 | Échec. Pour `doctor`, les lignes `✗` en donnent la cause (avant une première installation, `✗ plugin cstack@cstack : absent` est attendu). Pour les autres commandes, c'est le message qui commence par `cstack :`. |
-| 2 | Commande ou option inconnue. Relisez la commande. |
+| Autre | Échec. Pour `doctor`, les lignes `✗` en donnent la cause (avant une première installation, `✗ plugin cstack@cstack : absent` est attendu). Pour les autres commandes, lisez les dernières lignes : un message `cstack :`, l'erreur brute de Codex, ou l'aide du script si la commande est mal formée. |
 
 Dans `doctor`, `✓` est vérifié, `!` est facultatif (Bun, `gh`) et n'empêche pas l'usage, `✗` est bloquant.
 
@@ -51,6 +50,7 @@ Dans `doctor`, `✓` est vérifié, `!` est facultatif (Bun, `gh`) et n'empêche
 | `source inutilisable. L'installation actuelle est conservée.` | L'essai de la nouvelle source a échoué et rien n'a changé. Lisez l'erreur de Codex affichée juste avant : référence introuvable, réseau, permissions ou disque plein. Rapportez cette cause ; ne supposez pas une mauvaise `--ref`. |
 | `impossible de lire l'état de Codex` ou `état du plugin illisible` | Codex CLI ne répond pas correctement. Faites vérifier `codex --version` et la mise à jour de Codex ; ne touchez pas à ses fichiers. |
 | `épinglé sur un commit` | L'installation suit un commit fixe, souvent voulu. Demandez à l'utilisateur avant `install.sh install --ref main`. |
+| `n'a pas pu être restaurée` | Le changement de source a échoué et l'ancienne n'a pas pu être remise : cstack n'est peut-être plus installé. Relancez `install.sh doctor`, puis `install.sh install` si le plugin est absent, et dites-le à l'utilisateur. |
 | `cstack n'est pas installé` | Vous avez lancé `update` trop tôt : lancez `install.sh install`. |
 
-Pour tout autre échec, montrez le message tel quel à l'utilisateur. Le script annule lui-même un changement de source raté et conserve l'installation précédente.
+Pour tout autre échec, montrez le message tel quel à l'utilisateur.
