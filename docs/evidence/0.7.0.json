@@ -7,6 +7,11 @@
     "skill description form enforced by the validator",
     "make-bot-ui in French",
     "BUN_OPTIONS restart fix",
+    "runtime EPIPE classification fix",
+    "outcome bench and autonomy audit",
+    "short router and on-demand skill details",
+    "mode reminder hooks",
+    "native project agents and mixed panel proposal",
     "README rewrite"
   ],
   "environment": {
