@@ -122,7 +122,7 @@ Lis le playbook correspondant en entier et copie ses étapes dans la todo avant 
 - `playbooks/autopilot-full.md` : file autorisée de PR indépendantes que les propriétaires peuvent fusionner après vérification.
 - `playbooks/autopilot-stack.md` : file livrée comme une pile linéaire vérifiée que l’opérateur fait atterrir.
 - `playbooks/session-pickup.md` : reprendre depuis l’état local, une branche ou le contexte de conversation.
-- `playbooks/pause-safely.md` : laisser le travail local dans un état reprenable, y compris avant un résumé de contexte imminent.
+- `playbooks/pause-safely.md` : laisser le travail local dans un état reprenable.
 - `playbooks/multi-phase-plan.md` : plan qui couvre des phases ou PR.
 - `playbooks/worktree-cleanup.md` : nettoyage des worktrees temporaires libérés après une livraison fusionnée, ou nettoyage disque demandé.
 - `playbooks/opening-a-pr.md` : livraison révisable d’une implémentation. D’autres compétences sélectionnées directement ne créent pas de PR sans autorisation dans leur propre demande.

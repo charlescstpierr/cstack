@@ -4,66 +4,60 @@
 Codex lance ce hook à chaque message (`UserPromptSubmit`) et après un résumé ou une reprise
 (`SessionStart`). Il ne parle que dans une conversation où l'utilisateur a invoqué `$cstack:cstack` :
 ailleurs, il n'écrit rien. Il ne lit jamais le transcript et ne garde que des identifiants de session
-sous `PLUGIN_DATA`. Toute erreur donne une sortie vide : le hook ne bloque jamais un message.
+hachés sous `PLUGIN_DATA`. Toute erreur donne une sortie vide : le hook ne bloque jamais un message.
 """
 
-from __future__ import annotations
-
-import hashlib
-import json
 import os
-from pathlib import Path
-import re
 import sys
 
-ACTIVATE = re.compile(r"\$cstack:cstack\b")
-# « arrête cstack », « stop cstack », « désactive cstack », « quitte le mode cstack »…
-STOP = re.compile(r"\b(?:arr[êe]te|stop|stoppe|d[ée]sactive|quitte|sors?)\b[^.\n]{0,20}\bcstack\b", re.IGNORECASE)
-
-REMINDER = (
-    "Mode cstack actif dans cette conversation. Nouvelle tâche ou tâche en cours : applique `$cstack:cstack` "
-    "et, si le contexte a été résumé, relis son SKILL.md et `references/runtime/base.md` avant de continuer. "
-    "Tour anodin ou arrêt demandé par l'utilisateur : n'applique pas."
-)
-RESUMED = " Relis aussi le point de reprise de la tâche sous `.cstack/` s'il existe."
+ACTIVATE = "$cstack:cstack"
+STOP_VERBS = ("arrête", "arrete", "stop", "stoppe", "désactive", "desactive", "quitte")
+# Un pointeur vers les règles, pas une copie : `references/runtime/base.md` reste la source.
+REMINDER = "Mode cstack actif : tâche nouvelle ou en cours → applique `$cstack:cstack` ; tour anodin ou arrêt demandé → non."
+AFTER_SUMMARY = "Mode cstack actif et contexte résumé : relis `references/runtime/base.md` de `$cstack:cstack` avant de continuer."
 
 
-def _marker(data_dir: Path, session_id: str) -> Path:
-    # L'identifiant est haché : aucun chemin ne dépend d'une valeur externe.
-    return data_dir / "sessions" / hashlib.sha256(session_id.encode()).hexdigest()
+def _stop_requested(prompt: str) -> bool:
+    # « arrête cstack », « stop cstack »… : le verbe juste avant « cstack », pas une négation plus loin.
+    words = prompt.lower().translate(str.maketrans(",.;:!?«»\"'", "          ")).split()
+    return any(word == "cstack" and index and words[index - 1] in STOP_VERBS for index, word in enumerate(words))
 
 
-def reminder(event: dict, data_dir: Path) -> str:
-    session_id = event.get("session_id")
-    if not isinstance(session_id, str) or not session_id:
+def reminder(raw: str, data: str) -> str:
+    sessions = os.path.join(data, "sessions")
+    # Chemin chaud : hors cstack, sortir avant tout import ou accès disque coûteux.
+    if ACTIVATE not in raw and not os.path.isdir(sessions):
         return ""
-    marker = _marker(data_dir, session_id)
-    if event.get("hook_event_name") == "UserPromptSubmit":
-        prompt = event.get("prompt") if isinstance(event.get("prompt"), str) else ""
-        if STOP.search(prompt):
-            marker.unlink(missing_ok=True)
-            return ""
-        if ACTIVATE.search(prompt):
-            marker.parent.mkdir(parents=True, exist_ok=True)
-            marker.touch()
-        return REMINDER if marker.exists() else ""
-    if event.get("hook_event_name") == "SessionStart" and marker.exists():
-        return REMINDER + RESUMED
-    return ""
+    import hashlib
+    import json
+
+    event = json.loads(raw)
+    session_id = event.get("session_id")
+    if not session_id:
+        return ""
+    # L'identifiant est haché : aucun chemin ne dépend d'une valeur externe.
+    marker = os.path.join(sessions, hashlib.sha256(session_id.encode()).hexdigest())
+    if event.get("hook_event_name") == "SessionStart":
+        return AFTER_SUMMARY if os.path.exists(marker) else ""
+    prompt = event.get("prompt") or ""
+    if _stop_requested(prompt):
+        if os.path.exists(marker):
+            os.remove(marker)
+        return ""
+    if ACTIVATE in prompt:
+        os.makedirs(sessions, exist_ok=True)
+        open(marker, "a").close()
+    return REMINDER if os.path.exists(marker) else ""
 
 
 def main() -> int:
+    data = os.environ.get("PLUGIN_DATA")
     try:
-        data = os.environ.get("PLUGIN_DATA") or os.environ.get("CLAUDE_PLUGIN_DATA")
-        if not data:
-            return 0
-        event = json.loads(sys.stdin.read() or "{}")
-        text = reminder(event, Path(data)) if isinstance(event, dict) else ""
+        text = reminder(sys.stdin.read(), data) if data else ""
         if text:
             sys.stdout.write(text + "\n")
     except Exception:
-        # Un rappel manquant vaut mieux qu'un message bloqué.
-        return 0
+        pass  # Un rappel manquant vaut mieux qu'un message bloqué.
     return 0
 
 

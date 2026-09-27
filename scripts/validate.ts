@@ -419,6 +419,8 @@ export function validate(root: string): { skills: number; sourceFiles: number } 
   // Les hooks du plugin se limitent au rappel du mode cstack : deux événements, un seul script.
   const hooks = json(join(plugin, "hooks/hooks.json"));
   requireValue(record(hooks.hooks) && Object.keys(hooks.hooks).sort().join(",") === "SessionStart,UserPromptSubmit", "hooks: seuls UserPromptSubmit et SessionStart sont permis");
+  const sessionStart = (hooks.hooks as Record<string, unknown[]>).SessionStart;
+  requireValue(sessionStart.every((group) => record(group) && group.matcher === "compact|resume"), "hooks: SessionStart doit viser seulement compact|resume");
   for (const groups of Object.values(hooks.hooks)) {
     requireValue(Array.isArray(groups), "hooks: groupes invalides");
     for (const group of groups) {

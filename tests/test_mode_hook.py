@@ -21,7 +21,7 @@ class ModeHookTests(unittest.TestCase):
         self.tmp.cleanup()
 
     def run_hook(self, event, *, data=True, raw=None):
-        env = {key: value for key, value in os.environ.items() if key not in {"PLUGIN_DATA", "CLAUDE_PLUGIN_DATA"}}
+        env = {key: value for key, value in os.environ.items() if key != "PLUGIN_DATA"}
         if data:
             env["PLUGIN_DATA"] = str(self.data)
         result = subprocess.run([sys.executable, str(HOOK)], input=raw if raw is not None else json.dumps(event),
@@ -39,24 +39,27 @@ class ModeHookTests(unittest.TestCase):
     def test_reminder_after_activation_on_every_turn_of_that_session_only(self):
         first = self.prompt("$cstack:cstack Corrige ce bug.")
         self.assertIn("Mode cstack actif", first)
-        self.assertIn("runtime/base.md", first)
+        self.assertIn("$cstack:cstack", first)
         self.assertEqual(self.prompt("Et ajoute un test."), first)
         self.assertEqual(self.prompt("Autre conversation.", session="s2"), "")
         # Le rappel reste court, comme le `reminder:` de pstack, bien sous la limite d'injection.
-        self.assertLess(len(first.split()), 80)
+        self.assertLess(len(first.split()), 30)
 
     def test_stop_request_ends_the_reminder(self):
         self.prompt("$cstack:cstack Refactorise ce module.")
         self.assertEqual(self.prompt("Merci, arrête cstack maintenant."), "")
         self.assertEqual(self.prompt("Une question simple."), "")
         self.assertIn("Mode cstack actif", self.prompt("$cstack:cstack On reprend."))
+        # Seul un verbe d'arrêt juste avant « cstack » coupe le rappel.
+        for text in ("Ne stoppe pas cstack.", "Sors les logs de cstack."):
+            self.assertIn("Mode cstack actif", self.prompt(text))
 
     def test_reminder_survives_compaction_and_resume(self):
         self.prompt("$cstack:cstack Migration en plusieurs phases.")
         for source in ("compact", "resume"):
             text = self.run_hook({"hook_event_name": "SessionStart", "session_id": "s1", "source": source})
             self.assertIn("Mode cstack actif", text)
-            self.assertIn(".cstack/", text)
+            self.assertIn("runtime/base.md", text)
 
     def test_failures_never_block_the_message(self):
         self.assertEqual(self.run_hook(None, raw="pas du json"), "")
@@ -70,15 +73,6 @@ class ModeHookTests(unittest.TestCase):
         stored = [path.name for path in (self.data / "sessions").iterdir()]
         self.assertEqual(len(stored), 1)
         self.assertRegex(stored[0], r"^[0-9a-f]{64}$")
-
-    def test_hook_config_runs_only_this_script_on_two_events(self):
-        config = json.loads((ROOT / "plugins/cstack/hooks/hooks.json").read_text())["hooks"]
-        self.assertEqual(sorted(config), ["SessionStart", "UserPromptSubmit"])
-        self.assertEqual(config["SessionStart"][0]["matcher"], "compact|resume")
-        for groups in config.values():
-            for group in groups:
-                for hook in group["hooks"]:
-                    self.assertEqual(hook["command"], 'python3 "${PLUGIN_ROOT}/hooks/mode.py"')
 
 
 if __name__ == "__main__":
