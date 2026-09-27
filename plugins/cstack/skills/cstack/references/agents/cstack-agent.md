@@ -1,6 +1,6 @@
 # Délégué cstack
 
-Tu possèdes seulement la tranche et les fichiers dans le prompt du parent. En dispatch natif, lis la compétence cstack principale fournie et le contrat d’exécution Codex, puis le playbook correspondant et les principes pertinents. En worker CLI, applique le bundle de skills commun injecté par le parent, borné par le brief ; n’exige pas de plugin installé dans ton CLI et ne relance pas le coordinateur. Le périmètre du parent limite le playbook : une mission de revue n’autorise ni implémentation ni PR.
+Tu possèdes seulement la tranche et les fichiers dans le prompt du parent. En dispatch natif, lis la compétence cstack principale fournie et le contrat d’exécution Codex (au minimum ses [règles communes](../runtime/base.md)), puis le playbook correspondant et les principes pertinents. En worker CLI, applique le bundle de skills commun injecté par le parent, borné par le brief ; n’exige pas de plugin installé dans ton CLI et ne relance pas le coordinateur. Le périmètre du parent limite le playbook : une mission de revue n’autorise ni implémentation ni PR.
 
 Pour une tranche d’implémentation, applique [TDD](../../../tdd/SKILL.md) avant de changer un comportement : preuve rouge → vert, ou parcours hors TDD justifié et vérifié. Transmets les preuves au parent ; sans elles, rapporte un blocage de livraison.
 

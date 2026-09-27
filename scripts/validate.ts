@@ -416,6 +416,18 @@ export function validate(root: string): { skills: number; sourceFiles: number } 
       requireValue(!text.toLowerCase().includes(phrase), `${posix(root, path)}: régression de réserve sur la capacité ${phrase}`);
     }
   }
+  // Les hooks du plugin se limitent au rappel du mode cstack : deux événements, un seul script.
+  const hooks = json(join(plugin, "hooks/hooks.json"));
+  requireValue(record(hooks.hooks) && Object.keys(hooks.hooks).sort().join(",") === "SessionStart,UserPromptSubmit", "hooks: seuls UserPromptSubmit et SessionStart sont permis");
+  for (const groups of Object.values(hooks.hooks)) {
+    requireValue(Array.isArray(groups), "hooks: groupes invalides");
+    for (const group of groups) {
+      requireValue(record(group) && Array.isArray(group.hooks), "hooks: groupe invalide");
+      for (const hook of group.hooks) {
+        requireValue(record(hook) && hook.type === "command" && hook.command === 'python3 "${PLUGIN_ROOT}/hooks/mode.py"', "hooks: seule la commande du rappel de mode est permise");
+      }
+    }
+  }
   for (const rel of EXECUTABLES) {
     const path = join(plugin, rel);
     const mode = statSync(path).mode & 0o777;
