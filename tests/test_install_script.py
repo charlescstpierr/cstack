@@ -1,5 +1,6 @@
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -372,6 +373,30 @@ class InstallScriptTest(unittest.TestCase):
         self.assertEqual(self.run_script("update", "--local").returncode, 1)
         self.assertEqual(self.run_script("doctor", "--local").returncode, 2)
         self.assertEqual(self.calls(), [])
+
+
+class AgentRunbookTest(unittest.TestCase):
+    """INSTALL-AGENT.md doit citer les messages que install.sh affiche réellement."""
+
+    def test_known_failures_quote_real_messages(self):
+        runbook = (REPO / "INSTALL-AGENT.md").read_text()
+        script = SCRIPT.read_text()
+        section = runbook.split("## Pannes connues", 1)[1]
+        quoted = [cell for line in section.splitlines() if line.startswith("| `")
+                  for cell in re.findall(r"`([^`]+)`", line.split(" | ")[0])]
+        self.assertGreaterEqual(len(quoted), 6)
+        for message in quoted:
+            with self.subTest(message=message):
+                self.assertIn(message.replace("charlescstpierr/cstack", "${REPO}"), script)
+
+    def test_runbook_uses_the_readme_download_and_is_linked(self):
+        runbook = (REPO / "INSTALL-AGENT.md").read_text()
+        readme = (REPO / "README.md").read_text()
+        download = 'gh api repos/charlescstpierr/cstack/contents/install.sh -H "Accept: application/vnd.github.raw" > install-cstack.sh'
+        self.assertIn(download, runbook)
+        self.assertIn(download, readme)
+        self.assertIn("(INSTALL-AGENT.md)", readme)
+        self.assertIn("contents/INSTALL-AGENT.md", readme)
 
 
 if __name__ == "__main__":
