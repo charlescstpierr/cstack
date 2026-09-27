@@ -1,6 +1,6 @@
 ---
 name: no-comments
-description: "À utiliser pour $cstack:no-comments lors d'une revue indépendante des commentaires. Corrige ensuite les constats acceptés et propose des encodages pour les contraintes déclarées."
+description: "À utiliser pour $cstack:no-comments lors d'une revue indépendante des commentaires. Mène cette revue, corrige les constats acceptés et propose des encodages pour les contraintes déclarées."
 ---
 
 # No comments
