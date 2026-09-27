@@ -36,6 +36,9 @@ die_with() { printf '%s\n' "$1" >&2; exit 1; }
 
 run_codex() { "$CODEX" "$@"; }
 
+# Masque les identifiants d'une URL (https://user:token@hôte) avant tout affichage.
+redact() { sed -E 's#://[^/@]+@#://***@#g' <<<"$*"; }
+
 has_codex() { command -v "$CODEX" >/dev/null 2>&1; }
 
 python_ok() { python3 -c 'import sys; sys.exit(sys.version_info < (3, 9))' 2>/dev/null; }
@@ -129,7 +132,7 @@ add_marketplace() {
   fi
   current="$(current_marketplace)"
   if out="$(run_codex plugin marketplace add "${source[@]}" 2>&1)"; then
-    printf '%s\n' "$out"
+    redact "$out"
     if ! run_codex plugin add "$PLUGIN"; then
       # Un catalogue créé par cet appel ne survit pas à l'échec de l'installation du plugin.
       [[ -n "$current" ]] || run_codex plugin marketplace remove "$MARKETPLACE" >/dev/null 2>&1 || true
@@ -138,36 +141,38 @@ add_marketplace() {
     return
   fi
   # Codex refuse de changer la source (ref ou clone) d'un catalogue déjà configuré.
-  [[ -n "$current" ]] || die_with "$out"
-  echo "Changement de source : ${source[*]}"
+  [[ -n "$current" ]] || die_with "$(redact "$out")"
+  echo "Changement de source : $(redact "${source[@]}")"
   switch_marketplace "$current" "${source[@]}"
 }
 
 # Remplace le catalogue configuré (décrit par $1) par la source qui suit, plugin compris.
 # Toute étape ratée laisse ou remet l'installation précédente, à son commit exact.
 switch_marketplace() {
-  local current="$1" out trial trial_failed="" prev line
+  local current="$1" out trial trial_failed="" prev line was_installed=""
   shift
   local -a source=("$@") previous
   prev="$(previous_source "$current")" || die "commit actuel illisible dans le clone de Codex ; l'installation actuelle est conservée."
   while IFS= read -r line; do previous+=("$line"); done <<<"$prev"
+  # La restauration ne réinstalle le plugin que s'il l'était avant la commande.
+  [[ "$(codex_state plugin-status)" != installed* ]] || was_installed=1
   # Essai dans un CODEX_HOME jetable : une source invalide ne doit pas coûter l'installation actuelle.
   trial="$(mktemp -d)"
   # L'essai installe aussi le plugin : un catalogue valide sans cstack utilisable est refusé ici.
   out="$({ CODEX_HOME="$trial" run_codex plugin marketplace add "${source[@]}" &&
     CODEX_HOME="$trial" run_codex plugin add "$PLUGIN"; } 2>&1)" || trial_failed=1
   rm -rf "$trial"
-  [[ -z "$trial_failed" ]] || die_with "${out}"$'\n'"cstack : source inutilisable. L'installation actuelle est conservée."
+  [[ -z "$trial_failed" ]] || die_with "$(redact "$out")"$'\n'"cstack : source inutilisable. L'installation actuelle est conservée."
   run_codex plugin marketplace remove "$MARKETPLACE" >/dev/null
   # Catalogue et plugin forment une seule transaction : tout échec restaure l'ancienne source.
   if ! out="$({ run_codex plugin marketplace add "${source[@]}" && run_codex plugin add "$PLUGIN"; } 2>&1)"; then
-    printf '%s\n' "$out" >&2
+    redact "$out" >&2
     run_codex plugin marketplace remove "$MARKETPLACE" >/dev/null 2>&1 || true
-    { run_codex plugin marketplace add "${previous[@]}" && run_codex plugin add "$PLUGIN"; } >/dev/null 2>&1 ||
-      die "échec, et l'ancienne source (${previous[*]}) n'a pas pu être restaurée : relancez install.sh install."
-    die "échec ; l'ancienne source (${previous[*]}) est restaurée à son commit précédent. Pour suivre de nouveau une branche : install.sh install --ref <branche>"
+    { run_codex plugin marketplace add "${previous[@]}" && { [[ -z "$was_installed" ]] || run_codex plugin add "$PLUGIN"; }; } >/dev/null 2>&1 ||
+      die "échec, et l'ancienne source ($(redact "${previous[@]}")) n'a pas pu être restaurée : relancez install.sh install."
+    die "échec ; l'ancienne source ($(redact "${previous[@]}")) est restaurée à son commit précédent. Pour suivre de nouveau une branche : install.sh install --ref <branche>"
   fi
-  printf '%s\n' "$out"
+  redact "$out"
 }
 
 finish() {
@@ -179,7 +184,7 @@ finish() {
 parse_options() {
   while (($#)); do
     case "$1" in
-      --ref) [[ $# -ge 2 ]] || die "--ref attend une valeur."; ref="$2"; shift 2 ;;
+      --ref) [[ $# -ge 2 && -n "$2" ]] || die "--ref attend une valeur non vide."; ref="$2"; shift 2 ;;
       --local) local_source=1; shift ;;
       *) usage >&2; exit 2 ;;
     esac
@@ -205,14 +210,14 @@ cmd_update() {
   if [[ -n "$ref" ]]; then
     # Même avec une ref déjà configurée, `marketplace add` ne rafraîchirait pas le clone : on remplace.
     url="$(remote_source)"
-    echo "Mise à jour : ${url} --ref ${ref}"
+    echo "Mise à jour : $(redact "$url") --ref ${ref}"
     switch_marketplace "$current" "$url" --ref "$ref"
   elif [[ "$current" == git$'\t'* ]]; then
     # La nouvelle pointe de la branche passe par le même remplacement validé qu'un changement de source.
     branch="$(tracked_branch "$current")" ||
       die "cstack est épinglé sur un commit et n'avance pas. Pour suivre une branche : install.sh install --ref main"
     IFS=$'\t' read -r _ url _ <<<"$current"
-    echo "Mise à jour : ${url} --ref ${branch}"
+    echo "Mise à jour : $(redact "$url") --ref ${branch}"
     switch_marketplace "$current" "$url" --ref "$branch"
   else
     echo "Source locale : recopie depuis le clone, sans mise à jour Git."

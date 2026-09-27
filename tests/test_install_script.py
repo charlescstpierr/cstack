@@ -218,6 +218,27 @@ class InstallScriptTest(unittest.TestCase):
         self.assertIn("installation du plugin impossible", result.stderr)
         self.assertIsNone(self.source())
 
+    def set_state(self, **changes):
+        state = json.loads(self.state.read_text())
+        state.update(changes)
+        self.state.write_text(json.dumps(state))
+
+    def test_rollback_keeps_an_uninstalled_plugin_uninstalled(self):
+        self.run_script("install")
+        self.set_state(installed=False)
+        result = self.run_script("install", "--ref", "flaky")
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("est restaurée", result.stderr)
+        self.assertFalse(self.installed())
+
+    def test_rollback_messages_hide_url_credentials(self):
+        self.run_script("install")
+        self.set_state(source="https://user:s3cret@github.com/charlescstpierr/cstack.git")
+        result = self.run_script("install", "--ref", "flaky")
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("https://***@github.com", result.stderr)
+        self.assertNotIn("s3cret", result.stdout + result.stderr)
+
     def test_missing_codex_is_reported(self):
         result = self.run_script("install", CSTACK_CODEX="codex-absent")
         self.assertEqual(result.returncode, 1)
@@ -314,6 +335,8 @@ class InstallScriptTest(unittest.TestCase):
     def test_invalid_arguments_are_rejected(self):
         self.assertEqual(self.run_script("bogus").returncode, 2)
         self.assertEqual(self.run_script("install", "--ref").returncode, 1)
+        self.assertEqual(self.run_script("install", "--ref", "").returncode, 1)
+        self.assertEqual(self.run_script("update", "--ref", "").returncode, 1)
         self.assertEqual(self.run_script("install", "--ref", "main", "--local").returncode, 1)
         self.assertEqual(self.run_script("update", "--local").returncode, 1)
         self.assertEqual(self.calls(), [])
