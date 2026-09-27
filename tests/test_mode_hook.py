@@ -51,7 +51,7 @@ class ModeHookTests(unittest.TestCase):
         self.assertEqual(self.prompt("Une question simple."), "")
         self.assertIn("Mode cstack actif", self.prompt("$cstack:cstack On reprend."))
         # Seul un verbe d'arrêt juste avant « cstack » coupe le rappel.
-        for text in ("Ne stoppe pas cstack.", "Sors les logs de cstack.", "N'arrête pas cstack !", "Don't stop cstack."):
+        for text in ("Ne stoppe pas cstack.", "Sors les logs de cstack.", "N'arrête pas cstack !", "Don't stop cstack.", "Don’t stop cstack", "N’arrête pas cstack"):
             self.assertIn("Mode cstack actif", self.prompt(text))
 
     def test_reminder_survives_compaction_and_resume(self):

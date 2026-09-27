@@ -21,7 +21,8 @@ AFTER_SUMMARY = "Mode cstack actif et contexte résumé : relis `references/runt
 
 def _stop_requested(prompt: str) -> bool:
     # « arrête cstack », « stop cstack »… : le verbe juste avant « cstack », pas une négation plus loin.
-    words = prompt.lower().translate(str.maketrans(",.;:!?«»\"'", "          ")).split()
+    # Apostrophes droite et courbes (claviers macOS et iOS) séparent aussi les mots.
+    words = prompt.lower().translate(str.maketrans({ch: " " for ch in ",.;:!?«»\"'’‘"})).split()
     return any(word == "cstack" and index and words[index - 1] in STOP_VERBS
                and (index < 2 or words[index - 2] not in NEGATIONS) for index, word in enumerate(words))
 
