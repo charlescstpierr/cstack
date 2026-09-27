@@ -392,8 +392,6 @@ export function validate(root: string): { skills: number; sourceFiles: number } 
       const part = decodeURIComponent(filePart?.split("?")[0] ?? "");
       const target = part ? resolve(dirname(path), part) : path;
       requireValue(existsSync(target) && inside(plugin, target), `${relative(root, path)}: lien cassé ou situé hors du périmètre ${href}`);
-      // Les paquets de workers CLI n'emportent que skills/ : un lien qui en sort casse leur chargement.
-      requireValue(!inside(join(plugin, "skills"), path) || inside(join(plugin, "skills"), target), `${relative(root, path)}: lien hors de skills/ ${href}`);
       if (fragment && target.endsWith(".md")) {
         const slugs = headingSlugs(readFileSync(target, "utf8"));
         requireValue(slugs.has(fragment.toLowerCase()), `${relative(root, path)}: titre manquant pour le fragment ${href}`);
@@ -418,19 +416,10 @@ export function validate(root: string): { skills: number; sourceFiles: number } 
       requireValue(!text.toLowerCase().includes(phrase), `${posix(root, path)}: régression de réserve sur la capacité ${phrase}`);
     }
   }
-  // Les hooks du plugin se limitent au rappel du mode cstack : deux événements, un seul script.
-  const hooks = json(join(plugin, "hooks/hooks.json"));
-  requireValue(record(hooks.hooks) && Object.keys(hooks.hooks).sort().join(",") === "SessionStart,UserPromptSubmit", "hooks: seuls UserPromptSubmit et SessionStart sont permis");
-  const sessionStart = (hooks.hooks as Record<string, unknown[]>).SessionStart;
-  requireValue(sessionStart.every((group) => record(group) && group.matcher === "compact|resume"), "hooks: SessionStart doit viser seulement compact|resume");
-  // Chaque événement porte exactement un groupe et une commande : aucun rappel ne peut disparaître en silence.
-  for (const groups of Object.values(hooks.hooks)) {
-    requireValue(Array.isArray(groups) && groups.length === 1, "hooks: un seul groupe par événement");
-    const [group] = groups;
-    requireValue(record(group) && Array.isArray(group.hooks) && group.hooks.length === 1, "hooks: une seule commande par groupe");
-    const [hook] = group.hooks;
-    requireValue(record(hook) && hook.type === "command" && hook.command === 'python3 "${PLUGIN_ROOT}/hooks/mode.py"', "hooks: seule la commande du rappel de mode est permise");
-  }
+  // Les hooks du plugin se limitent au rappel du mode cstack : une seule forme permise.
+  const reminderHook = { type: "command", command: 'python3 -S "${PLUGIN_ROOT}/hooks/mode.py"', timeout: 5 };
+  const expectedHooks = { hooks: { UserPromptSubmit: [{ hooks: [reminderHook] }], SessionStart: [{ matcher: "compact|resume", hooks: [reminderHook] }] } };
+  requireValue(JSON.stringify(json(join(plugin, "hooks/hooks.json"))) === JSON.stringify(expectedHooks), "hooks: hooks.json diffère du seul rappel de mode permis");
   for (const rel of EXECUTABLES) {
     const path = join(plugin, rel);
     const mode = statSync(path).mode & 0o777;

@@ -11,20 +11,17 @@ import os
 import sys
 
 ACTIVATE = "$cstack:cstack"
+# Comme l'activation, l'arrêt est une commande exacte (« arrête cstack ») ; une phrase plus longue
+# reste au jugement du modèle, que le rappel invite déjà à ne pas appliquer cstack sur demande d'arrêt.
 STOP_VERBS = ("arrête", "arrete", "stop", "stoppe", "désactive", "desactive", "quitte")
-# « n'arrête pas cstack », « don't stop cstack » : une négation juste avant le verbe garde le mode.
-NEGATIONS = ("n", "ne", "t", "not", "never", "jamais")
 # Un pointeur vers les règles, pas une copie : `references/runtime/base.md` reste la source.
 REMINDER = "Mode cstack actif : tâche nouvelle ou en cours → applique `$cstack:cstack` ; tour anodin ou arrêt demandé → non."
 AFTER_SUMMARY = "Mode cstack actif et contexte résumé : relis `references/runtime/base.md` de `$cstack:cstack` avant de continuer."
 
 
 def _stop_requested(prompt: str) -> bool:
-    # « arrête cstack », « stop cstack »… : le verbe juste avant « cstack », pas une négation plus loin.
-    # Apostrophes droite et courbes (claviers macOS et iOS) séparent aussi les mots.
-    words = prompt.lower().translate(str.maketrans({ch: " " for ch in ",.;:!?«»\"'’‘"})).split()
-    return any(word == "cstack" and index and words[index - 1] in STOP_VERBS
-               and (index < 2 or words[index - 2] not in NEGATIONS) for index, word in enumerate(words))
+    words = prompt.lower().strip(" \t\n.!?…").split()
+    return len(words) == 2 and words[0] in STOP_VERBS and words[1] == "cstack"
 
 
 def reminder(raw: str, data: str) -> str:
@@ -45,8 +42,10 @@ def reminder(raw: str, data: str) -> str:
         return AFTER_SUMMARY if os.path.exists(marker) else ""
     prompt = event.get("prompt") or ""
     if _stop_requested(prompt):
-        if os.path.exists(marker):
+        try:
             os.remove(marker)
+        except FileNotFoundError:
+            pass
         return ""
     if ACTIVATE in prompt:
         os.makedirs(sessions, exist_ok=True)

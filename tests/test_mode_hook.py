@@ -47,11 +47,11 @@ class ModeHookTests(unittest.TestCase):
 
     def test_stop_request_ends_the_reminder(self):
         self.prompt("$cstack:cstack Refactorise ce module.")
-        self.assertEqual(self.prompt("Merci, arrête cstack maintenant."), "")
+        self.assertEqual(self.prompt("Arrête cstack."), "")
         self.assertEqual(self.prompt("Une question simple."), "")
         self.assertIn("Mode cstack actif", self.prompt("$cstack:cstack On reprend."))
-        # Seul un verbe d'arrêt juste avant « cstack » coupe le rappel.
-        for text in ("Ne stoppe pas cstack.", "Sors les logs de cstack.", "N'arrête pas cstack !", "Don't stop cstack.", "Don’t stop cstack", "N’arrête pas cstack"):
+        # Seule la commande exacte coupe le rappel ; une phrase plus longue reste au jugement du modèle.
+        for text in ("Ne stoppe pas cstack.", "Sors les logs de cstack.", "N'arrête pas cstack !", "Don’t stop cstack", "Merci, arrête cstack maintenant."):
             self.assertIn("Mode cstack actif", self.prompt(text))
 
     def test_reminder_survives_compaction_and_resume(self):

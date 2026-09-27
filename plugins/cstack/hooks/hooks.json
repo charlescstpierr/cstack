@@ -5,7 +5,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"${PLUGIN_ROOT}/hooks/mode.py\"",
+            "command": "python3 -S \"${PLUGIN_ROOT}/hooks/mode.py\"",
             "timeout": 5
           }
         ]
@@ -17,7 +17,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"${PLUGIN_ROOT}/hooks/mode.py\"",
+            "command": "python3 -S \"${PLUGIN_ROOT}/hooks/mode.py\"",
             "timeout": 5
           }
         ]
