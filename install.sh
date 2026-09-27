@@ -108,6 +108,7 @@ remote_source() {
   fi
 }
 
+# Configure la source demandée puis installe le plugin depuis elle.
 add_marketplace() {
   local ref="$1" local_source="$2" out trial remote trial_failed="" current
   local -a source previous
@@ -119,7 +120,11 @@ add_marketplace() {
     source=("$remote")
     [[ -z "$ref" ]] || source+=(--ref "$ref")
   fi
-  out="$(run_codex plugin marketplace add "${source[@]}" 2>&1)" && { printf '%s\n' "$out"; return; }
+  if out="$(run_codex plugin marketplace add "${source[@]}" 2>&1)"; then
+    printf '%s\n' "$out"
+    run_codex plugin add "$PLUGIN"
+    return
+  fi
   # Codex refuse de changer la source (ref ou clone) d'un catalogue déjà configuré.
   current="$(current_marketplace)"
   [[ -n "$current" ]] || die_with "$out"
@@ -134,9 +139,13 @@ add_marketplace() {
   local line
   while IFS= read -r line; do previous+=("$line"); done < <(previous_source "$current")
   run_codex plugin marketplace remove "$MARKETPLACE" >/dev/null
-  if ! out="$(run_codex plugin marketplace add "${source[@]}" 2>&1)"; then
+  # Catalogue et plugin forment une seule transaction : tout échec restaure l'ancienne source.
+  if ! out="$({ run_codex plugin marketplace add "${source[@]}" && run_codex plugin add "$PLUGIN"; } 2>&1)"; then
     printf '%s\n' "$out" >&2
-    run_codex plugin marketplace add "${previous[@]}" >/dev/null 2>&1 ||
+    if [[ -n "$(current_marketplace)" ]]; then
+      run_codex plugin marketplace remove "$MARKETPLACE" >/dev/null 2>&1 || true
+    fi
+    { run_codex plugin marketplace add "${previous[@]}" && run_codex plugin add "$PLUGIN"; } >/dev/null 2>&1 ||
       die "échec du changement de source, et l'ancienne (${previous[*]}) n'a pas pu être restaurée : relancez install.sh install."
     die "échec du changement de source ; l'ancienne source (${previous[*]}) est restaurée."
   fi
@@ -144,7 +153,6 @@ add_marketplace() {
 }
 
 finish() {
-  run_codex plugin add "$PLUGIN"
   echo
   echo "cstack est prêt. Ouvrez une nouvelle tâche Codex, puis tapez \$cstack:cstack."
 }
@@ -185,6 +193,8 @@ cmd_update() {
   else
     echo "Source locale : recopie depuis le clone, sans mise à jour Git."
   fi
+  # add_marketplace installe déjà le plugin ; upgrade et la source locale le recopient ici.
+  [[ -n "$ref" ]] || run_codex plugin add "$PLUGIN"
   finish
 }
 

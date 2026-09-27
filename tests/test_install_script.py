@@ -74,6 +74,9 @@ FAKE_CODEX = textwrap.dedent("""\
             fail("marketplace `cstack` is not configured")
         if state["source"].endswith("--ref no-plugin"):
             fail("plugin `cstack` was not found in marketplace `cstack`")
+        # Cache plein dans le vrai CODEX_HOME seulement : l'essai réussit, l'installation réelle échoue.
+        if state["source"].endswith("--ref cache-full") and os.environ["CODEX_HOME"] == os.environ["FAKE_MAIN_HOME"]:
+            fail("failed to write plugin cache: No space left on device")
         state["installed"] = True
         save()
         print("Added plugin `cstack` from marketplace `cstack`.")
@@ -193,6 +196,14 @@ class InstallScriptTest(unittest.TestCase):
         self.assertEqual(result.returncode, 1)
         self.assertIn("est restaurée", result.stderr)
         self.assertEqual(self.source(), "charlescstpierr/cstack --ref main")
+
+    def test_failed_plugin_install_after_switch_restores_the_previous_source(self):
+        self.run_script("install")
+        result = self.run_script("install", "--ref", "cache-full")
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("est restaurée", result.stderr)
+        self.assertEqual(self.source(), "charlescstpierr/cstack --ref main")
+        self.assertTrue(self.installed())
 
     def test_missing_codex_is_reported(self):
         result = self.run_script("install", CSTACK_CODEX="codex-absent")
