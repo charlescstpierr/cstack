@@ -4,6 +4,8 @@
 
 C'est le portage des processus de [pstack](https://github.com/cursor/plugins/tree/889ec4b68fa5aab0e867dad71ec3fdf386ae48f3/pstack) vers les outils natifs de Codex, sans moteur d'orchestration supplémentaire. Rien ne change dans vos projets tant que vous n'invoquez pas `$cstack:cstack`. [Installation en une commande](#installer).
 
+> **Agent IA (Codex) chargé de l'installer ?** Suivez [INSTALL-AGENT.md](INSTALL-AGENT.md).
+
 ## Ce que cstack apporte
 
 - **Un routeur, `$cstack:cstack`.** Il lit la demande, choisit le guide d'exécution adapté (bug, fonctionnalité, revue, livraison…) et le suit jusqu'à une preuve.
@@ -43,6 +45,16 @@ cd cstack
 ```
 
 Ouvrez ensuite une **nouvelle tâche** dans Codex App ou une nouvelle session CLI. Le CLI et l'application partagent l'installation s'ils utilisent le même profil Codex.
+
+### Faire installer par un agent IA
+
+Donnez ce message à Codex, dans une tâche ouverte sur n'importe quel dossier. Le dépôt étant privé, l'agent lit la procédure avec `gh` ou Git plutôt que par le web :
+
+```text
+Installe le plugin cstack. Lis d'abord sa procédure pour agents dans le dépôt privé charlescstpierr/cstack (gh api repos/charlescstpierr/cstack/contents/INSTALL-AGENT.md -H "Accept: application/vnd.github.raw", ou sans gh : clone le dépôt avec git, en HTTPS ou en SSH, dans un dossier temporaire), puis suis-la.
+```
+
+Étapes et garde-fous : [INSTALL-AGENT.md](INSTALL-AGENT.md). L'agent vous demande votre accord avant d'installer un outil global.
 
 ### Gérer l'installation
 
