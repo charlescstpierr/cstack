@@ -70,6 +70,15 @@ add_marketplace() {
     # Codex refuse de changer la source (ref ou clone) d'un catalogue déjà ajouté : on la remplace.
     grep -q "already added from a different source" <<<"$out" || { printf '%s\n' "$out" >&2; exit 1; }
     echo "Changement de source : ${source}"
+    # Essai dans un CODEX_HOME jetable : une ref ou une source invalide ne doit pas coûter l'installation actuelle.
+    local trial
+    trial="$(mktemp -d)"
+    if ! out="$(CODEX_HOME="$trial" run_codex plugin marketplace add "$source" 2>&1)"; then
+      rm -rf "$trial"
+      printf '%s\n' "$out" >&2
+      die "source inutilisable : ${source}. L'installation actuelle est conservée."
+    fi
+    rm -rf "$trial"
     run_codex plugin marketplace remove "$MARKETPLACE" >/dev/null
     out="$(run_codex plugin marketplace add "$source" 2>&1)" || { printf '%s\n' "$out" >&2; exit 1; }
   fi
@@ -151,7 +160,7 @@ cmd_doctor() {
     warn "gh absent ou non authentifié : opérations GitHub indisponibles"
   fi
   if command -v "$CODEX" >/dev/null 2>&1; then
-    status="$(plugin_status)"
+    status="$(plugin_status || true)"
     if [[ "$status" == installed,\ enabled* ]]; then
       ok "plugin ${PLUGIN} : ${status}"
     else

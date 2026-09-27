@@ -16,7 +16,7 @@ BASH = shutil.which("bash")
 # Reproduit les sorties et erreurs de `codex plugin` observées avec codex-cli 0.157.1.
 FAKE_CODEX = textwrap.dedent("""\
     import json, os, sys
-    state_path = os.environ["FAKE_CODEX_STATE"]
+    state_path = os.path.join(os.environ["CODEX_HOME"], "state.json")
     state = json.load(open(state_path)) if os.path.exists(state_path) else {"source": None, "installed": False}
     args = sys.argv[1:]
     with open(os.environ["FAKE_CODEX_LOG"], "a") as log:
@@ -31,8 +31,11 @@ FAKE_CODEX = textwrap.dedent("""\
     elif args[:3] == ["plugin", "marketplace", "list"]:
         print("MARKETPLACE  ROOT\\ncstack       /root" if state["source"] else "No plugin marketplaces in scope.")
     elif args[:3] == ["plugin", "marketplace", "add"]:
+        # Hypothèse la plus défavorable : le conflit de source est signalé avant la validation de la ref.
         if state["source"] not in (None, args[3]):
             fail("marketplace 'cstack' is already added from a different source; remove it before adding this source")
+        if args[3].endswith("@missing"):
+            fail("git checkout missing failed with status exit status: 1")
         state["source"] = args[3]
         save()
         print("Added marketplace `cstack` from " + args[3] + ".")
@@ -45,6 +48,8 @@ FAKE_CODEX = textwrap.dedent("""\
         state["source"] = None
         save()
     elif args[:2] == ["plugin", "list"]:
+        if os.environ.get("FAKE_CODEX_LIST_FAILS"):
+            fail("marketplace `cstack` is not configured")
         status = "installed, enabled  0.6.0" if state["installed"] else "not installed"
         print("PLUGIN         STATUS              VERSION  SOURCE")
         print("cstack@cstack  " + status + "    /root/plugins/cstack")
@@ -77,7 +82,9 @@ class InstallScriptTest(unittest.TestCase):
         git.write_text(FAKE_GIT)
         for tool in (codex, git):
             tool.chmod(0o755)
-        self.state = root / "state.json"
+        self.home = root / "codex-home"
+        self.home.mkdir()
+        self.state = self.home / "state.json"
         self.log = root / "codex.log"
         self.log.touch()
 
@@ -88,7 +95,7 @@ class InstallScriptTest(unittest.TestCase):
         environment = {
             **os.environ,
             "PATH": "{}{}{}".format(self.bin, os.pathsep, os.environ["PATH"]),
-            "FAKE_CODEX_STATE": str(self.state),
+            "CODEX_HOME": str(self.home),
             "FAKE_CODEX_LOG": str(self.log),
             **env,
         }
@@ -121,6 +128,15 @@ class InstallScriptTest(unittest.TestCase):
         result = self.run_script("install", "--local")
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(self.source(), str(REPO))
+
+    def test_unusable_new_source_keeps_the_current_installation(self):
+        self.run_script("install")
+        result = self.run_script("install", "--ref", "missing")
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("L'installation actuelle est conservée", result.stderr)
+        self.assertEqual(self.source(), "charlescstpierr/cstack")
+        self.assertTrue(json.loads(self.state.read_text())["installed"])
+        self.assertNotIn("plugin marketplace remove cstack", self.calls())
 
     def test_install_stops_before_codex_when_the_private_repo_is_unreachable(self):
         result = self.run_script("install", FAKE_GIT_DENIED="1")
@@ -164,6 +180,11 @@ class InstallScriptTest(unittest.TestCase):
         installed = self.run_script("doctor")
         self.assertEqual(installed.returncode, 0, installed.stdout)
         self.assertIn("✓ plugin cstack@cstack : installed, enabled 0.6.0", installed.stdout)
+
+    def test_doctor_reports_a_failing_plugin_list(self):
+        result = self.run_script("doctor", FAKE_CODEX_LIST_FAILS="1")
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("✗ plugin cstack@cstack : absent", result.stdout)
 
     def test_invalid_arguments_are_rejected(self):
         self.assertEqual(self.run_script("bogus").returncode, 2)
