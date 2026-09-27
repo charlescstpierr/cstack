@@ -15,7 +15,7 @@ Sépare les faits découvrables des décisions humaines avant de formuler les qu
 
 - Lis la demande, les fichiers courants, les consignes de projet, le mode et l'autorisation.
 - Établis toi-même les faits du dépôt, en réutilisant [`$cstack:how`](../how/SKILL.md) pour les questions de flux de code et de responsabilité. Marque une inférence comme inférence et garde-la séparée du comportement observé.
-- Si des faits indépendants gagnent une couverture séparée en lecture seule, applique le [contrat d’exploration déléguée](../cstack/references/codex-runtime.md#exploration-déléguée). Résous chaque explorateur comme le rôle configuré `how explorer` et transmets la sélection complète de modèle et d'effort de raisonnement. Sinon, établis les faits directement dans le parent. Ne délègue jamais un seul explorateur.
+- Si des faits indépendants gagnent une couverture séparée en lecture seule, applique le [contrat d’exploration déléguée](../cstack/references/runtime/exploration.md). Résous chaque explorateur comme le rôle configuré `how explorer` et transmets la sélection complète de modèle et d'effort de raisonnement. Sinon, établis les faits directement dans le parent. Ne délègue jamais un seul explorateur.
 - Ne demande jamais à l'utilisateur un fait que le dépôt où les outils exposés peuvent établir. N'invente jamais un fait, ne réponds jamais à une décision métier matérielle et ne transforme jamais une recommandation en décision.
 
 Le défaut est zéro agent supplémentaire. Si une passe séparée de recommandation ou de synthèse est vraiment utile, utilise le rôle configuré `judgment and prose`, en préservant sa sélection complète. Cette synthèse unique ne remplace pas les explorateurs requis par le contrat. Ne crée pas de nouveau rôle ou panel.

@@ -83,7 +83,7 @@ Codex et Claude ont des essais connectés documentés. Grok et Cursor restent ho
 - Les outils de navigateur, les connecteurs et les tâches planifiées sont facultatifs. Une capacité absente est signalée ; aucun résultat de test ni travail en arrière-plan n'est simulé.
 - Les webhooks Grok Bot et les automatisations événementielles Benny de Cursor ne disposent pas d'un équivalent intégré. Leurs limites sont conservées dans le [guide de portage](docs/PORTING.md).
 
-Une demande de revue ou l'activation d'une compétence spécialisée n'autorise pas à envoyer un message, ouvrir une PR, fusionner ou publier. Avec `$cstack:cstack`, les tâches d'implémentation suivent la portée de livraison du [contrat d'exécution](plugins/cstack/skills/cstack/references/codex-runtime.md#activation-et-routage). Le merge reste séparé.
+Une demande de revue ou l'activation d'une compétence spécialisée n'autorise pas à envoyer un message, ouvrir une PR, fusionner ou publier. Avec `$cstack:cstack`, les tâches d'implémentation suivent la portée de livraison du [contrat d'exécution](plugins/cstack/skills/cstack/references/runtime/activation.md). Le merge reste séparé.
 
 ## Développement
 

@@ -1025,7 +1025,51 @@
     },
     {
       "path": "plugins/cstack/skills/cstack/references/codex-runtime.md",
-      "reason": "Codex runtime contract, not present in pstack."
+      "reason": "Short index of the Codex runtime contract, not present in pstack; each part lives under runtime/ and is read on demand."
+    },
+    {
+      "path": "plugins/cstack/skills/cstack/references/runtime/activation.md",
+      "reason": "Codex runtime contract part (activation, routing and delivery scope), not present in pstack; read on demand."
+    },
+    {
+      "path": "plugins/cstack/skills/cstack/references/runtime/suivi.md",
+      "reason": "Codex runtime contract part (visible workflow and delegate tracking), not present in pstack; read on demand."
+    },
+    {
+      "path": "plugins/cstack/skills/cstack/references/runtime/goal.md",
+      "reason": "Codex runtime contract part (native multi-phase Goal), not present in pstack; read on demand."
+    },
+    {
+      "path": "plugins/cstack/skills/cstack/references/runtime/exploration.md",
+      "reason": "Codex runtime contract part (delegated exploration), not present in pstack; read on demand."
+    },
+    {
+      "path": "plugins/cstack/skills/cstack/references/runtime/delegation.md",
+      "reason": "Codex runtime contract part (native tools, delegation and worker dispatch), not present in pstack; read on demand."
+    },
+    {
+      "path": "plugins/cstack/skills/cstack/references/runtime/orchestration.md",
+      "reason": "Codex runtime contract part (required orchestration and BLOCKED handoff), not present in pstack; read on demand."
+    },
+    {
+      "path": "plugins/cstack/skills/cstack/references/runtime/modeles.md",
+      "reason": "Codex runtime contract part (model and effort selection), not present in pstack; read on demand."
+    },
+    {
+      "path": "plugins/cstack/skills/cstack/references/runtime/etat.md",
+      "reason": "Codex runtime contract part (local state, helpers and resume), not present in pstack; read on demand."
+    },
+    {
+      "path": "plugins/cstack/skills/cstack/references/runtime/commits.md",
+      "reason": "Codex runtime contract part (local commits), not present in pstack; read on demand."
+    },
+    {
+      "path": "plugins/cstack/skills/cstack/references/runtime/integrations.md",
+      "reason": "Codex runtime contract part (external integrations and authority), not present in pstack; read on demand."
+    },
+    {
+      "path": "plugins/cstack/skills/cstack/references/runtime/limites.md",
+      "reason": "Codex runtime contract part (Codex platform limits), not present in pstack; read on demand."
     },
     {
       "path": "plugins/cstack/skills/cstack/scripts/bootstrap.test.ts",

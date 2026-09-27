@@ -6,7 +6,7 @@ Suivez [le contrat d’exécution Codex](../references/codex-runtime.md).
 
 ## Cycle du Goal natif
 
-Applique cette section seulement quand le [Goal global](../references/codex-runtime.md#goal-global) est explicitement autorisé. Le coordinateur racine en est l'unique propriétaire ; ses délégués retournent leurs résultats sans créer ni terminer de Goal.
+Applique cette section seulement quand le [Goal global](../references/runtime/goal.md) est explicitement autorisé. Le coordinateur racine en est l'unique propriétaire ; ses délégués retournent leurs résultats sans créer ni terminer de Goal.
 
 1. Inspecte les outils Goal réellement exposés et lis l'objectif courant avec `get_goal` ou son équivalent natif. Réutilise l'objectif actif de cette tâche. Un objectif inachevé d'une autre tâche reste intact : rapporte le conflit et continue seulement le travail indépendant qui ne nécessite pas de le remplacer.
 2. S'il n'y a aucun objectif inachevé, crée un seul Goal avec le résultat global, les limites et les preuves de fin. N'ajoute un budget que si l'utilisateur en a demandé un. Le défaut est une PR testée, revue indépendamment et ouverte sans draft ; « local seulement » ou une livraison plus large explicitement autorisée modifient ce prédicat.

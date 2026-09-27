@@ -54,6 +54,8 @@ test("le paquet charge 29 skills et rejette les distributions dangereuses ou inc
       ["plugins/cstack/sources/pstack-claude.json", (text: string) => text.replace(/"target": "[^"]+"/, '"target": "../../README.md"'), /cible pstack-claude invalide/],
       ["plugins/cstack/.codex-plugin/plugin.json", (text: string) => text.replace('"name": "cstack"', '"name": "other"'), /identité du manifeste/],
       ["plugins/cstack/skills/cstack/agents/openai.yaml", (text: string) => text.replace("allow_implicit_invocation: false", "allow_implicit_invocation: true"), /invocation explicite/],
+      ["plugins/cstack/skills/tdd/SKILL.md", (text: string) => text + " mot".repeat(3000), /tdd: \d+ mots dépassent le plafond/],
+      ["plugins/cstack/skills/cstack/SKILL.md", (text: string) => text + " mot".repeat(300), /lecture initiale de \d+ mots/],
       ["plugins/cstack/skills/cstack/agents/openai.yaml", (text: string) => text.replace("$cstack:cstack", "$cstack"), /invocation canonique/],
       ["plugins/cstack/skills/cstack/agents/openai.yaml", (text: string) => text.replace(/short_description: .*/, 'short_description: "Organiser le travail et le vérifier avec"'), /description d’interface du skill tronquée/],
       ["plugins/cstack/skills/cstack/agents/openai.yaml", (text: string) => text.replace(/short_description: .*/, `short_description: "${"x".repeat(65)}"`), /longueur de la description d’interface du skill/],

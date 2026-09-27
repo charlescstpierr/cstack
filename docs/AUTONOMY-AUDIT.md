@@ -8,7 +8,7 @@ cstack sait enchaîner les phases d’une tâche sans demander d’approbation �
 
 ## Constats
 
-Les numéros de ligne renvoient à `plugins/cstack/skills/cstack/references/codex-runtime.md`, sauf mention contraire.
+Les numéros de ligne renvoient à `plugins/cstack/skills/cstack/references/codex-runtime.md` au commit `5d9e00a`, avant son découpage sous `runtime/`, sauf mention contraire.
 
 | # | Constat | Source | Pourquoi ça bloque l’autonomie | Ticket |
 | --- | --- | --- | --- | --- |

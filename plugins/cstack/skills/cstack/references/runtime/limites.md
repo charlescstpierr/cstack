@@ -1,0 +1,13 @@
+# Limites de plateforme
+
+Les webhooks Grok Bot et le pack Benny événementiel de Cursor n’ont pas d’implémentation de remplacement direct ici. Leurs notices pointent vers la source originale ; ils ne sont pas activés silencieusement. Une investigation manuelle équivalente de bug peut utiliser les outils Codex disponibles sans revendiquer un service webhook.
+
+Un plugin Codex ne livre pas d’agents : les agents custom se déclarent en TOML par projet (`.codex/agents/`) ou par utilisateur. `$cstack:setup-cstack` peut écrire les trois agents projet `cstack-*` avec les choix acceptés ; il n’installe jamais de rôle global. Un agent déclaré n’est pas la condition d’une délégation ; les types génériques exposés par l’hôte suffisent. La documentation Codex affirme que l’hôte respecte les consignes de délégation d’`AGENTS.md` ou d’une compétence : c’est non mesuré ici, et le bloc `AGENTS.md` du setup porte cette demande en attendant un essai natif.
+
+La vraie contrainte est ailleurs. Mesuré : dans `docs/evidence/0.3.0.json`, sur treize scénarios, les quatre qui ont lancé des enfants portaient tous une demande de délégation dans la demande utilisateur, et aucun autre n’en a lancé. Inféré de cette corrélation : la description de l’outil de lancement de l’hôte exige cette demande dans le tour de l’utilisateur, et sa consigne prime sur le texte d’une compétence, donc une instruction de SKILL.md ne suffit pas à elle seule à faire partir un sous-agent. Supposition tant qu’un essai natif ne l’a pas tranché : que le prompt par défaut d’une compétence sélectionnée compte comme cette demande.
+
+Les `default_prompt` des compétences qui délèguent portent cette demande pour cette raison ; ne la retire pas en les reformulant, et ajoute-la quand tu rends une compétence déléguante. Quand un utilisateur signale qu’un seul acteur travaille, vérifie d’abord cette demande, puis la configuration d’agents de l’hôte et sa limite de threads simultanés, avant de conclure à un défaut de routage.
+
+Un délégué ne lance pas de descendants sauf si son parent lui délègue explicitement cette décision ; c’est la règle de `../agents/cstack-agent.md`, pas une limite de plateforme. Une compétence qui ventile doit donc s’exécuter dans la session qui possède la ventilation ; la déléguer entière coûte sa propre ventilation. Ventile les tranches, pas les compétences qui ventilent. Quand cette règle rencontre une orchestration requise, applique [Orchestration requise](orchestration.md).
+
+Voir la [documentation officielle des sous-agents](https://learn.chatgpt.com/docs/agent-configuration/subagents) et le [contrat de packaging de plugin](https://developers.openai.com/plugins/build/plugins).

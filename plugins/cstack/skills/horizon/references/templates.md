@@ -95,7 +95,7 @@ research_children:
 
 ## Cycle des enfants de recherche
 
-Le parent est le seul rédacteur du ticket. Avant dispatch, réserve tous les angles de `research_children` selon le [contrat d'exploration déléguée](../../cstack/references/codex-runtime.md#exploration-déléguée). Chaque entrée possède un `angle`, un `child_handle` stable, un `native_handle`, un `child_state`, un chemin `artifact` distinct et un `attempt` initialement nul.
+Le parent est le seul rédacteur du ticket. Avant dispatch, réserve tous les angles de `research_children` selon le [contrat d'exploration déléguée](../../cstack/references/runtime/exploration.md). Chaque entrée possède un `angle`, un `child_handle` stable, un `native_handle`, un `child_state`, un chemin `artifact` distinct et un `attempt` initialement nul.
 
 | État | Transition et preuve |
 | --- | --- |

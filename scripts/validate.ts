@@ -11,6 +11,10 @@ const DIRECT_INVOCATION_ONLY: Record<string, string> = {
   "make-bot-ui": "Utilitaire d’interface de bot Grok invoqué directement, sans passer par le routeur.",
   "setup-cstack": "Utilitaire de configuration invoqué directement, sans passer par le routeur.",
 };
+// Plafond commun des SKILL.md : le plus long skill pstack (poteto-mode, 2 635 mots) plus la marge du français.
+const SKILL_WORD_CEILING = 3000;
+// `$cstack:cstack` lit seulement son SKILL.md d’avance ; le contrat se lit par parties, à la demande.
+const ENTRY_WORD_BUDGET = 2600;
 const EXECUTABLES = [
   "scripts/run-tool.sh",
   "skills/cstack/scripts/worktree-audit.sh",
@@ -29,6 +33,11 @@ const CAPACITY_HEDGES = [
   "si la capacité le permet",
   "si la revue native est disponible",
 ];
+
+// Même compte que `wc -w` : les suites d’espaces séparent les mots.
+function words(text: string): number {
+  return text.split(/\s+/).filter(Boolean).length;
+}
 
 function record(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -326,7 +335,11 @@ export function validate(root: string): { skills: number; sourceFiles: number } 
     requireValue(!/(?:[,;:]|\b(?:a|an|the|and|or|with|for|to|of|in|your|et|ou|avec|pour|de|du|des|le|la|les|un|une))$/i.test(summary), `${path}: description d’interface du skill tronquée`);
     requireValue(typeof policy.interface.default_prompt === "string" && policy.interface.default_prompt.includes(`$cstack:${name}`), `${path}: le prompt par défaut doit utiliser son invocation canonique`);
     requireValue(text.includes("codex-runtime.md"), `${path}: lien vers le contrat d’exécution manquant`);
+    const count = words(text);
+    requireValue(count <= SKILL_WORD_CEILING, `${name}: ${count} mots dépassent le plafond de ${SKILL_WORD_CEILING}`);
   }
+  const entryWords = words(mainSkill);
+  requireValue(entryWords <= ENTRY_WORD_BUDGET, `cstack: lecture initiale de ${entryWords} mots au-delà de ${ENTRY_WORD_BUDGET}`);
   const seenDisplay = new Set<string>();
   for (const item of skillUi) {
     requireValue(!seenDisplay.has(item.display), `display_name de skill dupliqué ${item.display}`);
