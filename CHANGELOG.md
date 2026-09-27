@@ -6,6 +6,11 @@ Les versions suivent SemVer. Le format suit [Keep a Changelog](https://keepachan
 
 ## [0.7.0] - 2026-09-27
 
+- Descriptions des compétences harmonisées : chacune commence par « À utiliser pour $cstack:<nom> » puis dit ce que fait la compétence ; le validateur impose cette forme, avec le nom comme jeton complet.
+- Correctif : au redémarrage après installation des dépendances, `bootstrap.ts` transmettait deux fois les drapeaux de `BUN_OPTIONS` ; il redémarre désormais sans cette variable, dont `execArgv` porte déjà les drapeaux.
+- Correctif : un worker qui quitte avant de lire son brief (EPIPE sur stdin) est classé d'après son code de sortie au lieu de faire échouer tout le run.
+- Banc de résultat (`scripts/outcome-bench.py`) : rejoue des correctifs open source récents dans les bras Codex seul, cstack et pstack amont (vérifié blob par blob contre `UPSTREAM.json`), note les diffs avec les tests cachés dans Docker et agrège résolution, tokens, durée et sous-agents. Aucune campagne n'est encore exécutée. Audit des obstacles à l'autonomie dans `docs/AUTONOMY-AUDIT.md`.
+- Tests : les trois tests qui provoquent une erreur de permission par `chmod 000` ne s'exécutent plus sous root, qui ignore ces permissions.
 - `make-bot-ui` passe en français, comme les autres compétences : le validateur épingle ses gardes de sécurité en français et ne l'exempte plus de la forme « À utiliser pour $cstack:<nom> ».
 - Installation en une commande : `install.sh` installe, met à jour (`--ref` pour une branche, un tag ou un commit, `--local` pour un clone), diagnostique (`doctor`) et retire cstack, uniquement par `codex plugin`. README refondu autour de l'installation, des premiers pas et d'un tableau des compétences ; descriptions du plugin réécrites.
 - Rappel du mode sur les longues sessions, comme le `reminder:` de pstack : deux hooks du plugin réinjectent un rappel court à chaque message et après chaque résumé, seulement après `$cstack:cstack` ; approbation unique avec `/hooks` en CLI. Pause propre avant un résumé imminent et relecture des règles après un résumé.
