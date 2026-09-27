@@ -11,8 +11,8 @@ const DIRECT_INVOCATION_ONLY: Record<string, string> = {
   "make-bot-ui": "Utilitaire d’interface de bot Grok invoqué directement, sans passer par le routeur.",
   "setup-cstack": "Utilitaire de configuration invoqué directement, sans passer par le routeur.",
 };
-// Plafond commun des SKILL.md : le plus long skill pstack (poteto-mode, 2 635 mots) plus la marge du français.
-const SKILL_WORD_CEILING = 3000;
+// Plafond commun des SKILL.md hors routeur : technical-writing, la plus longue skill pstack après poteto-mode (1 830 mots), plus la marge du français.
+const SKILL_WORD_CEILING = 2150;
 // `$cstack:cstack` lit seulement son SKILL.md d’avance ; le contrat se lit par parties, à la demande.
 const ENTRY_WORD_BUDGET = 2600;
 const EXECUTABLES = [
@@ -226,6 +226,8 @@ export function validate(root: string): { skills: number; sourceFiles: number } 
     requireValue(item.path.startsWith("plugins/cstack/") && !originalPaths.has(item.path), `chemin original invalide ou dupliqué: ${item.path}`);
     const target = resolve(root, item.path);
     requireValue(existsSync(target) && inside(plugin, target), `le chemin original n’existe pas: ${item.path}`);
+    // Un fichier extrait d’un texte porté garde la source amont dont il dérive.
+    requireValue(!("derived_from" in item) || (typeof item.derived_from === "string" && sourcePaths.has(item.derived_from)), `source amont dérivée inconnue pour ${item.path}`);
     originalPaths.add(item.path);
   }
 
@@ -334,12 +336,14 @@ export function validate(root: string): { skills: number; sourceFiles: number } 
     // Détecte les séparateurs et mots de liaison sans suite ; la prose nécessite aussi une relecture.
     requireValue(!/(?:[,;:]|\b(?:a|an|the|and|or|with|for|to|of|in|your|et|ou|avec|pour|de|du|des|le|la|les|un|une))$/i.test(summary), `${path}: description d’interface du skill tronquée`);
     requireValue(typeof policy.interface.default_prompt === "string" && policy.interface.default_prompt.includes(`$cstack:${name}`), `${path}: le prompt par défaut doit utiliser son invocation canonique`);
-    requireValue(text.includes("codex-runtime.md"), `${path}: lien vers le contrat d’exécution manquant`);
+    // Chaque skill atteint les règles communes ; le routeur les porte en ligne et lie l’index du contrat.
+    const contract = name === "cstack" ? "references/codex-runtime.md" : "../cstack/references/runtime/base.md";
+    requireValue(text.includes(`](${contract})`), `${path}: lien vers le contrat d’exécution manquant (${contract})`);
+    // Le routeur est lu à chaque invocation de `$cstack:cstack` : son plafond est le budget de lecture initiale.
     const count = words(text);
-    requireValue(count <= SKILL_WORD_CEILING, `${name}: ${count} mots dépassent le plafond de ${SKILL_WORD_CEILING}`);
+    const [ceiling, label] = name === "cstack" ? [ENTRY_WORD_BUDGET, "le budget de lecture initiale"] : [SKILL_WORD_CEILING, "le plafond"];
+    requireValue(count <= ceiling, `${name}: ${count} mots dépassent ${label} de ${ceiling}`);
   }
-  const entryWords = words(mainSkill);
-  requireValue(entryWords <= ENTRY_WORD_BUDGET, `cstack: lecture initiale de ${entryWords} mots au-delà de ${ENTRY_WORD_BUDGET}`);
   const seenDisplay = new Set<string>();
   for (const item of skillUi) {
     requireValue(!seenDisplay.has(item.display), `display_name de skill dupliqué ${item.display}`);

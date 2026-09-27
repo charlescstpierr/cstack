@@ -1028,6 +1028,10 @@
       "reason": "Short index of the Codex runtime contract, not present in pstack; each part lives under runtime/ and is read on demand."
     },
     {
+      "path": "plugins/cstack/skills/cstack/references/runtime/base.md",
+      "reason": "Codex runtime contract part (precedence and always-on rules linked by every skill), not present in pstack; read on demand."
+    },
+    {
       "path": "plugins/cstack/skills/cstack/references/runtime/activation.md",
       "reason": "Codex runtime contract part (activation, routing and delivery scope), not present in pstack; read on demand."
     },
@@ -1262,6 +1266,41 @@
     {
       "path": "plugins/cstack/sources/pstack-claude.json",
       "reason": "Inventaire des adaptations pstack-claude épinglées et de leur licence MIT."
+    },
+    {
+      "path": "plugins/cstack/skills/setup-cstack/references/inventory.md",
+      "reason": "Setup runtime/CLI probe inventory, login-status rules and model catalog discovery, moved out of SKILL.md and read on demand; extracted from the ported setup-cstack SKILL.md, derived from pstack/skills/setup-pstack/SKILL.md.",
+      "derived_from": "pstack/skills/setup-pstack/SKILL.md"
+    },
+    {
+      "path": "plugins/cstack/skills/setup-cstack/references/claude-code.md",
+      "reason": "Procedure to add or update Claude Code or another CLI as a worker runtime, moved out of SKILL.md and read on demand; extracted from the ported setup-cstack SKILL.md, derived from pstack/skills/setup-pstack/SKILL.md.",
+      "derived_from": "pstack/skills/setup-pstack/SKILL.md"
+    },
+    {
+      "path": "plugins/cstack/skills/setup-cstack/references/models.md",
+      "reason": "Setup model proposals, mixed review panels, recommendations, roles with fallbacks and catalog formats, read on demand; extracted from the ported setup-cstack SKILL.md, derived from pstack/skills/setup-pstack/SKILL.md.",
+      "derived_from": "pstack/skills/setup-pstack/SKILL.md"
+    },
+    {
+      "path": "plugins/cstack/skills/setup-cstack/references/project-apply.md",
+      "reason": "Project preparation: AGENTS.md block, native agents, tracker, project.py preview/apply, partial-write recovery and model-only mode, read on demand; extracted from the ported setup-cstack SKILL.md, derived from pstack/skills/setup-pstack/SKILL.md.",
+      "derived_from": "pstack/skills/setup-pstack/SKILL.md"
+    },
+    {
+      "path": "plugins/cstack/skills/make-bot-ui/references/codex-exec.md",
+      "reason": "On-demand codex exec detail for the bot UI: login, server steps, exposure, stdin, flags, fork, connectors and Cursor limits; extracted from the ported make-bot-ui SKILL.md, derived from pstack/skills/make-bot-ui/SKILL.md.",
+      "derived_from": "pstack/skills/make-bot-ui/SKILL.md"
+    },
+    {
+      "path": "plugins/cstack/skills/interrogate/references/scope-snapshot.md",
+      "reason": "Frozen-SHA scope snapshot procedure for interrogate, read on demand; extracted from the ported interrogate SKILL.md, derived from pstack/skills/interrogate/SKILL.md.",
+      "derived_from": "pstack/skills/interrogate/SKILL.md"
+    },
+    {
+      "path": "plugins/cstack/skills/interrogate/references/axes.md",
+      "reason": "Interrogate panel and runtime rules, Standards/Spec/Adversarial axes by panel size and axis-aware synthesis, read on demand; extracted from the ported interrogate SKILL.md, derived from pstack/skills/interrogate/SKILL.md.",
+      "derived_from": "pstack/skills/interrogate/SKILL.md"
     }
   ]
 }

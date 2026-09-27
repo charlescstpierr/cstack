@@ -55,6 +55,12 @@ La carte indexe les décisions fermées; elle ne répète pas les réponses de t
 
 Pour l'état local, l'id du ticket est la valeur exacte des métadonnées `id` et le préfixe du nom de fichier avant le premier `-` : `tickets/01-choose-storage.md` a `id: 01`. Les liens de carte utilisent le nom de fichier complet. Chaque entrée `blocked_by` nomme le `id` d'un autre ticket; rejette les ids dupliqués, ids manquants, incohérences fichier/métadonnées et cycles de dépendance avant de sélectionner le travail.
 
+## Métadonnées, propriété et éligibilité
+
+La carte est un index. Sa section `Décisions à ce stade` contient des résumés d'une ligne et des liens; la réponse complète vit dans exactement un ticket. Un ticket a des métadonnées explicites `id`, `title`, `type`, `status`, `blocked_by` et `owner`. `owner` est l'identité stable du coordinateur ou de l'utilisateur authentifié entre sessions, jamais un tour transitoire ni un handle enfant. Un ticket `waiting` garde ce owner pour que le même coordinateur puisse le reprendre; un autre owner ne doit pas le prendre. Un ticket `research` porte une liste `research_children` d'au moins deux angles distincts; elle en porte normalement trois quand trois angles utiles existent. Les enfants de recherche écrivent seulement leurs propres artefacts; ils ne modifient jamais la carte ou le ticket, ne revendiquent pas de tickets et ne lancent pas d'enfants.
+
+Avant de sélectionner du travail, valide tous les ids de tickets dans `blocked_by`, rejette les cycles de dépendance et identifie les tickets revendiqués par un autre owner. Un ticket est éligible au frontier seulement quand `status: ready`, que `owner` est vide et que chaque bloqueur a `status: resolved`. Un ticket bloqué nommé par l'utilisateur s'arrête avec son bloqueur; quand aucun ticket n'est nommé, choisis le premier ticket frontier indépendant éligible et laisse intacts les tickets bloqués ou revendiqués.
+
 ## Ticket de décision
 
 La liste `research_children` ci-dessous concerne seulement `type: research`. Pour les autres types, omets ce champ.
@@ -110,6 +116,28 @@ Une entrée `pending` ou `running` n'est jamais relancée sur la seule foi du ch
 Pour un ancien ticket de recherche, migre les champs singuliers seulement si `child_handle` ou `native_handle` est renseigné. Transfère leurs valeurs dans une entrée `legacy`, puis retire les champs singuliers, y compris `attempt`. Des champs vides et `attempt: 0` seuls ne créent pas d'entrée legacy. Complète les angles manquants sans remplacer un handle actif ; une métadonnée manquante sur une tentative commencée doit être réconciliée avant tout dispatch. Cette conversion ne laisse qu'une source d'état. Si un ancien guide de suivi nomme un seul fichier `research/<id>.md`, traite-le comme le format hérité : conserve les preuves existantes et attribue toujours un fichier distinct à chaque nouvel angle.
 
 Résous le ticket seulement quand toutes les entrées sont `completed` et que leurs preuves répondent à la question. Un artefact partiel, une entrée absente ou un état inconnu ne suffit pas.
+
+### Dispatch et drainage
+
+- Cartographie, étape 6 : pour chaque ticket `research` indépendant éligible au frontier, réserve-le avec `status: claimed`, un `owner` stable et `research_children` selon [le cycle des enfants](#cycle-des-enfants-de-recherche). Cette section définit les états, la migration, le dispatch et la reprise sans doublon. Conserve le nombre total d'angles prévus et mets les vagues suivantes en file selon la capacité native. Résous chaque appel avec `how explorer`, en conservant runtime, modèle et effort. Chaque enfant reçoit la question, son angle et son artefact réservé, sans droit de lancer des descendants. Une synthèse déléguée utilise `judgment and prose`; réserve `hardest tasks` à une architecture explicitement complexe.
+- Cartographie, étape 7 : attends ou draine toutes les entrées `research_children` avant de revenir. Un enfant natif terminé ne réussit que si son artefact complet existe et que ses citations répondent à son angle; le parent vérifie chaque entrée et n'enregistre la réponse ni la résolution du ticket qu'après le succès de toutes les entrées. Un artefact partiel ou un enfant manquant laisse le ticket `claimed` ou `waiting`, jamais `resolved`. Réessaie seulement après avoir vérifié l'état natif du `native_handle` et confirmé qu'aucun enfant vivant ne reste; n'exécute jamais d'enfants concurrents en double. Garde les métadonnées revendiquées et rapporte les angles et handles `queued`, `pending`, `running` ou `failed` si le drainage ne peut pas finir.
+- Travail d'un ticket, étape 3 : pour `research`, inspecte d'abord `research_children` et les champs singuliers hérités. S'il manque des entrées, réserve les angles manquants et lance-les avec la procédure de cartographie; consomme chaque artefact seulement après achèvement natif, valide chaque citation matérielle et laisse le parent enregistrer la réponse après le succès de toutes les entrées. Un enfant `pending`, `running`, `failed` ou partiel, ou un angle sans résultat, arrête avant résolution.
+- Travail d'un ticket, étape 5 : pour tout nouveau ticket `research` éligible, réserve `status`, `owner` stable et `research_children` avec au moins deux angles, puis utilise les mêmes règles d'état natif, citation, retry et vagues que la cartographie. Un ticket avec un `child_handle` ou `native_handle` vivant est déjà lancé et ne doit pas être répété. Attends ou draine toutes les entrées avant de revenir; un artefact partiel est `pending` ou `failed`, pas une résolution.
+
+### Affectation des enfants de recherche
+
+Utilise ce prompt borné pour chaque entrée de `research_children`, en changeant seulement l'id du ticket, la question, l'angle, le `child_handle` et le chemin d'artefact :
+
+```text
+Tu es l’enfant de recherche pour le ticket Horizon <id>, sur l’angle <angle>, avec le handle logique <child_handle>.
+Réponds seulement à cette question : <question du ticket>
+Lis les sources primaires (documentation officielle, code source, spécifications ou APIs first-party).
+Écris un artefact Markdown avec des findings concises et une citation pour chaque claim matérielle à <chemin d'artefact>.
+Ne modifie pas la carte ni le ticket, ne modifie pas le code produit et ne lance pas d’enfants.
+Retourne PASS avec le chemin d’artefact, ou BLOCKED avec la source ou capacité manquante exacte.
+```
+
+Le parent vérifie chaque artefact face à sa question, son angle et ses citations avant d'enregistrer une résolution. Un rapport d'enfant est une preuve, pas une permission d'élargir la portée; aucun ticket de recherche ne se résout tant qu'une entrée de `research_children` manque ou n'est pas terminée.
 
 ## Spec cohérente et unités verticales
 

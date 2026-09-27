@@ -200,7 +200,9 @@ class ProjectSetupTests(unittest.TestCase):
         self.assertEqual((self.root / "CLAUDE.md").read_text(), "  \n")
 
     def test_setup_documents_when_new_settings_take_effect(self) -> None:
-        skill = (ROOT / "plugins/cstack/skills/setup-cstack/SKILL.md").read_text()
+        setup = ROOT / "plugins/cstack/skills/setup-cstack"
+        skill = "\n".join(path.read_text() for path in
+                          [setup / "SKILL.md", *sorted((setup / "references").glob("*.md"))])
         guide = (ROOT / "plugins/cstack/docs/guide/01-setup.md").read_text()
         readme = (ROOT / "README.md").read_text()
         self.assertIn("la conversation actuelle garde l'ancien bloc", skill)

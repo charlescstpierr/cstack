@@ -5,7 +5,7 @@ description: "Génère une skill de vérification locale au projet qui pilote l'
 
 # Créer une skill de vérification
 
-Contrat d’exécution : [`../cstack/references/codex-runtime.md`](../cstack/references/codex-runtime.md).
+Runtime : [règles communes](../cstack/references/runtime/base.md), [intégrations](../cstack/references/runtime/integrations.md).
 
 Tout projet sérieux a besoin d'une façon scriptée de piloter la vraie app et de prouver le comportement : la lancer, exercer une fonctionnalité comme un utilisateur le ferait, puis capturer des preuves. Cette skill génère une skill locale au projet dans `.agents/skills/verify-<app>/`, adaptée au dépôt. Utilise la skill native `skill-creator` quand elle est disponible; sinon, écris directement les fichiers autonomes minimaux.
 

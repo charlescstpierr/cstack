@@ -5,7 +5,7 @@ description: "Utiliser quand $cstack:domain est sélectionne explicitement ou ro
 
 # Domaine
 
-Contrat d’exécution : [`../cstack/references/codex-runtime.md`](../cstack/references/codex-runtime.md).
+Runtime : [règles communes](../cstack/references/runtime/base.md), [activation](../cstack/references/runtime/activation.md), [exploration](../cstack/references/runtime/exploration.md), [délégation](../cstack/references/runtime/delegation.md), [modèles](../cstack/references/runtime/modeles.md) · rôles : `how explorer` (explorateurs), `documentation` (brouillon), `judgment and prose` (jugement).
 
 Utilise cette skill quand l'utilisateur sélectionne explicitement `$cstack:domain`, ou quand le coordinateur `$cstack:cstack` actif ou ses skills de préparation routent ici une décision terminologique matérielle. Elle sert au travail de domaine actif : résoudre le vocabulaire, vérifier les frontières de modèle et consigner un petit nombre de décisions durables. Lire simplement un glossaire n'est pas cette skill.
 
@@ -43,7 +43,7 @@ Garde l'ADR au format existant du dépôt et consigne contexte, décision et rai
 
 ## Faits, rédaction et jugement
 
-Le défaut est zéro agent supplémentaire. Quand des faits de dépôt indépendants exigent une couverture séparée, applique le [contrat d’exploration déléguée](../cstack/references/runtime/exploration.md) et utilise le rôle configuré `how explorer`. Établis les faits directement dans le parent quand la délégation n'ajoute pas de couverture. Quand un brouillon de document séparé est utile et que l'écriture est autorisée, utilise le rôle configuré `documentation`. Quand une passe indépendante de raisonnement ou de jugement est utile, utilise `judgment and prose`; cette synthèse ne compte pas comme exploration. Résous chaque rôle via le helper de confiance et transmets la sélection complète de modèle et d'effort de raisonnement; ne hard-code pas des noms de modèle et n'ajoute pas de rôle.
+Le défaut est zéro agent supplémentaire. Quand des faits de dépôt indépendants exigent une couverture séparée, applique le [contrat d’exploration déléguée](../cstack/references/runtime/exploration.md). Établis les faits directement dans le parent quand la délégation n'ajoute pas de couverture. Quand un brouillon de document séparé est utile et que l'écriture est autorisée, utilise `documentation`. Quand une passe indépendante de raisonnement ou de jugement est utile, utilise `judgment and prose`. N'ajoute pas de rôle.
 
 Le parent possède le jugement final et la vérification. Cette skill ne crée jamais d'objectifs, de changements d'implémentation, de trackers, de PR, de déploiements ou de messages externes. Ses seules écritures durables sont des documents de glossaire ou ADR explicitement autorisés.
 

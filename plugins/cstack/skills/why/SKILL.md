@@ -5,13 +5,11 @@ description: "À utiliser pour $cstack:why, « pourquoi X fonctionne-t-il ainsi 
 
 # Why
 
-Runtime : [`../cstack/references/codex-runtime.md`](../cstack/references/codex-runtime.md).
+Runtime : [règles communes](../cstack/references/runtime/base.md), [délégation](../cstack/references/runtime/delegation.md), [modèles](../cstack/references/runtime/modeles.md), [orchestration](../cstack/references/runtime/orchestration.md) · rôles : `why investigators`, `why synthesizer`.
 
 Enquête sur la motivation et l'intention derrière le code.
 
 Compagnon de la compétence `how`. `how` répond à ce que fait le code et comment il fonctionne. `why` répond aux forces qui ont mené à sa forme.
-
-Suis le chemin d'héritage direct du contrat runtime quand rien n'est configuré; sinon résous chaque rôle nommé avec son helper et transmets à chaque spawn natif la sélection complète, effort de raisonnement compris. Signale les lacunes de capacité de l'hôte au lieu de supprimer un champ sélectionné.
 
 ## Posture opérationnelle
 
@@ -80,7 +78,7 @@ Le contrôle source est disponible via git local; utilise `gh` authentifié quan
 
 Vise une **carte de couverture** complète, pas minimale. Documente le résultat nul; ne saute pas la recherche.
 
-Lance simultanément tous les enquêteurs natifs correspondants. Chaque affectation reste en lecture seule et couvre une source de preuve. Ils héritent du modèle parent par défaut. Si `.cstack/models.json` définit `why investigators`, suis le contrat runtime : utilise seulement des noms disponibles vérifiés et signale une surcharge explicite indisponible sans substituer silencieusement un autre modèle. Un subagent manquant sérialise la passe d'enquête. Il ne la retire jamais. Quand aucun slot de subagent n'est disponible, exécute cette catégorie dans la même session comme passe séparée et explicitement recadrée, étiquette le résultat `single-agent`, et signale l'indépendance manquante. Saute une catégorie seulement pour un connecteur manquant ou une source dont l'absence de pertinence est prouvée, jamais parce qu'un slot de subagent manque.
+Lance simultanément tous les enquêteurs natifs correspondants. Chaque affectation reste en lecture seule et couvre une source de preuve. Un slot de subagent manquant ne justifie jamais de sauter une catégorie.
 
 Chaque enquêteur reçoit :
 1. Le prompt de base depuis `references/investigator-prompt.md`
@@ -120,7 +118,7 @@ Si ton évaluation de portée suggère une cible triviale d'un seul commit où l
 
 ## Étape 4. Synthétiser
 
-Lance un synthétiseur natif. Il hérite du modèle parent par défaut. Si `.cstack/models.json` définit `why synthesizer`, suis le contrat runtime et ne substitue pas silencieusement une surcharge explicite indisponible. Garde l'affectation en lecture seule; il peut utiliser les outils exposés en lecture seule pour vérifier ponctuellement les citations. Quand aucun slot de subagent n'est disponible, exécute le prompt du synthétiseur dans cette session comme passe séparée, étiquette le résultat `single-agent` et signale l'indépendance manquante.
+Lance un synthétiseur natif. Garde l'affectation en lecture seule; il peut utiliser les outils exposés en lecture seule pour vérifier ponctuellement les citations.
 
 Le synthétiseur reçoit :
 1. Les résultats des enquêteurs, y compris les résultats nuls et les catégories sautées avec justification
@@ -131,7 +129,7 @@ Le synthétiseur reçoit :
 
 ## Étape 5. Présenter
 
-Prends la sortie du synthétiseur et présente-la à l'utilisateur. Tu peux retoucher légèrement pour la clarté ou ajouter le contexte de conversation, mais **ne réécris pas le langage de confiance**. Chaque affirmation porte sa preuve ou son étiquette dans la même phrase. Mesuré, inféré ou supposition. Une prédiction ou une cause non observée est une supposition. Ne donne jamais à l'humain une vérification que tu pourrais exécuter.
+Prends la sortie du synthétiseur et présente-la à l'utilisateur. Tu peux retoucher légèrement pour la clarté ou ajouter le contexte de conversation, mais **ne réécris pas le langage de confiance**. Chaque affirmation porte sa preuve ou son étiquette : mesuré, inféré ou supposition (toute prédiction ou cause non observée) ; Ne donne jamais à l'humain une vérification que tu pourrais exécuter.
 
 ## Format de sortie
 

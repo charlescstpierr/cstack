@@ -5,13 +5,13 @@ description: "Trouve ce qu'un changement pourrait casser ailleurs avant livraiso
 
 # Rayon d'impact
 
-Contrat d’exécution : [`../cstack/references/codex-runtime.md`](../cstack/references/codex-runtime.md).
+Runtime : [règles communes](../cstack/references/runtime/base.md), [intégrations](../cstack/references/runtime/integrations.md).
 
 Trouve ce qu'un changement casse ailleurs avant qu'il parte en livraison. Utilise pour "rayon d’impact de X", "qu’est-ce que cela pourrait casser", ou la revue d'un petit diff auquel tu ne fais pas encore confiance.
 
 Compagnon de `how` et `why`. `how` te dit ce que fait le code. `why` te dit pourquoi il a cette forme. Le rayon d'impact te dit ce qu'il casse ailleurs.
 
-Lister les appelants n'est pas le travail. L'agent peut les chercher avec grep en une seconde. Le travail, c'est la casse que grep ne te montrera pas.
+Lister les appelants n'est pas le travail. Le travail, c'est la casse que grep ne te montrera pas.
 
 ## Ne fais pas confiance à ton propre compte rendu
 
