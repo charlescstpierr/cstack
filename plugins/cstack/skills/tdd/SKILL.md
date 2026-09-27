@@ -5,9 +5,9 @@ description: "Utiliser $cstack:tdd pour les bugs et les nouvelles fonctionnalit�
 
 # Bugs et fonctionnalités en TDD
 
-Contrat d'exécution : [`../cstack/references/codex-runtime.md`](../cstack/references/codex-runtime.md).
+Runtime : [délégation](../cstack/references/runtime/delegation.md), [commits](../cstack/references/runtime/commits.md).
 
-Pour chaque bug ou comportement nouveau ou modifié, écris et exécute un test qui échoue pour la raison attendue avant de modifier le code de production. Fais-le ensuite passer avec le plus petit changement utile. La taille du diff ne décide pas de l'application du TDD.
+Pour chaque bug ou comportement nouveau ou modifié, écris et exécute un test qui échoue pour la raison attendue avant de modifier le code de production. Fais-le ensuite passer avec le plus petit changement utile.
 
 ## Choisir le parcours
 
@@ -30,7 +30,7 @@ Si le builder ne dispose pas des outils pour exécuter les tests, le coordinateu
 
 Une exception explique ce qui empêche réellement le cycle test-first : infrastructure indisponible, reproduction uniquement sur un système inaccessible ou test qui exigerait une simulation sans rapport avec le comportement. Elle nomme une vérification concrète : commande de reproduction, scénario navigateur, test d'intégration, comparaison de sorties ou inspection de l'artefact pertinent.
 
-Exécute cette vérification et conserve son résultat. Une exception ne dispense pas de vérifier. Si aucun contrôle pertinent ne peut aboutir, rapporte le blocage et ne déclare pas la livraison prête. Si l'absence de preuve rouge n'est découverte qu'après l'implémentation, rapporte le manquement ; une simple déclaration rétrospective ne vaut pas exception justifiée.
+Exécute cette vérification et conserve son résultat. Si aucun contrôle pertinent ne peut aboutir, rapporte le blocage et ne déclare pas la livraison prête. Si l'absence de preuve rouge n'est découverte qu'après l'implémentation, rapporte le manquement ; une simple déclaration rétrospective ne vaut pas exception justifiée.
 
 ## Preuve et livraison
 
@@ -39,4 +39,4 @@ Le builder transmet au coordinateur l'un des parcours suivants, avec les chemins
 - **TDD :** comportement, test, commande et échec observé avant implémentation, puis commande et réussite après ; contrôles voisins.
 - **Hors TDD :** absence d'effet comportemental, ou exception motivée, avec vérification alternative effectivement exécutée et résultat.
 
-Le coordinateur et le reviewer examinent ces preuves avant de déclarer le travail prêt pour PR ou merge. **Bloque la livraison si ni le cycle rouge → vert ni le parcours hors TDD justifié et vérifié ne sont établis.** « Tests OK » seul ne prouve pas le TDD. Cette barrière est une consigne de livraison aux agents ; une CI verte ne contrôle pas à elle seule l'ordre dans lequel code et tests ont été écrits.
+Le coordinateur et le reviewer examinent ces preuves avant de déclarer le travail prêt pour PR ou merge. **Bloque la livraison si ni le cycle rouge → vert ni le parcours hors TDD justifié et vérifié ne sont établis.** « Tests OK » ou une CI verte ne prouvent pas l'ordre test-first.

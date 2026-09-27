@@ -5,7 +5,7 @@ description: "Garde une trace de décisions relisible pour les travaux longs ou 
 
 # Montrer ton travail
 
-Contrat d'exécution : [`../cstack/references/codex-runtime.md`](../cstack/references/codex-runtime.md).
+Runtime : [délégation](../cstack/references/runtime/delegation.md), [modèles](../cstack/references/runtime/modeles.md), [orchestration](../cstack/references/runtime/orchestration.md), [état](../cstack/references/runtime/etat.md) · rôle : `judgment and prose`.
 
 Garde un journal canonique unique.
 
@@ -65,7 +65,7 @@ Corrige le journal, pas l'histoire. Si le travail a diverge de ce qu'une ligne a
 
 ## Revue indépendante de la trace
 
-Avant de rendre, exécute une revue indépendante de la trace. Préfère un relecteur natif. Résous `judgment and prose` sous le contrat d’exécution et préserve les deux champs sélectionnés au dispatch. Le relecteur lit la trace d'audit et le registre de tâche, puis signale les preuves faibles où les risqués. Si aucun emplacement de sous-agent n'est disponible, exécute une passe séparée dans la même session sur une relecture propre de la trace, étiquette-la `single-agent review` et nommé l'indépendance manquante. La revue ne disparaît jamais.
+Avant de rendre, exécute une revue indépendante de la trace. Préfère un relecteur natif. Le relecteur lit la trace d'audit et le registre de tâche, puis signale les preuves faibles où les risqués. La revue ne disparaît jamais.
 
 - Decisions journalisées avec preuves faibles ou absentes.
 - Étapes de vérification sautées ou affirmées sans preuve dans le registre de tâche.

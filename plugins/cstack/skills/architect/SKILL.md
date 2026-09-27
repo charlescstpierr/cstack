@@ -5,9 +5,7 @@ description: "Ébauche les types, signatures et structure de modules avant le co
 
 # Architecte
 
-Environnement d'exécution : [`../cstack/references/codex-runtime.md`](../cstack/references/codex-runtime.md).
-
-Pour chaque sélection avec `runtime`, applique le [dispatch CLI](../cstack/references/runtime-workers.md) à la place du lancement natif. Conserve la taille et l’ordre du panel, le rôle spécialisé et les étapes de vérification. Les replis single-agent de ce document concernent seulement les sélections natives ; une position CLI bloquée n’est jamais remplacée silencieusement par Codex.
+Runtime : [délégation](../cstack/references/runtime/delegation.md), [modèles](../cstack/references/runtime/modeles.md), [orchestration](../cstack/references/runtime/orchestration.md) · rôles : `architect runners`.
 
 Conçois avant d'implémenter. Ébauche les types, signatures de fonctions, formes de classes et frontières de modules avec des corps `not implemented` et du pseudocode. Synthétise plusieurs perspectives de modèles, puis remplis le code selon l'ébauche choisie. Si l'implémentation prouve que l'ébauche est mauvaise, jette-la et reconçois.
 
@@ -23,64 +21,64 @@ Suis un élément par phase dans la tâche courante avant de commencer.
 
 ## Phase A : Ancrer le problème
 
-Construis un vrai modèle mental de chaque système touché par le nouveau code. Exécute la compétence **how** sur les sous-systèmes pertinents, dans cette session, pour que son ancrage ventile ses explorateurs par défaut. Un délégué ne lance pas de descendants sans décision explicite du parent : ancrer deux sous-systèmes comme deux enfants coûte la ventilation d'explorateurs de chacun. Ventile les explorateurs, pas les ancrages.
+Construis un vrai modèle mental de chaque système touché par le nouveau code. Exécute la compétence **how** sur les sous-systèmes pertinents, dans cette session : un délégué ne lance pas de descendants sans décision explicite du parent, donc ventile les explorateurs, pas les ancrages.
 
-Nommer un fichier n'est pas ancrer le problème. Produis le modèle tracé prescrit par `how`. Si la conception redéfinit la propriété ou les couches, exécute aussi la compétence **why** sur la forme existante afin que la justification devienne une contrainte, pas une supposition. Une délégation exclue suit le repli explicite de `how`; elle n'autorise pas un explorateur délégué solitaire.
+Nommer un fichier n'est pas ancrer. Produis le modèle tracé prescrit par `how`. Si la conception redéfinit la propriété ou les couches, exécute aussi la compétence **why** sur la forme existante afin que la justification devienne une contrainte, pas une supposition.
 
-Saute la Phase A seulement quand le travail est réellement nouveau et qu'aucun système environnant n'est à intégrer.
+Saute la Phase A seulement pour un travail réellement nouveau, sans système environnant à intégrer.
 
 ## Phase B : Ébaucher
 
-Exécute la compétence **arena** avec la tâche d'ébauche de conception et les artefacts d'ancrage de la Phase A. Passe `references/runner-prompt.md` comme prompt de chaque exécuteur. Chaque candidat produit un dossier de conception conforme à `references/rationale-template.md`.
+Exécute la compétence **arena** avec la tâche d'ébauche et les artefacts d'ancrage de la Phase A, et `references/runner-prompt.md` comme prompt de chaque exécuteur. Chaque candidat produit un dossier de conception conforme à `references/rationale-template.md`.
 
-Résous le panneau `architect runners`, par défaut avec trois tentatives héritant du modèle. Un panneau configuré doit contenir au moins deux entrées; signale un panneau plus court comme erreur de configuration au lieu de modifier silencieusement son compte. Résous les sélections complètes selon le contrat runtime, en conservant le modèle et l'effort de raisonnement. Passe ce panneau exact et ce compte à Arena; il a priorité sur `arena runners` pour cette invocation, même si les deux clés sont configurées. Signale toute surcharge explicite indisponible sans substituer silencieusement un autre modèle.
+Résous le panel `architect runners` ; configuré, il compte au moins deux entrées, sinon c'est une erreur de configuration à signaler. Passe ce panel exact à Arena, où il prime sur `arena runners` même si les deux clés sont configurées.
 
-Conçois-le deux fois. Exige au moins deux candidats structurellement distincts avant la synthèse, même si le premier semble suffisant. C'est la référence au principe [Épuiser l’espace de conception](../cstack/references/principles/exhaust-the-design-space.md) rendue concrète. Il faut des alternatives de forme globale, pas des corrections ponctuelles dans une seule forme.
+Conçois-le deux fois. Exige au moins deux candidats structurellement distincts avant la synthèse, même si le premier semble suffisant. C'est [Épuiser l’espace de conception](../cstack/references/principles/exhaust-the-design-space.md) rendu concret. Des alternatives de forme globale, pas des corrections ponctuelles dans une forme.
 
 Passe chaque candidat au crible de [`references/design-red-flags.md`](references/design-red-flags.md) avant la synthèse. Rejette ou révise les modules superficiels, les fuites d'information, la décomposition temporelle et les méthodes relais.
 
-Compare les candidats viables selon la profondeur d'interface. Préfère la conception qui cache le plus de complexité derrière une surface publique plus petite et plus simple. Une interface riche peut raccourcir les chaînes d'appels en concentrant la capacité au lieu de l'éparpiller entre les couches.
+Compare les candidats viables selon la profondeur d'interface. Préfère la conception qui cache le plus de complexité derrière la surface publique la plus petite et simple. Une interface riche peut raccourcir les chaînes d'appels en concentrant la capacité plutôt que l'éparpiller entre couches.
 
-Arena retourne un dossier de conception synthétisé. La décision de synthèse remplit la section "Décision de synthèse" de la justification.
+Arena retourne un dossier de conception synthétisé ; sa décision de synthèse remplit la section "Décision de synthèse" de la justification.
 
 ## Phase C : Valider (sur demande)
 
-Si la tâche concrète autorise déjà l'implémentation, avance avec la conception synthétisée sans point de contrôle redondant. Pour une demande de conception seule ou en mode Codex Plan, retourne la conception et arrête avant l'implémentation.
+Si la tâche autorise déjà l'implémentation, avance avec la conception synthétisée sans point de contrôle redondant. Une demande de conception seule ou le mode Codex Plan retourne la conception, sans implémentation ni commit.
 
-Active un point de contrôle quand l'appelant le demande explicitement : "$cstack:architect avec point de contrôle", "arrête-toi et montre-moi avant d’implémenter", ou formulation semblable. Présente alors la conception synthétisée et mets-toi en pause pour validation.
+Active un point de contrôle seulement sur demande explicite ("$cstack:architect avec point de contrôle", "montre-moi avant d’implémenter" ou semblable) : présente la conception synthétisée et attends la validation.
 
-Pendant une implémentation déjà autorisée, la synthèse peut être son propre commit, comme mode "échafaudage d’abord" de la référence au principe [Pensée fondatrice](../cstack/references/principles/foundational-thinking.md). Une invocation de conception seule ou en mode Plan ne crée pas de commits. Pour une pression adversariale avant l'implémentation, exécute la compétence **interrogate** sur l'ébauche synthétisée dans la même portée.
+Pendant une implémentation autorisée, la synthèse peut être son propre commit, mode "échafaudage d’abord" de [Pensée fondatrice](../cstack/references/principles/foundational-thinking.md). Pour une pression adversariale avant l'implémentation, exécute la compétence **interrogate** sur l'ébauche synthétisée dans la même portée.
 
-Si l'humain repousse la forme (dans un point de contrôle ou après coup), traite cela comme une preuve de Phase A. Ré-ancre et relance la Phase B avant d'écrire plus de code.
+Si l'humain repousse la forme (au point de contrôle ou après coup), c'est une preuve de Phase A : ré-ancre et relance la Phase B avant d'écrire plus de code.
 
 ## Phase D : Implémenter selon l'ébauche
 
 Remplace les corps `not implemented` par du code, le pseudocode par de la logique. L'ébauche synthétisée est le contrat.
 
-Les écarts par rapport à l'ébauche sont des signaux à exposer, pas de la friction à absorber en silence. Si une fonction a besoin d'un paramètre que l'ébauche n'avait pas anticipé, demande si l'ébauche était mauvaise, si l'exigence a été manquée ou si l'implémentation va trop loin.
+Les écarts à l'ébauche sont des signaux à exposer, pas une friction à absorber en silence. Si une fonction a besoin d'un paramètre que l'ébauche n'avait pas anticipé, demande si l'ébauche était mauvaise, si l'exigence a été manquée ou si l'implémentation va trop loin.
 
 ## Phase E : Jeter quand l'architecture est mauvaise
 
-Si l'implémentation produit constamment de la friction que l'ébauche ne peut pas absorber, jette l'ébauche. Ne boulonne pas des correctifs sur une mauvaise conception, conformément aux références de principes [Reconcevoir depuis les premiers principes](../cstack/references/principles/redesign-from-first-principles.md) et [Corriger les causes racines](../cstack/references/principles/fix-root-causes.md).
+Si l'implémentation produit constamment une friction que l'ébauche ne peut absorber, jette-la. Ne boulonne pas des correctifs sur une mauvaise conception, selon [Reconcevoir depuis les premiers principes](../cstack/references/principles/redesign-from-first-principles.md) et [Corriger les causes racines](../cstack/references/principles/fix-root-causes.md).
 
 Le signal est un *motif*, pas des cas isolés. Indices :
 
-- La même forme de contournement apparaît à répétition dans du code sans lien direct.
-- Plusieurs cas limites sans rapport exigent tous des branches spéciales.
-- Des types ont besoin d'échappatoires (`any`, casts, champs optionnels toujours définis en pratique) pour compiler.
-- Le réflexe "il nous faut un verrou" quand l'ébauche disait que l'état n'était pas partagé.
-- Les appelants doivent connaître les règles internes de l'abstraction pour l'utiliser.
-- Deux écarts de Phase D indépendants ou plus ont la même forme dans l'implémentation.
+- La même forme de contournement revient dans du code sans lien.
+- Plusieurs cas limites sans rapport exigent des branches spéciales.
+- Des types exigent des échappatoires (`any`, casts, champs optionnels toujours définis en pratique) pour compiler.
+- Le réflexe "il faut un verrou" alors que l'ébauche disait l'état non partagé.
+- Les appelants doivent connaître les règles internes de l'abstraction.
+- Deux écarts de Phase D indépendants ou plus ont la même forme.
 
 Fais preuve de jugement. Quelques cas limites ne condamnent pas une architecture. Certains problèmes sont légitimement complexes. La complexité dans les données n'est pas la complexité dans la conception.
 
 Quand tu jettes :
 
-1. Relance la compétence **how** sur ce qui a été construit.
-2. Reconçois comme si les nouvelles contraintes avaient été des hypothèses du premier jour, conformément à la reconception depuis les premiers principes.
-3. Soustrais avant d'ajouter, conformément à la référence au principe [Soustraire avant d’ajouter](../cstack/references/principles/subtract-before-you-add.md). La nouvelle ébauche doit être plus petite que l'ancienne avant de grandir.
+1. Relance **how** sur ce qui a été construit.
+2. Reconçois comme si les nouvelles contraintes étaient des hypothèses du premier jour.
+3. [Soustrais avant d’ajouter](../cstack/references/principles/subtract-before-you-add.md) : la nouvelle ébauche rétrécit avant de grandir.
 4. Retourne à la Phase B et relance arena.
 
 ## Sorties
 
-L'usage côté appelant est écrit d'abord et l'ébauche de types en dérive. Un seul fichier avec nouveaux types et signatures pour les petits changements. Carte de modules plus définitions de types pour les travaux plus larges. La justification accompagne le tout, conforme à `references/rationale-template.md`, avec l'ébauche d'usage et la décision de synthèse.
+L'usage côté appelant s'écrit d'abord ; l'ébauche de types en dérive. Petit changement : un fichier de nouveaux types et signatures. Travail plus large : carte de modules et définitions de types. La justification l'accompagne, conforme à `references/rationale-template.md`, avec l'ébauche d'usage et la décision de synthèse.
