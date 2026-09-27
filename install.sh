@@ -203,7 +203,10 @@ cmd_update() {
   current="$(current_marketplace)"
   [[ -n "$current" ]] || die "cstack n'est pas installé. Lancez : install.sh install"
   if [[ -n "$ref" ]]; then
-    add_marketplace "$ref" ""
+    # Même avec une ref déjà configurée, `marketplace add` ne rafraîchirait pas le clone : on remplace.
+    url="$(remote_source)"
+    echo "Mise à jour : ${url} --ref ${ref}"
+    switch_marketplace "$current" "$url" --ref "$ref"
   elif [[ "$current" == git$'\t'* ]]; then
     # La nouvelle pointe de la branche passe par le même remplacement validé qu'un changement de source.
     branch="$(tracked_branch "$current")" ||

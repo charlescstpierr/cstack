@@ -240,6 +240,14 @@ class InstallScriptTest(unittest.TestCase):
         self.assertIn("Source locale", result.stdout)
         self.assertNotIn("plugin marketplace upgrade cstack", self.calls()[-2:])
 
+    def test_update_with_the_same_ref_refreshes_the_snapshot(self):
+        self.run_script("install", "--ref", "main")
+        result = self.run_script("update", "--ref", "main")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(self.calls()[-3:], ["plugin marketplace remove cstack",
+                                             "plugin marketplace add charlescstpierr/cstack --ref main",
+                                             "plugin add cstack@cstack"])
+
     def test_update_of_a_pinned_commit_explains_how_to_move_on(self):
         self.run_script("install", "--ref", "4ca420f")
         result = self.run_script("update", FAKE_GIT_DETACHED="1")
