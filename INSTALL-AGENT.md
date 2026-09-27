@@ -8,7 +8,7 @@ Ce fichier s'adresse à un agent de code (Codex CLI ou Codex App) à qui l'utili
 - Ne lisez, n'affichez ni ne copiez aucun token ou credential. Si l'accès GitHub manque, demandez à l'utilisateur de se connecter.
 - Demandez avant d'installer un prérequis global (Codex CLI, Python, Bun, `gh`).
 - Les commandes ont besoin du réseau et d'écrire dans le dossier de Codex. Dans un bac à sable, demandez l'approbation prévue par Codex ; ne contournez pas les permissions.
-- N'allez pas plus loin que l'installation : ne lancez pas `$cstack:setup` et ne choisissez aucun modèle à la place de l'utilisateur.
+- N'allez pas plus loin que l'installation : ne lancez pas `$cstack:setup-cstack` et ne choisissez aucun modèle à la place de l'utilisateur.
 
 ## Étapes
 

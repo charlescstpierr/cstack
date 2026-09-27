@@ -389,6 +389,14 @@ class AgentRunbookTest(unittest.TestCase):
             with self.subTest(message=message):
                 self.assertIn(message.replace("charlescstpierr/cstack", "${REPO}"), script)
 
+    def test_named_skills_exist(self):
+        runbook = (REPO / "INSTALL-AGENT.md").read_text()
+        names = set(re.findall(r"\$cstack:([a-z0-9-]+)", runbook))
+        self.assertTrue(names)
+        for name in names:
+            with self.subTest(skill=name):
+                self.assertTrue((REPO / "plugins/cstack/skills" / name / "SKILL.md").is_file())
+
     def test_runbook_uses_the_readme_download_and_is_linked(self):
         runbook = (REPO / "INSTALL-AGENT.md").read_text()
         readme = (REPO / "README.md").read_text()
