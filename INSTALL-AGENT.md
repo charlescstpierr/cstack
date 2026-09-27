@@ -17,11 +17,14 @@ Ce fichier s'adresse à un agent de code (Codex CLI ou Codex App) à qui l'utili
 2. **Obtenir le script, hors du projet de l'utilisateur.** Si vous êtes dans un clone de `charlescstpierr/cstack`, ou si vous en avez cloné un pour lire ce fichier, utilisez son `install.sh`. Sinon, travaillez dans un dossier temporaire pour ne laisser aucun fichier dans le dépôt de l'utilisateur :
 
    ```sh
-   tmp="$(mktemp -d)" && echo "$tmp"
-   gh api repos/charlescstpierr/cstack/contents/install.sh -H "Accept: application/vnd.github.raw" > "$tmp/install.sh" && test -s "$tmp/install.sh"
+   tmp="$(mktemp -d)" && echo "$tmp" &&
+     gh api repos/charlescstpierr/cstack/contents/install.sh -H "Accept: application/vnd.github.raw" > "$tmp/install.sh" &&
+     test -s "$tmp/install.sh"
    ```
 
-   Si cette commande échoue (`gh` absent ou non authentifié) : `git clone --depth 1 https://github.com/charlescstpierr/cstack.git "$tmp/cstack"` (ou l'URL SSH `git@github.com:charlescstpierr/cstack.git`), puis `$tmp/cstack/install.sh`. Notez le chemin affiché : si vos commandes tournent dans des shells séparés, `$tmp` n'existe plus au suivant, alors réutilisez ce chemin en toutes lettres jusqu'au nettoyage. Dans la suite, `install.sh` désigne le script obtenu, lancé avec `bash`.
+   Lancez ce bloc en une seule commande et notez le chemin affiché : `$tmp` n'existe que dans ce shell, alors dans les commandes suivantes, repli ci-dessous compris, écrivez ce chemin en toutes lettres jusqu'au nettoyage.
+
+   Si cette commande échoue (`gh` absent ou non authentifié) : `git clone --depth 1 https://github.com/charlescstpierr/cstack.git "$tmp/cstack"` (ou l'URL SSH `git@github.com:charlescstpierr/cstack.git`), puis `$tmp/cstack/install.sh`. Dans la suite, `install.sh` désigne le script obtenu, lancé avec `bash`.
 
 3. **Voir l'état actuel.** Lancez `install.sh doctor`.
    - La ligne du plugin commence par `✓ plugin cstack@cstack` : cstack est installé et fonctionne. Ne changez rien, sauf si l'utilisateur demande la dernière version (`install.sh update`) ou une version précise (`install.sh update --ref <ref>`, qui récupère réellement cette version).
