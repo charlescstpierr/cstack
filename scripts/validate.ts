@@ -301,11 +301,10 @@ export function validate(root: string): { skills: number; sourceFiles: number } 
     requireValue(mainSkill.includes(`](${href})`), `${target}: la référence du principe n’est pas accessible depuis cstack/SKILL.md`);
   }
   const makeBotUi = readFileSync(join(plugin, "skills/make-bot-ui/SKILL.md"), "utf8");
-  requireValue(!makeBotUi.includes("inject it into the HTML"), "make-bot-ui: le token de page ne doit pas être injecté dans le HTML");
-  requireValue(makeBotUi.includes("Do not inject the page token into served HTML"), "make-bot-ui: garde anti-injection du token de page manquante");
-  requireValue(makeBotUi.includes("Render a token input instead"), "make-bot-ui: saisie explicite du token de page manquante");
+  requireValue(makeBotUi.includes("N'injectez pas le token de page dans le HTML servi"), "make-bot-ui: garde anti-injection du token de page manquante");
+  requireValue(makeBotUi.includes("Affichez plutôt un champ de saisie du token"), "make-bot-ui: saisie explicite du token de page manquante");
   requireValue(makeBotUi.includes("thread_id") && makeBotUi.includes("thread.started"), "make-bot-ui: persistance du thread_id initial manquante");
-  requireValue(!makeBotUi.includes("codex exec resume --last") && !makeBotUi.includes("Use `resume --last`"), "make-bot-ui: reprise interdite avec resume --last");
+  requireValue(!makeBotUi.includes("codex exec resume --last") && !/(?<!N')[Uu]tilisez `resume --last`/.test(makeBotUi), "make-bot-ui: reprise interdite avec resume --last");
   requireValue(makeBotUi.includes("codex exec resume") && makeBotUi.includes('"$SESSION_ID"'), "make-bot-ui: reprise par SESSION_ID manquante");
   requireValue(makeBotUi.includes('PROMPT_TEXT=$(<"$PROMPT_FILE")'), "make-bot-ui: lecture du contenu du prompt file manquante");
   requireValue(!makeBotUi.includes('"$PROMPT"'), "make-bot-ui: le chemin du prompt file ne doit pas être passé comme prompt");
@@ -325,8 +324,7 @@ export function validate(root: string): { skills: number; sourceFiles: number } 
     // Le nom suivi d'un autre caractère de nom (`$cstack:brother` pour `bro`) ne cite pas l'invocation.
     const invocation = `\\$cstack:${name}(?![a-z0-9-])`;
     requireValue(new RegExp(invocation).test(metadata.description), `${path}: la description doit citer son invocation canonique $cstack:${name}`);
-    // make-bot-ui est rédigé en anglais, comme son corps que les gardes plus haut épinglent.
-    requireValue(name === "make-bot-ui" || new RegExp(`^À utiliser pour ${invocation}`).test(metadata.description), `${path}: la description doit commencer par « À utiliser pour $cstack:${name} »`);
+    requireValue(new RegExp(`^À utiliser pour ${invocation}`).test(metadata.description), `${path}: la description doit commencer par « À utiliser pour $cstack:${name} »`);
     requireValue(Object.keys(metadata).every((key) => ["name", "description", "license", "allowed-tools", "metadata"].includes(key)), `${path}: en-tête YAML du skill non pris en charge`);
     const policyPath = join(dirname(path), "agents/openai.yaml");
     const policy: unknown = Bun.YAML.parse(readFileSync(policyPath, "utf8"));
