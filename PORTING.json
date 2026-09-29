@@ -1309,6 +1309,14 @@
     {
       "path": "plugins/cstack/hooks/mode.py",
       "reason": "Mode reminder hook script: silent outside conversations that invoked $cstack:cstack, stores only hashed session ids under PLUGIN_DATA; not present in pstack."
+    },
+    {
+      "path": "plugins/cstack/skills/cstack/references/session-history.md",
+      "reason": "Original CStack documentation for an optional Agent-Git session adapter; no upstream pstack source."
+    },
+    {
+      "path": "plugins/cstack/skills/cstack/scripts/session-bridge.sh",
+      "reason": "Original CStack opt-in CLI bridge for explicit Agent-Git session operations; no upstream pstack source."
     }
   ]
 }
