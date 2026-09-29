@@ -17,9 +17,9 @@ jobs:
       - run: bun scripts/validate.ts
       - run: python3 -m unittest discover -s tests -p 'test_*.py'
       - name: Installer le CLI Agent-Git pour les fixtures isolées
-        run: npm install --prefix "$RUNNER_TEMP/cstack-agit" --no-save --ignore-scripts @einsia/agent-git@0.2.12
+        run: npm install --prefix "$RUNNER_TEMP/cstack-agit" --no-save --ignore-scripts @einsia/agent-git-linux-x64@0.2.12
       - name: Vérifier le pont avec le vrai CLI Agent-Git
-        run: CSTACK_AGIT_BINARY="$RUNNER_TEMP/cstack-agit/node_modules/.bin/agit" python3 -m unittest discover -s tests -p test_session_bridge_integration.py -v
+        run: CSTACK_AGIT_BINARY="$RUNNER_TEMP/cstack-agit/node_modules/@einsia/agent-git-linux-x64/bin/agit" python3 -m unittest discover -s tests -p test_session_bridge_integration.py -v
       - run: bun test tests
       - run: bun install --frozen-lockfile
         working-directory: plugins/cstack/skills/cstack/scripts
