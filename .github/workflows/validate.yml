@@ -16,6 +16,10 @@ jobs:
       - run: bun scripts/generate-facts.mjs --check
       - run: bun scripts/validate.ts
       - run: python3 -m unittest discover -s tests -p 'test_*.py'
+      - name: Installer le CLI Agent-Git pour les fixtures isolées
+        run: npm install --prefix "$RUNNER_TEMP/cstack-agit" --no-save --ignore-scripts @einsia/agent-git@0.2.12
+      - name: Vérifier le pont avec le vrai CLI Agent-Git
+        run: CSTACK_AGIT_BINARY="$RUNNER_TEMP/cstack-agit/node_modules/.bin/agit" python3 -m unittest discover -s tests -p test_session_bridge_integration.py -v
       - run: bun test tests
       - run: bun install --frozen-lockfile
         working-directory: plugins/cstack/skills/cstack/scripts
@@ -24,7 +28,7 @@ jobs:
       - run: bun run typecheck
         working-directory: plugins/cstack/skills/cstack/scripts
       - run: plugins/cstack/skills/cstack/scripts/node_modules/.bin/tsc -p tsconfig.json
-      - run: bash -n plugins/cstack/scripts/run-tool.sh plugins/cstack/skills/cstack/scripts/worktree-audit.sh plugins/cstack/skills/show-me-your-work/scripts/log.sh install.sh
+      - run: bash -n plugins/cstack/scripts/run-tool.sh plugins/cstack/skills/cstack/scripts/worktree-audit.sh plugins/cstack/skills/cstack/scripts/session-bridge.sh plugins/cstack/skills/show-me-your-work/scripts/log.sh install.sh
       - name: ShellCheck
         run: |
           docker run --rm -v "$PWD:/repo:ro" -w /repo \
@@ -32,6 +36,7 @@ jobs:
             --severity=warning \
             plugins/cstack/scripts/run-tool.sh \
             plugins/cstack/skills/cstack/scripts/worktree-audit.sh \
+            plugins/cstack/skills/cstack/scripts/session-bridge.sh \
             plugins/cstack/skills/show-me-your-work/scripts/log.sh \
             install.sh
       - name: Actionlint

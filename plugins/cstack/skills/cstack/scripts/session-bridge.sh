@@ -8,11 +8,11 @@ Usage: session-bridge.sh lineage <codex|claude-code|cursor|opencode> <native-ses
        session-bridge.sh import <runtime> <native-session-id> <owner/repo@branch> onto <ref>
        session-bridge.sh checkpoint <owner/repo@branch> <summary>
        session-bridge.sh log <owner/repo@branch>
-       session-bridge.sh resume <owner/repo@branch> [<target-runtime> --accept-loss]
-       session-bridge.sh fork <owner/repo@ref> <new-branch> [<target-runtime> --accept-loss]
+       session-bridge.sh resume <owner/repo@branch> [<target-runtime> --accept-loss] [--no-launch]
+       session-bridge.sh fork <owner/repo@ref> <new-branch> [<target-runtime> --accept-loss] [--no-launch]
 
-Requires an installed and signed-in agit CLI. Targets are explicit; this bridge
-never publishes. Publishing with agit push is a separate action. Cursor can be imported but
+Requires an installed and signed-in agit CLI. Import/checkpoint require an existing
+local Agent repo with effective push.auto=false. Publishing is a separate action. Cursor can be imported but
 cannot be a resume/fork destination. A target runtime requires explicit loss acknowledgment.
 USAGE
 }
@@ -34,6 +34,16 @@ require_runtime() {
   esac
 }
 
+no_launch=()
+if [[ ${1:-} == resume || ${1:-} == fork ]]; then
+  if [[ ${!#} == --no-launch ]]; then
+    no_launch=(--no-launch)
+    set -- "${@:1:$#-1}"
+  fi
+fi
+
+write_target=
+
 case "${1:-}" in
   -h|--help|help) usage; exit 0 ;;
   lineage)
@@ -49,6 +59,7 @@ case "${1:-}" in
     [[ -n $3 && $3 != -* ]] || fail 'native session id required'
     require_ref "$4"
     command=(import "$3" --from "$2" --into "$4")
+    write_target=$4
     if [[ $5 == independent && $# == 5 ]]; then
       command+=(--independent)
     elif [[ $5 == onto && $# == 6 && -n $6 && $6 != -* ]]; then
@@ -62,6 +73,7 @@ case "${1:-}" in
     require_ref "$2"
     [[ -n $3 ]] || fail 'checkpoint summary required'
     command=(commit "$2" "--milestone=$3")
+    write_target=$2
     ;;
   log)
     [[ $# == 2 ]] || fail 'log requires owner/repo@branch'
@@ -93,4 +105,9 @@ case "${1:-}" in
 esac
 
 command -v agit >/dev/null 2>&1 || fail 'agit CLI not found; install @einsia/agent-git and run agit login'
-exec agit "${command[@]}"
+if [[ -n $write_target ]]; then
+  repo=${write_target%%@*}
+  auto_push=$(agit --quiet config --repo "$repo" push.auto) || fail "cannot verify push.auto for $repo; initialize or clone the local Agent repo first"
+  [[ $auto_push == false ]] || fail "push.auto must be false; run agit config --repo $repo push.auto false before import/checkpoint"
+fi
+exec agit "${command[@]}" "${no_launch[@]}"

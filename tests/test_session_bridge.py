@@ -21,6 +21,9 @@ class SessionBridgeTests(unittest.TestCase):
             'import json, os, sys\n'
             'with open(os.environ["AGIT_CALLS"], "a") as output:\n'
             '    output.write(json.dumps(sys.argv[1:]) + "\\n")\n'
+            'if "config" in sys.argv:\n'
+            '    print(os.environ.get("AGIT_AUTO_PUSH", "false"))\n'
+            '    sys.exit(int(os.environ.get("AGIT_CONFIG_EXIT", "0")))\n'
             'sys.exit(int(os.environ.get("AGIT_EXIT", "0")))\n'
         )
         fake.chmod(0o755)
@@ -40,6 +43,9 @@ class SessionBridgeTests(unittest.TestCase):
             return []
         return [json.loads(line) for line in self.calls.read_text().splitlines()]
 
+    def config_check(self):
+        return ["--quiet", "config", "--repo", "charles/sessions", "push.auto"]
+
     def test_lineage_preview_does_not_import(self):
         result = self.invoke("lineage", "codex", "native-123", "charles/sessions@topic")
         self.assertEqual(result.returncode, 0, result.stderr)
@@ -48,12 +54,12 @@ class SessionBridgeTests(unittest.TestCase):
     def test_import_uses_explicit_independent_lineage(self):
         result = self.invoke("import", "cursor", "native-123", "charles/sessions@topic", "independent")
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertEqual(self.recorded(), [["import", "native-123", "--from", "cursor", "--into", "charles/sessions@topic", "--independent"]])
+        self.assertEqual(self.recorded(), [self.config_check(), ["import", "native-123", "--from", "cursor", "--into", "charles/sessions@topic", "--independent"]])
 
     def test_import_can_attach_to_a_selected_lineage(self):
         result = self.invoke("import", "codex", "native-123", "charles/sessions@topic", "onto", "a1b2c3d4")
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertEqual(self.recorded(), [["import", "native-123", "--from", "codex", "--into", "charles/sessions@topic", "--onto", "a1b2c3d4"]])
+        self.assertEqual(self.recorded(), [self.config_check(), ["import", "native-123", "--from", "codex", "--into", "charles/sessions@topic", "--onto", "a1b2c3d4"]])
 
     def test_import_without_lineage_choice_is_refused(self):
         result = self.invoke("import", "codex", "native-123", "charles/sessions@topic")
@@ -63,7 +69,40 @@ class SessionBridgeTests(unittest.TestCase):
     def test_checkpoint_records_locally_without_push(self):
         result = self.invoke("checkpoint", "charles/sessions@topic", "reviewed the router")
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertEqual(self.recorded(), [["commit", "charles/sessions@topic", "--milestone=reviewed the router"]])
+        self.assertEqual(self.recorded(), [self.config_check(), ["commit", "charles/sessions@topic", "--milestone=reviewed the router"]])
+
+    def test_auto_push_or_unreadable_preference_refuses_writes(self):
+        for setting in ["true", "unexpected"]:
+            for args in [("checkpoint", "charles/sessions@topic", "summary"),
+                         ("import", "codex", "native-123", "charles/sessions@topic", "independent")]:
+                with self.subTest(setting=setting, args=args):
+                    self.calls.unlink(missing_ok=True)
+                    result = self.invoke(*args, env={**self.env, "AGIT_AUTO_PUSH": setting})
+                    self.assertEqual(result.returncode, 2)
+                    self.assertIn("push.auto", result.stderr)
+                    self.assertEqual(self.recorded(), [self.config_check()])
+        self.calls.unlink(missing_ok=True)
+        result = self.invoke("checkpoint", "charles/sessions@topic", "summary", env={**self.env, "AGIT_CONFIG_EXIT": "1"})
+        self.assertEqual(result.returncode, 2)
+        self.assertEqual(self.recorded(), [self.config_check()])
+
+    def test_prepare_resume_and_fork_without_launching(self):
+        for args, expected in [
+            (("resume", "charles/sessions@topic", "--no-launch"), ["resume", "charles/sessions@topic", "--no-launch"]),
+            (("resume", "charles/sessions@topic", "codex", "--accept-loss", "--no-launch"), ["resume", "charles/sessions@topic", "--as", "codex", "--no-launch"]),
+            (("fork", "charles/sessions@topic#1", "new", "--no-launch"), ["fork", "charles/sessions@topic#1", "-b", "new", "--resume", "--no-launch"]),
+            (("fork", "charles/sessions@topic#1", "new", "claude-code", "--accept-loss", "--no-launch"), ["fork", "charles/sessions@topic#1", "-b", "new", "--resume", "--as", "claude-code", "--no-launch"]),
+        ]:
+            with self.subTest(args=args):
+                self.calls.unlink(missing_ok=True)
+                result = self.invoke(*args)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertEqual(self.recorded(), [expected])
+
+    def test_no_launch_does_not_bypass_conversion_acknowledgment(self):
+        result = self.invoke("resume", "charles/sessions@topic", "claude-code", "--no-launch")
+        self.assertEqual(result.returncode, 2)
+        self.assertEqual(self.recorded(), [])
 
     def test_resume_preserves_native_fast_path_when_runtime_omitted(self):
         result = self.invoke("resume", "charles/sessions@topic")
