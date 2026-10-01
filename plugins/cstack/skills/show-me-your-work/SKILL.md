@@ -36,7 +36,7 @@ ts	phase	decision	why	evidence	result
 
 Écris chaque entrée comme tu raconterais à un coéquipier ce que tu as fait. Mots simples, actions concrètes, pas de langage IA ni de jargon abstrait (la skill **unslop** s'applique aussi au texte du journal).
 
-Utilise le helper `scripts/log.sh <logfile> <phase> <decision> <why> <evidence> <result>`. Il tamponne `ts`, écrit l'en-tête à la première utilisation, retire les tabulations/nouvelles lignes parasites et préfixe toute cellule commençant par `=`, `+`, `-` ou `@` avec une apostrophe simple. Un simple `printf` qui ajoute une ligne fonctionne aussi, mais surveille ces mêmes octets si les cellules viennent de texte généré ou fourni par l'utilisateur.
+Utilise le helper `scripts/log.sh <logfile> <phase> <decision> <why> <evidence> <result>`. Il tamponne `ts`, écrit l'en-tête à la première utilisation, retire les tabulations/nouvelles lignes parasites et préfixe toute cellule commençant par `=`, `+`, `-`, `@` ou `"` avec une apostrophe simple. Un simple `printf` qui ajoute une ligne fonctionne aussi, mais surveille ces mêmes octets si les cellules viennent de texte généré ou fourni par l'utilisateur.
 
 Journalise les points de décision et checkpoints, pas chaque action : un embranchement choisi, une unité terminée avec son résultat de vérification, un pivot ou revert avec son déclencheur, un bloqueur remonté, une portée corrigée. Pour les boucles, une ligne par itération. Saute le trivial et l'évident.
 

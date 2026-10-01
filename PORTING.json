@@ -827,7 +827,7 @@
       "source": "pstack/skills/show-me-your-work/scripts/log.sh",
       "target": "plugins/cstack/skills/show-me-your-work/scripts/log.sh",
       "status": "ported",
-      "reason": "Writes a .cstack/.gitignore so local logs stay untracked."
+      "reason": "Writes a .cstack/.gitignore so local logs stay untracked. En-tête en `>>` repris de pstack #414 (0.15.5) ; préfixe des cellules qui commencent par \" repris de pstack-claude #99."
     },
     {
       "source": "pstack/skills/swarm/SKILL.md",

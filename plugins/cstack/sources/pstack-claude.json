@@ -188,6 +188,26 @@
           "commit": "65ea93ccce0d47af0e943e9d7571e2c5ba28f784"
         }
       ]
+    },
+    {
+      "target": "skills/show-me-your-work/scripts/log.sh",
+      "sources": [
+        {
+          "path": "plugins/pstack/skills/show-me-your-work/scripts/log.sh",
+          "sha256": "3de85b7a6759ec94a976ca6cd3b6a116cf6501cbd6d10ff905ee33f4f8ec6534",
+          "commit": "9f6ddf71e82b60f505b79f2a727e9436a5e6e1d8"
+        }
+      ]
+    },
+    {
+      "target": "skills/show-me-your-work/SKILL.md",
+      "sources": [
+        {
+          "path": "plugins/pstack/skills/show-me-your-work/SKILL.md",
+          "sha256": "45dddfe4d44e951482f4bdfb4b0692464d355cf9e4da668dbd903eec9abfc97e",
+          "commit": "9f6ddf71e82b60f505b79f2a727e9436a5e6e1d8"
+        }
+      ]
     }
   ]
 }

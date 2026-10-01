@@ -26,15 +26,18 @@ while [ -n "$cstack_dir" ] && [ "$cstack_dir" != "." ] && [ "$cstack_dir" != "/"
 	[ "$next" = "$cstack_dir" ] && break
 	cstack_dir="$next"
 done
-if [ ! -f "$logfile" ]; then
-	printf 'ts\tphase\tdecision\twhy\tevidence\tresult\n' > "$logfile"
+# Use `>>` here, never `>`. A network mount can fail this test for a log
+# that exists. Then the cost is one stray header line, not the rows.
+if [ ! -s "$logfile" ]; then
+	printf 'ts\tphase\tdecision\twhy\tevidence\tresult\n' >> "$logfile"
 fi
 
 ts="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 # Map C0/DEL, UTF-8 C1 (U+0080-U+009F as C2 80-9F), a lone 0x9B (CSI),
 # and U+2028/U+2029 to spaces so cells stay one line. Prefix a cell whose
 # first non-space char is =, +, -, or @ so a spreadsheet will not parse it
-# as a formula after a leading control has been mapped to a space. Do not
+# as a formula, or " so a TSV reader will not open a quoted field, after a
+# leading control has been mapped to a space. Do not
 # strip 0x80-0x9F in isolation: those bytes are UTF-8 continuations (Û is
 # C3 9B). LC_ALL=C keeps tr and the byte walk byte-oriented.
 line_separator=$(printf '\xe2\x80\xa8')
@@ -72,7 +75,7 @@ clean() {
 	done
 	tail="${out#"${out%%[! ]*}"}"
 	case "$tail" in
-		=*|+*|-*|@*) printf "'%s" "$out" ;;
+		=*|+*|-*|@*|\"*) printf "'%s" "$out" ;;
 		*) printf '%s' "$out" ;;
 	esac
 }
