@@ -10,7 +10,7 @@
 | Principes internes | 23 |
 | Guides d’exécution | 23 |
 | Fichiers source amont | 158 |
-| Fichiers `ported` | 130 |
-| Fichiers `retained` | 5 |
+| Fichiers `ported` | 131 |
+| Fichiers `retained` | 4 |
 | Fichiers `replaced` | 23 |
 | Fichiers `unsupported` | 0 |

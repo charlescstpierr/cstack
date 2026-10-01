@@ -568,8 +568,8 @@
     {
       "source": "pstack/skills/poteto-mode/scripts/watch-pr/fakes.test-helper.ts",
       "target": "plugins/cstack/skills/cstack/scripts/watch-pr/fakes.test-helper.ts",
-      "status": "retained",
-      "reason": "Portable upstream content retained under its original MIT license."
+      "status": "ported",
+      "reason": "Lecteur factice amont ; les pages de rollup portent leur type, comme dans pstack-claude #153."
     },
     {
       "source": "pstack/skills/poteto-mode/scripts/watch-pr/github.test.ts",

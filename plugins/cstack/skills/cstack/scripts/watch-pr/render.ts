@@ -7,6 +7,8 @@ function ciCell(row: T.PrSnapshot): string {
   switch (row.ci.kind) {
     case "ci-clean":
       return "✅";
+    case "ci-none":
+      return "➖ aucun check";
     case "ci-pending":
       return `⏳ ${row.ci.pending.length} en attente${was}`;
     case "ci-failing":
@@ -157,7 +159,7 @@ export function renderPretty(verdict: T.WatcherVerdict): string {
     case "READY": {
       const detail =
         verdict.scope.kind === "single" && verdict.scope.pr.kind === "ready-pr"
-          ? `\nmergeStateStatus=${verdict.scope.pr.proof.ci.github.mergeStateStatus}\nreviewDecision=${verdict.scope.pr.proof.gate.reviewDecision}\nisDraft=${verdict.scope.pr.proof.gate.draft === "draft-allowed"}${verdict.scope.pr.proof.gate.draft === "draft-allowed" ? "\nnote=brouillon autorisé (--allow-draft); laisser en brouillon, ne pas marquer prêt" : ""}`
+          ? `\nmergeStateStatus=${verdict.scope.pr.proof.ci.github.mergeStateStatus}\nreviewDecision=${verdict.scope.pr.proof.gate.reviewDecision}\nisDraft=${verdict.scope.pr.proof.gate.draft === "draft-allowed"}${verdict.scope.pr.proof.gate.draft === "draft-allowed" ? "\nnote=brouillon autorisé (--allow-draft); laisser en brouillon, ne pas marquer prêt" : ""}${verdict.scope.pr.proof.ci.kind === "ci-none" ? "\nchecks=aucun signalé sur le commit head" : ""}`
           : "";
       return `READY: aucun conflit de fusion, aucun fil de revue non résolu, aucun check en échec ou en attente${detail}\n`;
     }

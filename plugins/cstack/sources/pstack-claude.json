@@ -91,6 +91,11 @@
           "path": "plugins/pstack/skills/poteto-mode/scripts/watch-pr/policy.ts",
           "sha256": "ac53d17be394e8fa3f5c0055e260d088a293c5e9516c9f6f6ae11214f24a979a",
           "commit": "7b08003c3321884ed3f6c38ee62e336f89207d37"
+        },
+        {
+          "path": "plugins/pstack/skills/poteto-mode/scripts/watch-pr/policy.ts",
+          "sha256": "5102e23a41d5fb99447f1552703a1f25f4711a2f565ca9d332583d2d8df0a93c",
+          "commit": "65ea93ccce0d47af0e943e9d7571e2c5ba28f784"
         }
       ]
     },
@@ -101,6 +106,11 @@
           "path": "plugins/pstack/skills/poteto-mode/scripts/watch-pr/types.ts",
           "sha256": "e1c544efc31e7683c5fbf1641c73bb7a38e31db4da2dc49f1d03d950bd4e9bea",
           "commit": "7b08003c3321884ed3f6c38ee62e336f89207d37"
+        },
+        {
+          "path": "plugins/pstack/skills/poteto-mode/scripts/watch-pr/types.ts",
+          "sha256": "ae04f90c1ff333360a7c1e99874acb1664657e3819f847ed832727112693a63e",
+          "commit": "65ea93ccce0d47af0e943e9d7571e2c5ba28f784"
         }
       ]
     },
@@ -111,6 +121,11 @@
           "path": "plugins/pstack/skills/poteto-mode/scripts/watch-pr/render.ts",
           "sha256": "062864f54f4bb6536f7e18203e563e2c5fa61567343e9a86fff79a644345a09e",
           "commit": "7b08003c3321884ed3f6c38ee62e336f89207d37"
+        },
+        {
+          "path": "plugins/pstack/skills/poteto-mode/scripts/watch-pr/render.ts",
+          "sha256": "b6e8e605b49743e8ea63a8613f0084193fe69cee276f8decbcea23419a4e576f",
+          "commit": "65ea93ccce0d47af0e943e9d7571e2c5ba28f784"
         }
       ]
     },
@@ -121,6 +136,56 @@
           "path": "plugins/pstack/skills/poteto-mode/scripts/watch-pr/policy.test.ts",
           "sha256": "670b6af093a041d6e45e811958c92003a1342e87338838fecdf90cc2f03a2d2f",
           "commit": "7b08003c3321884ed3f6c38ee62e336f89207d37"
+        },
+        {
+          "path": "plugins/pstack/skills/poteto-mode/scripts/watch-pr/policy.test.ts",
+          "sha256": "8cea325b0d375ff6e5fecea4b5655b8d95b3abfabe8be03ca766e8e14a5d6880",
+          "commit": "65ea93ccce0d47af0e943e9d7571e2c5ba28f784"
+        }
+      ]
+    },
+    {
+      "target": "skills/cstack/scripts/watch-pr/github.ts",
+      "sources": [
+        {
+          "path": "plugins/pstack/skills/poteto-mode/scripts/watch-pr/github.ts",
+          "sha256": "ef3bd949dcc27a599ec9a6dd1b75f4525d23ae725f44215605b7f0f05d0753b5",
+          "commit": "65ea93ccce0d47af0e943e9d7571e2c5ba28f784"
+        }
+      ]
+    },
+    {
+      "target": "skills/cstack/scripts/watch-pr/fakes.test-helper.ts",
+      "sources": [
+        {
+          "path": "plugins/pstack/skills/poteto-mode/scripts/watch-pr/fakes.test-helper.ts",
+          "sha256": "1ece4cde492ada4edba08318006c9ed60e4ec65aefe57e1cebfdcbcc4f213e43",
+          "commit": "65ea93ccce0d47af0e943e9d7571e2c5ba28f784"
+        }
+      ]
+    },
+    {
+      "target": "skills/cstack/scripts/watch-pr/github.test.ts",
+      "sources": [
+        {
+          "path": "plugins/pstack/skills/poteto-mode/scripts/watch-pr/github.test.ts",
+          "sha256": "6bc2d6cbdb19a214d1ca75c7ce770815934c70fb54ee2f4b5473ff464f41cb91",
+          "commit": "65ea93ccce0d47af0e943e9d7571e2c5ba28f784"
+        },
+        {
+          "path": "plugins/pstack/skills/poteto-mode/scripts/watch-pr/transport.test.ts",
+          "sha256": "daeda450d929008c9af031ef7aa216735e0e97d41c3ab24d4a63122009550195",
+          "commit": "65ea93ccce0d47af0e943e9d7571e2c5ba28f784"
+        }
+      ]
+    },
+    {
+      "target": "skills/cstack/scripts/watch-pr/cli.test.ts",
+      "sources": [
+        {
+          "path": "plugins/pstack/skills/poteto-mode/scripts/watch-pr/cli.test.ts",
+          "sha256": "519555739741a11edf2b4ca6b9375f7e1ef694ae7ec3f455962760741b797a74",
+          "commit": "65ea93ccce0d47af0e943e9d7571e2c5ba28f784"
         }
       ]
     }
