@@ -418,3 +418,67 @@ it("utilise le plancher et le plafond de réessai spécifiés", () => {
   expect(queryBackoffSeconds(1, 2)).toBe(120);
   expect(queryBackoffSeconds(60, 4)).toBe(300);
 });
+
+describe("barrière de revue", () => {
+  it("bloque sur une revue requise au lieu de déclarer prête une PR bloquée", async () => {
+    const snapshot = await readSnapshot({
+      reader: fakeReader({
+        facts: { reviewDecision: "REVIEW_REQUIRED", mergeStateStatus: "BLOCKED" },
+      }),
+      context: context(23),
+      pendingHistory: "omit",
+      allowDraft: false,
+    });
+    expect(classifyPr(snapshot)).toEqual({
+      kind: "blocker",
+      blocker: { kind: "merge-gate", pr: context(23), reason: "review-required" },
+    });
+    expect(
+      selectTierMajorStackDecision([snapshot] as NonEmpty<typeof snapshot>)
+    ).toMatchObject({
+      kind: "blocker",
+      blocker: { kind: "merge-gate", reason: "review-required" },
+    });
+  });
+
+  it("bloque quand une protection de branche retient une PR approuvée à la CI propre", async () => {
+    const snapshot = await readSnapshot({
+      reader: fakeReader({ facts: { mergeStateStatus: "BLOCKED" } }),
+      context: context(24),
+      pendingHistory: "omit",
+      allowDraft: false,
+    });
+    expect(classifyPr(snapshot)).toMatchObject({
+      kind: "blocker",
+      blocker: { kind: "merge-gate", reason: "merge-blocked" },
+    });
+  });
+
+  it("attend les checks en cours avant de signaler la barrière de revue", async () => {
+    const snapshot = await readSnapshot({
+      reader: fakeReader({
+        facts: { reviewDecision: "REVIEW_REQUIRED", mergeStateStatus: "BLOCKED" },
+        fastPath: { kind: "checks", checks: [pendingCheck()] },
+      }),
+      context: context(26),
+      pendingHistory: "omit",
+      allowDraft: false,
+    });
+    expect(classifyPr(snapshot)).toMatchObject({ kind: "waiting" });
+  });
+
+  it("signale toujours les changements demandés comme barrière de fusion", async () => {
+    const snapshot = await readSnapshot({
+      reader: fakeReader({
+        facts: { reviewDecision: "CHANGES_REQUESTED", mergeStateStatus: "BLOCKED" },
+      }),
+      context: context(25),
+      pendingHistory: "omit",
+      allowDraft: false,
+    });
+    expect(classifyPr(snapshot)).toMatchObject({
+      kind: "blocker",
+      blocker: { kind: "merge-gate", reason: "changes-requested" },
+    });
+  });
+});

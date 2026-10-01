@@ -160,17 +160,26 @@ function gateReason(
   if (row.kind === "merged") return null;
   if (row.kind === "closed") return "closed-without-merge";
   if (row.facts.isDraft && !allowDraft) return "draft-pr";
-  return row.facts.reviewDecision === "CHANGES_REQUESTED"
-    ? "changes-requested"
-    : null;
+  if (row.facts.reviewDecision === "CHANGES_REQUESTED")
+    return "changes-requested";
+  if (row.facts.reviewDecision === "REVIEW_REQUIRED") return "review-required";
+  // BLOCKED avec une CI propre vient d'une autre règle de protection de branche,
+  // comme des commits signés ou un check requis jamais rapporté. GitHub ne fusionnera pas.
+  return row.facts.mergeStateStatus === "BLOCKED" ? "merge-blocked" : null;
 }
+// Les barrières que des checks en cours peuvent encore expliquer attendent d'abord ces checks.
+const DEFERRED_WHILE_PENDING: ReadonlySet<T.MergeGateReason> = new Set([
+  "draft-pr",
+  "review-required",
+  "merge-blocked",
+]);
 function gateBlocker(
   row: T.PrSnapshot,
   allowDraft: boolean
 ): T.MergeBlocker | null {
   const reason = gateReason(row, allowDraft);
   return reason === null ||
-    (reason === "draft-pr" &&
+    (DEFERRED_WHILE_PENDING.has(reason) &&
       row.kind === "open" &&
       row.ci.kind === "ci-pending")
     ? null
@@ -195,7 +204,11 @@ function readyContribution(
   )
     return null;
   const reviewDecision = row.facts.reviewDecision;
-  if (reviewDecision === "CHANGES_REQUESTED") return null;
+  if (
+    reviewDecision === "CHANGES_REQUESTED" ||
+    reviewDecision === "REVIEW_REQUIRED"
+  )
+    return null;
   return {
     kind: "ready-pr",
     context: row.context,

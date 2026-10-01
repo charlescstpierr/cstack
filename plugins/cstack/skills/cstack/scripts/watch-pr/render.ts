@@ -28,7 +28,9 @@ function reviewCell(row: T.PrSnapshot): string {
       : "🤖 en cours"
     : open
       ? `📝 ${open} ouverts`
-      : "✅";
+      : row.facts.reviewDecision === "REVIEW_REQUIRED"
+        ? "👀 revue requise"
+        : "✅";
 }
 function mergeCell(row: T.PrSnapshot): string {
   if (row.kind === "merged") return "✅ fusionnee";
@@ -40,7 +42,9 @@ function mergeCell(row: T.PrSnapshot): string {
     row.facts.mergeStateStatus === "DIRTY" ||
     row.facts.mergeStateStatus === "CONFLICTING"
     ? "⚠️ conflit"
-    : "✅";
+    : row.facts.mergeStateStatus === "BLOCKED"
+      ? "⛔ bloquee"
+      : "✅";
 }
 export function renderStatusTable(rows: T.NonEmpty<T.PrSnapshot>): string {
   const lines = ["| PR | CI | Revue | Fusion |", "| --- | --- | --- | --- |"];
@@ -110,7 +114,11 @@ function renderBlocker(blocker: T.MergeBlocker | StatusQueryBlocker): string {
           ? "restaurer ou retirer la PR fermee de la pile en file"
           : blocker.reason === "draft-pr"
             ? "marquer la PR prête pour revue avant d’attendre la file de fusion"
-            : "résoudre la revue demandant des changements avant d’attendre la file de fusion";
+            : blocker.reason === "review-required"
+              ? "obtenir la revue d’approbation requise"
+              : blocker.reason === "merge-blocked"
+                ? "trouver la règle de protection de branche qui retient la fusion (mergeStateStatus=BLOCKED avec une CI propre)"
+                : "résoudre la revue demandant des changements avant d’attendre la file de fusion";
       return [
         `BLOCKER: ${blocker.reason}`,
         `pr=${blocker.pr.number}`,

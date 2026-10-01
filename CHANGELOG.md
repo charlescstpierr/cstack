@@ -4,6 +4,8 @@ Les versions suivent SemVer. Le format suit [Keep a Changelog](https://keepachan
 
 ## [Unreleased]
 
+- Correctif : `watch-pr` déclarait `READY` une PR retenue par une revue obligatoire, car un état `BLOCKED` passait dès que la CI n'était pas rouge. Une revue requise (`review-required`) ou une autre protection de branche (`merge-blocked`) donne désormais un bloqueur `merge-gate` terminal, après la fin des checks en cours. Porté de pstack-claude #95.
+
 ## [0.7.0] - 2026-09-27
 
 - Descriptions des compétences harmonisées : chacune commence par « À utiliser pour $cstack:<nom> » puis dit ce que fait la compétence ; le validateur impose cette forme, avec le nom comme jeton complet.
