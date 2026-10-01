@@ -4,6 +4,10 @@ Les versions suivent SemVer. Le format suit [Keep a Changelog](https://keepachan
 
 ## [Unreleased]
 
+- Correctif : `log.sh` (show-me-your-work) testait le journal avec `-f` puis écrivait l'en-tête avec `>`. Un journal vide restait sans en-tête, et un test raté sur un disque réseau pouvait écraser les lignes. Il teste désormais `-s` et ajoute avec `>>`. Une cellule qui commence par `"` reçoit aussi le préfixe `'`, pour qu'un lecteur TSV n'ouvre pas un champ entre guillemets. Porté de pstack #414 et de pstack-claude #99.
+- Correctif : `watch-pr` relançait sans fin sur un dépôt sans CI, car l'absence de checks levait `ChecksUnavailable` comme une lecture impossible. Elle devient l'état `ci-none` quand `gh pr checks` ne signale aucun check, que le rollup du commit head est nul, qu'aucun commit de la PR n'a rapporté de check et que GitHub a calculé la fusionnabilité. Tout autre résultat vide reste refusé. Porté de pstack-claude #153.
+- Correctif : `watch-pr` déclarait `READY` une PR retenue par une revue obligatoire, car un état `BLOCKED` passait dès que la CI n'était pas rouge. Une revue requise (`review-required`) ou une autre protection de branche (`merge-blocked`) donne désormais un bloqueur `merge-gate` terminal, après la fin des checks en cours. Porté de pstack-claude #95.
+
 ## [0.7.0] - 2026-09-27
 
 - Descriptions des compétences harmonisées : chacune commence par « À utiliser pour $cstack:<nom> » puis dit ce que fait la compétence ; le validateur impose cette forme, avec le nom comme jeton complet.

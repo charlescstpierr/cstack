@@ -97,6 +97,9 @@ class LogScriptTest(unittest.TestCase):
             (b"  +cmd", b"'  +cmd"),
             (b"\xc2\x9c@SUM(A1)", b"' @SUM(A1)"),
             (b"\xe2\x80\xa9-1+1", b"' -1+1"),
+            (b'"=HYPERLINK(1)"', b"'\"=HYPERLINK(1)\""),
+            (b' "open', b"' \"open"),
+            (b'\x01"open', b"' \"open"),
         ]
         for cell, expected in cases:
             with self.subTest(cell=cell):
@@ -106,6 +109,21 @@ class LogScriptTest(unittest.TestCase):
                 fields = self.logfile.read_bytes().split(b"\n")[1].split(b"\t")
                 self.assertEqual(len(fields), 6)
                 self.assertEqual(fields[4], expected)
+
+    def test_empty_existing_log_gets_its_header(self):
+        self.logfile.parent.mkdir(parents=True)
+        self.logfile.write_bytes(b"")
+        self.log()
+        lines = self.logfile.read_text().splitlines()
+        self.assertEqual(lines[0], "ts\tphase\tdecision\twhy\tevidence\tresult")
+        self.assertEqual(len(lines), 2)
+
+    def test_existing_rows_are_appended_not_replaced(self):
+        self.log()
+        self.log()
+        lines = self.logfile.read_text().splitlines()
+        self.assertEqual(len(lines), 3)
+        self.assertTrue(lines[0].startswith("ts\t"))
 
 
 if __name__ == "__main__":

@@ -222,6 +222,37 @@ describe("main", () => {
     });
   });
 
+  it("nomme l’absence de checks dans le tableau d’état et le verdict READY", async () => {
+    const argv = [
+      "--owner",
+      "owner",
+      "--repo",
+      "repo",
+      "--pr",
+      "1",
+      "--pretty",
+    ];
+    const noChecks = () =>
+      testRuntime(
+        fakeReader({
+          facts: { reviewDecision: null },
+          fastPath: { kind: "none-reported" },
+          rollupPages: [{ kind: "no-rollup" }],
+          commitRollups: [{ oid: "head", state: null }],
+        })
+      );
+    const status = noChecks();
+    expect(await main([...argv, "--status-only"], status.runtime)).toBe(0);
+    expect(status.stdout.join("")).toContain(
+      "| [#1](https://github.com/owner/repo/pull/1) | ➖ aucun check | ✅ | ✅ |"
+    );
+    const ready = noChecks();
+    expect(await main(argv, ready.runtime)).toBe(0);
+    expect(ready.stdout.join("")).toBe(
+      "READY: aucun conflit de fusion, aucun fil de revue non résolu, aucun check en échec ou en attente\nmergeStateStatus=CLEAN\nreviewDecision=null\nisDraft=false\nchecks=aucun signalé sur le commit head\n"
+    );
+  });
+
   it("affiche l’aide sans toucher au lecteur", async () => {
     const lecteur = fakeReader();
     const harness = testRuntime(lecteur);

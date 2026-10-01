@@ -21,6 +21,7 @@ import {
   passingCheck,
   pendingCheck,
 } from "./fakes.test-helper.ts";
+import type { CheckRead, ReportedChecks } from "./types.ts";
 import { parsePrNumber } from "./types.ts";
 
 const context = {
@@ -43,12 +44,18 @@ const openPr = (
   baseRefName,
 });
 
+function reported(read: CheckRead): ReportedChecks {
+  if (read.kind !== "reported")
+    throw new Error(`checks attendus : ${read.kind}`);
+  return read;
+}
+
 describe("chaîne de repli des vérifications", () => {
   it("utilise un résultat du chemin rapide non vide sans requête rollup", async () => {
     const reader = fakeReader({
       fastPath: { kind: "checks", checks: [passingCheck("fast")] },
     });
-    const read = await resolveChecks(reader, context);
+    const read = reported(await resolveChecks(reader, context));
     expect(read.source).toBe("gh-pr-checks");
     expect(read.checks.map((check) => check.name)).toEqual(["fast"]);
     expect(reader.calls).toEqual(["checksFastPath"]);
@@ -58,11 +65,15 @@ describe("chaîne de repli des vérifications", () => {
     const reader = fakeReader({
       fastPath: { kind: "unusable", exitCode: 8, stderr: "" },
       rollupPages: [
-        { checks: [passingCheck("first")], endCursor: "next" },
-        { checks: [failedCheck("second")], endCursor: null },
+        {
+          kind: "contexts",
+          checks: [passingCheck("first")],
+          endCursor: "next",
+        },
+        { kind: "contexts", checks: [failedCheck("second")], endCursor: null },
       ],
     });
-    const read = await resolveChecks(reader, context);
+    const read = reported(await resolveChecks(reader, context));
     expect(read.source).toBe("graphql-rollup");
     expect(read.checks.map((check) => check.name)).toEqual(["first", "second"]);
     expect(reader.calls).toEqual([
@@ -75,9 +86,15 @@ describe("chaîne de repli des vérifications", () => {
   it("bascule en repli quand le JSON du chemin rapide valide représente une liste vide", async () => {
     const reader = fakeReader({
       fastPath: { kind: "checks", checks: [] },
-      rollupPages: [{ checks: [pendingCheck("repli")], endCursor: null }],
+      rollupPages: [
+        {
+          kind: "contexts",
+          checks: [pendingCheck("repli")],
+          endCursor: null,
+        },
+      ],
     });
-    expect((await resolveChecks(reader, context)).checks[0].name).toBe(
+    expect(reported(await resolveChecks(reader, context)).checks[0].name).toBe(
       "repli"
     );
     expect(reader.calls).toEqual(["checksFastPath", "checkRollupPage:null"]);
@@ -95,6 +112,50 @@ describe("chaîne de repli des vérifications", () => {
       ChecksUnavailable
     );
     expect(reader.calls).toEqual(["checksFastPath", "checkRollupPage:null"]);
+  });
+
+  it("lit l’absence de checks quand gh n’en signale aucun et que le commit head n’a pas de rollup", async () => {
+    const reader = fakeReader({
+      fastPath: { kind: "none-reported" },
+      rollupPages: [{ kind: "no-rollup" }],
+    });
+    expect(await resolveChecks(reader, context)).toEqual({ kind: "no-checks" });
+    expect(reader.calls).toEqual(["checksFastPath", "checkRollupPage:null"]);
+  });
+
+  it("échoue ferme quand une seule lecture dit qu’il n’y a pas de checks", async () => {
+    const oneSided = [
+      {
+        fastPath: { kind: "unusable", exitCode: 1, stderr: "HTTP 401" },
+        rollupPages: [{ kind: "no-rollup" }],
+      },
+      {
+        fastPath: { kind: "checks", checks: [] },
+        rollupPages: [{ kind: "no-rollup" }],
+      },
+      {
+        fastPath: { kind: "none-reported" },
+        rollupPages: [{ kind: "contexts", checks: [], endCursor: null }],
+      },
+    ] as const;
+    for (const options of oneSided)
+      await expect(
+        resolveChecks(fakeReader(options), context)
+      ).rejects.toBeInstanceOf(ChecksUnavailable);
+  });
+
+  it("propage une requête rollup en échec au lieu de la lire comme une absence de checks", async () => {
+    const reader = fakeReader({ fastPath: { kind: "none-reported" } });
+    const failure = new WatcherQueryError({
+      kind: "command-exit",
+      retryable: true,
+      code: 1,
+      detail: "HTTP 502",
+    });
+    reader.checkRollupPage = async () => {
+      throw failure;
+    };
+    await expect(resolveChecks(reader, context)).rejects.toBe(failure);
   });
 });
 
@@ -631,5 +692,72 @@ exit 1
     } finally {
       await rm(directory, { recursive: true, force: true });
     }
+  });
+});
+
+describe("lecture gh d’une PR sans checks configurés", () => {
+  // Rejoue ce que gh renvoie pour une PR d’un dépôt sans CI : `gh pr checks`
+  // sort en 1 avec « no checks reported » et le rollup du commit head est nul.
+  async function withFakeGh(
+    checksStderr: string,
+    operation: (reader: GhGitHubReader) => Promise<void>
+  ): Promise<void> {
+    const directory = await mkdtemp(join(tmpdir(), "watch-no-ci-gh-"));
+    const gh = join(directory, "gh");
+    await writeFile(
+      gh,
+      `#!/bin/bash
+if [ "$1" = "pr" ] && [ "$2" = "checks" ]; then
+  echo ${JSON.stringify(checksStderr)} >&2
+  exit 1
+fi
+case "$*" in
+  *"query PrCheckRollup"*)
+    echo '{"data":{"repository":{"pullRequest":{"commits":{"nodes":[{"commit":{"statusCheckRollup":null}}]}}}}}'
+    exit 0;;
+esac
+echo "appel gh inattendu: $*" >&2
+exit 2
+`
+    );
+    await chmod(gh, 0o755);
+    const original = process.env.PATH;
+    process.env.PATH = original ? `${directory}:${original}` : directory;
+    try {
+      await operation(new GhGitHubReader());
+    } finally {
+      if (original === undefined) delete process.env.PATH;
+      else process.env.PATH = original;
+      await rm(directory, { recursive: true, force: true });
+    }
+  }
+
+  it("lit « no checks reported » et un rollup nul comme une absence de checks", async () => {
+    await withFakeGh("no checks reported on the 'feature' branch", async (reader) => {
+      expect(await reader.checksFastPath(context)).toEqual({
+        kind: "none-reported",
+      });
+      expect(await reader.checkRollupPage(context, null)).toEqual({
+        kind: "no-rollup",
+      });
+      expect(await resolveChecks(reader, context)).toEqual({
+        kind: "no-checks",
+      });
+    });
+  });
+
+  it("échoue ferme quand gh pr checks sort en 1 pour une autre raison", async () => {
+    await withFakeGh(
+      "HTTP 401: Bad credentials (https://api.github.com/graphql)",
+      async (reader) => {
+        expect(await reader.checksFastPath(context)).toMatchObject({
+          kind: "unusable",
+          exitCode: 1,
+        });
+        await expect(resolveChecks(reader, context)).rejects.toBeInstanceOf(
+          ChecksUnavailable
+        );
+      }
+    );
   });
 });

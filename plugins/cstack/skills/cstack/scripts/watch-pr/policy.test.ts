@@ -418,3 +418,134 @@ it("utilise le plancher et le plafond de réessai spécifiés", () => {
   expect(queryBackoffSeconds(1, 2)).toBe(120);
   expect(queryBackoffSeconds(60, 4)).toBe(300);
 });
+
+describe("barrière de revue", () => {
+  it("bloque sur une revue requise au lieu de déclarer prête une PR bloquée", async () => {
+    const snapshot = await readSnapshot({
+      reader: fakeReader({
+        facts: { reviewDecision: "REVIEW_REQUIRED", mergeStateStatus: "BLOCKED" },
+      }),
+      context: context(23),
+      pendingHistory: "omit",
+      allowDraft: false,
+    });
+    expect(classifyPr(snapshot)).toEqual({
+      kind: "blocker",
+      blocker: { kind: "merge-gate", pr: context(23), reason: "review-required" },
+    });
+    expect(
+      selectTierMajorStackDecision([snapshot] as NonEmpty<typeof snapshot>)
+    ).toMatchObject({
+      kind: "blocker",
+      blocker: { kind: "merge-gate", reason: "review-required" },
+    });
+  });
+
+  it("bloque quand une protection de branche retient une PR approuvée à la CI propre", async () => {
+    const snapshot = await readSnapshot({
+      reader: fakeReader({ facts: { mergeStateStatus: "BLOCKED" } }),
+      context: context(24),
+      pendingHistory: "omit",
+      allowDraft: false,
+    });
+    expect(classifyPr(snapshot)).toMatchObject({
+      kind: "blocker",
+      blocker: { kind: "merge-gate", reason: "merge-blocked" },
+    });
+  });
+
+  it("attend les checks en cours avant de signaler la barrière de revue", async () => {
+    const snapshot = await readSnapshot({
+      reader: fakeReader({
+        facts: { reviewDecision: "REVIEW_REQUIRED", mergeStateStatus: "BLOCKED" },
+        fastPath: { kind: "checks", checks: [pendingCheck()] },
+      }),
+      context: context(26),
+      pendingHistory: "omit",
+      allowDraft: false,
+    });
+    expect(classifyPr(snapshot)).toMatchObject({ kind: "waiting" });
+  });
+
+  it("signale toujours les changements demandés comme barrière de fusion", async () => {
+    const snapshot = await readSnapshot({
+      reader: fakeReader({
+        facts: { reviewDecision: "CHANGES_REQUESTED", mergeStateStatus: "BLOCKED" },
+      }),
+      context: context(25),
+      pendingHistory: "omit",
+      allowDraft: false,
+    });
+    expect(classifyPr(snapshot)).toMatchObject({
+      kind: "blocker",
+      blocker: { kind: "merge-gate", reason: "changes-requested" },
+    });
+  });
+});
+
+describe("une PR sans checks configurés", () => {
+  const noChecks = {
+    fastPath: { kind: "none-reported" },
+    rollupPages: [{ kind: "no-rollup" }],
+    commitRollups: [{ oid: "head", state: null }],
+  } as const;
+  const read = (overrides: Parameters<typeof fakeReader>[0] = {}) =>
+    readSnapshot({
+      reader: fakeReader({ ...noChecks, ...overrides }),
+      context: context(30),
+      pendingHistory: "omit",
+      allowDraft: false,
+    });
+
+  it("est prête quand GitHub la déclare fusionnable", async () => {
+    const snapshot = await read({ facts: { reviewDecision: null } });
+    expect(classifyPr(snapshot)).toMatchObject({
+      kind: "ready",
+      pr: { proof: { ci: { kind: "ci-none" } } },
+    });
+  });
+
+  it("s’arrête toujours sur les conflits, les fils de revue et les barrières de fusion", async () => {
+    const thread = {
+      id: "thread",
+      firstComment: null,
+      isBugbot: false,
+      bugbotReviewPasses: 0,
+    };
+    const cases = [
+      [{ facts: { mergeable: "CONFLICTING" } }, { kind: "merge-conflicts" }],
+      [{ threads: [thread] }, { kind: "review-threads" }],
+      [
+        { facts: { reviewDecision: "REVIEW_REQUIRED" } },
+        { kind: "merge-gate", reason: "review-required" },
+      ],
+      [
+        { facts: { mergeStateStatus: "BLOCKED" } },
+        { kind: "merge-gate", reason: "merge-blocked" },
+      ],
+      [{ facts: { isDraft: true } }, { kind: "merge-gate", reason: "draft-pr" }],
+    ] as const;
+    for (const [overrides, blocker] of cases)
+      expect(classifyPr(await read(overrides))).toMatchObject({
+        kind: "blocker",
+        blocker,
+      });
+  });
+
+  it("échoue ferme tant que le head n’a peut-être pas encore rapporté", async () => {
+    const unsettled = [
+      {
+        commitRollups: [
+          { oid: "earlier", state: "SUCCESS" },
+          { oid: "head", state: null },
+        ],
+      },
+      { commitRollups: [{ oid: "head", state: "PENDING" }] },
+      { facts: { mergeable: "UNKNOWN", mergeStateStatus: "UNKNOWN" } },
+    ] as const;
+    for (const overrides of unsettled)
+      await expect(read(overrides)).rejects.toMatchObject({
+        failure: { kind: "checks-unavailable", retryable: true },
+      });
+  });
+});
