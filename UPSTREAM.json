@@ -1,12 +1,12 @@
 {
   "repository": "https://github.com/cursor/plugins",
-  "commit": "889ec4b68fa5aab0e867dad71ec3fdf386ae48f3",
+  "commit": "12d587dfb20741cafc376c42c696c5f6e2a64487",
   "subdirectory": "pstack",
-  "version": "0.15.2",
+  "version": "0.15.5",
   "files": [
     {
       "path": "pstack/.cursor-plugin/plugin.json",
-      "git_blob": "19402321c3ac7272b941757838c24b1694c03545"
+      "git_blob": "6ebc34b96f65088d695e3c3038eb412d750c8bdb"
     },
     {
       "path": "pstack/.gitignore",
@@ -18,7 +18,7 @@
     },
     {
       "path": "pstack/README.md",
-      "git_blob": "6b77b0087d5fe0c39164fcac65a2731c22864216"
+      "git_blob": "b7cdef8aeb15da88a8f9cdd82904d884552395b7"
     },
     {
       "path": "pstack/agents/comment-sicko.md",
@@ -82,7 +82,7 @@
     },
     {
       "path": "pstack/docs/guide/01-setup.md",
-      "git_blob": "21dc4a4fc837ec2ee29c8edb94c9169008fe886f"
+      "git_blob": "1e602f61c81eb1902150b849682b92b8e583fa7c"
     },
     {
       "path": "pstack/docs/guide/02-poteto-mode.md",
@@ -106,7 +106,7 @@
     },
     {
       "path": "pstack/docs/guide/07-overnight.md",
-      "git_blob": "43c46529c0a468065854dd9c65bb57f1c0334705"
+      "git_blob": "9ff66b7706041179ff3661213939a961eb196212"
     },
     {
       "path": "pstack/docs/guide/08-principles.md",
@@ -150,7 +150,7 @@
     },
     {
       "path": "pstack/skills/architect/SKILL.md",
-      "git_blob": "923ffc55e8f3f760c80b7ff8a9992fd848c56614"
+      "git_blob": "afa6eead878d2a7b8d22b8eb99e6cf0c6ee0ad69"
     },
     {
       "path": "pstack/skills/architect/references/design-red-flags.md",
@@ -166,7 +166,7 @@
     },
     {
       "path": "pstack/skills/arena/SKILL.md",
-      "git_blob": "d1aec509a2b3aeee58b88c25eb6933db57d4a029"
+      "git_blob": "e50356e2f97608dbb48d9c1cd75af6d70b3f7059"
     },
     {
       "path": "pstack/skills/automate-me/SKILL.md",
@@ -174,7 +174,7 @@
     },
     {
       "path": "pstack/skills/blast-radius/SKILL.md",
-      "git_blob": "298d030cb606b051ca57e89c7b39a12f7fad75a0"
+      "git_blob": "1713b283d477530be64e925ede2bdbe5ce2d6e31"
     },
     {
       "path": "pstack/skills/bro/SKILL.md",
@@ -198,11 +198,11 @@
     },
     {
       "path": "pstack/skills/figure-it-out/SKILL.md",
-      "git_blob": "aa6967aa4bba8a51ada469310e356df02d47916e"
+      "git_blob": "fbf3fb122cab127d71d3c41e84711e61cc5dec4c"
     },
     {
       "path": "pstack/skills/how/SKILL.md",
-      "git_blob": "7d4627c3bec8a6a994a3cf9bb5686ab33c39ac8f"
+      "git_blob": "cd22fff659f14822ad2f485f711a355b6da0668d"
     },
     {
       "path": "pstack/skills/how/references/explainer-prompt.md",
@@ -210,15 +210,15 @@
     },
     {
       "path": "pstack/skills/how/references/explorer-prompt.md",
-      "git_blob": "8b898d9e729e5d5fa41e95720e44f23a4204de43"
+      "git_blob": "9b4b0594bfd779015616e9d280369aba939583b4"
     },
     {
       "path": "pstack/skills/interrogate/SKILL.md",
-      "git_blob": "b59dff74c3f665cf82fabd9d197d814df8115531"
+      "git_blob": "bd82e5b179f186e1cd7913dd112db9f8b07b4846"
     },
     {
       "path": "pstack/skills/interrogate/references/code-quality-review.md",
-      "git_blob": "50230358f9b6138caf66065b1084be595d453d81"
+      "git_blob": "16581250d81044c7e80fe234c4970a3f7b7fc98a"
     },
     {
       "path": "pstack/skills/interrogate/references/lead-judgment.md",
@@ -226,11 +226,11 @@
     },
     {
       "path": "pstack/skills/interrogate/references/reviewer-prompt.md",
-      "git_blob": "53ffa747ff6af72ed24cc00e2622b2c14dd564a9"
+      "git_blob": "13a252b2c3cd18522d4c8dc39a7030477037b249"
     },
     {
       "path": "pstack/skills/interrogate/references/rubric.md",
-      "git_blob": "04bd4ca6d31a17694071c415c349128a3b404006"
+      "git_blob": "2d92f1b83e13be03fb10f20cba12639a1406a2da"
     },
     {
       "path": "pstack/skills/maintain-verification-skill/SKILL.md",
@@ -246,7 +246,7 @@
     },
     {
       "path": "pstack/skills/poteto-mode/SKILL.md",
-      "git_blob": "7559dea02e890c3e72db4dfcd226facae0779576"
+      "git_blob": "f8ddcae379007d61aefcae39b18bd836a488ee21"
     },
     {
       "path": "pstack/skills/poteto-mode/playbooks/authoring-a-skill.md",
@@ -258,19 +258,19 @@
     },
     {
       "path": "pstack/skills/poteto-mode/playbooks/autopilot-full.md",
-      "git_blob": "78532504732ce78cc4d0ed95f3b7581fe177c090"
+      "git_blob": "e92be88a8dfcb0a1f2745e0da7af42d31f1d6606"
     },
     {
       "path": "pstack/skills/poteto-mode/playbooks/autopilot-stack.md",
-      "git_blob": "f5b6e1df88f815af1add0a0a3eecd12a318719fe"
+      "git_blob": "810a70fff72ae49a9387b5ea41dcb13f890c83c0"
     },
     {
       "path": "pstack/skills/poteto-mode/playbooks/babysit.md",
-      "git_blob": "73eddb732ad9d4a4c27c16e3cc6c41f78becc3e1"
+      "git_blob": "683cf0ba889789cbe2d880fce667c75349f9ed12"
     },
     {
       "path": "pstack/skills/poteto-mode/playbooks/bug-fix.md",
-      "git_blob": "c58289708610217f015387e61c14539b736f7274"
+      "git_blob": "eeebc42b7477d435d8ac61d631d84822f908f59c"
     },
     {
       "path": "pstack/skills/poteto-mode/playbooks/eval.md",
@@ -278,11 +278,11 @@
     },
     {
       "path": "pstack/skills/poteto-mode/playbooks/feature.md",
-      "git_blob": "6cab21817e0f97e1c707d7c47ef82aa4f3ea99cd"
+      "git_blob": "79a6bbbe0ce61c3b5ef9af1ee8e3ccdb0557edc6"
     },
     {
       "path": "pstack/skills/poteto-mode/playbooks/hillclimb.md",
-      "git_blob": "edb6edc26e9890a327d25e2d748d4824d9906c03"
+      "git_blob": "582555e826675068ceaea08e6134a44ba0ea4511"
     },
     {
       "path": "pstack/skills/poteto-mode/playbooks/investigation.md",
@@ -290,11 +290,11 @@
     },
     {
       "path": "pstack/skills/poteto-mode/playbooks/multi-phase-plan.md",
-      "git_blob": "1fd40dd3f6cd539cd7cc420e2e364282a05a73cf"
+      "git_blob": "fe006110f6005dcdb746d891e7901a1734a75538"
     },
     {
       "path": "pstack/skills/poteto-mode/playbooks/opening-a-pr.md",
-      "git_blob": "a5c65a0959d0c37ebd12d5636710c4e0f91fba88"
+      "git_blob": "626f376bd64e2e7b04c2575cb8b8f4ba70a6078d"
     },
     {
       "path": "pstack/skills/poteto-mode/playbooks/orchestrate.md",
@@ -302,11 +302,11 @@
     },
     {
       "path": "pstack/skills/poteto-mode/playbooks/pause-safely.md",
-      "git_blob": "ad61122202763e96b59af9aae48afe3e242a751e"
+      "git_blob": "9d1c5f8303976fff40de099f7f28185909430c11"
     },
     {
       "path": "pstack/skills/poteto-mode/playbooks/perf-issue.md",
-      "git_blob": "e153c343190c97b2a34e50c7dd7a8063b9d2cb08"
+      "git_blob": "688d483d4d4a6c58efa515558c822e11f621540f"
     },
     {
       "path": "pstack/skills/poteto-mode/playbooks/prototype.md",
@@ -314,7 +314,7 @@
     },
     {
       "path": "pstack/skills/poteto-mode/playbooks/refactoring.md",
-      "git_blob": "dfc5d480f450f1b28d70099650f0d12822ac4b6e"
+      "git_blob": "df2a863b531906c64f92b9f9d8feb62f8c7a8665"
     },
     {
       "path": "pstack/skills/poteto-mode/playbooks/runtime-forensics.md",
@@ -326,7 +326,7 @@
     },
     {
       "path": "pstack/skills/poteto-mode/playbooks/shipping.md",
-      "git_blob": "4c83fa3ef3b3457d55ce4b9b3bfd0dd6c12745cd"
+      "git_blob": "0f1d41f189222b991734015926a3b22607e1b92f"
     },
     {
       "path": "pstack/skills/poteto-mode/playbooks/trace-forensics.md",
@@ -354,7 +354,7 @@
     },
     {
       "path": "pstack/skills/poteto-mode/scripts/check-plan.mjs",
-      "git_blob": "21d350ac155928bbcf8d29dce193a97974f12748"
+      "git_blob": "6c07f4e903d10332702a2ac4602ada9273e71609"
     },
     {
       "path": "pstack/skills/poteto-mode/scripts/orch/orch.test.ts",
@@ -458,7 +458,7 @@
     },
     {
       "path": "pstack/skills/principle-guard-the-context-window/SKILL.md",
-      "git_blob": "eb2cecc40f9d830dc077009f93a467be69f195a2"
+      "git_blob": "c4db544909b26981c45eed9caa6591d32885f841"
     },
     {
       "path": "pstack/skills/principle-laziness-protocol/SKILL.md",
@@ -482,15 +482,15 @@
     },
     {
       "path": "pstack/skills/principle-never-block-on-the-human/SKILL.md",
-      "git_blob": "46d410715c0f36cc43f6774dac9f89b3404e9aa4"
+      "git_blob": "11f08b6ef1fd93a3b3e47c57eb84716dc9acbff9"
     },
     {
       "path": "pstack/skills/principle-outcome-oriented-execution/SKILL.md",
-      "git_blob": "4c2ed4695b4ca15ea5a98468c13bfe5de97f16df"
+      "git_blob": "c49be0bc74783f0dee013101365ae09b2abb48a2"
     },
     {
       "path": "pstack/skills/principle-prove-it-works/SKILL.md",
-      "git_blob": "4563023d4d9f22e10e33cbf0ae94da156be30618"
+      "git_blob": "5dc14a3b06f9d579e5c17cd8a7242f432ddb3125"
     },
     {
       "path": "pstack/skills/principle-redesign-from-first-principles/SKILL.md",
@@ -502,7 +502,7 @@
     },
     {
       "path": "pstack/skills/principle-sequence-verifiable-units/SKILL.md",
-      "git_blob": "dd008c371ee803decaa1964b72081a646d95d9b9"
+      "git_blob": "986371260ebccd9a5a6818c9561e88c1d270d0ee"
     },
     {
       "path": "pstack/skills/principle-subtract-before-you-add/SKILL.md",
@@ -522,15 +522,15 @@
     },
     {
       "path": "pstack/skills/reflect/SKILL.md",
-      "git_blob": "d004951789602ea16430f9de5a542bf80b419cdb"
+      "git_blob": "cb270acc507aeaeab7c37db11fc8130cbb2f93f4"
     },
     {
       "path": "pstack/skills/reflect/references/divergent-reviewer.md",
-      "git_blob": "73969d847dd97f2d714df20d27359ce98ad0f7cc"
+      "git_blob": "de95be3b9cc9c11052596249336dcc328473eb26"
     },
     {
       "path": "pstack/skills/reflect/references/judgment-reviewer.md",
-      "git_blob": "830213aedff81c5b27462988201663e1f0229a72"
+      "git_blob": "222f02b1c3c6eb3e700fa09a71bad108807d3485"
     },
     {
       "path": "pstack/skills/reflect/references/synthesizer.md",
@@ -538,15 +538,15 @@
     },
     {
       "path": "pstack/skills/reflect/references/tooling-reviewer.md",
-      "git_blob": "e7fcd9e669c5a10664f4a14d8856af6978f9e535"
+      "git_blob": "a37e2009d6ef08f535df87e020e52426c6a5fa33"
     },
     {
       "path": "pstack/skills/setup-pstack/SKILL.md",
-      "git_blob": "6bf4b49a837a287fd211515d182ea31a1d091f18"
+      "git_blob": "1009e73c6116c8f6c24b5870c8f0600ae144b631"
     },
     {
       "path": "pstack/skills/show-me-your-work/SKILL.md",
-      "git_blob": "6e98dd24e619a9097ddd51b2a58ffb8f92b62cbf"
+      "git_blob": "d350a150c36ca16382b4aa6d4196b39e67454ad1"
     },
     {
       "path": "pstack/skills/show-me-your-work/references/decision-log-template.tsv",
@@ -554,15 +554,15 @@
     },
     {
       "path": "pstack/skills/show-me-your-work/scripts/log.sh",
-      "git_blob": "523e2a74ee15bfe6528c795a347827f04ecc5e95"
+      "git_blob": "052e53b7e1090579eaec1d3d59f7a1cd2f2e452a"
     },
     {
       "path": "pstack/skills/swarm/SKILL.md",
-      "git_blob": "5b465d3ba542703707871165b369406bbd90c7e9"
+      "git_blob": "a63e09eda94558aa8c7ae6d0653951838a3abd3f"
     },
     {
       "path": "pstack/skills/tdd/SKILL.md",
-      "git_blob": "887a98b7f4ead1ec0d147ce6e5ad6844ef16ca5f"
+      "git_blob": "ca6f24c963001d9d518db2936dfe3d12f29b4e94"
     },
     {
       "path": "pstack/skills/teach/SKILL.md",
@@ -570,7 +570,7 @@
     },
     {
       "path": "pstack/skills/technical-writing/SKILL.md",
-      "git_blob": "70a477e42fc5f37c35bf602d86ff89c0f5258ecf"
+      "git_blob": "1cd44cf2595a5caeda1f702aacd4f8a25aa8166a"
     },
     {
       "path": "pstack/skills/typescript-best-practices/SKILL.md",
@@ -582,11 +582,11 @@
     },
     {
       "path": "pstack/skills/unslop/SKILL.md",
-      "git_blob": "a3a7dc7baf0bed5fed4fe0f12ea7fcfe48d94c89"
+      "git_blob": "229a090708710c36caa0017f8d33e90880dc6846"
     },
     {
       "path": "pstack/skills/why/SKILL.md",
-      "git_blob": "53045ddba6f52fa0eec44101fd8e363d47141832"
+      "git_blob": "daac2c734a8f8fe43d30663054d694066f2b41ec"
     },
     {
       "path": "pstack/skills/why/references/epistemics.md",
