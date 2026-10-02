@@ -6,7 +6,8 @@ Le résultat est une liste de bugs confirmés, chacun avec un test de reproducti
 
 ## 1. Préparer
 
-- Lance l'application une fois selon la section Launch et vérifie-la avec Doctor. Si plusieurs explorateurs doivent piloter en même temps, chacun a sa propre instance ou un port libre ; une instance partagée par plusieurs explorateurs produit des faux bugs d'état.
+- Lance l'application une fois selon la section Launch et vérifie-la avec Doctor. Si plusieurs explorateurs doivent piloter en même temps, chacun a sa propre instance ou un port libre ; une instance partagée par plusieurs explorateurs produit des faux bugs d'état. Quand la section Isolation de la skill dit que deux instances ne peuvent pas tourner côte à côte, les chartes passent en série sur l'instance unique, avec Doctor ou un retour à un état connu entre deux chartes.
+- Vérifie que `.cstack/` est ignoré par Git (`git check-ignore -q .cstack/bugbash`). Sinon, crée `.cstack/.gitignore` contenant `*`, comme le fait le journal de décisions, avant d'y écrire quoi que ce soit.
 - Donne à chaque charte son propre compte ou espace de données, créé avec les fixtures ou scripts d'amorçage du projet. Deux explorateurs sur le même compte se signalent mutuellement leurs modifications.
 - Écris dans le contexte des explorateurs ce que l'environnement local ne sait pas faire (service externe sans clé, envoi de courriel, paiement) et ce qui ne doit jamais être déclenché. Ces limites produiraient sinon des constats qui ne disent rien du produit.
 - Sur une instance partagée ou déployée que d'autres utilisent, l'exploration est en lecture seule : pas d'inscription, de soumission ni de rafale de requêtes.
@@ -28,7 +29,9 @@ Une charte d'entrées limites sans liste d'entrées dépense son budget avant de
 
 ## 3. Explorer en parallèle
 
-Applique [Swarm](../../swarm/SKILL.md) : une tranche par charte, avec son instance, son compte, son dossier de sortie sous `.cstack/bugbash/<slug>/` et le harnais de la skill. Chaque explorateur rend, par constat : la route, les étapes, l'attendu, l'observé, la preuve capturée et son verdict de pilotage. Un explorateur bloqué (`auth`, `environnement`, `données`, `budget`, `non pris en charge`) le dit avec son code ; corrige la cause et relance cette charte seule.
+Quand les instances sont indépendantes, applique [Swarm](../../swarm/SKILL.md) : une tranche par charte, avec son instance, son compte, son dossier de sortie sous `.cstack/bugbash/<slug>/` et le harnais de la skill. Avec une instance unique, pilote les chartes l'une après l'autre (étape 1). Chaque explorateur rend, par constat : la route, les étapes, l'attendu, l'observé, la preuve capturée et son verdict de pilotage.
+
+Un explorateur bloqué le dit avec son code. Pour `auth`, `environnement` ou `données`, relance la charte une seule fois, et seulement si tu as corrigé la cause pendant la session (compte réamorcé, service redémarré). `budget`, `non pris en charge` et tout blocage sans remède immédiat restent des lacunes de couverture, rapportées à la fin sans nouvelle tentative.
 
 ## 4. Fusionner
 
@@ -42,7 +45,7 @@ Range chaque constat avant d'écrire le moindre test. Lis le code source pour tr
 | --- | --- | --- |
 | Artefact d'exploration | Le harnais ou l'explorateur a mal lu l'écran : lien ouvert dans un nouvel onglet, texte coupé que l'écran affiche entier, contenu chargé au défilement jamais atteint. | Rejeté, avec la vérification qui l'a montré. |
 | Environnement | L'échec tient à une clé, un service ou une limite que seule la pile locale n'a pas. | Rejeté, en nommant la variable ou le service ; note à part une gestion d'erreur que de vrais utilisateurs verraient. |
-| Conception voulue | Le code, ses tests ou ses textes disent que le comportement est voulu. | Rejeté, en citant l'endroit. |
+| Conception voulue | Une spécification, la documentation pour l'utilisateur, un test existant ou une décision consignée (ADR, ticket) dit que le comportement est voulu. Le code testé ne prouve jamais sa propre intention. | Rejeté, en citant la source. |
 | Données de départ | Les fixtures n'ont pas un champ que les vrais enregistrements ont toujours. | Rejeté, en nommant le champ. |
 | Candidat | Aucun des cas précédents. | À vérifier (étape 6). |
 

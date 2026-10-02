@@ -383,7 +383,7 @@ if __name__ == "__main__":
     raise SystemExit(main(sys.argv[1:]))
 """,
     }
-    verification = """Utilise $cstack:create-verification-skill pour ce dépôt. J'autorise l'écriture de la skill générée sous .agents/skills/ et l'exécution de notes.py dans ce dépôt. Aucun NOTES_TOKEN n'est disponible et aucun service distant ne doit être contacté. Ne modifie pas notes.py et ne crée ni commit ni PR."""
+    verification = """Utilise $cstack:create-verification-skill pour ce dépôt. J'autorise l'écriture de la skill générée sous .agents/skills/ et l'exécution de notes.py dans ce dépôt. Pour la preuve de la skill générée, pilote la fonctionnalité sync, sans NOTES_TOKEN : aucun jeton n'est disponible et aucun service distant ne doit être contacté. Ne modifie pas notes.py et ne crée ni commit ni PR."""
     register(cases, expectations, case_id="create_verification_cli_verdicts",
              project=create_project(output, "hornbeam", verification_files, [], catalog),
              bundle=new, skill="create-verification-skill", roles=[], body=verification,

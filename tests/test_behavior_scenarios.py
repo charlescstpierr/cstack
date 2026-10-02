@@ -74,6 +74,8 @@ class BehaviorScenarioGeneratorTests(unittest.TestCase):
             self.assertEqual(arena["expected_children"], 5)
             self.assertEqual(len(arena["role_metadata"]["arena runners"]), 3)
             self.assertEqual(len(arena["role_metadata"]["arena cross-judge pool"]), 1)
+            verification = next(case for case in cases if case["id"] == "create_verification_cli_verdicts")
+            self.assertIn("pilote la fonctionnalité sync, sans NOTES_TOKEN", verification["prompt"])
             for case_id in ("interrogate_partial_set_baseline", "interrogate_partial_set_proposed"):
                 self.assertEqual(by_id[case_id]["expected_children"], 3)
                 project = Path(next(case["cwd"] for case in cases if case["id"] == case_id))
