@@ -90,6 +90,8 @@ test("le paquet charge 29 skills et rejette les distributions dangereuses ou inc
       ["plugins/cstack/skills/cstack/references/rule-pressure-tests.md", (text: string) => text.replace("Note mot pour mot", "Résume"), /rule-pressure-tests: excuses mot pour mot manquantes/],
       ["plugins/cstack/skills/cstack/references/rule-pressure-tests.md", (text: string) => text.replace("l'étiquette « non prouvée »", "une note"), /rule-pressure-tests: règle non exécutée présentée comme vérifiée/],
       ["plugins/cstack/skills/cstack/playbooks/eval.md", (text: string) => text.replace("n'est pas promue", "peut être promue"), /eval: règle promue sans échec de référence/],
+      ["plugins/cstack/skills/cstack/playbooks/opening-a-pr.md", (text: string) => text.replace("Compare ensuite la documentation au diff", "Relis la documentation"), /opening-a-pr: contrôle doc contre diff manquant/],
+      ["plugins/cstack/skills/cstack/playbooks/opening-a-pr.md", (text: string) => text.replace("porte à double sens", "changement"), /opening-a-pr: réversibilité du changement manquante/],
       ["plugins/cstack/skills/reflect/SKILL.md", (text: string) => text.replace("`AGENTS.override.md` s'il existe", "le fichier voulu"), /reflect: fichier d'instructions actif non résolu/],
       ["plugins/cstack/skills/reflect/SKILL.md", (text: string) => text.replace("n'est pas écrite à côté d'elle", "est signalée"), /reflect: leçon contradictoire écrite/],
       ["plugins/cstack/skills/reflect/references/tooling-reviewer.md", (text: string) => text.replace("Un passage entre `<private>` et `</private>` est exclu", "Tout passage compte"), /reflect: exclusion <private> manquante dans tooling-reviewer/],

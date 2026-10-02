@@ -346,6 +346,9 @@ export function validate(root: string): { skills: number; sourceFiles: number } 
   requireValue(pressure.includes("l'étiquette « non prouvée »"), "rule-pressure-tests: règle non exécutée présentée comme vérifiée");
   const evalPlaybook = readFileSync(join(plugin, "skills/cstack/playbooks/eval.md"), "utf8");
   requireValue(evalPlaybook.includes("n'est pas promue"), "eval: règle promue sans échec de référence");
+  const openingPr = readFileSync(join(plugin, "skills/cstack/playbooks/opening-a-pr.md"), "utf8");
+  requireValue(openingPr.includes("Compare ensuite la documentation au diff"), "opening-a-pr: contrôle doc contre diff manquant");
+  requireValue(openingPr.includes("porte à double sens"), "opening-a-pr: réversibilité du changement manquante");
   const recall = readFileSync(join(plugin, "skills/recall/SKILL.md"), "utf8");
   requireValue(recall.includes("rend d'abord un index"), "recall: extraction par index manquante");
   requireValue(bugBash.includes("Le code testé ne prouve jamais sa propre intention."), "bug-bash: le code testé accepté comme preuve d’intention");
