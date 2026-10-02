@@ -24,19 +24,19 @@ Suis un élément par phase dans la tâche courante avant tout lancement.
 2. Choisis la forme. Partitionne en tranches, fais courir N workers sur des briefs identiques, ou mélange les deux. Pour une course ou forme mixte, déclare `first pass`, `rank all` ou `best-of` avant le lancement.
 3. Fixe N depuis l'utilisateur ou dérive-le de la forme : au moins deux tranches dès que la forme l'admet ; un seul worker exige une raison nommée. N est le total de workers, pas la fenêtre d'exécution ; celle-ci compte l'emplacement parent des sous-agents natifs.
 4. Le rôle ou la sélection fournis par l'appelant priment ; sinon, `swarm workers`. Pour une course de modèles, nomme dès le début la sélection vérifiée de chaque bras.
-5. Donne à chaque worker sa propre sortie inscriptible quand il écrit.
+5. Donne à chaque worker sa propre sortie inscriptible quand il écrit. Quand des workers vérifient ou mesurent des commits, chaque brief nomme les SHA exacts. Un brief de mesure nomme aussi la méthode (nombre d'échantillons, ce qu'est un échantillon, ordre). Le worker consigne les deux dans son résultat.
 
 ## Phase B : Déployer
 
 Lance les N workers en parallèle. Chaque brief assigne une portée bornée, la propriété exclusive des fichiers quand le worker écrit, et la lecture seule pour l'investigation et la revue.
 
-Chaque brief tient seul. Inclus l'objectif, la portée, la tranche ou le bras de course exact, comment vérifier, et quoi rapporter. Les rapports utilisent `PASS`, `ISSUES` ou `BLOCKED` avec preuves.
+Chaque brief tient seul. Inclus l'objectif, la portée, la tranche ou le bras de course exact, comment vérifier, et quoi rapporter. Les rapports utilisent `PASS`, `ISSUES` ou `BLOCKED` avec preuves. Un worker qui peut prouver un défaut rapporte `ISSUES` et liste chaque problème qu'il peut prouver, pas seulement le premier.
 
 Si un worker abandonne, continue avec N-1 et note-le.
 
 ## Phase C : Agréger
 
-Lis les résultats terminaux. Pour la couverture, chaque tranche requise doit avoir un résultat. Pour une course, applique la règle de sélection déclarée dès le début. Ne colle pas les dumps bruts des workers.
+Lis les résultats terminaux. Écarte un résultat qui ne consigne pas les SHA et la méthode que son brief nomme, et relance ce worker une fois. Après un second manque, consigne une lacune ; une lacune ne compte pas comme un succès. Pour la couverture, chaque tranche requise doit avoir un résultat. Pour une course, applique la règle de sélection déclarée dès le début. Ne colle pas les dumps bruts des workers.
 
 Garde un tableau de résultats compact, des problèmes étayés en une ligne, et les manques ou abandons explicites.
 
