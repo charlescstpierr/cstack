@@ -15,5 +15,5 @@ Les [règles communes](runtime/base.md) (précédence, données externes, capaci
 - [Modèles](runtime/modeles.md) : `.cstack/models.json` ou surcharge de modèle ou d’effort.
 - [État et reprise](runtime/etat.md) : point de reprise, worktree temporaire, lanceur `run-tool.sh`, historique de tâches.
 - [Commits locaux](runtime/commits.md) : avant chaque commit d’une unité vérifiée.
-- [Intégrations externes](runtime/integrations.md) : connecteurs, vérification UI, action externe, merge et nettoyage de livraison.
+- [Intégrations externes](runtime/integrations.md) : connecteurs, sources versionnées, vérification UI, action externe, merge et nettoyage de livraison.
 - [Limites de plateforme](runtime/limites.md) : agents TOML, délégation qui ne part pas, descendants de délégués.

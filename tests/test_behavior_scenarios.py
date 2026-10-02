@@ -25,8 +25,8 @@ class BehaviorScenarioGeneratorTests(unittest.TestCase):
             self.assertEqual(result, 0)
             cases = json.loads((output / "cases.json").read_text(encoding="utf-8"))
             expectations = json.loads((output / "expectations.json").read_text(encoding="utf-8"))["cases"]
-            self.assertEqual(len(cases), 23)
-            self.assertEqual(len(expectations), 23)
+            self.assertEqual(len(cases), 24)
+            self.assertEqual(len(expectations), 24)
             self.assertEqual(len({case["cwd"] for case in cases}), len(cases))
 
             routing = {
@@ -74,6 +74,20 @@ class BehaviorScenarioGeneratorTests(unittest.TestCase):
             self.assertEqual(arena["expected_children"], 5)
             self.assertEqual(len(arena["role_metadata"]["arena runners"]), 3)
             self.assertEqual(len(arena["role_metadata"]["arena cross-judge pool"]), 1)
+            authoring = by_id["authoring_rule_baseline_first"]
+            self.assertEqual(authoring["routing"], {
+                "expected": [
+                    "skills/cstack/playbooks/authoring-a-skill.md",
+                    "skills/cstack/references/rule-pressure-tests.md",
+                ],
+                "forbidden": [],
+            })
+            self.assertEqual(authoring["min_children"], 2)
+            self.assertNotIn("expected_children", authoring)
+            self.assertEqual(authoring["expected_artifacts"], [
+                ".cstack/tasks/*/pressure/base.md",
+                ".cstack/tasks/*/pressure/regle-1.md",
+            ])
             verification = next(case for case in cases if case["id"] == "create_verification_cli_verdicts")
             self.assertIn("pilote la fonctionnalité sync, sans NOTES_TOKEN", verification["prompt"])
             for case_id in ("interrogate_partial_set_baseline", "interrogate_partial_set_proposed"):

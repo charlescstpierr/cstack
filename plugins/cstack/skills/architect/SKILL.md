@@ -23,7 +23,7 @@ Suis un élément par phase dans la tâche courante avant de commencer.
 
 Construis un vrai modèle mental de chaque système touché par le nouveau code. Exécute la compétence **how** sur les sous-systèmes pertinents, dans cette session : un délégué ne lance pas de descendants sans décision explicite du parent, donc ventile les explorateurs, pas les ancrages.
 
-Nommer un fichier n'est pas ancrer. Produis le modèle tracé prescrit par `how`. Si la conception redéfinit la propriété ou les couches, exécute aussi la compétence **why** sur la forme existante afin que la justification devienne une contrainte, pas une supposition.
+Nommer un fichier n'est pas ancrer. Produis le modèle tracé prescrit par `how`. Quand l'ébauche dépend d'un framework ou d'une bibliothèque, ancre aussi sa version installée et sa documentation officielle selon les [sources versionnées](../cstack/references/runtime/integrations.md). Si la conception redéfinit la propriété ou les couches, exécute aussi la compétence **why** sur la forme existante afin que la justification devienne une contrainte, pas une supposition.
 
 Saute la Phase A seulement pour un travail réellement nouveau, sans système environnant à intégrer.
 

@@ -16,7 +16,7 @@ Suivez [le contrat d’exécution Codex](../references/codex-runtime.md).
 
 **Étapes :**
 
-1. **Cadrer.** Énonce quelle variante est testée et quel comportement compte comme réussite. Écris la rubrique (3 à 6 critères concrets) pour le juge seulement. Ne la donne pas aux candidats.
+1. **Cadrer.** Énonce quelle variante est testée et quel comportement compte comme réussite. Écris la rubrique (3 à 6 critères concrets) pour le juge seulement. Ne la donne pas aux candidats. Quand la variante est une règle de compétence, l'autre variante est la même compétence sans cette règle ; une règle sans échec de référence observé n'est pas promue.
 2. **Mettre en place des environnements nettoyés.** Répertoire de travail par candidat avec la variante en place. Plante tout contexte qu’une tâche organique aurait : squelette de projet, compétences que le candidat lirait naturellement.
 3. **Rédiger un prompt organique.** Ce qu’un utilisateur taperait. Aucune fuite sur ce qui est mesuré.
 4. **Lancer le panel de candidats.** Lis et applique `../../arena/SKILL.md`. Sans configuration de panel, lance trois candidats indépendants en modèle hérité. Donne à chaque candidat le même prompt et un répertoire inscriptible séparé. Limite le travail à la capacité native et lance les candidats excédentaires par vagues. Utilise seulement les surcharges disponibles depuis `.cstack/models.json`.

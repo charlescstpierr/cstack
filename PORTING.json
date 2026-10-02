@@ -1313,6 +1313,10 @@
     {
       "path": "plugins/cstack/skills/maintain-verification-skill/references/bug-bash.md",
       "reason": "Protocole de bug bash propre à cstack, lu à la demande ; méthode inspirée de tester-army/e2e (voir NOTICE.md), sans texte copié."
+    },
+    {
+      "path": "plugins/cstack/skills/cstack/references/rule-pressure-tests.md",
+      "reason": "Méthode propre à cstack pour tester une règle de compétence contre une base sans elle, lue à la demande depuis authoring-a-skill ; inspirée de obra/superpowers (voir NOTICE.md), réécrite sans copie."
     }
   ]
 }
