@@ -16,7 +16,11 @@ ACTIVATE = "$cstack:cstack"
 STOP_VERBS = ("arrête", "arrete", "stop", "stoppe", "désactive", "desactive", "quitte")
 # Un pointeur vers les règles, pas une copie : `references/runtime/base.md` reste la source.
 REMINDER = "Mode cstack actif : tâche nouvelle ou en cours → applique `$cstack:cstack` ; tour anodin ou arrêt demandé → non."
-AFTER_SUMMARY = "Mode cstack actif et contexte résumé : relis `references/runtime/base.md` de `$cstack:cstack` avant de continuer."
+AFTER_SUMMARY = (
+    "Mode cstack actif et contexte résumé : relis `references/runtime/base.md` de `$cstack:cstack` "
+    "et le point de reprise de la tâche active dont le résumé nomme le chemin sous `.cstack/` "
+    "(voir `references/runtime/etat.md`) avant de continuer."
+)
 
 
 def _stop_requested(prompt: str) -> bool:
