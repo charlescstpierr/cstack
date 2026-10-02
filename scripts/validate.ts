@@ -339,6 +339,13 @@ export function validate(root: string): { skills: number; sourceFiles: number } 
   const etat = readFileSync(join(plugin, "skills/cstack/references/runtime/etat.md"), "utf8");
   requireValue(etat.includes("est exclu de toute extraction"), "état: exclusion des passages <private> manquante");
   requireValue(etat.includes("Nomme son chemin dans la conversation"), "état: chemin du point de reprise non nommé");
+  const authoring = readFileSync(join(plugin, "skills/cstack/playbooks/authoring-a-skill.md"), "utf8");
+  requireValue(authoring.includes("obtiens d'abord un échec de référence sans elle"), "authoring-a-skill: échec de référence manquant");
+  const pressure = readFileSync(join(plugin, "skills/cstack/references/rule-pressure-tests.md"), "utf8");
+  requireValue(pressure.includes("Note mot pour mot"), "rule-pressure-tests: excuses mot pour mot manquantes");
+  requireValue(pressure.includes("l'étiquette « non prouvée »"), "rule-pressure-tests: règle non exécutée présentée comme vérifiée");
+  const evalPlaybook = readFileSync(join(plugin, "skills/cstack/playbooks/eval.md"), "utf8");
+  requireValue(evalPlaybook.includes("n'est pas promue"), "eval: règle promue sans échec de référence");
   const recall = readFileSync(join(plugin, "skills/recall/SKILL.md"), "utf8");
   requireValue(recall.includes("rend d'abord un index"), "recall: extraction par index manquante");
   requireValue(bugBash.includes("Le code testé ne prouve jamais sa propre intention."), "bug-bash: le code testé accepté comme preuve d’intention");

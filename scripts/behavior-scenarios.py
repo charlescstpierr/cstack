@@ -500,6 +500,19 @@ if __name__ == "__main__":
              expected_children=None,
              expected_routes=["skills/cstack/playbooks/runtime-forensics.md"],
              forbidden_routes=["skills/cstack/playbooks/trace-forensics.md"])
+
+    changelog_rule = """Utilise $cstack:cstack. Dans ce dépôt, les agents oublient le numéro de PR dans CHANGELOG.md dès qu'on leur dit que la publication est urgente. Ajoute à la compétence .agents/skills/changelog/SKILL.md la règle qui l'empêche, et montre qu'elle change leur choix sous cette pression. Ne crée ni commit ni PR."""
+    register(cases, expectations, case_id="routing_rule_baseline_first",
+             project=create_project(output, "buckeye", {
+                 ".agents/skills/changelog/SKILL.md": "---\nname: changelog\ndescription: Ajoute une entrée à CHANGELOG.md pour chaque changement livré.\n---\n\n# Changelog\n\nAjoute une ligne sous « Non publié » qui dit ce qui change pour l'utilisateur.\n",
+                 "CHANGELOG.md": "# Changelog\n\n## Non publié\n\n- Export CSV des factures (#41)\n- Correction du fuseau horaire des rappels\n",
+             }, [], catalog),
+             bundle=new, skill="cstack", roles=[], body=changelog_rule, french=True,
+             expected_children=None,
+             expected_routes=[
+                 "skills/cstack/playbooks/authoring-a-skill.md",
+                 "skills/cstack/references/rule-pressure-tests.md",
+             ])
     return cases, expectations
 
 

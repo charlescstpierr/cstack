@@ -25,8 +25,8 @@ class BehaviorScenarioGeneratorTests(unittest.TestCase):
             self.assertEqual(result, 0)
             cases = json.loads((output / "cases.json").read_text(encoding="utf-8"))
             expectations = json.loads((output / "expectations.json").read_text(encoding="utf-8"))["cases"]
-            self.assertEqual(len(cases), 23)
-            self.assertEqual(len(expectations), 23)
+            self.assertEqual(len(cases), 24)
+            self.assertEqual(len(expectations), 24)
             self.assertEqual(len({case["cwd"] for case in cases}), len(cases))
 
             routing = {
@@ -59,6 +59,13 @@ class BehaviorScenarioGeneratorTests(unittest.TestCase):
                 "routing_live_process_diagnosis": {
                     "expected": ["skills/cstack/playbooks/runtime-forensics.md"],
                     "forbidden": ["skills/cstack/playbooks/trace-forensics.md"],
+                },
+                "routing_rule_baseline_first": {
+                    "expected": [
+                        "skills/cstack/playbooks/authoring-a-skill.md",
+                        "skills/cstack/references/rule-pressure-tests.md",
+                    ],
+                    "forbidden": [],
                 },
             })
             for value in routing.values():
