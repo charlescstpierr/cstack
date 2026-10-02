@@ -16,7 +16,7 @@ $cstack:automate-me
 $cstack:reflect cette tâche a pris trop longtemps. Propose une règle qui évitera le même détour.
 ```
 
-[`$cstack:reflect`](../../skills/reflect/SKILL.md) transforme les observations en propositions concrètes. Une leçon devient une règle seulement si elle change une décision future.
+[`$cstack:reflect`](../../skills/reflect/SKILL.md) transforme les observations en propositions concrètes. Une leçon devient une règle seulement si elle change une décision future. Avant d'écrire, il vérifie le fichier d'instructions : la leçon va dans le fichier que Codex charge vraiment pour ce dossier, respecte le budget `project_doc_max_bytes`, remplace une règle qu'elle contredit au lieu de s'y ajouter, et n'est pas écrite si le code la montre déjà.
 
 ## Écrire une compétence ciblée
 
@@ -25,6 +25,8 @@ $cstack:cstack écris une compétence pour vérifier les migrations de base de d
 ```
 
 Suivez le [guide d'exécution d'auteur de compétence](../../skills/cstack/playbooks/authoring-a-skill.md). Vérifiez le frontmatter, les liens et un exemple réel. Une compétence locale ne doit pas être enregistrée comme compétence globale sans demande explicite.
+
+Pour une règle de discipline, celle qu'un agent est tenté d'écarter sous pression, cstack observe d'abord un échec sans elle : un scénario réaliste qui cumule plusieurs pressions et impose un choix, lancé dans un sous-agent, avec les excuses notées mot pour mot sous `.cstack/`. La règle répond ensuite à ces excuses ; voir [Tester une règle sous pression](../../skills/cstack/references/rule-pressure-tests.md).
 
 ## Écrire une documentation lisible
 
@@ -40,6 +42,6 @@ $cstack:technical-writing relis cette documentation et rends les étapes exécut
 $cstack:cstack exécute le guide d'exécution eval sur cette modification de compétence. Compare les preuves sans révéler les variantes.
 ```
 
-Le [guide d'exécution eval](../../skills/cstack/playbooks/eval.md) teste le comportement dans des répertoires isolés. Relisez les sorties et ne mélangez pas la modification de compétence avec une fonctionnalité produit.
+Le [guide d'exécution eval](../../skills/cstack/playbooks/eval.md) teste le comportement dans des répertoires isolés. Relisez les sorties et ne mélangez pas la modification de compétence avec une fonctionnalité produit. Une règle se compare à la même compétence sans elle, et une règle sans échec de référence observé n'est pas promue.
 
 Suivant : [recettes et pièges](./10-recipes-and-pitfalls.md).

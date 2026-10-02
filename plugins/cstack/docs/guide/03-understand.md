@@ -34,7 +34,9 @@ $cstack:teach comment cette PR change les retries et pourquoi elle corrige la ca
 $cstack:recall mon travail sur l'export de la semaine dernière.
 ```
 
-[`$cstack:recall`](../../skills/recall/SKILL.md) reconstruit le contexte récent à partir des traces disponibles. Il aide à reprendre un sujet, tandis que la reprise d'une tâche précise passe par le guide d'exécution de session.
+[`$cstack:recall`](../../skills/recall/SKILL.md) reconstruit le contexte récent à partir des traces disponibles. Il aide à reprendre un sujet, tandis que la reprise d'une tâche précise passe par le guide d'exécution de session. Il dresse d'abord un index des tâches (date, sujet), puis ne développe que celles qui servent votre demande.
+
+Un passage placé entre `<private>` et `</private>` dans une conversation ou une note n'est jamais extrait : ni `recall`, ni `reflect`, ni `automate-me` ne le citent ou ne le résument.
 
 ## Reprendre un travail précédent
 

@@ -15,6 +15,10 @@ Ce fichier distingue le catalogue courant des campagnes datées. Les nombres his
 
 **Verdicts de vérification et bug bash.** Les règles sont épinglées par le validateur, mais l'essai natif n'a pas encore tourné. Le cas `create_verification_cli_verdicts` génère une skill pour une petite CLI de notes. À observer : la section Preuve générée définit passé, échoué (dont non concluant) et bloqué avec son code ; la consigne impose de piloter `sync` sans `NOTES_TOKEN` ; `sync` sans `NOTES_TOKEN` sort `bloqué` (`auth`) et non comme un bug produit ; l'état final est relu par une observation neuve ; aucun jeton n'apparaît dans les preuves.
 
+**Contexte et mémoire (#85).** Le test du hook vérifie que le rappel `SessionStart` (`compact`, `resume`) nomme le point de reprise ; il échouait avant le changement. Le hook a aussi été lancé à la main sur une session marquée et a rendu le rappel attendu. Les consignes de `reflect` et `recall` (fichier d'instructions actif, budget `project_doc_max_bytes`, index, exclusion `<private>` jusque dans les modèles de reviewers) sont épinglées par le validateur, avec des tests de mutation ; aucun essai natif ne les a encore exercées.
+
+**Workflows (#86).** Les règles (base sans la règle avant une règle de discipline, corps de PR et doc contre diff, sources versionnées et leur déclencheur dans le routeur) sont épinglées par le validateur ; les tests de mutation échouent avec le validateur de `main`. Le cas `authoring_rule_baseline_first` est prêt mais n'a pas tourné. À observer : les routes vers `authoring-a-skill.md` et `rule-pressure-tests.md`, au moins deux sous-agents (la base sans la règle, puis la relance avec elle) et les fichiers `.cstack/tasks/*/pressure/base.md` et `regle-1.md`.
+
 ```sh
 codex debug models > /tmp/cstack-model-catalog.json
 python3 scripts/behavior-scenarios.py --baseline /chemin/plugin-main --proposed plugins/cstack --catalog /tmp/cstack-model-catalog.json --output /tmp/cstack-cases

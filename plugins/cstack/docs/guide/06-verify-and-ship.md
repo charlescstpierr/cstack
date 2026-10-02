@@ -16,7 +16,7 @@ $cstack:cstack ajoute la sortie JSON. La sortie texte reste identique, le JSON s
 $cstack:create-verification-skill
 ```
 
-[`$cstack:create-verification-skill`](../../skills/create-verification-skill/SKILL.md) décrit comment lancer l'application, la piloter comme un utilisateur et capturer une preuve. Il peut s'appuyer sur un harnais existant, un navigateur, un terminal ou HTTP selon le projet.
+[`$cstack:create-verification-skill`](../../skills/create-verification-skill/SKILL.md) décrit comment lancer l'application, la piloter comme un utilisateur et capturer une preuve. Il peut s'appuyer sur un harnais existant, un navigateur, un terminal ou HTTP selon le projet. Chaque pilotage rend `passé`, `échoué` ou `bloqué` avec un code (`auth`, `environnement`, `données`, `budget`, `non pris en charge`) : un pilotage bloqué n'est jamais présenté comme un bug du produit, et un résultat non concluant n'est jamais un succès.
 
 ## Garder cette vérification honnête
 
@@ -25,6 +25,12 @@ $cstack:maintain-verification-skill audite la carte des fonctionnalités et corr
 ```
 
 [`$cstack:maintain-verification-skill`](../../skills/maintain-verification-skill/SKILL.md) relit les sources puis exécute une passe réelle. Il signale un produit défectueux au lieu de masquer le problème dans la compétence.
+
+```text
+$cstack:maintain-verification-skill fais un bug bash sur l'export et la facturation.
+```
+
+Sur demande, la même compétence mène un [bug bash](../../skills/maintain-verification-skill/references/bug-bash.md) : des chartes zone × posture explorées en parallèle, un tri des constats, puis un test de reproduction qui doit échouer sur l'assertion visée pour qu'un bug soit confirmé. Le code produit n'est pas modifié.
 
 ## Enregistrer les modifications
 
@@ -36,9 +42,11 @@ Une demande explicite de ne pas committer, le mode Plan et la lecture seule sont
 
 Préparez un diff court, des commits ordonnés et les preuves. Git et `gh` sont les chemins de référence quand ils sont installés. Avec `$cstack:cstack`, la PR suit la portée de livraison du contrat d’exécution. L'envoi d'un message, la publication, le merge et le déploiement restent des actions séparées.
 
+La description montre le plus petit visuel qui rend le changement clair, l'avant et l'après d'un changement de comportement, et dit si un simple revert suffit à l'annuler. Avant d'ouvrir la PR, cstack compare la documentation au diff : il corrige les chemins, drapeaux, commandes et exemples périmés, et vous soumet tout changement de récit.
+
 ## Amener la PR à un état révisable
 
-Le [guide d'exécution d'ouverture de PR](../../skills/cstack/playbooks/opening-a-pr.md) prépare la livraison. Le [guide d'exécution de suivi](../../skills/cstack/playbooks/babysit.md) traite les conflits, retours et contrôles CI. Il ne fusionne rien sans autorisation.
+Le [guide d'exécution d'ouverture de PR](../../skills/cstack/playbooks/opening-a-pr.md) prépare la livraison. Le [guide d'exécution de suivi](../../skills/cstack/playbooks/babysit.md) traite les conflits, retours et contrôles CI. Il ne fusionne rien sans autorisation. Il s'arrête sur une revue obligatoire ou une protection de branche au lieu de déclarer la PR prête, et reconnaît un dépôt sans CI au lieu d'attendre sans fin.
 
 ## Livrer une pile
 
