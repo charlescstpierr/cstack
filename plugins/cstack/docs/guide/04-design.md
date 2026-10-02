@@ -26,7 +26,7 @@ L'audit d'architecture examine des opportunités ; choisir un candidat autorise 
 $cstack:architect conçois la chaîne d'import avant l'implémentation. Pars de l'utilisation par les appelants.
 ```
 
-[`$cstack:architect`](../../skills/architect/SKILL.md) lit le code concerné, pose les types et les frontières, puis garde la conception utilisable pendant l'implémentation.
+[`$cstack:architect`](../../skills/architect/SKILL.md) lit le code concerné, pose les types et les frontières, puis garde la conception utilisable pendant l'implémentation. Quand la conception dépend d'un framework ou d'une bibliothèque, l'ancrage lit aussi sa version installée et la documentation officielle de cette version.
 
 ## Comparer avec `$cstack:arena`
 
@@ -35,6 +35,8 @@ $cstack:arena propose trois formes pour ce cache. Compare-les sur les invalidati
 ```
 
 [`$cstack:arena`](../../skills/arena/SKILL.md) fait produire plusieurs propositions indépendantes, sélectionne une base et vérifie la synthèse. Utilisez-le quand la première conception risque de verrouiller une mauvaise forme.
+
+Chaque candidat est vérifié contre la base commune avant le jugement : un candidat qui introduit une régression ne devient pas la base, sauf si tous les candidats vérifiables en introduisent une ; ce cas est alors consigné. Le juge voit des candidats anonymes dans un ordre aléatoire, et un second jugement en ordre inverse s'ajoute à partir de trois candidats.
 
 ## Couvrir des tranches avec `$cstack:swarm`
 
@@ -53,6 +55,8 @@ $cstack:interrogate examine cette branche. Ne change rien et signale uniquement 
 [`$cstack:interrogate`](../../skills/interrogate/SKILL.md) sollicite plusieurs angles de revue, puis classe les constats. Rien n'est appliqué automatiquement.
 
 Les trois réviseurs par défaut portent les axes Standards, Spec et contradictoire. Les comités personnalisés conservent exactement leur taille et leurs modèles. Une exigence manquée reste un constat pertinent même si un seul réviseur avait l'axe Spec. La revue du travail courant inclut les fichiers staged, unstaged et non suivis demandés ; une revue de PR ou de branche reste limitée aux commits désignés.
+
+L'axe contradictoire cherche aussi les cas limites atteignables depuis le diff (un ensemble traité en partie, un consommateur d'un élément supprimé) et le trou de vérification : « si ce comportement cassait, quel test échouerait ? ». Un comité de quatre ou cinq réviseurs donne ces lentilles comme axe principal à ses réviseurs supplémentaires.
 
 ## Choisir le niveau de conception
 

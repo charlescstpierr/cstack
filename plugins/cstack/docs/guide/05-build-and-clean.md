@@ -12,6 +12,8 @@ Le [guide d'exécution de bug](../../skills/cstack/playbooks/bug-fix.md) reprodu
 
 Indiquez le déclencheur, les invariants à conserver et la preuve attendue. Cette information permet au guide d'exécution de choisir une étape de reproduction, de caractérisation ou de mesure sans vous faire répéter la procédure.
 
+Quand le changement dépend de la version d'un framework ou d'une bibliothèque, cstack lit d'abord la version installée dans le lockfile ou le manifeste du projet, puis la documentation officielle de cette version. Il cite la page dans son rapport ou la PR, pas dans un commentaire de code, et utilise un outil de documentation connecté s'il en existe un, sans jamais l'installer.
+
 ## Écrire le test utile avec `$cstack:tdd`
 
 ```text

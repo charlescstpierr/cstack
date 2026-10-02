@@ -1,6 +1,6 @@
 # cstack
 
-Les processus de pstack 0.15.5 adaptés aux outils natifs de Codex App et CLI. Plugin `0.7.0`. Version amont épinglée `12d587dfb20741cafc376c42c696c5f6e2a64487`.
+Les processus de pstack 0.15.5 adaptés aux outils natifs de Codex App et CLI. Plugin `0.8.0`. Version amont épinglée `12d587dfb20741cafc376c42c696c5f6e2a64487`.
 
 Les préparations `$cstack:clarify`, `$cstack:domain`, `$cstack:horizon` et `$cstack:audit-architecture` sont disponibles sur demande. La configuration peut préparer un bloc de projet dans `AGENTS.md` et les conventions documentaires, en conservant les instructions existantes. Voir [la configuration](docs/guide/01-setup.md) et [les processus de préparation](docs/guide/04-design.md).
 

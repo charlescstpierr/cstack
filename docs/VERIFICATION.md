@@ -2,7 +2,15 @@
 
 Ce fichier distingue le catalogue courant des campagnes datées. Les nombres historiques restent ceux de leur campagne.
 
-## Non publié (après 0.7.0)
+## État 0.8.0
+
+Le catalogue 0.8.0 contient 29 skills, 23 références de principes et 23 guides d'exécution. La couverture conserve 158 fichiers source, épinglés sur pstack 0.15.5.
+
+Les [preuves 0.8.0](evidence/0.8.0.json) enregistrent **415 tests réussis et cinq ignorés** : 194 tests Python réussis sur 197 collectés, 28 tests Bun racine et 193 tests des assistants. Le validateur du paquet, les faits générés, les deux vérifications de types, la syntaxe Bash, ShellCheck 0.10.0, Actionlint 1.7.12 et l'espacement passent. Les contrôles ont tourné en root dans un conteneur : les quatre tests qui provoquent une erreur de permission par `chmod 000` y sont ignorés ; le cinquième, propre à Python 3.9, est ignoré sous Python 3.11. ShellCheck et Actionlint ont tourné en binaires locaux de mêmes versions (ShellCheck par la roue `shellcheck-py` 0.10.0.1, Actionlint par l'archive officielle dont la somme SHA-256 a été vérifiée) ; la CI les a exécutés dans les images épinglées par digest, avec toute la suite sous Python 3.9, sur le commit `02dd008` ([job 110892727718](https://github.com/charlescstpierr/cstack/actions/runs/37023653588/job/110892727718)). Les commits suivants ne changent que la documentation et cette référence de CI.
+
+`install.sh install --local` puis `doctor` ont tourné avec `codex-cli 0.160.0` dans un `CODEX_HOME` isolé : le diagnostic rapporte `cstack@cstack : installed, enabled 0.8.0`. C'est une observation unique.
+
+Aucune consigne nouvelle de cette version n'a été exercée par un essai natif Codex : l'environnement de travail n'avait pas d'identifiants OpenAI. Les scénarios prêts sont suivis dans le ticket #81, et la campagne du [banc de résultat](OUTCOME-BENCH.md) (ticket #65) n'a pas tourné ; aucun gain de comportement n'est revendiqué. Notes par lot :
 
 **watch-pr (#78).** Le plugin a été installé dans `codex-cli 0.160.0` avec deux `CODEX_HOME` isolés, l'un depuis `main` (`b5d9b63`) et l'autre depuis la branche. Les deux ont été lancés par `scripts/run-tool.sh watch-pr/watch-pr` face à un faux `gh` qui rejoue sept scénarios. Avant le correctif, une revue requise et un `BLOCKED` à CI propre donnaient `READY`, et un dépôt sans CI donnait `status-query` sans fin. Après, ils donnent `review-required` (6), `merge-blocked` (6) et `READY` (0) ; des identifiants refusés restent un échec fermé (7). Aucune vraie PR n'a été lue : l'environnement refusait GraphQL.
 
@@ -14,6 +22,10 @@ Ce fichier distingue le catalogue courant des campagnes datées. Les nombres his
 - `arena_verified_selection` : trois implémentations de `parse_duration` contre un unittest existant. À observer : la vérification de chaque candidat contre la base, des étiquettes anonymes, deux jugements en ordre inverse (cinq enfants au total) et aucune base rouge.
 
 **Verdicts de vérification et bug bash.** Les règles sont épinglées par le validateur, mais l'essai natif n'a pas encore tourné. Le cas `create_verification_cli_verdicts` génère une skill pour une petite CLI de notes. À observer : la section Preuve générée définit passé, échoué (dont non concluant) et bloqué avec son code ; la consigne impose de piloter `sync` sans `NOTES_TOKEN` ; `sync` sans `NOTES_TOKEN` sort `bloqué` (`auth`) et non comme un bug produit ; l'état final est relu par une observation neuve ; aucun jeton n'apparaît dans les preuves.
+
+**Contexte et mémoire (#85).** Le test du hook vérifie que le rappel `SessionStart` (`compact`, `resume`) nomme le point de reprise ; il échouait avant le changement. Le hook a aussi été lancé à la main sur une session marquée et a rendu le rappel attendu. Les consignes de `reflect` et `recall` (fichier d'instructions actif, budget `project_doc_max_bytes`, index, exclusion `<private>` jusque dans les modèles de reviewers) sont épinglées par le validateur, avec des tests de mutation ; aucun essai natif ne les a encore exercées.
+
+**Workflows (#86).** Les règles (base sans la règle avant une règle de discipline, corps de PR et doc contre diff, sources versionnées et leur déclencheur dans le routeur) sont épinglées par le validateur ; les tests de mutation échouent avec le validateur de `main`. Le cas `authoring_rule_baseline_first` est prêt mais n'a pas tourné. À observer : les routes vers `authoring-a-skill.md` et `rule-pressure-tests.md`, au moins deux sous-agents (la base sans la règle, puis la relance avec elle) et les fichiers `.cstack/tasks/*/pressure/base.md` et `regle-1.md`.
 
 ```sh
 codex debug models > /tmp/cstack-model-catalog.json
