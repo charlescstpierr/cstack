@@ -60,6 +60,8 @@ class ModeHookTests(unittest.TestCase):
             text = self.run_hook({"hook_event_name": "SessionStart", "session_id": "s1", "source": source})
             self.assertIn("Mode cstack actif", text)
             self.assertIn("runtime/base.md", text)
+            self.assertIn("point de reprise", text)
+            self.assertIn(".cstack/", text)
 
     def test_failures_never_block_the_message(self):
         self.assertEqual(self.run_hook(None, raw="pas du json"), "")
