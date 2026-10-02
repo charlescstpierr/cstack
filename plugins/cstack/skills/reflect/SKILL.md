@@ -17,7 +17,7 @@ Invoque pour `$cstack:reflect` ou quand l'utilisateur demande une réflexion. Sa
 
 ### 1. Charger l'enregistrement de tâche actif
 
-Utilise les outils natifs d'historique de tâches, bornés au projet et à la tâche actifs, quand ils sont disponibles. Sinon utilise le contexte courant et les checkpoints explicites. Lis une transcription locale seulement quand ses métadonnées correspondent explicitement au projet actif et à la session demandée; n'infère jamais un chemin de transcription et ne scanne pas de projets sans rapport. Si aucun enregistrement n'est disponible, écris un digest serré de la tâche courante et utilise-le.
+Utilise les outils natifs d'historique de tâches, bornés au projet et à la tâche actifs, quand ils sont disponibles. Sinon utilise le contexte courant et les checkpoints explicites. Lis une transcription locale seulement quand ses métadonnées correspondent explicitement au projet actif et à la session demandée; n'infère jamais un chemin de transcription et ne scanne pas de projets sans rapport. Si aucun enregistrement n'est disponible, écris un digest serré de la tâche courante et utilise-le. Exclus les passages `<private>` selon [l'état](../cstack/references/runtime/etat.md).
 
 ### 2. Lancer trois reviewers en parallèle
 

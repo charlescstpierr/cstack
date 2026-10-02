@@ -84,6 +84,8 @@ test("le paquet charge 29 skills et rejette les distributions dangereuses ou inc
       ["plugins/cstack/skills/maintain-verification-skill/SKILL.md", (text: string) => text.replace("n'est jamais un manque produit", "est un manque produit"), /maintain-verification-skill: pilotage bloqué classé comme manque produit/],
       ["plugins/cstack/skills/maintain-verification-skill/references/bug-bash.md", (text: string) => text.replace("**sur l'assertion visée**", "pour une raison quelconque"), /bug-bash: confirmation par assertion visée manquante/],
       ["plugins/cstack/skills/reflect/SKILL.md", (text: string) => text.replace("`project_doc_max_bytes`", "une limite"), /reflect: budget AGENTS\.md de Codex manquant/],
+      ["plugins/cstack/skills/cstack/references/runtime/etat.md", (text: string) => text.replace("est exclu de toute extraction", "peut être extrait"), /état: exclusion des passages <private> manquante/],
+      ["plugins/cstack/skills/recall/SKILL.md", (text: string) => text.replace("rend d'abord un index", "rend tout"), /recall: extraction par index manquante/],
       ["plugins/cstack/skills/maintain-verification-skill/references/bug-bash.md", (text: string) => text.replace("Le code testé ne prouve jamais sa propre intention.", ""), /bug-bash: le code testé accepté comme preuve d’intention/],
       ["plugins/cstack/skills/arena/SKILL.md", (text: string) => text.replace("un échec absent de la base", "un échec"), /arena: comparaison à la base commune manquante/],
       ["plugins/cstack/skills/arena/SKILL.md", (text: string) => text.replace("ne peut pas être recommandé comme base", "peut être recommandé comme base"), /arena: barrière absente du brief du juge/],

@@ -330,6 +330,10 @@ export function validate(root: string): { skills: number; sourceFiles: number } 
   requireValue(bugBash.includes("**sur l'assertion visée**"), "bug-bash: confirmation par assertion visée manquante");
   const reflect = readFileSync(join(plugin, "skills/reflect/SKILL.md"), "utf8");
   requireValue(reflect.includes("`project_doc_max_bytes`"), "reflect: budget AGENTS.md de Codex manquant");
+  const etat = readFileSync(join(plugin, "skills/cstack/references/runtime/etat.md"), "utf8");
+  requireValue(etat.includes("est exclu de toute extraction"), "état: exclusion des passages <private> manquante");
+  const recall = readFileSync(join(plugin, "skills/recall/SKILL.md"), "utf8");
+  requireValue(recall.includes("rend d'abord un index"), "recall: extraction par index manquante");
   requireValue(bugBash.includes("Le code testé ne prouve jamais sa propre intention."), "bug-bash: le code testé accepté comme preuve d’intention");
   const names = new Set<string>();
   const skillUi: Array<{ policyPath: string; name: string; display: string }> = [];

@@ -27,7 +27,7 @@ Le mode mise à jour change le reste du flux :
 
 ### 1. Extraire son historique
 
-Utilise les outils natifs d'historique de tâches bornées au projet actif quand ils sont disponibles. Sinon, utilise le contexte de la tâche courante et les checkpoints explicites. Lis les fichiers de transcription locaux seulement quand leurs métadonnées correspondent explicitement au projet actif et à la session demandée; ne devine jamais un chemin de stockage et ne scanne pas de projets sans rapport.
+Utilise les outils natifs d'historique de tâches bornées au projet actif quand ils sont disponibles. Sinon, utilise le contexte de la tâche courante et les checkpoints explicites. Lis les fichiers de transcription locaux seulement quand leurs métadonnées correspondent explicitement au projet actif et à la session demandée; ne devine jamais un chemin de stockage et ne scanne pas de projets sans rapport. Exclus les passages `<private>` selon [l'état](../cstack/references/runtime/etat.md).
 
 Examine uniquement la période demandée pour chercher les motifs récurrents. Parallélise des tranches bornées d'historique quand le corpus est assez grand pour que ça aide. Chaque sous-agent d'extraction renvoie une courte liste structurée avec des pointeurs de preuve. Signaux par défaut qui valent la peine d'être cherchés :
 
