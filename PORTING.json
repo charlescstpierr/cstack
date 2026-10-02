@@ -1309,6 +1309,10 @@
     {
       "path": "plugins/cstack/hooks/mode.py",
       "reason": "Mode reminder hook script: silent outside conversations that invoked $cstack:cstack, stores only hashed session ids under PLUGIN_DATA; not present in pstack."
+    },
+    {
+      "path": "plugins/cstack/skills/maintain-verification-skill/references/bug-bash.md",
+      "reason": "Protocole de bug bash propre à cstack, lu à la demande ; méthode inspirée de tester-army/e2e (voir NOTICE.md), sans texte copié."
     }
   ]
 }

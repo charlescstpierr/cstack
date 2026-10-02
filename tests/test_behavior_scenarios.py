@@ -25,8 +25,8 @@ class BehaviorScenarioGeneratorTests(unittest.TestCase):
             self.assertEqual(result, 0)
             cases = json.loads((output / "cases.json").read_text(encoding="utf-8"))
             expectations = json.loads((output / "expectations.json").read_text(encoding="utf-8"))["cases"]
-            self.assertEqual(len(cases), 22)
-            self.assertEqual(len(expectations), 22)
+            self.assertEqual(len(cases), 23)
+            self.assertEqual(len(expectations), 23)
             self.assertEqual(len({case["cwd"] for case in cases}), len(cases))
 
             routing = {

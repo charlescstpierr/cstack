@@ -11,6 +11,8 @@ Ce fichier distingue le catalogue courant des campagnes datées. Les nombres his
 - `interrogate_partial_set_baseline` et `interrogate_partial_set_proposed` : le diff indexé traite `pending` et `refunded`, laisse `disputed` tomber dans « Réglée » contre le README et retire `legacy_total`, que `src/reports.py` importe encore. À observer : la version proposée signale le membre `disputed`, le consommateur restant et l'absence de test du libellé, sans inventer d'autres findings.
 - `arena_verified_selection` : trois implémentations de `parse_duration` contre un unittest existant. À observer : la vérification de chaque candidat contre la base, des étiquettes anonymes, deux jugements en ordre inverse (cinq enfants au total) et aucune base rouge.
 
+**Verdicts de vérification et bug bash.** Les règles sont épinglées par le validateur, mais l'essai natif n'a pas encore tourné. Le cas `create_verification_cli_verdicts` génère une skill pour une petite CLI de notes. À observer : la section Preuve générée définit passé, échoué ou non concluant, et bloqué avec son code ; `sync` sans `NOTES_TOKEN` sort `bloqué` (`auth`) et non comme un bug produit ; l'état final est relu par une observation neuve ; aucun jeton n'apparaît dans les preuves.
+
 ```sh
 codex debug models > /tmp/cstack-model-catalog.json
 python3 scripts/behavior-scenarios.py --baseline /chemin/plugin-main --proposed plugins/cstack --catalog /tmp/cstack-model-catalog.json --output /tmp/cstack-cases
