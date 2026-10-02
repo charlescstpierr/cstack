@@ -133,5 +133,15 @@
         "test_behavior_runner.BehaviorRunnerTests.test_python39_requires_tomllib_to_parse_config"
       ]
     }
-  ]
+  ],
+  "ci": {
+    "commit": "02dd0086722e1bcfa190cad6b104d2b58b2ac02a",
+    "workflow": ".github/workflows/validate.yml",
+    "job_id": 110892727718,
+    "run_id": 37023653588,
+    "conclusion": "success",
+    "python": "3.9",
+    "shellcheck_image": "koalaman/shellcheck:v0.10.0@sha256:2097951f02e735b613f4a34de20c40f937a6c8f18ecb170612c88c34517221fb",
+    "actionlint_image": "rhysd/actionlint:1.7.12@sha256:b1934ee5f1c509618f2508e6eb47ee0d3520686341fec936f3b79331f9315667"
+  }
 }
