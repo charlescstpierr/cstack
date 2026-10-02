@@ -305,6 +305,45 @@ class OutcomeBenchTests(unittest.TestCase):
         self.assertEqual(cstack["unstable_tasks"], ["b"])
         self.assertEqual(outcome_bench.summarize(rows)["arms"]["vanilla"]["unstable_tasks"], [])
 
+    def test_pass_all_requires_every_expected_repetition(self):
+        def row(task, resolved, status="completed"):
+            return {"task_id": task, "arm": "cstack", "resolved": resolved, "agent_status": status, "tokens": 1,
+                    "wall_seconds": 1, "diff": {"lines_added": 0, "lines_removed": 0, "hidden_paths_touched": []}}
+        rows = [row("a", True), row("a", False, status="infra_error"), row("b", True), row("b", True)]
+        cstack = outcome_bench.summarize(rows, repetitions=2)["arms"]["cstack"]
+        self.assertEqual(cstack["incomplete_tasks"], ["a"])
+        self.assertEqual(cstack["pass_all"], 1)
+        self.assertEqual(cstack["pass_all_rate"], 1.0)
+        self.assertEqual(cstack["complete_tasks"], 1)
+        only_partial = outcome_bench.summarize([row("a", True)], repetitions=2)["arms"]["cstack"]
+        self.assertEqual(only_partial["pass_all"], 0)
+        self.assertIsNone(only_partial["pass_all_rate"])
+
+    def test_report_counts_tasks_missing_a_repetition_as_incomplete(self):
+        output = self.root / "partial"
+        output.mkdir()
+        manifest = {"tasks": ["t0"], "arms": ["cstack"], "repetitions": 2, "seed": 5}
+        (output / "manifest.json").write_text(json.dumps(manifest))
+        row = {"run_id": "t0--cstack--r1", "task_id": "t0", "arm": "cstack", "resolved": True,
+               "agent_status": "completed", "diff": {"lines_added": 0, "lines_removed": 0, "hidden_paths_touched": []}}
+        (output / "results.jsonl").write_text(json.dumps(row) + "\n")
+        outcome_bench.main(["report", "--output", str(output)])
+        cstack = json.loads((output / "summary.json").read_text())["arms"]["cstack"]
+        self.assertEqual(cstack["incomplete_tasks"], ["t0"])
+        self.assertIsNone(cstack["pass_all_rate"])
+
+    def test_pair_statistics_use_unrounded_task_rates(self):
+        def row(task, arm, resolved):
+            return {"task_id": task, "arm": arm, "resolved": resolved, "agent_status": "completed", "tokens": 1,
+                    "wall_seconds": 1, "diff": {"lines_added": 0, "lines_removed": 0, "hidden_paths_touched": []}}
+        rows = []
+        for _ in range(3):
+            rows += [row("x", "vanilla", False), row("x", "cstack", True)]
+        rows += [row("y", "vanilla", False)] * 3
+        rows += [row("y", "cstack", True), row("y", "cstack", False), row("y", "cstack", False)]
+        paired = outcome_bench.summarize(rows)["paired"]["cstack_vs_vanilla"]
+        self.assertEqual(paired["mean_rate_difference"], 0.667)
+
     def test_summary_bootstraps_a_seeded_interval_on_paired_task_differences(self):
         def row(task, arm, resolved):
             return {"task_id": task, "arm": arm, "resolved": resolved, "agent_status": "completed", "tokens": 1,

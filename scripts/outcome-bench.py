@@ -613,7 +613,8 @@ def bootstrap_interval(differences: list[float], seed: int) -> list[float] | Non
             round(means[int(0.975 * BOOTSTRAP_RESAMPLES) - 1], 3)]
 
 
-def summarize(results: list[dict[str, Any]], expected: set[str] | None = None, seed: int = 0) -> dict[str, Any]:
+def summarize(results: list[dict[str, Any]], expected: set[str] | None = None, seed: int = 0,
+              repetitions: int | None = None) -> dict[str, Any]:
     arms: dict[str, Any] = {}
     by_arm: dict[str, list[dict[str, Any]]] = {}
     counted_by_arm: dict[str, list[dict[str, Any]]] = {}
@@ -629,10 +630,13 @@ def summarize(results: list[dict[str, Any]], expected: set[str] | None = None, s
         rows = counted_by_arm.get(arm, [])
         everything = by_arm[arm]
         resolved = [row for row in rows if row.get("resolved")]
-        task_outcomes: dict[str, set[bool]] = {}
+        task_outcomes: dict[str, list[bool]] = {}
         for row in rows:
-            task_outcomes.setdefault(row["task_id"], set()).add(bool(row.get("resolved")))
-        pass_all = sum(1 for outcomes in task_outcomes.values() if outcomes == {True})
+            task_outcomes.setdefault(row["task_id"], []).append(bool(row.get("resolved")))
+        # Sans le nombre de répétitions du manifeste, la tâche la plus fournie du bras sert de référence.
+        required = repetitions or max((len(outcomes) for outcomes in task_outcomes.values()), default=0)
+        complete = {task: outcomes for task, outcomes in task_outcomes.items() if len(outcomes) >= required}
+        pass_all = sum(1 for outcomes in complete.values() if all(outcomes))
         tokens = [row["tokens"] for row in rows if isinstance(row.get("tokens"), int)]
         walls = [row["wall_seconds"] for row in rows if isinstance(row.get("wall_seconds"), (int, float))]
         arms[arm] = {
@@ -640,9 +644,11 @@ def summarize(results: list[dict[str, Any]], expected: set[str] | None = None, s
             "resolved": len(resolved),
             "resolved_rate": round(len(resolved) / len(rows), 3) if rows else None,
             "tasks": len(task_outcomes),
+            "complete_tasks": len(complete),
+            "incomplete_tasks": sorted(set(task_outcomes) - set(complete)),
             "pass_all": pass_all,
-            "pass_all_rate": round(pass_all / len(task_outcomes), 3) if task_outcomes else None,
-            "unstable_tasks": sorted(task for task, outcomes in task_outcomes.items() if len(outcomes) > 1),
+            "pass_all_rate": round(pass_all / len(complete), 3) if complete else None,
+            "unstable_tasks": sorted(task for task, outcomes in task_outcomes.items() if len(set(outcomes)) > 1),
             "infra_errors": sum(1 for row in everything if row.get("agent_status") == "infra_error"),
             "possible_leaks": sum(1 for row in everything if row.get("possible_leak")),
             "settings_mismatches": sum(1 for row in everything if row.get("settings_mismatch")),
@@ -659,17 +665,21 @@ def summarize(results: list[dict[str, Any]], expected: set[str] | None = None, s
             ) if rows else None,
             "runs_touching_hidden_paths": sum(1 for row in rows if row["diff"]["hidden_paths_touched"]),
         }
-    per_task = {}
+    exact_rates: dict[str, dict[str, float | None]] = {}
     for task_id in sorted({task_id for task_id, _ in by_task}):
-        rates = {}
+        rates: dict[str, float | None] = {}
         for arm in present:
             rows = by_task.get((task_id, arm), [])
-            rates[arm] = round(sum(1 for row in rows if row.get("resolved")) / len(rows), 3) if rows else None
-        per_task[task_id] = rates
+            rates[arm] = sum(1 for row in rows if row.get("resolved")) / len(rows) if rows else None
+        exact_rates[task_id] = rates
+    per_task = {
+        task_id: {arm: round(rate, 3) if rate is not None else None for arm, rate in rates.items()}
+        for task_id, rates in exact_rates.items()
+    }
     paired = {}
     for index, left in enumerate(present):
         for right in present[index + 1:]:
-            both = [rates for rates in per_task.values() if rates.get(left) is not None and rates.get(right) is not None]
+            both = [rates for rates in exact_rates.values() if rates.get(left) is not None and rates.get(right) is not None]
             differences = [rates[right] - rates[left] for rates in both]
             paired[f"{right}_vs_{left}"] = {
                 "tasks": len(both),
@@ -691,7 +701,7 @@ def summarize(results: list[dict[str, Any]], expected: set[str] | None = None, s
             "Échantillon petit : l’écart doit être large et cohérent entre tâches pour être interprété.",
             "infra_error, possible_leak et settings_mismatch sont exclus des dénominateurs et comptés à part.",
             "Les tokens viennent des métadonnées natives ; tokens_known indique leur couverture.",
-            "pass_all_rate est la part des tâches résolues à toutes les répétitions ; unstable_tasks liste celles dont les répétitions divergent.",
+            "pass_all_rate est la part des tâches résolues à toutes les répétitions, calculée sur les seules tâches dont toutes les répétitions comptent ; incomplete_tasks liste les autres, unstable_tasks celles dont les répétitions divergent.",
             "ci95 est un intervalle bootstrap percentile, initialisé par la graine du manifeste, sur l’écart moyen de taux de résolution par tâche ; un intervalle qui contient 0 ne montre pas d’écart.",
         ],
     }
@@ -858,7 +868,8 @@ def command_run(args: argparse.Namespace) -> int:
             row = {**run, "agent_status": "infra_error", "agent_error": str(error), "resolved": False}
         append_result(results_path, runner.scrub(row))
         print(f"[{run['run_id']}] {row['agent_status']} résolu={row.get('resolved')}", flush=True)
-    write_json(output / "summary.json", summarize(load_results(results_path), expected_runs(manifest), seed=manifest["seed"]))
+    write_json(output / "summary.json", summarize(load_results(results_path), expected_runs(manifest), seed=manifest["seed"],
+                                                repetitions=manifest["repetitions"]))
     print(f"résumé : {output / 'summary.json'}", flush=True)
     return 0
 
@@ -869,7 +880,8 @@ def command_report(args: argparse.Namespace) -> int:
     if not manifest_path.is_file():
         raise BenchError(f"aucune campagne sous {output} : manifest.json absent")
     manifest = read_json(manifest_path)
-    summary = summarize(load_results(output / "results.jsonl"), expected_runs(manifest), seed=manifest["seed"])
+    summary = summarize(load_results(output / "results.jsonl"), expected_runs(manifest), seed=manifest["seed"],
+                        repetitions=manifest["repetitions"])
     if not summary["complete"]:
         print(f"outcome-bench: campagne incomplète, {len(summary['missing_runs'])} run(s) manquant(s)", file=sys.stderr)
     write_json(output / "summary.json", summary)
