@@ -30,7 +30,7 @@ $cstack:maintain-verification-skill audite la carte des fonctionnalités et corr
 $cstack:maintain-verification-skill fais un bug bash sur l'export et la facturation.
 ```
 
-Sur demande, la même compétence mène un [bug bash](../../skills/maintain-verification-skill/references/bug-bash.md) : des chartes zone × posture explorées en parallèle, un tri des constats, puis un test de reproduction qui doit échouer sur l'assertion visée pour qu'un bug soit confirmé. Le code produit n'est pas modifié.
+Sur demande, la même compétence mène un [bug bash](../../skills/maintain-verification-skill/references/bug-bash.md) : des chartes zone × posture, explorées en parallèle quand l'application peut tourner en plusieurs instances indépendantes, sinon l'une après l'autre, un tri des constats, puis un test de reproduction qui doit échouer sur l'assertion visée pour qu'un bug soit confirmé. Le code produit n'est pas modifié.
 
 ## Enregistrer les modifications
 
@@ -42,7 +42,7 @@ Une demande explicite de ne pas committer, le mode Plan et la lecture seule sont
 
 Préparez un diff court, des commits ordonnés et les preuves. Git et `gh` sont les chemins de référence quand ils sont installés. Avec `$cstack:cstack`, la PR suit la portée de livraison du contrat d’exécution. L'envoi d'un message, la publication, le merge et le déploiement restent des actions séparées.
 
-La description montre le plus petit visuel qui rend le changement clair, l'avant et l'après d'un changement de comportement, et dit si un simple revert suffit à l'annuler. Avant d'ouvrir la PR, cstack compare la documentation au diff : il corrige les chemins, drapeaux, commandes et exemples périmés, et vous soumet tout changement de récit.
+Quand le texte seul ne suffit pas, la description montre le plus petit visuel qui rend le changement clair. Elle montre aussi l'avant et l'après d'un changement de comportement, et dit si un simple revert suffit à l'annuler. Avant d'ouvrir la PR, cstack compare la documentation au diff : il corrige les chemins, drapeaux, commandes et exemples périmés, et vous soumet tout changement de récit.
 
 ## Amener la PR à un état révisable
 

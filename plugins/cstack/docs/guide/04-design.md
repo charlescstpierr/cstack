@@ -36,7 +36,7 @@ $cstack:arena propose trois formes pour ce cache. Compare-les sur les invalidati
 
 [`$cstack:arena`](../../skills/arena/SKILL.md) fait produire plusieurs propositions indépendantes, sélectionne une base et vérifie la synthèse. Utilisez-le quand la première conception risque de verrouiller une mauvaise forme.
 
-Chaque candidat est vérifié contre la base commune avant le jugement : un candidat qui introduit une régression ne peut pas devenir la base. Le juge voit des candidats anonymes dans un ordre aléatoire, et un second jugement en ordre inverse s'ajoute à partir de trois candidats.
+Chaque candidat est vérifié contre la base commune avant le jugement : un candidat qui introduit une régression ne devient pas la base, sauf si tous les candidats vérifiables en introduisent une ; ce cas est alors consigné. Le juge voit des candidats anonymes dans un ordre aléatoire, et un second jugement en ordre inverse s'ajoute à partir de trois candidats.
 
 ## Couvrir des tranches avec `$cstack:swarm`
 
