@@ -52,16 +52,17 @@ Exporte une copie assainie vers un chemin de rapport suivi seulement quand l'uti
 - Ajout seulement. Un mauvais choix reçoit une nouvelle ligne qui le remplace. Ne modifie ou supprime jamais l'historique.
 - Préfère les preuves produites par des scripts committés aux one-offs faits à la main (référence de principe [encoder les leçons dans la structure](../cstack/references/principles/encode-lessons-in-structure.md)).
 
+Une exécution est une conversation d'agent, avec ses tours suivants et tout résumé d'elle. Une reprise, un agent de remplacement ou une nouvelle conversation démarre une nouvelle exécution. Quand une exécution ajoute à un journal qui a déjà des lignes, sa première ligne a la phase `start`, de même que sa première ligne après la ligne `start` d'une autre exécution. Une exécution qui revient au journal lors d'un tour ultérieur lit donc d'abord les dernières lignes pour voir si une autre exécution a écrit entre-temps. Une ligne `start` nomme la plage `ts` des lignes précédentes que cette exécution n'a pas écrites, et sa preuve nomme cette exécution, par exemple son identifiant d'agent. N'utilise la phase `start` pour rien d'autre.
+
 ## Auditer le journal contre le registre de tâche
 
-À la fin de l'exécution, vérifie que le journal dit la vérité. Préfère les outils natifs d'historique de tâches bornées à ce projet et à cette tâche. Sinon, utilise le contexte courant et les checkpoints. Lis une transcription locale seulement quand ses métadonnées correspondent explicitement à ce projet et à cette session; n'infère jamais un chemin de stockage et ne scanne pas de projets sans rapport. Compare le journal avec ce qui s'est vraiment passé :
+À la fin de l'exécution, vérifie que le journal dit la vérité. Préfère les outils natifs d'historique de tâches bornées à ce projet et à cette tâche. Sinon, utilise le contexte courant et les checkpoints. Lis une transcription locale seulement quand ses métadonnées correspondent explicitement à ce projet et à cette session; n'infère jamais un chemin de stockage et ne scanne pas de projets sans rapport. Compare les lignes de cette exécution avec ce qui s'est vraiment passé. Chaque tronçon de ces lignes commence à l'une de ses lignes `start`, ou à la première ligne si cette exécution a créé le journal, et finit à la ligne `start` suivante d'une autre exécution :
 
-- Chaque ligne correspond à une vraie action. Coupe les entrées inventées ou aspirationnelles.
-- La preuve de chaque ligne se résout et montre ce que la ligne affirme.
+- Vérifie que chaque ligne correspond à une vraie décision ou action.
+- Vérifie que la preuve de chaque ligne se résout et montre ce que la ligne affirme.
 - Un embranchement, pivot ou approche abandonnée qui a façonné le travail sans être journalisé est un manque. Ajoute-le.
-- Supprime le remplissage.
 
-Corrige le journal, pas l'histoire. Si le travail a diverge de ce qu'une ligne affirme, la ligne est fausse.
+Corrige le journal, pas l'histoire. L'audit ne modifie ni ne retire jamais une ligne, même inventée. Quand une ligne n'enregistre ni vraie décision ni vraie action, ou que son affirmation ou sa preuve est fausse, ajoute une ligne qui la remplace avec ce qui s'est vraiment passé et un renvoi qui se résout. Cet audit ne vérifie pas les lignes hors des tronçons de cette exécution ; si le travail de cette exécution montre que l'une d'elles est fausse, remplace-la comme tout mauvais choix.
 
 ## Revue indépendante de la trace
 
