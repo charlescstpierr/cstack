@@ -12,9 +12,9 @@ Le panneau par défaut contient trois reviewers avec ces responsabilités :
 
 - Reviewer 1 : Standards, en utilisant les sources de standards fournies par le dépôt.
 - Reviewer 2 : Spec, en utilisant seulement les preuves d'exigences approuvées. Sans source approuvée, rapporte l'écart de preuve et n'invente pas d'exigences.
-- Reviewer 3 : Adversarial, couvrant exactitude, sécurité, cause racine, vérification et maintenabilité.
+- Reviewer 3 : Adversarial, couvrant exactitude, cas limites atteignables depuis le diff, sécurité, cause racine, trou de vérification et maintenabilité.
 
-Pour un panneau à deux reviewers, combine Adversarial avec Standards et garde Spec séparé. Pour un panneau à un reviewer, couvre tous les axes en une passe et divulgue qu'il n'y a pas de revues d'axes indépendantes. Pour un panneau plus grand que trois, garde ces trois premières affectations et donne une couverture complète à chaque reviewer additionnel. Chaque reviewer peut rapporter une finding à fort impact d'un autre axe quand les preuves le soutiennent, tout en gardant l'axe assigné comme principal. Cela préserve le compte configuré; n'ajoute pas un second panneau "Matt".
+Pour un panneau à deux reviewers, combine Adversarial avec Standards et garde Spec séparé. Pour un panneau à un reviewer, couvre tous les axes en une passe et divulgue qu'il n'y a pas de revues d'axes indépendantes. Pour un panneau plus grand que trois, garde ces trois premières affectations. Le quatrième reviewer prend comme axe principal les cas limites atteignables depuis le diff, le cinquième le trou de vérification ; chaque reviewer additionnel reçoit une couverture complète. Chaque reviewer peut rapporter une finding à fort impact d'un autre axe quand les preuves le soutiennent, tout en gardant l'axe assigné comme principal. Cela préserve le compte configuré; n'ajoute pas un second panneau "Matt".
 
 ## Synthèse par axe
 

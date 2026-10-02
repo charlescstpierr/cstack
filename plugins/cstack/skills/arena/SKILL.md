@@ -15,7 +15,7 @@ Suis un élément par phase dans la tâche courante avant de lancer quoi que ce 
 
 1. Cadrer
 2. Déployer
-3. Juger croisé
+3. Vérifier chaque candidat, puis juger croisé
 4. Choisir
 5. Greffer
 6. Vérifier
@@ -37,19 +37,25 @@ Chaque raisonnement nomme les alternatives envisagées par le candidat et ce qu'
 
 Si un candidat ne produit rien, continue avec N-1 et note l'abandon dans le registre de synthèse.
 
-## Phase C : Juger croisé
+## Phase C : Vérifier chaque candidat, puis juger croisé
 
-Une fois tous les candidats de la phase B terminés, lance un juge en revue seule (`arena cross-judge pool`). Il voit la grille et les candidats par étiquette de chemin, note chaque critère et recommande une base avec son raisonnement. Il peut tourner pendant la lecture du parent en phase D. Ne le lance pas pendant que les candidats écrivent encore.
+Une fois tous les candidats de la phase B terminés, gèle leurs sorties.
+
+1. **Vérifier chaque candidat.** Quand l'artefact est exécutable ou vérifiable, lance la même vérification du projet (tests, typecheck, commande VERIFY) dans l'emplacement de chaque candidat, et note pour chacun vert, rouge avec l'échec, ou non vérifiable avec la raison. Une conception sans contrôle exécutable est non vérifiable ; ne la déclare pas verte.
+2. **Anonymiser.** Donne aux candidats des étiquettes neutres tirées dans un ordre aléatoire (`cand-A`, `cand-B`…). Retire des chemins, raisonnements et rapports transmis au juge les noms de runtime, de modèle et de reçu. Garde la correspondance étiquette → candidat pour toi seul.
+3. **Juger.** Lance un juge en revue seule (`arena cross-judge pool`). Il voit la grille, les candidats anonymisés et leurs résultats de vérification, note chaque critère et recommande une base avec son raisonnement. À partir de trois candidats, lance un second jugement indépendant qui reçoit les candidats dans l'ordre inverse. Si les deux jugements ne recommandent pas la même base, c'est un signal de biais de position ou d'une grille ambiguë : consigne-le pour la phase D.
+
+Le juge peut tourner pendant la lecture du parent en phase D. Ne le lance pas pendant que les candidats écrivent encore.
 
 ## Phase D : Choisir une base
 
 Lis chaque candidat de bout en bout avant de choisir.
 
-Note chaque candidat selon la grille, critère par critère, pas au ressenti global. Compare avec le juge croisé. Un accord sur la base confirme le choix. Un désaccord signifie que l'un de vous est biaisé ou que la grille était ambiguë. Lis les deux raisonnements avant de décider.
+Note chaque candidat selon la grille, critère par critère, pas au ressenti global. Un candidat rouge à la vérification de la phase C ne peut pas devenir la base, sauf si tous les candidats vérifiables sont rouges ; dis-le alors dans la note de synthèse. Ses bonnes idées restent greffables en phase E. Compare avec le juge croisé. Un accord sur la base confirme le choix. Un désaccord signifie que l'un de vous est biaisé ou que la grille était ambiguë. Lis les deux raisonnements avant de décider.
 
 Choisis comme base le candidat qu'un futur mainteneur pourra étendre le plus facilement sans casser les invariants. Quand deux candidats semblent à égalité, préfère la frontière la plus nette ou la plus petite API, selon le Laziness Protocol.
 
-Consigne le choix et sa raison dans une courte note de synthèse à côté de l'artefact de base, avec le verdict du juge croisé.
+Consigne le choix et sa raison dans une courte note de synthèse à côté de l'artefact de base, avec les résultats de vérification par candidat et le verdict du juge croisé, ou les deux verdicts et leur désaccord éventuel.
 
 ## Phase E : Greffer
 
@@ -69,4 +75,4 @@ Si la vérification révèle un problème que l'arena n'a pas attrapé, soit la 
 
 ## Sorties
 
-Un artefact synthétisé. Une courte note de synthèse à côté, nommant la base, les greffes (avec le candidat source), les rejets, les abandons s'il y en a et le résultat de vérification. Chaque affirmation porte sa preuve ou son étiquette : mesuré, inféré ou supposition (toute prédiction ou cause non observée) ; Ne donne jamais à l'humain une vérification que tu pourrais exécuter.
+Un artefact synthétisé. Une courte note de synthèse à côté, nommant la base, les greffes (avec le candidat source), les rejets, les abandons s'il y en a, la vérification de chaque candidat et le résultat de vérification final. Chaque affirmation porte sa preuve ou son étiquette : mesuré, inféré ou supposition (toute prédiction ou cause non observée) ; Ne donne jamais à l'humain une vérification que tu pourrais exécuter.

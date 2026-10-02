@@ -24,6 +24,14 @@ Le code fait-il réellement ce que l'intention dit qu'il doit faire ?
 
 Quand tu trouves un bug potentiel, trace le chemin d'exécution. Ne signale pas seulement "ceci pourrait être nil". Montre la chaîne d'appels qui le rend nil.
 
+## Cas limites atteignables depuis le diff
+
+Pars de chaque hunk et suis les branches et bornes qu'il ouvre. Rapporte seulement les cas non gérés et atteignables ; ne juge pas ici si le code est beau.
+
+- Pour chaque condition, chaque `switch` ou `match` et chaque valeur limite introduits ou modifiés, demande quelle entrée prend l'autre branche et ce qui se passe alors.
+- Ensembles traités en partie : quand le diff gère explicitement certains membres d'un ensemble fixe (enum, union de types, codes de statut, sentinelles, drapeaux, états), énumère l'ensemble complet depuis sa définition et vérifie le sort de chaque membre restant. Un membre qui tombe silencieusement dans un défaut ou une branche vide est une finding si un chemin l'atteint.
+- Suppressions : quand le diff retire ou renomme une fonction, un champ, une option, une clé de configuration ou une branche, cherche ses consommateurs restants (code, tests, docs, scripts) et rapporte ceux qui en dépendent encore.
+
 ## Causes racines vs symptômes
 
 Le code corrige-t-il le vrai problème ou masque-t-il un symptôme ?
@@ -53,6 +61,8 @@ Ne pénalise pas du code simple pour absence d'abstraction. L'abstraction préma
 ## Vérification
 
 Peux-tu dire que ce code fonctionne en le lisant ?
+
+Pour chaque comportement ajouté ou modifié, pose la question du trou de vérification : si ce comportement cassait, quel test échouerait ? Nomme le test, ou rapporte le comportement comme non couvert. C'est un écart de couverture, pas un bug ; étiquette-le ainsi. Ne réclame pas de test qui cherche un libellé dans un prompt ou un fichier source, ni de test qui interroge un modèle en direct et juge sa réponse : ces tests ne vérifient rien. Une assertion de contenu exact reste légitime quand du code déterministe produit ce contenu. Un test existant affaibli par le diff est une finding.
 
 - Y a-t-il des tests ? Testent-ils le comportement ou les détails d'implémentation ?
 - Y a-t-il des assertions/invariants qui attraperaient les régressions ?

@@ -309,6 +309,15 @@ export function validate(root: string): { skills: number; sourceFiles: number } 
   requireValue(makeBotUi.includes("codex exec resume") && makeBotUi.includes('"$SESSION_ID"'), "make-bot-ui: reprise par SESSION_ID manquante");
   requireValue(makeBotUi.includes('PROMPT_TEXT=$(<"$PROMPT_FILE")'), "make-bot-ui: lecture du contenu du prompt file manquante");
   requireValue(!makeBotUi.includes('"$PROMPT"'), "make-bot-ui: le chemin du prompt file ne doit pas être passé comme prompt");
+  const arena = readFileSync(join(plugin, "skills/arena/SKILL.md"), "utf8");
+  requireValue(arena.includes("ne peut pas devenir la base"), "arena: barrière de vérification par candidat manquante");
+  requireValue(arena.includes("dans l'ordre inverse"), "arena: second jugement en ordre inverse manquant");
+  requireValue(arena.includes("Retire des chemins"), "arena: anonymisation des candidats manquante");
+  const rubric = readFileSync(join(plugin, "skills/interrogate/references/rubric.md"), "utf8");
+  requireValue(rubric.includes("quel test échouerait"), "interrogate: lentille du trou de vérification manquante");
+  requireValue(rubric.includes("Ensembles traités en partie"), "interrogate: lentille des cas limites manquante");
+  const reviewerPrompt = readFileSync(join(plugin, "skills/interrogate/references/reviewer-prompt.md"), "utf8");
+  requireValue(reviewerPrompt.includes("Zéro finding reste une réponse valide."), "interrogate: méthode pistes puis preuve manquante");
   const names = new Set<string>();
   const skillUi: Array<{ policyPath: string; name: string; display: string }> = [];
   for (const path of skills) {
