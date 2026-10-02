@@ -8,6 +8,17 @@ Exécute la commande modèle `show`, avec `--claude-ready` quand l'inventaire tr
 
 Montre, après le tableau des propositions, les autres modèles/efforts confirmés disponibles pour personnaliser ces choix. Pour un rôle absent de la configuration actuelle, indique qu’il hérite actuellement du parent. Propose dans cet ordre : accepter toutes les recommandations disponibles, choisir des groupes, personnaliser par rôle ou position de panel, conserver la configuration actuelle, utiliser l’héritage pour les rôles sélectionnés, ou annuler. Préserve les rôles non sélectionnés. Si aucun modèle n’a pu être découvert, explique l’échec de découverte avant de proposer l’héritage.
 
+## Budget de raisonnement
+
+Avant le tableau des propositions, demande un budget avec ces quatre choix, en nommant le budget courant quand il se déduit de la configuration (tous les efforts explicites identiques ; sinon « personnalisé ») :
+
+- `illimité — conserver max`
+- `large — effort xhigh`
+- `moyen — effort high`
+- `réduit — effort medium`
+
+`illimité` laisse les efforts tels que les propose le tableau. `large`, `moyen` et `réduit` fixent l'effort cible de chaque sélection à modèle explicite, positions de panel comprises, sur l'échelle `max` > `xhigh` > `high` > `medium` > `low`. Si le catalogue live ne propose pas cet effort pour ce modèle, prends l'effort disponible le plus élevé en dessous de la cible ; s'il n'y en a aucun, marque la position comme choix requis. L'héritage (`inherit-parent`), une sélection de modèle sans effort et une sélection CLI sans effort ne changent pas. Le budget s'applique seulement aux rôles que l'utilisateur sélectionne, et `models.py apply` le valide contre le catalogue comme tout autre choix.
+
 ## Recommandations
 
 Ces choix sont facultatifs et valides contre le catalogue live avant sélection :
