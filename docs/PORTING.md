@@ -1,8 +1,10 @@
 # Portage de pstack vers cstack
 
-Source : pstack 0.15.2, commit `889ec4b68fa5aab0e867dad71ec3fdf386ae48f3` de `cursor/plugins`. Pin précédent : 0.15.0, `27e2a62ff94f9af4b5e68435e41cdceacadb840c`.
+Source : pstack 0.15.5, commit `12d587dfb20741cafc376c42c696c5f6e2a64487` de `cursor/plugins`. Pin précédent : 0.15.2, `889ec4b68fa5aab0e867dad71ec3fdf386ae48f3`.
 
 `UPSTREAM.json` enregistre les 158 fichiers source et leurs identifiants Git. `PORTING.json` associe chaque fichier à une destination avec un statut et une raison. Aucun sous-ensemble issu du portage ChatGPT Web n'est utilisé comme base.
+
+Le repin 0.15.2 vers 0.15.5 apporte cinq commits amont, portés à la main en français puis appliqués par le synchroniseur (45 cibles, résolution `write` du texte porté). `5bf2b15` (#366) ajoute la question de budget du setup, portée sans écrire de budget dans `models.json`. `70b2dc8` (#414) ajoute les rondes de vérification à partir du head code-ready, les règles de rebase, `children.tsv`, au moins deux voies d'audit, la règle du bruit de build et les briefs Swarm qui nomment SHA et méthode ; la règle d'autonomie totale va dans le principe « Ne jamais bloquer sur l'humain ». `12d587d` (#422) ajoute les lignes `start` du journal de décisions et l'exception du propriétaire en autopilot pour le rebase et babysit. Ne sont pas repris : les modèles par défaut et les noms de modèles (#414, #416), qu'`AGENTS.md` interdit de figer ; les consignes supprimées par #414 et `b0b9c7a` (#419), conservées faute de preuve sur Codex ; la lecture unifiée de la règle de modèle (#422), déjà couverte par `runtime/modeles.md`.
 
 Le repin 0.15.0 vers 0.15.2 apporte trois commits amont. `f8abedd` exige que chaque affirmation porte sa preuve ou son étiquette (mesuré, inféré, guess) dans la même phrase. `f5bdd68` remplace les pronoms genrés par « the operator » et demande un message de statut dans le chat. `889ec4b` aligne les rôles code-delegate `bug-fix`, `perf-issue` et `hillclimb` sur le défaut déjà utilisé par fonctionnalité et refactorisation. Le setup cstack conserve le rôle d'exécution, mais recommande maintenant `gpt-6-astra` avec l'effort `medium` pour `bug-fix` au lieu du groupe développement `low`.
 

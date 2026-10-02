@@ -2,9 +2,9 @@
 
 cstack is an independent Codex adaptation of pstack by Lauren Tan.
 
-- Source: https://github.com/cursor/plugins/tree/889ec4b68fa5aab0e867dad71ec3fdf386ae48f3/pstack
-- Upstream commit: `889ec4b68fa5aab0e867dad71ec3fdf386ae48f3`
-- Upstream manifest version: `0.15.2`
+- Source: https://github.com/cursor/plugins/tree/12d587dfb20741cafc376c42c696c5f6e2a64487/pstack
+- Upstream commit: `12d587dfb20741cafc376c42c696c5f6e2a64487`
+- Upstream manifest version: `0.15.5`
 - Original copyright: Copyright (c) 2026 Lauren Tan
 - License: MIT. The original license is preserved in LICENSE.
 - cstack plugin version: `0.7.0`
