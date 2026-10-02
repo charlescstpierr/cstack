@@ -18,7 +18,8 @@ STOP_VERBS = ("arrête", "arrete", "stop", "stoppe", "désactive", "desactive", 
 REMINDER = "Mode cstack actif : tâche nouvelle ou en cours → applique `$cstack:cstack` ; tour anodin ou arrêt demandé → non."
 AFTER_SUMMARY = (
     "Mode cstack actif et contexte résumé : relis `references/runtime/base.md` de `$cstack:cstack` "
-    "et le point de reprise de la tâche active sous `.cstack/` (voir `references/runtime/etat.md`) avant de continuer."
+    "et le point de reprise de la tâche active dont le résumé nomme le chemin sous `.cstack/` "
+    "(voir `references/runtime/etat.md`) avant de continuer."
 )
 
 

@@ -61,6 +61,7 @@ class ModeHookTests(unittest.TestCase):
             self.assertIn("Mode cstack actif", text)
             self.assertIn("runtime/base.md", text)
             self.assertIn("point de reprise", text)
+            self.assertIn("le résumé nomme le chemin", text)
             self.assertIn(".cstack/", text)
 
     def test_failures_never_block_the_message(self):
