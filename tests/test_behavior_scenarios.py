@@ -25,8 +25,8 @@ class BehaviorScenarioGeneratorTests(unittest.TestCase):
             self.assertEqual(result, 0)
             cases = json.loads((output / "cases.json").read_text(encoding="utf-8"))
             expectations = json.loads((output / "expectations.json").read_text(encoding="utf-8"))["cases"]
-            self.assertEqual(len(cases), 19)
-            self.assertEqual(len(expectations), 19)
+            self.assertEqual(len(cases), 22)
+            self.assertEqual(len(expectations), 22)
             self.assertEqual(len({case["cwd"] for case in cases}), len(cases))
 
             routing = {
@@ -68,6 +68,17 @@ class BehaviorScenarioGeneratorTests(unittest.TestCase):
             for case in expectations:
                 if case["id"].startswith("routing_"):
                     self.assertNotIn("expected_children", case)
+
+            by_id = {case["id"]: case for case in expectations}
+            arena = by_id["arena_verified_selection"]
+            self.assertEqual(arena["expected_children"], 5)
+            self.assertEqual(len(arena["role_metadata"]["arena runners"]), 3)
+            self.assertEqual(len(arena["role_metadata"]["arena cross-judge pool"]), 1)
+            for case_id in ("interrogate_partial_set_baseline", "interrogate_partial_set_proposed"):
+                self.assertEqual(by_id[case_id]["expected_children"], 3)
+                project = Path(next(case["cwd"] for case in cases if case["id"] == case_id))
+                self.assertIn("legacy_total", (project / "src" / "reports.py").read_text(encoding="utf-8"))
+                self.assertNotIn("legacy_total", (project / "src" / "billing.py").read_text(encoding="utf-8"))
 
 
 if __name__ == "__main__":

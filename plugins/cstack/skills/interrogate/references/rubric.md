@@ -29,7 +29,7 @@ Quand tu trouves un bug potentiel, trace le chemin d'exécution. Ne signale pas 
 Pars de chaque hunk et suis les branches et bornes qu'il ouvre. Rapporte seulement les cas non gérés et atteignables ; ne juge pas ici si le code est beau.
 
 - Pour chaque condition, chaque `switch` ou `match` et chaque valeur limite introduits ou modifiés, demande quelle entrée prend l'autre branche et ce qui se passe alors.
-- Ensembles traités en partie : quand le diff gère explicitement certains membres d'un ensemble fixe (enum, union de types, codes de statut, sentinelles, drapeaux, états), énumère l'ensemble complet depuis sa définition et vérifie le sort de chaque membre restant. Un membre qui tombe silencieusement dans un défaut ou une branche vide est une finding si un chemin l'atteint.
+- Ensembles traités en partie : quand le diff gère explicitement certains membres d'un ensemble fixe (enum, union de types, codes de statut, sentinelles, drapeaux, états), énumère l'ensemble complet depuis sa définition et vérifie le sort de chaque membre restant. Un membre qui tombe dans un défaut ou une branche vide est une finding seulement si un chemin l'atteint et que ce défaut est faux pour lui ou efface une distinction dont un consommateur a besoin. Un défaut voulu et correct pour les membres restants n'en est pas une.
 - Suppressions : quand le diff retire ou renomme une fonction, un champ, une option, une clé de configuration ou une branche, cherche ses consommateurs restants (code, tests, docs, scripts) et rapporte ceux qui en dépendent encore.
 
 ## Causes racines vs symptômes

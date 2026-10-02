@@ -2,6 +2,21 @@
 
 Ce fichier distingue le catalogue courant des campagnes datées. Les nombres historiques restent ceux de leur campagne.
 
+## Non publié (après 0.7.0)
+
+**watch-pr (#78).** Le plugin a été installé dans `codex-cli 0.160.0` avec deux `CODEX_HOME` isolés, l'un depuis `main` (`b5d9b63`) et l'autre depuis la branche. Les deux ont été lancés par `scripts/run-tool.sh watch-pr/watch-pr` face à un faux `gh` qui rejoue sept scénarios. Avant le correctif, une revue requise et un `BLOCKED` à CI propre donnaient `READY`, et un dépôt sans CI donnait `status-query` sans fin. Après, ils donnent `review-required` (6), `merge-blocked` (6) et `READY` (0) ; des identifiants refusés restent un échec fermé (7). Aucune vraie PR n'a été lue : l'environnement refusait GraphQL.
+
+**Arena et Interrogate (#80).** Les règles sont épinglées par le validateur. Les essais natifs sont prêts mais n'ont pas encore été exécutés, faute d'identifiants OpenAI dans l'environnement de travail ; aucun effet sur le comportement n'est revendiqué. `scripts/behavior-scenarios.py` génère trois cas pour les mesurer :
+
+- `interrogate_partial_set_baseline` et `interrogate_partial_set_proposed` : le diff indexé traite `pending` et `refunded`, laisse `disputed` tomber dans « Réglée » contre le README et retire `legacy_total`, que `src/reports.py` importe encore. À observer : la version proposée signale le membre `disputed`, le consommateur restant et l'absence de test du libellé, sans inventer d'autres findings.
+- `arena_verified_selection` : trois implémentations de `parse_duration` contre un unittest existant. À observer : la vérification de chaque candidat contre la base, des étiquettes anonymes, deux jugements en ordre inverse (cinq enfants au total) et aucune base rouge.
+
+```sh
+codex debug models > /tmp/cstack-model-catalog.json
+python3 scripts/behavior-scenarios.py --baseline /chemin/plugin-main --proposed plugins/cstack --catalog /tmp/cstack-model-catalog.json --output /tmp/cstack-cases
+python3 scripts/verify-behavior.py --cases /tmp/cstack-cases/cases.json --output /tmp/cstack-results --case-id interrogate_partial_set_proposed
+```
+
 ## État 0.7.0
 
 Le catalogue 0.7.0 contient 29 skills, 23 références de principes et 23 guides d'exécution. La couverture conserve 158 fichiers source.

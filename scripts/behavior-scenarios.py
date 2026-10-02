@@ -17,7 +17,7 @@ from typing import Any
 MODEL = {"model": "gpt-5.6-luna", "reasoning_effort": "max"}
 IGNORED_DIRS = {".git", "__pycache__", "node_modules"}
 FORBIDDEN_PROMPT_LABELS = re.compile(r"\b(?:eval|test|judge|candidate|benchmark)\b", re.IGNORECASE)
-PANEL_LENGTHS = {"interrogate reviewers": 3}
+PANEL_LENGTHS = {"interrogate reviewers": 3, "arena runners": 3, "arena cross-judge pool": 1}
 GIT_NAME = "scénario cstack"
 GIT_EMAIL = "cstack-scenario@example.invalid"
 
@@ -187,6 +187,76 @@ Utilisez cedar --json pour des enregistrements lisibles par une machine.
     return project
 
 
+def partial_set_project(output: Path, name: str, catalog: Path | None) -> Path:
+    project = create_project(output, name, {
+        "README.md": """# Facturation Cedar
+
+## Comportement approuvé
+
+Chaque statut de commande (pending, paid, refunded, disputed) a son propre libellé français.
+Une commande en litige (disputed) ne doit jamais apparaître comme réglée.
+""",
+        "src/status.py": 'STATUSES = ("pending", "paid", "refunded", "disputed")\n',
+        "src/billing.py": """def label(status):
+    return status
+
+
+def legacy_total(items):
+    return sum(items)
+""",
+        "src/reports.py": """from .billing import legacy_total
+
+
+def report(items):
+    return legacy_total(items)
+""",
+    }, ["interrogate reviewers"], catalog)
+    seed_git(project, "feature/labels")
+    write_text(project, "src/billing.py", """def label(status):
+    if status == "pending":
+        return "En attente"
+    if status == "refunded":
+        return "Remboursée"
+    return "Réglée"
+""")
+    git(project, "add", "src/billing.py")
+    return project
+
+
+def arena_project(output: Path, name: str, catalog: Path | None) -> Path:
+    return create_project(output, name, {
+        "README.md": """# Durées Cedar
+
+parse_duration convertit une durée écrite en secondes : "90s" vaut 90, "2h" vaut 7200, "1h30m" vaut 5400 et "0m" vaut 0.
+Une chaîne vide, une unité inconnue ("10x") ou un nombre sans unité ("15") lève ValueError.
+""",
+        "src/__init__.py": "",
+        "src/duration.py": """def parse_duration(text):
+    raise NotImplementedError
+""",
+        "tests/__init__.py": "",
+        "tests/test_duration.py": """import unittest
+
+from src.duration import parse_duration
+
+
+class ParseDuration(unittest.TestCase):
+    def test_values(self):
+        for text, seconds in (("90s", 90), ("2h", 7200), ("1h30m", 5400), ("0m", 0)):
+            self.assertEqual(parse_duration(text), seconds)
+
+    def test_rejects(self):
+        for text in ("", "10x", "15"):
+            with self.assertRaises(ValueError):
+                parse_duration(text)
+
+
+if __name__ == "__main__":
+    unittest.main()
+""",
+    }, ["arena runners", "arena cross-judge pool"], catalog)
+
+
 def setup_project(output: Path, name: str, catalog: Path | None) -> Path:
     project = create_project(output, name, {}, [], catalog)
     (project / "AGENTS.md").write_bytes("# Règles manuelles du projet\r\n\r\nConserver cette ligne exacte.\r\n".encode("utf-8"))
@@ -256,6 +326,22 @@ def filter_events(events, start, today):
                  project=interrogate_project(output, name, catalog), bundle=bundle,
                  skill="interrogate", roles=["interrogate reviewers"],
                  body=review, sandbox="read-only", expected_children=3)
+
+    partial_review = """Utilise $cstack:interrogate sur le travail courant indexé (git diff --cached) avec le panel configuré. Intention : afficher un libellé français pour chaque statut de commande. Le README contient le comportement approuvé. Ne modifie aucun fichier et ne crée ni commit ni PR."""
+    for case_id, name, bundle in (
+        ("interrogate_partial_set_baseline", "aspen", old),
+        ("interrogate_partial_set_proposed", "poplar", new),
+    ):
+        register(cases, expectations, case_id=case_id,
+                 project=partial_set_project(output, name, catalog), bundle=bundle,
+                 skill="interrogate", roles=["interrogate reviewers"],
+                 body=partial_review, french=True, sandbox="read-only", expected_children=3)
+
+    arena_task = """Utilise $cstack:arena pour implémenter parse_duration dans src/duration.py selon le README, avec le panel configuré de trois implémentations concurrentes. La vérification du projet est python3 -m unittest discover -s tests. Ne crée ni commit, ni PR, ni objectif natif."""
+    register(cases, expectations, case_id="arena_verified_selection",
+             project=arena_project(output, "yew", catalog), bundle=new,
+             skill="arena", roles=["arena runners", "arena cross-judge pool"],
+             body=arena_task, french=True, expected_children=5)
 
     storage = archive_files
     overwrite = """Utilise $cstack:clarify pour préparer une décision sur storage.py. Lorsqu'un enregistrement existant serait écrasé, le produit n'a pas encore choisi entre remplacer, conserver l'ancien ou refuser. Inspecte les faits du dépôt, puis pose les questions de frontière nécessaires avec des recommandations. Ne choisis pas pour moi, ne modifie aucun fichier et n'écris aucun document."""
