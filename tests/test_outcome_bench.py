@@ -274,7 +274,8 @@ class OutcomeBenchTests(unittest.TestCase):
         self.assertEqual(summary["arms"]["cstack"]["infra_errors"], 1)
         self.assertEqual(summary["arms"]["cstack"]["tokens_per_resolved"], 200)
         self.assertEqual(summary["paired"], {
-            "cstack_vs_vanilla": {"tasks": 2, "cstack_better": 1, "vanilla_better": 0, "ties": 1},
+            "cstack_vs_vanilla": {"tasks": 2, "cstack_better": 1, "vanilla_better": 0, "ties": 1,
+                                  "mean_rate_difference": 0.5, "ci95": [0.0, 1.0], "bootstrap_resamples": 2000},
         })
 
     def test_summary_compares_every_pair_of_present_arms(self):
@@ -286,6 +287,75 @@ class OutcomeBenchTests(unittest.TestCase):
         paired = outcome_bench.summarize(rows)["paired"]
         self.assertEqual(sorted(paired), ["cstack_vs_vanilla", "pstack_vs_cstack", "pstack_vs_vanilla"])
         self.assertEqual(paired["pstack_vs_cstack"]["pstack_better"], 1)
+
+    def test_summary_reports_pass_all_and_unstable_tasks(self):
+        def row(task, arm, resolved):
+            return {"task_id": task, "arm": arm, "resolved": resolved, "agent_status": "completed", "tokens": 1,
+                    "wall_seconds": 1, "diff": {"lines_added": 0, "lines_removed": 0, "hidden_paths_touched": []}}
+        rows = [
+            row("a", "cstack", True), row("a", "cstack", True),
+            row("b", "cstack", True), row("b", "cstack", False),
+            row("c", "cstack", False), row("c", "cstack", False),
+            row("a", "vanilla", True), row("b", "vanilla", False), row("c", "vanilla", False),
+        ]
+        cstack = outcome_bench.summarize(rows)["arms"]["cstack"]
+        self.assertEqual(cstack["tasks"], 3)
+        self.assertEqual(cstack["pass_all"], 1)
+        self.assertEqual(cstack["pass_all_rate"], 0.333)
+        self.assertEqual(cstack["unstable_tasks"], ["b"])
+        self.assertEqual(outcome_bench.summarize(rows)["arms"]["vanilla"]["unstable_tasks"], [])
+
+    def test_summary_bootstraps_a_seeded_interval_on_paired_task_differences(self):
+        def row(task, arm, resolved):
+            return {"task_id": task, "arm": arm, "resolved": resolved, "agent_status": "completed", "tokens": 1,
+                    "wall_seconds": 1, "diff": {"lines_added": 0, "lines_removed": 0, "hidden_paths_touched": []}}
+        rows = []
+        for index, (left, right) in enumerate(((False, True), (False, True), (True, True), (True, False), (False, True))):
+            rows += [row(f"t{index}", "vanilla", left), row(f"t{index}", "cstack", right)]
+        first = outcome_bench.summarize(rows, seed=7)["paired"]["cstack_vs_vanilla"]
+        again = outcome_bench.summarize(rows, seed=7)["paired"]["cstack_vs_vanilla"]
+        self.assertEqual(first["mean_rate_difference"], 0.4)
+        self.assertEqual(first, again)
+        low, high = first["ci95"]
+        self.assertLessEqual(low, 0.4)
+        self.assertGreaterEqual(high, 0.4)
+        self.assertGreaterEqual(low, -1)
+        self.assertLessEqual(high, 1)
+        self.assertEqual(first["bootstrap_resamples"], 2000)
+
+        uniform = [row("u1", "vanilla", False), row("u1", "cstack", True),
+                   row("u2", "vanilla", False), row("u2", "cstack", True)]
+        self.assertEqual(outcome_bench.summarize(uniform)["paired"]["cstack_vs_vanilla"]["ci95"], [1.0, 1.0])
+        single = [row("s", "vanilla", False), row("s", "cstack", True)]
+        self.assertIsNone(outcome_bench.summarize(single)["paired"]["cstack_vs_vanilla"]["ci95"])
+
+    def test_report_uses_the_manifest_seed_for_the_interval(self):
+        output = self.root / "seeded"
+        output.mkdir()
+        rows = []
+        for task, (left, right) in (("t0", (False, True)), ("t1", (True, True))):
+            for arm, resolved in (("vanilla", left), ("cstack", right)):
+                rows.append({"run_id": f"{task}--{arm}--r1", "task_id": task, "arm": arm, "resolved": resolved,
+                             "agent_status": "completed",
+                             "diff": {"lines_added": 0, "lines_removed": 0, "hidden_paths_touched": []}})
+        (output / "results.jsonl").write_text("".join(json.dumps(row) + "\n" for row in rows))
+        manifest = {"tasks": ["t0", "t1"], "arms": ["vanilla", "cstack"], "repetitions": 1, "seed": 41}
+        (output / "manifest.json").write_text(json.dumps(manifest))
+        seen = []
+        original = outcome_bench.bootstrap_interval
+
+        def spy(differences, seed):
+            seen.append(seed)
+            return original(differences, seed)
+
+        outcome_bench.bootstrap_interval = spy
+        try:
+            outcome_bench.main(["report", "--output", str(output)])
+        finally:
+            outcome_bench.bootstrap_interval = original
+        self.assertEqual(seen, [41])
+        reported = json.loads((output / "summary.json").read_text())["paired"]["cstack_vs_vanilla"]
+        self.assertEqual(reported["ci95"], original([1.0, 0.0], 41))
 
     def test_pstack_fetch_accepts_only_the_pinned_inventory(self):
         upstream = self.root / "plugins-upstream"
