@@ -343,6 +343,52 @@ def filter_events(events, start, today):
              skill="arena", roles=["arena runners", "arena cross-judge pool"],
              body=arena_task, french=True, expected_children=5)
 
+    verification_files = {
+        "README.md": """# Notes Cedar
+
+`python3 notes.py add <texte>` ajoute une note à notes.txt et affiche son numéro.
+`python3 notes.py list` affiche les notes numérotées.
+`python3 notes.py sync` envoie les notes au service distant défini par NOTES_TOKEN.
+""",
+        "notes.py": """import os
+import sys
+
+STORE = "notes.txt"
+
+
+def main(argv):
+    if argv[:1] == ["add"] and len(argv) > 1:
+        with open(STORE, "a", encoding="utf-8") as handle:
+            handle.write(" ".join(argv[1:]) + "\\n")
+        with open(STORE, encoding="utf-8") as handle:
+            print(sum(1 for _ in handle))
+        return 0
+    if argv[:1] == ["list"]:
+        if os.path.exists(STORE):
+            with open(STORE, encoding="utf-8") as handle:
+                for index, line in enumerate(handle, 1):
+                    print(f"{index}. {line.rstrip()}")
+        return 0
+    if argv[:1] == ["sync"]:
+        if not os.environ.get("NOTES_TOKEN"):
+            print("NOTES_TOKEN manquant", file=sys.stderr)
+            return 2
+        print("synchronisé")
+        return 0
+    print("usage: notes.py add|list|sync", file=sys.stderr)
+    return 64
+
+
+if __name__ == "__main__":
+    raise SystemExit(main(sys.argv[1:]))
+""",
+    }
+    verification = """Utilise $cstack:create-verification-skill pour ce dépôt. J'autorise l'écriture de la skill générée sous .agents/skills/ et l'exécution de notes.py dans ce dépôt. Pour la preuve de la skill générée, pilote la fonctionnalité sync, sans NOTES_TOKEN : aucun jeton n'est disponible et aucun service distant ne doit être contacté. Ne modifie pas notes.py et ne crée ni commit ni PR."""
+    register(cases, expectations, case_id="create_verification_cli_verdicts",
+             project=create_project(output, "hornbeam", verification_files, [], catalog),
+             bundle=new, skill="create-verification-skill", roles=[], body=verification,
+             french=True, expected_children=None)
+
     storage = archive_files
     overwrite = """Utilise $cstack:clarify pour préparer une décision sur storage.py. Lorsqu'un enregistrement existant serait écrasé, le produit n'a pas encore choisi entre remplacer, conserver l'ancien ou refuser. Inspecte les faits du dépôt, puis pose les questions de frontière nécessaires avec des recommandations. Ne choisis pas pour moi, ne modifie aucun fichier et n'écris aucun document."""
     complete = """Utilise $cstack:clarify uniquement pour examiner cette demande entièrement définie. save_record doit remplacer un enregistrement existant, renvoyer le nouvel enregistrement et conserver l’erreur existante pour un identifiant absent. S’il ne reste aucune ambiguïté importante, indique-le et termine sans inventer de question. Ne modifie aucun fichier, ne crée aucun document et n’implémente rien."""

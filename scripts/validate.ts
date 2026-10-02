@@ -321,6 +321,14 @@ export function validate(root: string): { skills: number; sourceFiles: number } 
   requireValue(rubric.includes("Un défaut voulu et correct"), "interrogate: défaut correct d’un ensemble non exclu");
   const reviewerPrompt = readFileSync(join(plugin, "skills/interrogate/references/reviewer-prompt.md"), "utf8");
   requireValue(reviewerPrompt.includes("Zéro finding reste une réponse valide."), "interrogate: méthode pistes puis preuve manquante");
+  const createVerification = readFileSync(join(plugin, "skills/create-verification-skill/SKILL.md"), "utf8");
+  requireValue(createVerification.includes("ce n'est jamais un succès"), "create-verification-skill: verdict non concluant manquant");
+  requireValue(createVerification.includes("observation neuve en lecture seule"), "create-verification-skill: juge indépendant manquant");
+  const maintainVerification = readFileSync(join(plugin, "skills/maintain-verification-skill/SKILL.md"), "utf8");
+  requireValue(maintainVerification.includes("n'est jamais un manque produit"), "maintain-verification-skill: pilotage bloqué classé comme manque produit");
+  const bugBash = readFileSync(join(plugin, "skills/maintain-verification-skill/references/bug-bash.md"), "utf8");
+  requireValue(bugBash.includes("**sur l'assertion visée**"), "bug-bash: confirmation par assertion visée manquante");
+  requireValue(bugBash.includes("Le code testé ne prouve jamais sa propre intention."), "bug-bash: le code testé accepté comme preuve d’intention");
   const names = new Set<string>();
   const skillUi: Array<{ policyPath: string; name: string; display: string }> = [];
   for (const path of skills) {
