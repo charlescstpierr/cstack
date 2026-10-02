@@ -2,7 +2,15 @@
 
 Ce fichier distingue le catalogue courant des campagnes datées. Les nombres historiques restent ceux de leur campagne.
 
-## Non publié (après 0.7.0)
+## État 0.8.0
+
+Le catalogue 0.8.0 contient 29 skills, 23 références de principes et 23 guides d'exécution. La couverture conserve 158 fichiers source, épinglés sur pstack 0.15.5.
+
+Les [preuves 0.8.0](evidence/0.8.0.json) enregistrent **415 tests réussis et cinq ignorés** : 194 tests Python réussis sur 197 collectés, 28 tests Bun racine et 193 tests des assistants. Le validateur du paquet, les faits générés, les deux vérifications de types, la syntaxe Bash, ShellCheck 0.10.0, Actionlint 1.7.12 et l'espacement passent. Les contrôles ont tourné en root dans un conteneur : les quatre tests qui provoquent une erreur de permission par `chmod 000` y sont ignorés ; le cinquième, propre à Python 3.9, est ignoré sous Python 3.11. ShellCheck et Actionlint ont tourné en binaires locaux de mêmes versions (ShellCheck par la roue `shellcheck-py` 0.10.0.1, Actionlint par l'archive officielle dont la somme SHA-256 a été vérifiée) ; la CI les exécute dans les images épinglées par digest.
+
+`install.sh install --local` puis `doctor` ont tourné avec `codex-cli 0.160.0` dans un `CODEX_HOME` isolé : le diagnostic rapporte `cstack@cstack : installed, enabled 0.8.0`. C'est une observation unique.
+
+Aucune consigne nouvelle de cette version n'a été exercée par un essai natif Codex : l'environnement de travail n'avait pas d'identifiants OpenAI. Les scénarios prêts sont suivis dans le ticket #81, et la campagne du [banc de résultat](OUTCOME-BENCH.md) (ticket #65) n'a pas tourné ; aucun gain de comportement n'est revendiqué. Notes par lot :
 
 **watch-pr (#78).** Le plugin a été installé dans `codex-cli 0.160.0` avec deux `CODEX_HOME` isolés, l'un depuis `main` (`b5d9b63`) et l'autre depuis la branche. Les deux ont été lancés par `scripts/run-tool.sh watch-pr/watch-pr` face à un faux `gh` qui rejoue sept scénarios. Avant le correctif, une revue requise et un `BLOCKED` à CI propre donnaient `READY`, et un dépôt sans CI donnait `status-query` sans fin. Après, ils donnent `review-required` (6), `merge-blocked` (6) et `READY` (0) ; des identifiants refusés restent un échec fermé (7). Aucune vraie PR n'a été lue : l'environnement refusait GraphQL.
 

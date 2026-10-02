@@ -7,7 +7,7 @@ cstack is an independent Codex adaptation of pstack by Lauren Tan.
 - Upstream manifest version: `0.15.5`
 - Original copyright: Copyright (c) 2026 Lauren Tan
 - License: MIT. The original license is preserved in LICENSE.
-- cstack plugin version: `0.7.0`
+- cstack plugin version: `0.8.0`
 - Catalog: 29 skills, 23 principle references, 23 playbooks, two agent prompts
 
 The adaptation replaces Cursor-specific execution instructions, model routing and plugin packaging with native Codex workflows. Modified files retain the original license. cstack is not an official Cursor or OpenAI product.
