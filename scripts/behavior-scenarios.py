@@ -119,6 +119,8 @@ def register(
     french: bool = False,
     sandbox: str = "workspace-write",
     expected_children: int | None = 0,
+    min_children: int | None = None,
+    expected_artifacts: list[str] | None = None,
     expected_routes: list[str] | None = None,
     forbidden_routes: list[str] | None = None,
 ) -> None:
@@ -144,8 +146,14 @@ def register(
         },
         "role_metadata": model_config(roles),
     }
+    if expected_children is not None and min_children is not None:
+        raise ValueError(f"{case_id}: expected_children et min_children s’excluent")
     if expected_children is not None:
         expectation["expected_children"] = expected_children
+    if min_children is not None:
+        expectation["min_children"] = min_children
+    if expected_artifacts is not None:
+        expectation["expected_artifacts"] = expected_artifacts
     if expected_routes is not None or forbidden_routes is not None:
         expected = sorted(expected_routes or [])
         forbidden = sorted(forbidden_routes or [])
@@ -502,13 +510,17 @@ if __name__ == "__main__":
              forbidden_routes=["skills/cstack/playbooks/trace-forensics.md"])
 
     changelog_rule = """Utilise $cstack:cstack. Dans ce dépôt, les agents oublient le numéro de PR dans CHANGELOG.md dès qu'on leur dit que la publication est urgente. Ajoute à la compétence .agents/skills/changelog/SKILL.md la règle qui l'empêche, et montre qu'elle change leur choix sous cette pression. Ne crée ni commit ni PR."""
-    register(cases, expectations, case_id="routing_rule_baseline_first",
+    register(cases, expectations, case_id="authoring_rule_baseline_first",
              project=create_project(output, "buckeye", {
                  ".agents/skills/changelog/SKILL.md": "---\nname: changelog\ndescription: Ajoute une entrée à CHANGELOG.md pour chaque changement livré.\n---\n\n# Changelog\n\nAjoute une ligne sous « Non publié » qui dit ce qui change pour l'utilisateur.\n",
                  "CHANGELOG.md": "# Changelog\n\n## Non publié\n\n- Export CSV des factures (#41)\n- Correction du fuseau horaire des rappels\n",
              }, [], catalog),
              bundle=new, skill="cstack", roles=[], body=changelog_rule, french=True,
-             expected_children=None,
+             expected_children=None, min_children=2,
+             expected_artifacts=[
+                 ".cstack/tasks/*/pressure/base.md",
+                 ".cstack/tasks/*/pressure/regle-1.md",
+             ],
              expected_routes=[
                  "skills/cstack/playbooks/authoring-a-skill.md",
                  "skills/cstack/references/rule-pressure-tests.md",

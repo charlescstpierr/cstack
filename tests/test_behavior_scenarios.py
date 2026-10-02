@@ -60,13 +60,6 @@ class BehaviorScenarioGeneratorTests(unittest.TestCase):
                     "expected": ["skills/cstack/playbooks/runtime-forensics.md"],
                     "forbidden": ["skills/cstack/playbooks/trace-forensics.md"],
                 },
-                "routing_rule_baseline_first": {
-                    "expected": [
-                        "skills/cstack/playbooks/authoring-a-skill.md",
-                        "skills/cstack/references/rule-pressure-tests.md",
-                    ],
-                    "forbidden": [],
-                },
             })
             for value in routing.values():
                 for route in value["expected"] + value["forbidden"]:
@@ -81,6 +74,20 @@ class BehaviorScenarioGeneratorTests(unittest.TestCase):
             self.assertEqual(arena["expected_children"], 5)
             self.assertEqual(len(arena["role_metadata"]["arena runners"]), 3)
             self.assertEqual(len(arena["role_metadata"]["arena cross-judge pool"]), 1)
+            authoring = by_id["authoring_rule_baseline_first"]
+            self.assertEqual(authoring["routing"], {
+                "expected": [
+                    "skills/cstack/playbooks/authoring-a-skill.md",
+                    "skills/cstack/references/rule-pressure-tests.md",
+                ],
+                "forbidden": [],
+            })
+            self.assertEqual(authoring["min_children"], 2)
+            self.assertNotIn("expected_children", authoring)
+            self.assertEqual(authoring["expected_artifacts"], [
+                ".cstack/tasks/*/pressure/base.md",
+                ".cstack/tasks/*/pressure/regle-1.md",
+            ])
             verification = next(case for case in cases if case["id"] == "create_verification_cli_verdicts")
             self.assertIn("pilote la fonctionnalité sync, sans NOTES_TOKEN", verification["prompt"])
             for case_id in ("interrogate_partial_set_baseline", "interrogate_partial_set_proposed"):

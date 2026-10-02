@@ -121,7 +121,7 @@ Pour ne rejouer que le routage, restreindre `verify-behavior.py` avec `--case-id
 | `routing_internal_api_replacement` | Le cluster migration : `skills/cstack/references/principles/migrate-callers-then-delete-legacy-apis.md` doit être atteint parmi ses voisins. |
 | `routing_live_process_diagnosis` | La direction non mesurée de la paire forensics : un processus vivant doit atteindre `runtime-forensics.md`, pas `trace-forensics.md`. |
 
-`expectations.json` porte désormais un bloc `routing` pour ces cas, avec `expected` et `forbidden` exprimés en chemins relatifs à la racine du bundle. Le générateur refuse une route inexistante ou présente dans les deux listes. Ces cas se jugent sur les routes empruntées, pas sur le nombre d'enfants : ils omettent donc `expected_children`.
+`expectations.json` porte désormais un bloc `routing` pour ces cas, avec `expected` et `forbidden` exprimés en chemins relatifs à la racine du bundle. Le générateur refuse une route inexistante ou présente dans les deux listes. Ces cas se jugent sur les routes empruntées, pas sur le nombre d'enfants : ils omettent donc `expected_children`. Le cas `authoring_rule_baseline_first` porte aussi un bloc `routing`, avec `min_children` (plancher d'enfants natifs quand les relances rendent le nombre exact imprévisible) et `expected_artifacts` (motifs de chemins que l'exécution doit laisser dans le projet).
 
 Leurs fixtures sont réduites au strict nécessaire pour poser la question de routage. Un agent peut donc emprunter la bonne route puis signaler qu'il ne peut pas mener la tâche à terme, faute de processus vivant ou de dépôt complet. Ce n'est pas un échec du cas : le routage précède la découverte de cette limite.
 

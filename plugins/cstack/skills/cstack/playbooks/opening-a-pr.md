@@ -19,7 +19,7 @@ Avant de déclarer une livraison prête, applique la barrière de preuve de [TDD
 - `## Scope` nomme les symboles et chemins importants.
 - `## Tradeoffs` nomme les alternatives rejetées qu’un reviewer pourrait demander.
 - `## Blast radius` nomme les appelants, utilisateurs ou systèmes touchés et le risque principal, et dit si le changement est une porte à double sens (un revert suffit) ou à sens unique (migration de données, suppression, contrat publié). Lis et applique `../../blast-radius/SKILL.md` quand le diff change un symbole largement utilisé, une frontière de module ou un contrat partagé.
-- `## Verification` nomme chaque commande ou contrôle d’interface réel et son résultat, et montre l’avant et l’après : le contrôle qui échouait avant le changement et passe après, ou une capture de chaque état pour un changement visuel.
+- `## Verification` nomme chaque commande ou contrôle d’interface réel et son résultat. Pour un changement de comportement, montre l’avant et l’après : le contrôle qui échouait avant le changement et passe après, ou une capture de chaque état pour un changement visuel. Pour un changement sans effet de comportement (refactorisation, documentation), nomme le parcours hors TDD justifié de [TDD](../../tdd/SKILL.md) et ses contrôles verts.
 
 Joins captures d’écran ou vidéo quand elles prouvent une affirmation visuelle ou d’interaction. Garde les logs complets, rapports de voie et longues traces de décision dans des artéfacts liés sous `.cstack/` ou un chemin approuvé par le dépôt.
 

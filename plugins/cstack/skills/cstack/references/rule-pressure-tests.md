@@ -18,15 +18,15 @@ Sans échec de référence observé, tu ne sais pas si la règle empêche le bon
 
 Le scénario nomme de vrais chemins et de vraies échéances, propose des options A, B et C, et demande « que fais-tu ? », pas « que faudrait-il faire ? ». Aucune option ne permet d'esquiver en renvoyant la décision à l'humain. La consigne suit les règles d'aveuglement de [l'évaluation](../playbooks/eval.md) : elle ressemble à une vraie demande et ne dit pas qu'elle mesure quelque chose.
 
-Lance ce scénario sans la règle, dans un sous-agent natif dont le bundle n'a pas la modification. Note mot pour mot le choix et chaque justification. Repère les excuses qui reviennent et les pressions qui font céder.
+Lance ce scénario sans la règle, dans un sous-agent natif dont le bundle n'a pas la modification. Note mot pour mot le choix et chaque justification dans `.cstack/tasks/<slug>/pressure/base.md`, avec le scénario exact. Repère les excuses qui reviennent et les pressions qui font céder.
 
 ## 2. Écrire la règle minimale
 
-Écris seulement ce qui contre les échecs observés, sans cas hypothétique. Relance le même scénario avec la règle. L'agent doit maintenant choisir l'option attendue.
+Écris seulement ce qui contre les échecs observés, sans cas hypothétique. Relance le même scénario avec la règle dans un nouveau sous-agent natif et consigne le choix et ses justifications dans `.cstack/tasks/<slug>/pressure/regle-1.md`, puis `regle-2.md` et ainsi de suite à chaque relance. L'agent doit maintenant choisir l'option attendue.
 
 ## 3. Boucher les échappatoires
 
-Chaque nouvelle excuse reçoit une négation explicite dans la règle, par exemple « ne garde pas l'ancien code comme référence », plutôt qu'un rappel général. Quand une excuse revient sous plusieurs formes, ajoute aussi à la description de la compétence le symptôme qui précède la violation. Relance après chaque changement.
+Chaque nouvelle excuse reçoit dans la règle une contre-mesure qui la nomme, formulée comme l'action attendue, par exemple « supprime l'ancien code, y compris la copie gardée comme référence », plutôt qu'un rappel général. Quand une excuse revient sous plusieurs formes, ajoute aussi à la description de la compétence le symptôme qui précède la violation. Relance après chaque changement.
 
 Si l'agent choisit encore mal, demande-lui dans la même conversation : « Tu as lu la règle et choisi C. Comment aurait-elle dû être écrite pour que A soit la seule réponse acceptable ? » Trois réponses :
 
@@ -38,4 +38,4 @@ La règle tient quand l'agent choisit l'option attendue sous la pression maximal
 
 ## 4. Rapporter
 
-Rends le scénario, le choix et les excuses de la base, la règle écrite, le choix avec la règle et chaque itération. Sans sous-agent ni bundle de base disponible, applique [Orchestration requise](runtime/orchestration.md) ; si l'exécution reste impossible, la règle est livrée avec l'étiquette « non prouvée » et le scénario prêt à lancer, jamais comme une règle vérifiée.
+Rends le scénario, le choix et les excuses de la base, la règle écrite, le choix avec la règle et chaque itération, avec les chemins de ces fichiers. Sans sous-agent ni bundle de base disponible, applique [Orchestration requise](runtime/orchestration.md) ; si l'exécution reste impossible, la règle est livrée avec l'étiquette « non prouvée » et le scénario prêt à lancer, jamais comme une règle vérifiée.

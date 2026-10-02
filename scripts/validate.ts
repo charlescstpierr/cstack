@@ -343,12 +343,16 @@ export function validate(root: string): { skills: number; sourceFiles: number } 
   requireValue(authoring.includes("obtiens d'abord un échec de référence sans elle"), "authoring-a-skill: échec de référence manquant");
   const pressure = readFileSync(join(plugin, "skills/cstack/references/rule-pressure-tests.md"), "utf8");
   requireValue(pressure.includes("Note mot pour mot"), "rule-pressure-tests: excuses mot pour mot manquantes");
+  requireValue(pressure.includes("formulée comme l'action attendue"), "rule-pressure-tests: contre-mesure formulée négativement");
   requireValue(pressure.includes("l'étiquette « non prouvée »"), "rule-pressure-tests: règle non exécutée présentée comme vérifiée");
   const evalPlaybook = readFileSync(join(plugin, "skills/cstack/playbooks/eval.md"), "utf8");
   requireValue(evalPlaybook.includes("n'est pas promue"), "eval: règle promue sans échec de référence");
   const openingPr = readFileSync(join(plugin, "skills/cstack/playbooks/opening-a-pr.md"), "utf8");
   requireValue(openingPr.includes("Compare ensuite la documentation au diff"), "opening-a-pr: contrôle doc contre diff manquant");
   requireValue(openingPr.includes("porte à double sens"), "opening-a-pr: réversibilité du changement manquante");
+  requireValue(openingPr.includes("Pour un changement sans effet de comportement"), "opening-a-pr: parcours hors TDD absent de la vérification");
+  const router = readFileSync(join(plugin, "skills/cstack/SKILL.md"), "utf8");
+  requireValue(router.includes("les sources versionnées des [intégrations](references/runtime/integrations.md)"), "cstack: sources versionnées non routées");
   const integrations = readFileSync(join(plugin, "skills/cstack/references/runtime/integrations.md"), "utf8");
   requireValue(integrations.includes("lis la version installée dans le lockfile"), "intégrations: version installée non lue");
   requireValue(integrations.includes("ne l’installe jamais"), "intégrations: outil de documentation installé automatiquement");
