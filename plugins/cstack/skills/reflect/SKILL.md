@@ -41,6 +41,14 @@ Pour tout élément accepté appliqué plus fiablement par une règle de lint, u
 
 ### 5. Appliquer ou rédiger
 
+Avant d'écrire un élément accepté dans un fichier d'instructions (`AGENTS.md`, `AGENTS.override.md`, une skill), vérifie l'hygiène de la cible :
+
+- Rejette une leçon que le code, un test ou la configuration montrent déjà ; ne la recopie pas en prose.
+- Vise l'endroit le plus précis qui s'applique : un `AGENTS.md` imbriqué dans le dossier concerné ou la skill concernée, plutôt que la racine.
+- Respecte le budget de Codex : il concatène les `AGENTS.md` de la racine vers le dossier courant et cesse d'en ajouter quand la taille cumulée atteint `project_doc_max_bytes` (32 KiB par défaut ; lis la valeur réelle dans la configuration Codex quand elle est définie, et dis laquelle tu utilises). Si l'ajout ferait dépasser ce budget sur un chemin de travail courant, propose de déplacer ou condenser plutôt que d'ajouter.
+- Signale toute contradiction avec une règle existante et toute référence morte (chemin, commande, symbole) dans la section touchée.
+- Fusionne avec la règle voisine qui couvre déjà le sujet plutôt que d'empiler une nouvelle ligne.
+
 Applique les modifications acceptées seulement dans un checkout source appartenant à l'utilisateur et placé dans la portée. Ne modifie jamais un cache de plugin installé, des instructions globales, une mémoire utilisateur sans rapport ni un autre projet. Si la cible est hors portée source inscriptible, écris plutôt une proposition sous `.cstack/proposals/reflect/` dans le workspace actif.
 
 Ne crée pas d'issues, commentaires, PR ou messages externes sauf si l'utilisateur les a concrètement demandés. Garde les éléments du carnet dans la proposition locale.

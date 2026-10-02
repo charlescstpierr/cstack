@@ -328,6 +328,8 @@ export function validate(root: string): { skills: number; sourceFiles: number } 
   requireValue(maintainVerification.includes("n'est jamais un manque produit"), "maintain-verification-skill: pilotage bloqué classé comme manque produit");
   const bugBash = readFileSync(join(plugin, "skills/maintain-verification-skill/references/bug-bash.md"), "utf8");
   requireValue(bugBash.includes("**sur l'assertion visée**"), "bug-bash: confirmation par assertion visée manquante");
+  const reflect = readFileSync(join(plugin, "skills/reflect/SKILL.md"), "utf8");
+  requireValue(reflect.includes("`project_doc_max_bytes`"), "reflect: budget AGENTS.md de Codex manquant");
   requireValue(bugBash.includes("Le code testé ne prouve jamais sa propre intention."), "bug-bash: le code testé accepté comme preuve d’intention");
   const names = new Set<string>();
   const skillUi: Array<{ policyPath: string; name: string; display: string }> = [];
