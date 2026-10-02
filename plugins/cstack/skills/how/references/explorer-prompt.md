@@ -25,7 +25,8 @@ Suis ce motif :
 2. **Tracer le flux.** Suis la chaîne d'appels depuis le point d'entrée. Lis chaque fonction. Comprends quelles données circulent et comment elles se transforment.
 3. **Cartographier les abstractions clés.** Quels types, interfaces, services ou classes sont centraux ? Lis leurs définitions. Comprends ce qu'ils représentent et pourquoi ils existent.
 4. **Trouver les frontières.** Où ce sous-système s'interface-t-il avec les autres ? Qu'est-ce qui entre, qu'est-ce qui sort ?
-5. **Chercher le non évident.** Quelque chose de surprenant ? Un artefact historique ? Quelque chose qu'un nouvel arrivant comprendrait mal ?
+5. **Situer les dépendances versionnées.** Quand le comportement vient d'un framework ou d'une bibliothèque, note sa version installée (lockfile ou manifeste) et la page de documentation officielle de cette version qui le décrit ; sans page vérifiée, marque l'affirmation comme supposition.
+6. **Chercher le non évident.** Quelque chose de surprenant ? Un artefact historique ? Quelque chose qu'un nouvel arrivant comprendrait mal ?
 
 Continue jusqu'à pouvoir décrire l'image complète sans gestes vagues. Si tu atteins une partie impossible à tracer, dis-le explicitement. "Je n'ai pas pu déterminer comment X se connecte à Y" vaut mieux qu'inventer.
 

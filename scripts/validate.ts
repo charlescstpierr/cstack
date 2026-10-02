@@ -349,6 +349,12 @@ export function validate(root: string): { skills: number; sourceFiles: number } 
   const openingPr = readFileSync(join(plugin, "skills/cstack/playbooks/opening-a-pr.md"), "utf8");
   requireValue(openingPr.includes("Compare ensuite la documentation au diff"), "opening-a-pr: contrôle doc contre diff manquant");
   requireValue(openingPr.includes("porte à double sens"), "opening-a-pr: réversibilité du changement manquante");
+  const integrations = readFileSync(join(plugin, "skills/cstack/references/runtime/integrations.md"), "utf8");
+  requireValue(integrations.includes("lis la version installée dans le lockfile"), "intégrations: version installée non lue");
+  requireValue(integrations.includes("ne l’installe jamais"), "intégrations: outil de documentation installé automatiquement");
+  requireValue(integrations.includes("pas dans un commentaire de code"), "intégrations: source citée en commentaire de code");
+  const architect = readFileSync(join(plugin, "skills/architect/SKILL.md"), "utf8");
+  requireValue(architect.includes("[sources versionnées](../cstack/references/runtime/integrations.md)"), "architect: sources versionnées non ancrées");
   const recall = readFileSync(join(plugin, "skills/recall/SKILL.md"), "utf8");
   requireValue(recall.includes("rend d'abord un index"), "recall: extraction par index manquante");
   requireValue(bugBash.includes("Le code testé ne prouve jamais sa propre intention."), "bug-bash: le code testé accepté comme preuve d’intention");
