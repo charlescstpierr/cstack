@@ -33,7 +33,7 @@ La boucle fonctionne aussi en journée. Elle continue tant que le résultat conv
 $cstack:cstack continue jusqu'à ce que chaque fixture passe. N'envoie aucun message externe. Journalise les décisions et arrête-toi sur un blocage.
 ```
 
-Le travail avance par unités vérifiables. `$cstack:swarm` peut répartir des tranches indépendantes, avec une vérification par tranche. Les erreurs, les permissions manquantes et les ambiguïtés matérielles deviennent des blocages explicites.
+Le travail avance par unités vérifiables. `$cstack:swarm` peut répartir des tranches indépendantes, avec une vérification par tranche. Pour une file de PR menée jusqu'au merge (Autopilot-full), des vérificateurs neufs lancent une ronde au head code-ready du propriétaire puis à chaque push qui change le patch ; seul un verdict propre sur le patch qui fusionne autorise le merge. Les erreurs, les permissions manquantes et les ambiguïtés matérielles deviennent des blocages explicites.
 
 Une planification récurrente n'est utilisée que si un planificateur natif est disponible et demandé explicitement. cstack ne simule pas de webhook, de cron ou d'agent persistant.
 

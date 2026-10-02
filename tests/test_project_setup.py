@@ -212,8 +212,10 @@ class ProjectSetupTests(unittest.TestCase):
         self.assertIn("rôles résolus après leur écriture", guide)
         self.assertIn("un délégué déjà lancé garde sa sélection", guide)
         self.assertIn("peut toujours lire ou modifier ces fichiers", guide)
-        self.assertIn("affiche d'abord sept recommandations", readme)
-        self.assertLess(readme.index("affiche d'abord sept recommandations"),
+        self.assertIn("demande d'abord un budget de raisonnement", readme)
+        self.assertLess(readme.index("demande d'abord un budget de raisonnement"),
+                        readme.index("puis affiche sept recommandations"))
+        self.assertLess(readme.index("puis affiche sept recommandations"),
                         readme.index("l'héritage éventuel"))
 
     def test_explicit_tracker_modes_are_local_and_github_is_validation_only(self) -> None:

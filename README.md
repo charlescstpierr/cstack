@@ -2,7 +2,7 @@
 
 **Des workflows d'ingénierie vérifiés pour Codex App et CLI.** cstack apprend à Codex à investiguer avant de coder, à concevoir avant d'implémenter, à faire relire par des sous-agents indépendants et à prouver le résultat avant de livrer.
 
-C'est le portage des processus de [pstack](https://github.com/cursor/plugins/tree/889ec4b68fa5aab0e867dad71ec3fdf386ae48f3/pstack) vers les outils natifs de Codex, sans moteur d'orchestration supplémentaire. Rien ne change dans vos projets tant que vous n'invoquez pas `$cstack:cstack`. [Installation en une commande](#installer).
+C'est le portage des processus de [pstack](https://github.com/cursor/plugins/tree/12d587dfb20741cafc376c42c696c5f6e2a64487/pstack) vers les outils natifs de Codex, sans moteur d'orchestration supplémentaire. Rien ne change dans vos projets tant que vous n'invoquez pas `$cstack:cstack`. [Installation en une commande](#installer).
 
 > **Agent IA (Codex) chargé de l'installer ?** Suivez [INSTALL-AGENT.md](INSTALL-AGENT.md).
 
@@ -124,7 +124,7 @@ Les 23 principes sont des [références internes](plugins/cstack/docs/guide/08-p
 
 ## Configurer un projet
 
-`$cstack:setup-cstack` affiche d'abord sept recommandations vérifiées de modèle et d'effort pour tous les rôles et positions de panel. Il affiche ensuite la configuration actuelle et l'héritage éventuel. Vous pouvez accepter, personnaliser, conserver, choisir l'héritage pour certains rôles ou annuler. Les choix sont vérifiés dans le catalogue courant et enregistrés dans `.cstack/models.json`, sans modifier la session principale ni la configuration globale. Voir le [tableau de recommandations](plugins/cstack/docs/guide/01-setup.md#configurer-cstack).
+`$cstack:setup-cstack` demande d'abord un budget de raisonnement (illimité, large, moyen ou réduit), puis affiche sept recommandations vérifiées de modèle et d'effort pour tous les rôles et positions de panel. Il affiche ensuite la configuration actuelle et l'héritage éventuel. Vous pouvez accepter, personnaliser, conserver, choisir l'héritage pour certains rôles ou annuler. Les choix sont vérifiés dans le catalogue courant et enregistrés dans `.cstack/models.json`, sans modifier la session principale ni la configuration globale. Voir le [tableau de recommandations](plugins/cstack/docs/guide/01-setup.md#configurer-cstack).
 
 La configuration peut aussi préparer les conventions du projet : un bloc cstack dans `AGENTS.md`, un guide local et le suivi de tickets choisi. Elle montre les changements avant de les appliquer et conserve les instructions extérieures au bloc. Elle ne modifie pas `CLAUDE.md`, n'active pas cstack automatiquement et ne crée aucun ticket distant.
 
@@ -174,7 +174,7 @@ Le [guide](plugins/cstack/docs/guide/README.md) détaille les processus. Le [rap
 
 ## Provenance et licence
 
-Version amont épinglée `0.15.2`, commit `889ec4b68fa5aab0e867dad71ec3fdf386ae48f3`. `UPSTREAM.json` identifie les fichiers source, `PORTING.json` leur destination dans cstack, et [MAINTENANCE-SOURCES.json](MAINTENANCE-SOURCES.json) la provenance des outils de développement adaptés de pstack-claude.
+Version amont épinglée `0.15.5`, commit `12d587dfb20741cafc376c42c696c5f6e2a64487`. `UPSTREAM.json` identifie les fichiers source, `PORTING.json` leur destination dans cstack, et [MAINTENANCE-SOURCES.json](MAINTENANCE-SOURCES.json) la provenance des outils de développement adaptés de pstack-claude.
 
 La documentation et les messages sont en français ; les noms de commandes et de compétences, chemins, clés de configuration et licences originales sont conservés pour compatibilité.
 
