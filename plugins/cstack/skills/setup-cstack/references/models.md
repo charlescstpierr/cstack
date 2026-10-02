@@ -17,7 +17,7 @@ Avant le tableau des propositions, demande un budget avec ces quatre choix, en n
 - `moyen — effort high`
 - `réduit — effort medium`
 
-`illimité` laisse les efforts tels que les propose le tableau. `large`, `moyen` et `réduit` fixent l'effort cible de chaque sélection à modèle explicite, positions de panel comprises, sur l'échelle `max` > `xhigh` > `high` > `medium` > `low`. Si le catalogue live ne propose pas cet effort pour ce modèle, prends l'effort disponible le plus élevé en dessous de la cible ; s'il n'y en a aucun, marque la position comme choix requis. L'héritage (`inherit-parent`), une sélection de modèle sans effort et une sélection CLI sans effort ne changent pas. Le budget s'applique seulement aux rôles que l'utilisateur sélectionne, et `models.py apply` le valide contre le catalogue comme tout autre choix.
+`illimité` laisse les efforts tels que les propose le tableau. `large`, `moyen` et `réduit` fixent un plafond d'effort pour chaque sélection à modèle explicite, positions de panel comprises, sur l'échelle `max` > `xhigh` > `high` > `medium` > `low`. Un effort déjà inférieur ou égal au plafond reste tel quel ; un effort supérieur descend au plafond. Si le catalogue live ne propose pas cet effort pour ce modèle, prends l'effort disponible le plus élevé en dessous ; s'il n'y en a aucun, marque la position comme choix requis. L'héritage (`inherit-parent`), une sélection de modèle sans effort et une sélection CLI sans effort ne changent pas. Le budget s'applique seulement aux rôles que l'utilisateur sélectionne, et `models.py apply` le valide contre le catalogue comme tout autre choix.
 
 ## Recommandations
 
