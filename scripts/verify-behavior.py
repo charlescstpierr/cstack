@@ -381,6 +381,8 @@ def update_state(message, state, parent_thread):
         if encoded not in state["token_usage_keys"]:
             state["token_usage_keys"].add(encoded)
             state["token_usage"].append(scrub(value))
+    if parent_thread is not None:
+        state["child_ids"][:] = [thread_id for thread_id in state["child_ids"] if thread_id != str(parent_thread)]
 
 
 def project_metadata(value):
@@ -510,7 +512,10 @@ def read_cases(path):
         sandbox = row.get("sandbox", "workspace-write")
         if not isinstance(sandbox, str) or not sandbox:
             raise HarnessError(f"{case_id}: sandbox doit être une chaîne")
-        cases.append({"id": case_id, "cwd": cwd, "prompts": prompts, "sandbox": sandbox})
+        ephemeral = row.get("ephemeral", True)
+        if not isinstance(ephemeral, bool):
+            raise HarnessError(f"{case_id}: ephemeral doit être un booléen")
+        cases.append({"id": case_id, "cwd": cwd, "prompts": prompts, "sandbox": sandbox, "ephemeral": ephemeral})
     return cases
 
 
@@ -546,6 +551,7 @@ def run_case(case, output, command, model, effort, timeout):
         parent_thread = first(thread_result, ("threadId", "thread_id")) or first(first(thread_result, ("thread",)) or {}, ("id",))
         if not parent_thread:
             raise HarnessError("thread/start n’a renvoyé aucun identifiant de conversation")
+        state["child_ids"][:] = [thread_id for thread_id in state["child_ids"] if thread_id != str(parent_thread)]
         for index, prompt in enumerate(case["prompts"]):
             state["current_turn"] = {"index": index, "prompt": prompt, "messages": [], "status": None}
             state["messages"] = []

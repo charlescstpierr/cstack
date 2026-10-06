@@ -13,6 +13,16 @@ SPEC.loader.exec_module(behavior_scenarios)
 
 
 class BehaviorScenarioGeneratorTests(unittest.TestCase):
+    def test_generated_cases_use_persistent_threads_for_native_delegation(self):
+        with tempfile.TemporaryDirectory() as directory:
+            cases, expectations = [], []
+            behavior_scenarios.register(
+                cases, expectations, case_id="delegated-fix", project=Path(directory),
+                bundle=ROOT / "plugins" / "cstack", skill="cstack", roles=[],
+                body="Correct the user message locally.", expected_children=1,
+            )
+            self.assertIs(cases[0].get("ephemeral"), False)
+
     def test_routing_expectations_match_current_bundle_layout(self):
         with tempfile.TemporaryDirectory() as directory:
             output = Path(directory) / "cases"
