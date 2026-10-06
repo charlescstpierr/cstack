@@ -32,6 +32,103 @@ def state():
 
 
 class BehaviorRunnerTests(unittest.TestCase):
+    def test_dispatch_never_counts_parent_as_child(self):
+        current = state()
+        verify_behavior.update_state({
+            "method": "item/completed",
+            "params": {"threadId": "parent", "item": {
+                "type": "collabAgentToolCall", "id": "dispatch-1",
+                "agentThreadId": "parent", "receiverThreadIds": ["parent", "child"],
+                "events": [{"type": "subagentActivity", "agentThreadId": "parent"}],
+            }},
+        }, current, "parent")
+        self.assertEqual(current["child_ids"], ["child"])
+        self.assertEqual(current["dispatch_metadata"][0]["receiver_thread_ids"], ["parent", "child"])
+
+    def test_cases_preserve_ephemeral_and_reject_non_boolean_values(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            cases_path = root / "cases.json"
+            rows = [
+                {"id": "default", "cwd": directory, "prompt": "A"},
+                {"id": "durable", "cwd": directory, "prompt": "B", "ephemeral": False},
+                {"id": "temporary", "cwd": directory, "prompt": "C", "ephemeral": True},
+            ]
+            cases_path.write_text(json.dumps(rows))
+            cases = verify_behavior.read_cases(cases_path)
+            self.assertEqual([case["ephemeral"] for case in cases], [True, False, True])
+            for invalid in (None, 0, 1, "false", [], {}):
+                with self.subTest(invalid=invalid):
+                    cases_path.write_text(json.dumps([{**rows[1], "ephemeral": invalid}]))
+                    with self.assertRaises(verify_behavior.HarnessError):
+                        verify_behavior.read_cases(cases_path)
+
+    def test_run_case_sends_durable_thread_and_excludes_parent_from_children(self):
+        class FakeAppServer:
+            instances = []
+
+            def __init__(self, *args):
+                self.requests = []
+                self.__class__.instances.append(self)
+
+            def request(self, method, params, timeout, on_event):
+                self.requests.append((method, params))
+                if method == "thread/start":
+                    on_event({
+                        "method": "item/completed",
+                        "params": {"threadId": "parent", "item": {
+                            "type": "collabAgentToolCall", "id": "early", "agentThreadId": "parent",
+                            "receiverThreadIds": ["parent", "child"],
+                        }},
+                    })
+                    return {"thread": {"id": "parent"}}
+                if method == "turn/start":
+                    on_event({
+                        "method": "item/completed",
+                        "params": {"threadId": "parent", "item": {
+                            "type": "collabAgentToolCall", "id": "later",
+                            "receiverThreadIds": ["parent", "child"],
+                            "events": [{"type": "subagentActivity", "agentThreadId": "parent"}],
+                        }},
+                    })
+                    return {"turn": {"id": "turn-1"}}
+                if method == "thread/read":
+                    return {"thread": {"id": params["threadId"], "model": "model-observed"}}
+                return {}
+
+            def notify(self, method):
+                pass
+
+            def read(self, deadline):
+                return {"method": "turn/completed", "params": {
+                    "threadId": "parent", "turn": {"id": "turn-1", "status": "completed"},
+                }}
+
+            def close(self):
+                pass
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            project = root / "project"
+            project.mkdir()
+            output = root / "output"
+            cases_path = root / "cases.json"
+            cases_path.write_text(json.dumps([{
+                "id": "durable", "cwd": str(project), "prompt": "Inspecter.", "ephemeral": False,
+            }]))
+            case = verify_behavior.read_cases(cases_path)[0]
+            with patch.object(verify_behavior, "AppServer", FakeAppServer):
+                result = verify_behavior.run_case(case, output, ["fake-app-server"], None, None, 1)
+
+        requests = FakeAppServer.instances[0].requests
+        self.assertIs(next(params for method, params in requests if method == "thread/start")["ephemeral"], False)
+        self.assertEqual(result["status"], "completed")
+        self.assertEqual(result["native_child_thread_ids"], ["child"])
+        self.assertEqual([params["threadId"] for method, params in requests if method == "thread/read"], ["parent", "child"])
+        self.assertEqual([row["thread_id"] for row in result["child_metadata"]], ["child"])
+        self.assertEqual(result["after_turn_actual_metadata"][0]["metadata"]["thread"]["id"], "parent")
+        self.assertEqual(len(result["dispatch_metadata"]), 2)
+
     def test_rejects_overlapping_or_nonempty_output_before_native_launch(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
