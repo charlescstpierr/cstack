@@ -127,7 +127,7 @@ class BehaviorRunnerTests(unittest.TestCase):
         self.assertEqual([params["threadId"] for method, params in requests if method == "thread/read"], ["parent", "child"])
         self.assertEqual([row["thread_id"] for row in result["child_metadata"]], ["child"])
         self.assertEqual(result["after_turn_actual_metadata"][0]["metadata"]["thread"]["id"], "parent")
-        self.assertEqual(len(result["dispatch_metadata"]), 2)
+        self.assertEqual(len(result["dispatch_metadata"]), 3)
 
     def test_rejects_overlapping_or_nonempty_output_before_native_launch(self):
         with tempfile.TemporaryDirectory() as directory:

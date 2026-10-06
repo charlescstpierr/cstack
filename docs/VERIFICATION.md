@@ -2,6 +2,14 @@
 
 Ce fichier distingue le catalogue courant des campagnes datées. Les nombres historiques restent ceux de leur campagne.
 
+## Scénarios natifs persistants
+
+`scripts/verify-behavior.py` conserve le booléen `ephemeral` de chaque scénario jusqu'à `thread/start`. Les valeurs autres que `true` ou `false` sont refusées ; un scénario fourni sans ce champ garde le défaut éphémère. Le générateur `scripts/behavior-scenarios.py` demande explicitement des fils persistants pour permettre la délégation native. Ces conversations restent dans l'historique du `CODEX_HOME` courant, et les fixtures ainsi que leurs preuves sont conservées dans les dossiers de sortie.
+
+Le reçu `native_child_thread_ids` exclut le fil parent, y compris lorsqu'un événement arrive avant la réponse de `thread/start`. Les dispatchs bruts restent conservés et les métadonnées d'un enfant fermé restent une lacune d'observation. Le statut `completed` décrit la fin du tour ; il ne prouve ni le résultat de la tâche ni la conformité du workflow. La confrontation des attentes de routage aux lectures observées reste le périmètre distinct de la PR #43.
+
+Le [reçu du 6 octobre 2026](evidence/behavior-runner-2026-10-06.json) enregistre une sonde via l'interface CLI corrigée. Le parent est persistant, un enfant est confirmé par ses métadonnées et le parent est absent de la liste d'enfants. La correction du message et une assertion indépendante sur sa sortie passent. Le bundle source était chargé directement, sans observation des hooks installés. C'est un essai unique, pas une campagne comparative ni une preuve générale de conformité des workflows.
+
 ## État 0.8.0
 
 Le catalogue 0.8.0 contient 29 skills, 23 références de principes et 23 guides d'exécution. La couverture conserve 158 fichiers source, épinglés sur pstack 0.15.5.

@@ -1,0 +1,77 @@
+{
+  "date": "2026-10-06",
+  "base_commit": "a395969bc8b1ea19fdbf6c79a97785f780d61ea7",
+  "test_first_commit": "7321dc1",
+  "scope": "Correction du vérificateur natif, pas comparaison de qualité de workflows",
+  "native": {
+    "codex_cli_version": "0.159.0",
+    "model_observed": "gpt-6.1-sol",
+    "effort_observed": "medium",
+    "case_id": "routing_one_word_user_string",
+    "samples": 1,
+    "parent_ephemeral": false,
+    "reported_child_count": 1,
+    "confirmed_child_count": 1,
+    "parent_excluded": true,
+    "expected_output": "Error: could not process invoice 123",
+    "only_requested_file_changed": true,
+    "spawn_missing_rollout_error": false,
+    "runner_sha256": "a95236b70b0936e1cbb66c2ecad49263dbb73003ad6fc32a6e817bd8970e6cba"
+  },
+  "checks": [
+    {
+      "name": "facts",
+      "exit_code": 0
+    },
+    {
+      "name": "validator",
+      "exit_code": 0
+    },
+    {
+      "name": "python",
+      "exit_code": 0
+    },
+    {
+      "name": "bun-root",
+      "exit_code": 0
+    },
+    {
+      "name": "install-helpers",
+      "exit_code": 0
+    },
+    {
+      "name": "helper-tests",
+      "exit_code": 0
+    },
+    {
+      "name": "helper-types",
+      "exit_code": 0
+    },
+    {
+      "name": "root-types",
+      "exit_code": 0
+    },
+    {
+      "name": "bash",
+      "exit_code": 0
+    },
+    {
+      "name": "shellcheck",
+      "exit_code": 0
+    },
+    {
+      "name": "actionlint",
+      "exit_code": 0
+    },
+    {
+      "name": "diff",
+      "exit_code": 0
+    }
+  ],
+  "limits": [
+    "Un essai natif, sans conclusion de fiabilité générale.",
+    "Bundle source chargé directement; hooks installés non exercés.",
+    "La conformité du workflow et le résultat ne sont pas déduits du statut completed.",
+    "Les traces complètes restent sous .cstack/fix-behavior-evidence-1006/native-after dans le workspace de la campagne."
+  ]
+}

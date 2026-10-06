@@ -133,7 +133,7 @@ def register(
         raise ValueError(f"{case_id}: fournissez body ou bodies")
     texts = bodies if bodies is not None else [body]
     prompts = [prompt(bundle, skill, text, french) for text in texts if text is not None]
-    case: dict[str, Any] = {"id": case_id, "cwd": str(project), "sandbox": sandbox}
+    case: dict[str, Any] = {"id": case_id, "cwd": str(project), "sandbox": sandbox, "ephemeral": False}
     case["prompts" if bodies is not None else "prompt"] = prompts if bodies is not None else prompts[0]
     cases.append(case)
     skill_path = bundle / "skills" / skill / "SKILL.md"
