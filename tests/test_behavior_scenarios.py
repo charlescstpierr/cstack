@@ -21,6 +21,109 @@ RUNNER_SPEC.loader.exec_module(verify_behavior)
 
 
 class BehaviorScenarioGeneratorTests(unittest.TestCase):
+    def test_merge_and_cherry_pick_in_progress_are_not_fingerprinted_but_legacy_is_allowed(self):
+        for operation in ("merge", "cherry-pick"):
+            with self.subTest(operation=operation), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                project = behavior_scenarios.create_project(root, "alder", {"shared.txt": "base"}, [])
+                behavior_scenarios.seed_git(project)
+                behavior_scenarios.git(project, "switch", "-c", "side")
+                (project / "shared.txt").write_text("side")
+                behavior_scenarios.git(project, "add", ".")
+                identity = ["-c", "user.name=fixture", "-c", "user.email=fixture@example.invalid"]
+                behavior_scenarios.git(project, *identity, "commit", "-m", "side")
+                behavior_scenarios.git(project, "switch", "main")
+                if operation == "cherry-pick":
+                    (project / "shared.txt").write_text("main")
+                    behavior_scenarios.git(project, "add", ".")
+                    behavior_scenarios.git(project, *identity, "commit", "-m", "main")
+                    args = ["cherry-pick", "side"]
+                else:
+                    args = ["merge", "--no-ff", "--no-commit", "side"]
+                completed = subprocess.run(["git", "-C", str(project), *identity, *args], capture_output=True)
+                self.assertEqual(completed.returncode, 1 if operation == "cherry-pick" else 0)
+                with self.subTest(hasher="generator"), self.assertRaisesRegex(ValueError, "opération Git"):
+                    behavior_scenarios.git_hash(project)
+                with self.subTest(hasher="runner"), self.assertRaisesRegex(verify_behavior.HarnessError, "opération Git"):
+                    verify_behavior.git_hash(project)
+                cases = root / "cases.json"
+                cases.write_text(json.dumps([{"id": "one", "cwd": str(project), "prompt": "Resolve the operation."}]))
+                with patch.object(verify_behavior, "build_command", return_value=["fake"]), \
+                     patch.object(verify_behavior, "run_case", return_value={"id": "one", "status": "completed"}) as launch:
+                    self.assertEqual(verify_behavior.main(["--cases", str(cases), "--output", str(root / "legacy")]), 0)
+                    self.assertEqual(launch.call_count, 1)
+                marker = "MERGE_HEAD" if operation == "merge" else "CHERRY_PICK_HEAD"
+                marker_path = project / os.fsdecode(subprocess.check_output([
+                    "git", "-C", str(project), "rev-parse", "--git-path", marker])).rstrip("\n")
+                marker_bytes = marker_path.read_bytes()
+                behavior_scenarios.git(project, operation, "--quit")
+                expected_git = behavior_scenarios.git_hash(project)
+                marker_path.write_bytes(marker_bytes)
+                normalized = verify_behavior.read_cases(cases)[0]
+                expectations = root / "expectations.json"
+                expectations.write_text(json.dumps({"schema_version": 1, "cases": [{
+                    "id": "one", "case_sha256": behavior_scenarios.case_hash(normalized), "git_sha256": expected_git}]}))
+                with patch.object(verify_behavior, "build_command", return_value=["fake"]) as build, \
+                     patch.object(verify_behavior, "run_case") as launch:
+                    with self.assertRaisesRegex(verify_behavior.HarnessError, "opération Git"):
+                        verify_behavior.main(["--cases", str(cases), "--expectations", str(expectations),
+                            "--output", str(root / "refused")])
+                    build.assert_not_called()
+                    launch.assert_not_called()
+                self.assertFalse((root / "refused").exists())
+
+    def test_bisect_reset_and_empty_ref_directories_are_not_operations_in_progress(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            project = behavior_scenarios.create_project(root, "alder", {"file.txt": "first"}, [])
+            behavior_scenarios.seed_git(project)
+            for number in range(3):
+                (project / "file.txt").write_text(str(number))
+                behavior_scenarios.git(project, "add", "file.txt")
+                behavior_scenarios.git(project, "-c", "user.name=fixture", "-c", "user.email=fixture@example.invalid",
+                    "commit", "-m", str(number))
+            expected = behavior_scenarios.git_hash(project)
+            behavior_scenarios.git(project, "bisect", "start", "HEAD", "HEAD~3")
+            with self.assertRaisesRegex(ValueError, "opération Git"):
+                behavior_scenarios.git_hash(project)
+            behavior_scenarios.git(project, "bisect", "reset")
+            # Git versions may retain this empty namespace directory after reset.
+            bisect_refs = project / os.fsdecode(subprocess.check_output([
+                "git", "-C", str(project), "rev-parse", "--git-path", "refs/bisect"])).rstrip("\n")
+            bisect_refs.mkdir(exist_ok=True)
+            self.assertEqual(behavior_scenarios.git_hash(project), expected)
+            self.assertEqual(verify_behavior.git_hash(project), expected)
+
+    def test_unborn_git_head_and_first_commit_have_distinct_stable_snapshots(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            project = behavior_scenarios.create_project(root, "alder", {"file.txt": "first"}, [])
+            behavior_scenarios.git(project, "init", "-b", "main")
+            behavior_scenarios.git(project, "add", "file.txt")
+            expected = behavior_scenarios.git_hash(project)
+            self.assertEqual(verify_behavior.git_hash(project), expected)
+            copied = root / "copy"
+            shutil.copytree(project, copied)
+            self.assertEqual(verify_behavior.git_hash(copied), expected)
+            behavior_scenarios.git(project, "-c", "user.name=fixture", "-c", "user.email=fixture@example.invalid",
+                "commit", "-m", "first")
+            self.assertNotEqual(behavior_scenarios.git_hash(project), expected)
+
+    def test_invalid_head_or_reference_is_not_treated_as_unborn(self):
+        for corruption in ("invalid-head", "malformed-ref", "missing-object"):
+            with self.subTest(corruption=corruption), tempfile.TemporaryDirectory() as directory:
+                project = Path(directory)
+                behavior_scenarios.git(project, "init", "-b", "main")
+                if corruption == "invalid-head":
+                    (project / ".git/HEAD").write_text("not a HEAD")
+                else:
+                    ref = project / ".git/refs/heads/main"
+                    ref.write_text("malformed" if corruption == "malformed-ref" else "f" * 40)
+                with self.assertRaises(ValueError):
+                    behavior_scenarios.git_hash(project)
+                with self.assertRaises(verify_behavior.HarnessError):
+                    verify_behavior.git_hash(project)
+
     def test_git_hash_ignores_cache_timestamps_and_preserves_normalized_copies(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

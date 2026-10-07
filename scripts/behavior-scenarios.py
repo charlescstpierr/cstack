@@ -101,10 +101,27 @@ def git_hash(project: Path) -> str:
         else:
             if Path(os.fsdecode(discovered).rstrip("\n")).resolve() != project.resolve():
                 raise ValueError(f"la racine Git doit être celle de la fixture: {project}")
-            snapshot = {}
+            markers = ("MERGE_HEAD", "CHERRY_PICK_HEAD", "REVERT_HEAD", "rebase-merge", "rebase-apply",
+                       "sequencer", "BISECT_LOG", "BISECT_START")
+            _, paths = read(["rev-parse", *[arg for marker in markers for arg in ("--git-path", marker)]])
+            paths = paths.splitlines()
+            if len(paths) != len(markers):
+                raise ValueError(f"état Git inaccessible: {project}")
+            if any((project / os.fsdecode(path)).exists() or (project / os.fsdecode(path)).is_symlink() for path in paths):
+                raise ValueError(f"opération Git en cours non prise en charge: {project}")
+            ref_code, head_ref = read(["symbolic-ref", "-q", "HEAD"], (0, 1))
+            head_code, head = read(["rev-parse", "--verify", "HEAD^{commit}"], (0, 128))
+            if head_code:
+                ref = os.fsdecode(head_ref).rstrip("\n")
+                if ref_code or not ref.startswith("refs/heads/"):
+                    raise ValueError(f"état Git inaccessible: {project}")
+                read(["check-ref-format", ref])
+                exists, _ = read(["show-ref", "--verify", "--quiet", ref], (0, 1))
+                if exists == 0:
+                    raise ValueError(f"état Git inaccessible: {project}")
+            snapshot = {"head": head.hex() if head_code == 0 else None,
+                        "head_ref": head_ref.hex() if ref_code == 0 else None}
             for key, args, allowed in (
-                ("head", ["rev-parse", "--verify", "HEAD"], (0,)),
-                ("head_ref", ["symbolic-ref", "-q", "HEAD"], (0, 1)),
                 ("refs", ["for-each-ref", "--format=%(refname)%00%(objectname)%00%(symref)"], (0,)),
                 ("index", ["ls-files", "--stage", "-v", "-z"], (0,)),
                 ("staged_diff", ["diff", "--cached", "--raw", "-z", "--no-abbrev", "--no-renames", "--no-ext-diff", "--no-textconv"], (0,)),
