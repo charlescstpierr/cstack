@@ -1,6 +1,7 @@
 import importlib.util
 import json
 import os
+import subprocess
 import tempfile
 import unittest
 from pathlib import Path
@@ -18,6 +19,36 @@ RUNNER_SPEC.loader.exec_module(verify_behavior)
 
 
 class BehaviorScenarioGeneratorTests(unittest.TestCase):
+    def test_chmod_of_project_bundle_or_file_link_target_invalidates_provenance(self):
+        for scope in ("project", "bundle", "file-link"):
+            with self.subTest(scope=scope), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                project, bundle = root / "project", root / "bundle"
+                project.mkdir()
+                bundle.mkdir()
+                hashed = bundle if scope == "bundle" else project
+                script = hashed / "tool.sh"
+                script.write_text("#!/bin/sh\nexit 0\n")
+                script.chmod(0o755)
+                if scope == "file-link":
+                    (project / "alias.sh").symlink_to("tool.sh")
+                subprocess.run([str(script)], check=True)
+                digest = behavior_scenarios.tree_hash(hashed)
+                expectation = {"id": "one", "hash_algorithm": "cstack-tree-sha256-v2"}
+                if scope == "bundle":
+                    expectation["source_sha256"] = {"bundle": digest}
+                else:
+                    expectation["project_sha256"] = digest
+                case = {"id": "one", "cwd": project, "bundle": bundle, "prompts": ["Read."]}
+                verify_behavior.verify_provenance(case, expectation)
+                script.chmod(0o644)
+                with self.assertRaises(PermissionError):
+                    subprocess.run([str(script)], check=True)
+                with self.assertRaisesRegex(verify_behavior.HarnessError, "empreinte"):
+                    verify_behavior.verify_provenance(case, expectation)
+                self.assertNotEqual(behavior_scenarios.tree_hash(hashed), digest)
+                self.assertEqual(behavior_scenarios.tree_hash(hashed), verify_behavior.tree_hash(hashed, None)["sha256"])
+
     def test_directory_links_cannot_receive_project_or_bundle_provenance(self):
         for scope in ("project", "bundle"):
             with self.subTest(scope=scope), tempfile.TemporaryDirectory() as directory:
@@ -77,6 +108,7 @@ class BehaviorScenarioGeneratorTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             project = behavior_scenarios.create_project(root, "alder", {"a.bin": "original"}, [])
+            (project / "a.bin").chmod(0o755)
             alias = project / "alias.bin"
             alias.symlink_to("a.bin")
             bundle = root / "bundle"
@@ -93,6 +125,8 @@ class BehaviorScenarioGeneratorTests(unittest.TestCase):
             def modify_copy(case, *args):
                 copied = case["cwd"] / "alias.bin"
                 self.assertFalse(copied.is_symlink())
+                self.assertEqual(copied.stat().st_mode & 0o7777, 0o755)
+                self.assertEqual((case["cwd"] / "a.bin").stat().st_mode & 0o7777, 0o755)
                 self.assertEqual(verify_behavior.tree_hash(case["cwd"], None)["sha256"], expectations[0]["project_sha256"])
                 copied.write_text("changed")
                 self.assertEqual((case["cwd"] / "a.bin").read_text(), "original")

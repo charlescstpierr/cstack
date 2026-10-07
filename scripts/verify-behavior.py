@@ -13,6 +13,7 @@ import re
 import selectors
 import shlex
 import shutil
+import stat
 import subprocess
 import sys
 import tempfile
@@ -417,7 +418,9 @@ def tree_hash(root, excluded):
             if not item.is_file() or (excluded and (item == excluded or excluded in item.parents)):
                 continue
             relative = item.relative_to(root).as_posix().encode()
-            digest.update(len(relative).to_bytes(8, "big") + relative)
+            mode = item.stat().st_mode
+            effective_mode = stat.S_IFMT(mode) | stat.S_IMODE(mode)
+            digest.update(effective_mode.to_bytes(2, "big") + len(relative).to_bytes(8, "big") + relative)
             content_digest = hashlib.sha256()
             with item.open("rb") as stream:
                 while chunk := stream.read(1024 * 1024):

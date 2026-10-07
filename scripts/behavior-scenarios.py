@@ -10,6 +10,7 @@ import os
 from pathlib import Path
 import re
 import shutil
+import stat
 import subprocess
 import sys
 from typing import Any
@@ -52,7 +53,9 @@ def tree_hash(root: Path) -> str:
                 continue
             # File links have the same representation as their materialized copies.
             relative = item.relative_to(root).as_posix().encode()
-            digest.update(len(relative).to_bytes(8, "big") + relative)
+            mode = item.stat().st_mode
+            effective_mode = stat.S_IFMT(mode) | stat.S_IMODE(mode)
+            digest.update(effective_mode.to_bytes(2, "big") + len(relative).to_bytes(8, "big") + relative)
             digest.update(hashlib.sha256(item.read_bytes()).digest())
     return digest.hexdigest()
 
