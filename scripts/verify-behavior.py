@@ -469,7 +469,13 @@ def observed_routes(trace_prefix, bundle, commands=(), cwd=None):
             if not match:
                 continue
             try:
-                path = Path(json.loads('"' + match.group(1) + '"')).resolve()
+                path = Path(json.loads('"' + match.group(1) + '"'))
+                # Relative opens use the traced process's cwd or dirfd, neither
+                # of which this trace records (a child may have called chdir).
+                if not path.is_absolute():
+                    ambiguous = True
+                    continue
+                path = path.resolve()
             except (json.JSONDecodeError, OSError):
                 ambiguous = True
                 continue
@@ -539,7 +545,7 @@ def read_expectations(path):
             raise HarnessError(f"{case_id}: outcome_checks doit être un tableau")
         ids = set()
         for check in checks:
-            if (not isinstance(check, dict) or set(check) - {"id", "argv", "timeout"}
+            if (not isinstance(check, dict) or set(check) - {"id", "argv", "timeout", "expected_json"}
                     or not isinstance(check.get("id"), str) or not check["id"] or check["id"] in ids
                     or not isinstance(check.get("argv"), list) or not check["argv"]
                     or any(not isinstance(arg, str) or "\0" in arg for arg in check["argv"])
@@ -592,7 +598,13 @@ def evaluate_case(result, expectation, verify_outcomes=False):
                 process = subprocess.run(check["argv"], cwd=result["cwd"], stdin=subprocess.DEVNULL,
                                          capture_output=True, text=True, errors="replace",
                                          timeout=check.get("timeout", 30), check=False)
-                record.update(status="pass" if process.returncode == 0 else "fail", returncode=process.returncode,
+                passed = process.returncode == 0
+                if "expected_json" in check:
+                    try:
+                        passed = passed and json.loads(process.stdout) == check["expected_json"]
+                    except (ValueError, RecursionError):
+                        passed = False
+                record.update(status="pass" if passed else "fail", returncode=process.returncode,
                               stdout=scrub_text(process.stdout)[-4096:], stderr=scrub_text(process.stderr)[-4096:])
             except (OSError, subprocess.TimeoutExpired) as error:
                 record.update(status="unverified", error=scrub_text(str(error)))
@@ -879,6 +891,17 @@ def main(argv=None):
     for case in cases:
         if output == case["cwd"] or case["cwd"] in output.parents or output in case["cwd"].parents:
             raise HarnessError(f"la sortie doit être située hors du cwd du scénario: {case['id']}")
+        if args.repeats > 1:
+            if not (case["cwd"] / ".git").exists():
+                for parent in case["cwd"].parents:
+                    git_path = parent / ".git"
+                    if git_path.is_file() or git_path.is_symlink() or (git_path / "HEAD").is_file():
+                        raise HarnessError(f"répétitions non prises en charge pour un sous-dossier de dépôt Git: {case['cwd']}")
+            for directory, names, files in os.walk(case["cwd"]):
+                git_path = Path(directory) / ".git"
+                if ".git" in files or git_path.is_symlink():
+                    raise HarnessError(f"répétitions non prises en charge pour un dépôt Git lié: {git_path}")
+                names[:] = [name for name in names if name != ".git"]
     if output.exists() and any(output.iterdir()):
         raise HarnessError("le dossier de sortie doit être absent ou vide ; refus d’écraser les preuves")
     output.mkdir(parents=True, exist_ok=True)

@@ -1,6 +1,8 @@
 import importlib.util
 import json
 import os
+import shutil
+import subprocess
 import sys
 import tempfile
 import types
@@ -233,6 +235,88 @@ class BehaviorRunnerTests(unittest.TestCase):
             self.assertEqual([case["id"] for case in summary["cases"]],
                              ["one__run_01", "one__run_02", "one__run_03"])
             self.assertEqual((project / "source.txt").read_text(), "original")
+
+    def test_repeats_reject_linked_git_worktrees_before_launch(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            original, linked = root / "original", root / "linked"
+            original.mkdir()
+            subprocess.run(["git", "init", "-q", str(original)], check=True)
+            (original / "source.txt").write_text("original")
+            subprocess.run(["git", "-C", str(original), "add", "."], check=True)
+            subprocess.run(["git", "-C", str(original), "-c", "user.name=test",
+                            "-c", "user.email=test@example.invalid", "commit", "-qm", "initial"], check=True)
+            subprocess.run(["git", "-C", str(original), "worktree", "add", "-qb", "linked", str(linked)], check=True)
+            head = subprocess.check_output(["git", "-C", str(linked), "rev-parse", "HEAD"])
+            index = Path(subprocess.check_output(["git", "-C", str(linked), "rev-parse",
+                                                "--git-path", "index"], text=True).strip())
+            before_index = index.read_bytes()
+            cases = root / "cases.json"
+            (linked / "subdir").mkdir()
+            for cwd in (linked, linked / "subdir"):
+                with self.subTest(cwd=cwd):
+                    cases.write_text(json.dumps([{"id": "linked", "cwd": str(cwd), "prompt": "Commit a fix."}]))
+                    with patch.object(verify_behavior, "build_command", return_value=["fake"]), \
+                         patch.object(verify_behavior, "run_case", return_value={"id": "linked", "status": "completed"}) as launch:
+                        with self.assertRaisesRegex(verify_behavior.HarnessError, "dépôt Git"):
+                            verify_behavior.main(["--cases", str(cases), "--output", str(root / "results"), "--repeats", "2"])
+                        launch.assert_not_called()
+            self.assertEqual(subprocess.check_output(["git", "-C", str(linked), "rev-parse", "HEAD"]), head)
+            self.assertEqual(index.read_bytes(), before_index)
+            self.assertFalse((root / "results").exists())
+
+    def test_repeated_standalone_git_commits_leave_fixture_head_and_index_intact(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            project = root / "project"
+            project.mkdir()
+
+            def git(cwd, *args):
+                return subprocess.check_output(["git", "-C", str(cwd), "-c", "user.name=test",
+                    "-c", "user.email=test@example.invalid", *args], stderr=subprocess.DEVNULL)
+
+            git(project, "init", "-q")
+            (project / "source.txt").write_text("original")
+            git(project, "add", ".")
+            git(project, "commit", "-qm", "initial")
+            head, index = git(project, "rev-parse", "HEAD"), (project / ".git/index").read_bytes()
+            cases = root / "cases.json"
+            cases.write_text(json.dumps([{"id": "one", "cwd": str(project), "prompt": "Commit the fix."}]))
+
+            def commit_fix(case, *args):
+                self.assertEqual(git(case["cwd"], "rev-parse", "HEAD"), head)
+                (case["cwd"] / "source.txt").write_text("fixed")
+                git(case["cwd"], "add", ".")
+                git(case["cwd"], "commit", "-qm", "fix")
+                return {"id": case["id"], "status": "completed"}
+
+            with patch.object(verify_behavior, "build_command", return_value=["fake"]), \
+                 patch.object(verify_behavior, "run_case", side_effect=commit_fix) as launch:
+                self.assertEqual(verify_behavior.main(["--cases", str(cases), "--output", str(root / "results"),
+                                                      "--repeats", "2"]), 0)
+                self.assertEqual(launch.call_count, 2)
+            self.assertEqual(git(project, "rev-parse", "HEAD"), head)
+            self.assertEqual((project / ".git/index").read_bytes(), index)
+            self.assertEqual((project / "source.txt").read_text(), "original")
+
+    @unittest.skipUnless(shutil.which("strace"), "strace requis")
+    def test_relative_strace_open_cannot_be_a_known_negative(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            bundle = root / "bundle"
+            skill = bundle / "skills/how/SKILL.md"
+            skill.parent.mkdir(parents=True)
+            skill.write_text("how")
+            prefix = root / "route-open"
+            subprocess.run(["strace", "-ff", "-e", "trace=openat,openat2", "-o", str(prefix),
+                            "cat", "bundle/skills/how/SKILL.md"], cwd=root, check=True,
+                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            observed = verify_behavior.observed_routes(prefix, bundle, ["cat bundle/skills/how/SKILL.md"], root)
+            score = verify_behavior.score_routes(observed, {"routing": {
+                "expected": [], "forbidden": ["skills/how/SKILL.md"]}})
+            self.assertEqual(score["known_true_negative"], [])
+            self.assertEqual(score["unknown_forbidden"], ["skills/how/SKILL.md"])
+            self.assertTrue(observed["ambiguous_path"])
 
 
     def test_dispatch_never_counts_parent_as_child(self):

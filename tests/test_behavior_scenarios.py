@@ -1,8 +1,10 @@
 import importlib.util
 import json
+import os
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 
 ROOT = Path(__file__).parents[1]
@@ -10,9 +12,42 @@ MODULE_PATH = ROOT / "scripts" / "behavior-scenarios.py"
 SPEC = importlib.util.spec_from_file_location("behavior_scenarios", MODULE_PATH)
 behavior_scenarios = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(behavior_scenarios)
+RUNNER_SPEC = importlib.util.spec_from_file_location("verify_behavior", ROOT / "scripts/verify-behavior.py")
+verify_behavior = importlib.util.module_from_spec(RUNNER_SPEC)
+RUNNER_SPEC.loader.exec_module(verify_behavior)
 
 
 class BehaviorScenarioGeneratorTests(unittest.TestCase):
+    def test_frozen_outcomes_reject_early_exit_and_optimized_wrong_results(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            cases, expectations = behavior_scenarios.build_cases(
+                ROOT / "plugins/cstack", ROOT / "plugins/cstack", root, None)
+            projects = {case["id"]: Path(case["cwd"]) for case in cases}
+            by_id = {row["id"]: row for row in expectations}
+            for case_id, filename, valid, wrong in (
+                ("clear_python_correction_proposed", "events.py",
+                 'def filter_events(events, start, today):\n    return [e for e in events if start <= e["date"] <= today]\n',
+                 'def filter_events(events, start, today):\n    return []\n'),
+                ("routing_one_word_user_string", "src/errors.py",
+                 'def fail(code):\n    return f"Error: could not process invoice {code}"\n',
+                 'def fail(code):\n    return "wrong"\n'),
+            ):
+                check = by_id[case_id]["outcome_checks"][0]
+                target = projects[case_id] / filename
+                early = wrong.replace('return []', 'raise SystemExit(0)').replace('return "wrong"', 'raise SystemExit(0)')
+                for label, code, optimized in (("early-exit", early, False), ("optimized", wrong, True),
+                                               ("correct", valid, True)):
+                    with self.subTest(case_id=case_id, label=label):
+                        target.write_text(code)
+                        env = dict(os.environ, PYTHONOPTIMIZE="1" if optimized else "0", PYTHONDONTWRITEBYTECODE="1")
+                        with patch.dict(os.environ, env):
+                            report = verify_behavior.evaluate_case(
+                                {"status": "completed", "cwd": str(projects[case_id])},
+                                {"outcome_checks": [check]}, verify_outcomes=True)
+                        self.assertEqual(report["outcome"]["status"], "pass" if label == "correct" else "fail",
+                                         f"{label}: {report['outcome']}")
+
     def test_generated_cases_use_persistent_threads_for_native_delegation(self):
         with tempfile.TemporaryDirectory() as directory:
             cases, expectations = [], []

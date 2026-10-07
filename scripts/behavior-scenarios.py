@@ -311,8 +311,9 @@ def filter_events(events, start, today):
                  bundle=bundle, skill="cstack", roles=["bug-fix"],
                  body=correction, expected_children=0,
                  outcome_checks=[{"id": "event-boundaries", "argv": [sys.executable, "-c",
-                     "from events import filter_events; events = [{'date': n} for n in (0, 1, 2, 3)]; "
-                     "assert filter_events(events, 1, 2) == events[1:3]"]}])
+                     "import json; from events import filter_events; events = [{'date': n} for n in (0, 1, 2, 3)]; "
+                     "print(json.dumps(filter_events(events, 1, 2)))"],
+                     "expected_json": [{"date": 1}, {"date": 2}]}])
 
     archive_files = {
         "storage.py": "def save_record(record, existing):\n    if record[\"id\"] not in existing:\n        raise KeyError(record[\"id\"])\n    return record\n",
@@ -478,7 +479,8 @@ if __name__ == "__main__":
              forbidden_routes=[
                  "skills/cstack/references/principles/laziness-protocol.md",
              ], outcome_checks=[{"id": "invoice-message", "argv": [sys.executable, "-c",
-                 "from src.errors import fail; assert fail('demo') == 'Error: could not process invoice demo'"]}])
+                 "import json; from src.errors import fail; print(json.dumps(fail('demo')))"],
+                 "expected_json": "Error: could not process invoice demo"}])
 
     typed_boundary = """Use $cstack:cstack. Operators hand-edit config.yaml and the service reads it at startup. Give the configuration a typed shape and write the loader that produces it. Operators regularly ship a missing key, a quoted number where an integer belongs, or an endpoint with no scheme."""
     register(cases, expectations, case_id="routing_typed_external_boundary",
