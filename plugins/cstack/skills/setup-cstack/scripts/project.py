@@ -612,12 +612,12 @@ def apply_plan(workspace: Path, supplied_plan: Any, raw_options: Any, catalog: d
         if current_hash != entry["current_sha256"]:
             raise ProjectError(f"fichier modifié avant la préparation: {entry['path']}")
         changes.append(entry)
-    result = _apply_changes(workspace, changes)
+    result = _apply_changes(workspace, changes, resume_on_interrupt=True)
     result["plan_sha256"] = plan["plan_sha256"]
     return result
 
 
-def _apply_changes(workspace: Path, changes: list[dict[str, Any]]) -> dict[str, Any]:
+def _apply_changes(workspace: Path, changes: list[dict[str, Any]], *, resume_on_interrupt: bool = False) -> dict[str, Any]:
     if not changes:
         return {"status": "noop", "changed": []}
     staged: list[tuple[dict[str, Any], Path | None, bytes | None]] = []
@@ -650,15 +650,15 @@ def _apply_changes(workspace: Path, changes: list[dict[str, Any]]) -> dict[str, 
         return {"status": "applied", "changed": [entry["path"] for entry, _ in replaced]}
     except InterruptedApply:
         raise
-    except KeyboardInterrupt as error:
-        done = [entry["path"] for entry, _ in replaced]
-        skipped = [entry["path"] for entry in changes if entry["path"] not in done]
-        raise InterruptedApply(done, skipped) from error
-    except Exception as error:
+    except (Exception, KeyboardInterrupt) as error:
+        if isinstance(error, KeyboardInterrupt) and resume_on_interrupt:
+            done = [entry["path"] for entry, _ in replaced]
+            skipped = [entry["path"] for entry in changes if entry["path"] not in done]
+            raise InterruptedApply(done, skipped) from error
         rolled_back, conflicts = [], []
         for entry, old in reversed(replaced):
             (rolled_back if _restore(_path(workspace, entry["path"], write=True), old, entry["new_sha256"]) else conflicts).append(entry["path"])
-        return {"status": "rolled_back" if not conflicts else "partial", "error": str(error), "rolled_back": rolled_back, "rollback_conflicts": conflicts}
+        return {"status": "rolled_back" if not conflicts else "partial", "error": str(error) or "application interrompue", "rolled_back": rolled_back, "rollback_conflicts": conflicts}
     finally:
         for _, temp, _ in staged:
             if temp is not None:

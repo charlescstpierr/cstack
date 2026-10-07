@@ -80,7 +80,14 @@ class ModelSetupTests(unittest.TestCase):
             with self.subTest(existing_models=existing), tempfile.TemporaryDirectory() as directory:
                 self.check_failed_cli_rollback(project, Path(directory), existing, explorer)
 
-    def check_failed_cli_rollback(self, project, workspace, existing, explorer):
+    def test_apply_cli_rolls_back_interruption_after_model_write(self):
+        project = models.project_helper()
+        with tempfile.TemporaryDirectory() as directory:
+            self.check_failed_cli_rollback(project, Path(directory), True, "gpt-6-astra",
+                                           "KeyboardInterrupt", "cstack-explorer.toml")
+
+    def check_failed_cli_rollback(self, project, workspace, existing, explorer,
+                                 failure="OSError", failing_target="cstack-reviewer.toml"):
         directory = str(workspace)
         options = {"native_agents": True}
         plan = project.preview_plan(workspace, options, None)
@@ -98,19 +105,22 @@ class ModelSetupTests(unittest.TestCase):
         runner = '''
 import os, runpy, sys
 from pathlib import Path
+failure = getattr(__import__("builtins"), sys.argv.pop(1))
+failing_target = sys.argv.pop(1)
 replace = os.replace
-def fail_reviewer(source, target):
-    if Path(target).name == "cstack-reviewer.toml":
-        raise OSError("échec reviewer simulé")
+def fail_write(source, target):
+    if Path(target).name == failing_target:
+        raise failure("échec écriture simulé")
     replace(source, target)
-os.replace = fail_reviewer
+os.replace = fail_write
 runpy.run_path(sys.argv.pop(1), run_name="__main__")
 '''
-        result = subprocess.run([sys.executable, "-c", runner, str(SCRIPT), "--workspace", directory,
+        result = subprocess.run([sys.executable, "-c", runner, failure, failing_target,
+                                 str(SCRIPT), "--workspace", directory,
                                  "--catalog", str(catalog), "apply", "--choices", str(choices),
                                  "--expected-sha256", digest], capture_output=True, text=True)
         self.assertEqual(result.returncode, 2, result.stderr)
-        self.assertIn("échec reviewer simulé", result.stderr)
+        self.assertIn("échec écriture simulé", result.stderr)
         self.assertEqual({p: p.read_bytes() for p in before}, before)
         self.assertEqual(path.exists(), existing)
         self.assertFalse((path.parent / ".gitignore").exists())
