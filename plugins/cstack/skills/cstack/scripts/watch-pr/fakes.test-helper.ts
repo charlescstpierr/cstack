@@ -104,12 +104,19 @@ export function fakeReader(
     },
     async checkRollupPage(_requested, after) {
       calls.push(`checkRollupPage:${after ?? "null"}`);
+      const fast = options.fastPath ?? {
+        kind: "checks",
+        checks: [passingCheck()],
+      };
       return (
-        options.rollupPages?.[page++] ?? {
-          kind: "contexts",
-          checks: [],
-          endCursor: null,
-        }
+        options.rollupPages?.[page++] ??
+        (fast.kind === "none-reported"
+          ? { kind: "no-rollup" }
+          : {
+              kind: "contexts",
+              checks: fast.kind === "checks" ? fast.checks : [],
+              endCursor: null,
+            })
       );
     },
     async reviewThreads() {

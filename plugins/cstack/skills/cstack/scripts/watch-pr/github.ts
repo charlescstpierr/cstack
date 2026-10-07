@@ -7,8 +7,27 @@ export const REVIEW_THREADS_QUERY =
   "\nquery ReviewThreads($owner: String!, $repo: String!, $pr: Int!) {\n  repository(owner: $owner, name: $repo) {\n    pullRequest(number: $pr) {\n      reviewThreads(first: 100) {\n        pageInfo {\n          hasNextPage\n        }\n        nodes {\n          id\n          isResolved\n          comments(first: 10) {\n            nodes {\n              body\n              createdAt\n              path\n              line\n              author { login }\n            }\n          }\n        }\n      }\n    }\n  }\n}\n";
 export const PR_COMMIT_STATUS_QUERY =
   "\nquery PrCommitStatuses($owner: String!, $repo: String!, $pr: Int!) {\n  repository(owner: $owner, name: $repo) {\n    pullRequest(number: $pr) {\n      commits(last: 50) {\n        nodes {\n          commit {\n            oid\n            statusCheckRollup {\n              state\n            }\n          }\n        }\n      }\n    }\n  }\n}\n";
-export const PR_CHECK_ROLLUP_QUERY =
-  "\nquery PrCheckRollup($owner: String!, $repo: String!, $pr: Int!, $after: String) {\n  repository(owner: $owner, name: $repo) {\n    pullRequest(number: $pr) {\n      commits(last: 1) {\n        nodes {\n          commit {\n            statusCheckRollup {\n              contexts(first: 100, after: $after) {\n                pageInfo {\n                  hasNextPage\n                  endCursor\n                }\n                nodes {\n                  __typename\n                  ... on CheckRun {\n                    name\n                    status\n                    conclusion\n                    detailsUrl\n                  }\n                  ... on StatusContext {\n                    context\n                    state\n                    targetUrl\n                  }\n                }\n              }\n            }\n          }\n        }\n      }\n    }\n  }\n}\n";
+export const PR_CHECK_ROLLUP_QUERY = `
+query PrCheckRollup($owner: String!, $repo: String!, $head: String!, $after: String) {
+  repository(owner: $owner, name: $repo) {
+    object(expression: $head) {
+      ... on Commit {
+        oid
+        statusCheckRollup {
+          contexts(first: 100, after: $after) {
+            pageInfo { hasNextPage endCursor }
+            nodes {
+              __typename
+              ... on CheckRun { name status conclusion detailsUrl }
+              ... on StatusContext { context state targetUrl }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+`;
 
 interface CommandResult {
   readonly code: number;
@@ -662,21 +681,29 @@ export class GhGitHubReader implements T.GitHubReader {
   }
   async checkRollupPage(
     context: T.PrContext,
-    after: string | null
+    after: string | null,
+    headRefOid: string
   ): Promise<T.RollupPage> {
-    const argv = graphqlArgs(PR_CHECK_ROLLUP_QUERY, context);
+    const argv: [string, ...string[]] = [
+      "gh",
+      "api",
+      "graphql",
+      "-f",
+      `query=${PR_CHECK_ROLLUP_QUERY}`,
+      "-f",
+      `owner=${context.owner}`,
+      "-f",
+      `repo=${context.repo}`,
+      "-f",
+      `head=${headRefOid}`,
+    ];
     if (after !== null) argv.push("-f", `after=${after}`);
     const value = await runJson(argv);
-    const commits = list(
-      at(value, ["data", "repository", "pullRequest", "commits", "nodes"]),
-      "commits.nodes"
-    );
-    if (commits.length === 0)
-      return { kind: "contexts", checks: [], endCursor: null };
-    const commit = record(
-      at(commits[commits.length - 1], ["commit"]),
-      "commit"
-    );
+    const commit = record(at(value, ["data", "repository", "object"]), "commit");
+    if (string(commit.oid, "commit.oid") !== headRefOid)
+      throw new ChecksUnavailable(
+        `le rollup ne correspond pas au head ${headRefOid}`
+      );
     if (commit.statusCheckRollup === null) return { kind: "no-rollup" };
     const contexts = record(
       at(commit, ["statusCheckRollup", "contexts"]),
@@ -733,17 +760,14 @@ export class GhGitHubReader implements T.GitHubReader {
 
 export async function resolveChecks(
   reader: T.GitHubReader,
-  context: T.PrContext
+  context: T.PrContext,
+  headRefOid: string
 ): Promise<T.CheckRead> {
-  const fast = await reader.checksFastPath(context);
-  const direct = fast.kind === "checks" ? nonEmpty(fast.checks) : null;
-  if (direct !== null)
-    return { kind: "reported", source: "gh-pr-checks", checks: direct };
   const checks: T.Check[] = [];
   let after: string | null = null;
   let headHasRollup = true;
   do {
-    const page = await reader.checkRollupPage(context, after);
+    const page = await reader.checkRollupPage(context, after, headRefOid);
     if (page.kind === "no-rollup") {
       headHasRollup = false;
       break;
@@ -754,18 +778,12 @@ export async function resolveChecks(
   const fallback = nonEmpty(checks);
   if (fallback !== null)
     return { kind: "reported", source: "graphql-rollup", checks: fallback };
-  // Les deux lectures doivent le dire. Un rollup nul à côté d'un chemin rapide en
-  // échec peut venir d'un identifiant qui ne voit pas les checks, et un rollup
-  // présent sans check lisible peut contenir un type de contexte inconnu de ce lecteur.
-  if (fast.kind === "none-reported" && !headHasRollup)
-    return { kind: "no-checks" };
-  const suffix =
-    fast.kind === "unusable"
-      ? `sortie fast path=${fast.exitCode}; le rollup GraphQL était vide${firstLine(fast.stderr) ? `; ${firstLine(fast.stderr)}` : ""}`
-      : fast.kind === "none-reported"
-        ? "le fast path n'a signalé aucun check ; le rollup GraphQL existe mais ne liste aucun check lisible"
-        : "fast path et rollup GraphQL étaient vides";
-  throw new ChecksUnavailable(`impossible de lire les checks de PR: ${suffix}`);
+  if (!headHasRollup) {
+    // Confirme l'absence depuis gh, puis readSnapshot revalide le head de la PR.
+    const fast = await reader.checksFastPath(context);
+    if (fast.kind === "none-reported") return { kind: "no-checks" };
+  }
+  throw new ChecksUnavailable(`impossible de lire les checks du head ${headRefOid}`);
 }
 export async function resolveContext(args: {
   readonly reader: T.GitHubReader;

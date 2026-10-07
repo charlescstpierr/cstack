@@ -149,16 +149,33 @@ export async function readSnapshot(args: {
     return { kind: "merged", context: args.context, facts };
   if (facts.state === "CLOSED")
     return { kind: "closed", context: args.context, facts };
+  if (facts.headRefOid === null || facts.headRefOid.length === 0)
+    throw new ChecksUnavailable("le SHA du head de la PR est indisponible");
   const threads = await args.reader.reviewThreads(args.context);
-  const checks = await resolveChecks(args.reader, args.context);
+  const checks = await resolveChecks(args.reader, args.context, facts.headRefOid);
   const ci =
     checks.kind === "no-checks"
       ? await noChecksCi(args.reader, facts)
       : await reportedCi(args.reader, facts, checks, args.pendingHistory);
+  const confirmed = await args.reader.pullRequest(args.context);
+  if (
+    confirmed.headRefOid !== facts.headRefOid ||
+    confirmed.state !== facts.state ||
+    confirmed.mergedAt !== facts.mergedAt ||
+    confirmed.mergeable !== facts.mergeable ||
+    confirmed.mergeStateStatus !== facts.mergeStateStatus ||
+    confirmed.reviewDecision !== facts.reviewDecision ||
+    confirmed.isDraft !== facts.isDraft ||
+    confirmed.headRefName !== facts.headRefName ||
+    confirmed.baseRefName !== facts.baseRefName
+  )
+    throw new ChecksUnavailable(
+      `la PR a changé pendant la lecture du head ${facts.headRefOid} (head actuel=${confirmed.headRefOid}); relire les preuves`
+    );
   return {
     kind: "open",
     context: args.context,
-    facts,
+    facts: { ...facts, headRefOid: facts.headRefOid },
     threads,
     ci,
     reviewAutomationRunning:
@@ -250,6 +267,7 @@ function readyContribution(
   return {
     kind: "ready-pr",
     context: row.context,
+    headRefOid: row.facts.headRefOid,
     proof: {
       mergeability: "clear",
       threads: [],

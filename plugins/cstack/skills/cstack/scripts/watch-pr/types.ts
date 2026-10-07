@@ -168,7 +168,7 @@ export type PrSnapshot =
   | {
       readonly kind: "open";
       readonly context: PrContext;
-      readonly facts: PullRequestFacts;
+      readonly facts: PullRequestFacts & { readonly headRefOid: string };
       readonly threads: readonly ReviewThread[];
       readonly ci: CiState;
       readonly reviewAutomationRunning: boolean;
@@ -176,6 +176,7 @@ export type PrSnapshot =
 export interface ReadyPr {
   readonly kind: "ready-pr";
   readonly context: PrContext;
+  readonly headRefOid: string;
   readonly proof: {
     readonly mergeability: "clear";
     readonly threads: readonly [];
@@ -440,7 +441,8 @@ export interface GitHubReader {
   checksFastPath(context: PrContext): Promise<ChecksFastPath>;
   checkRollupPage(
     context: PrContext,
-    after: string | null
+    after: string | null,
+    headRefOid: string
   ): Promise<RollupPage>;
   reviewThreads(context: PrContext): Promise<readonly ReviewThread[]>;
   commitRollups(context: PrContext): Promise<readonly CommitRollup[]>;

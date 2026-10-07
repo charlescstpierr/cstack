@@ -40,6 +40,7 @@ const cleanCi = {
 const readyPr = {
   kind: "ready-pr",
   context,
+  headRefOid: "head",
   proof: {
     mergeability: "clear",
     threads: [],
@@ -51,6 +52,9 @@ const readyPr = {
     },
   },
 } satisfies ReadyPr;
+const { headRefOid: _headRefOid, ...readyWithoutHead } = readyPr;
+// @ts-expect-error READY doit nommer le commit dont les checks ont été lus.
+const missingReadyHead: ReadyPr = readyWithoutHead;
 const ready = {
   schemaVersion: 1,
   sequence: 1,
