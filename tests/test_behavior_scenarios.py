@@ -21,6 +21,45 @@ RUNNER_SPEC.loader.exec_module(verify_behavior)
 
 
 class BehaviorScenarioGeneratorTests(unittest.TestCase):
+    @unittest.skipUnless(hasattr(os, "geteuid") and hasattr(os, "seteuid"), "Unix permissions required")
+    def test_unreadable_directory_refuses_hashing_and_launch_before_output(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            root.chmod(0o755)
+            project = root / "project"
+            unreadable = project / "unreadable"
+            unreadable.mkdir(parents=True)
+            (unreadable / "behavior.py").write_text("original code")
+            cases = root / "cases.json"
+            cases.write_text(json.dumps([{"id": "one", "cwd": str(project), "prompt": "Read."}]))
+            original_euid = os.geteuid()
+            try:
+                unreadable.chmod(0)
+                if original_euid == 0:
+                    os.chown(root, 65534, -1)
+                    os.seteuid(65534)
+                try:
+                    list(unreadable.iterdir())
+                except PermissionError:
+                    pass
+                else:
+                    self.skipTest("chmod 000 does not prevent traversal for this UID")
+                with self.subTest(hasher="generator"), self.assertRaisesRegex(ValueError, "parcours.*incomplet"):
+                    behavior_scenarios.tree_hash(project)
+                with self.subTest(hasher="runner"), self.assertRaisesRegex(verify_behavior.HarnessError, "parcours.*incomplet"):
+                    verify_behavior.tree_hash(project, None)
+                with patch.object(verify_behavior, "build_command", return_value=["fake"]) as build, \
+                     patch.object(verify_behavior, "run_case", return_value={"id": "one", "status": "completed"}) as launch:
+                    with self.subTest(hasher="preflight"), self.assertRaisesRegex(verify_behavior.HarnessError, "parcours.*incomplet"):
+                        verify_behavior.main(["--cases", str(cases), "--output", str(root / "results")])
+                    build.assert_not_called()
+                    launch.assert_not_called()
+                self.assertFalse((root / "results").exists())
+            finally:
+                if os.geteuid() != original_euid:
+                    os.seteuid(original_euid)
+                unreadable.chmod(0o700)
+
     def test_execution_case_mutations_are_rejected_before_any_launch(self):
         for field in ("prompt", "prompts", "sandbox", "ephemeral", "cwd", "bundle", "case-hash-removed"):
             with self.subTest(field=field), tempfile.TemporaryDirectory() as directory:

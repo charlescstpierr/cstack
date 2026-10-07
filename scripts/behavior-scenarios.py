@@ -40,8 +40,11 @@ def write_text(root: Path, relative: str, content: str) -> None:
 
 
 def tree_hash(root: Path) -> str:
+    def unreadable(error: OSError) -> None:
+        raise ValueError(f"parcours d’empreinte incomplet: {error.filename}") from error
+
     digest = hashlib.sha256((TREE_HASH_ALGORITHM + "\0").encode())
-    for directory, names, filenames in os.walk(root, topdown=True):
+    for directory, names, filenames in os.walk(root, topdown=True, onerror=unreadable):
         path = Path(directory)
         names[:] = sorted(name for name in names if name not in IGNORED_DIRS)
         for name in names:

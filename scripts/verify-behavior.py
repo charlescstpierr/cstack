@@ -400,6 +400,9 @@ def project_metadata(value):
 
 
 def tree_hash(root, excluded):
+    def unreadable(error):
+        raise HarnessError(f"parcours d’empreinte incomplet: {error.filename}") from error
+
     digest = hashlib.sha256((TREE_HASH_ALGORITHM + "\0").encode())
     files = 0
     total_bytes = 0
@@ -407,7 +410,7 @@ def tree_hash(root, excluded):
     excluded = excluded.resolve() if excluded else None
     if excluded and root not in excluded.parents:
         excluded = None
-    for directory, names, filenames in os.walk(root, topdown=True, followlinks=False):
+    for directory, names, filenames in os.walk(root, topdown=True, followlinks=False, onerror=unreadable):
         path = Path(directory)
         names[:] = sorted(name for name in names if name not in SKIP_DIRS and not (excluded and (path / name).resolve() == excluded))
         for name in names:
