@@ -128,7 +128,7 @@ def _unb64(value: Any) -> bytes | None:
 
 
 def _path(workspace: Path, relative: str, *, write: bool = False) -> Path:
-    allowed = TARGET_PATHS if write else ALLOWED_PATHS
+    allowed = (TARGET_PATHS if write else ALLOWED_PATHS) + (".cstack/.gitignore",)
     if relative not in allowed or Path(relative).is_absolute() or ".." in Path(relative).parts:
         raise ProjectError(f"le chemin est hors de la liste d’autorisation de configuration projet: {relative}")
     return workspace / relative
@@ -376,20 +376,43 @@ def sync_agents(workspace: Path, config: dict[str, Any]) -> dict[str, list[str]]
     """Aligner les agents gérés existants sur models.json après une mise à jour des modèles seule."""
     workspace = _workspace(workspace)
     snapshots = {relative: _read(workspace, relative) for relative in AGENT_PATHS.values()}
-    result: dict[str, list[str]] = {"updated": [], "removed": []}
-    for relative, new in _agent_changes(None, snapshots, config, _models()).items():
-        target = _path(workspace, relative, write=True)
-        if new is None:
-            target.unlink()
-            result["removed"].append(relative)
-        elif new != snapshots[relative]:
-            temp = _temp(target.parent, new, stat.S_IMODE(target.stat().st_mode))
-            try:
-                os.replace(temp, target)
-            finally:
-                temp.unlink(missing_ok=True)
-            result["updated"].append(relative)
-    return result
+    entries = [_entry(relative, snapshots[relative], new)
+               for relative, new in _agent_changes(None, snapshots, config, _models()).items()]
+    result = _apply_changes(workspace, [entry for entry in entries if entry["action"] != "unchanged"])
+    _require_applied(result)
+    return _agent_result(entries, result["changed"])
+
+
+def _require_applied(result: dict[str, Any]) -> None:
+    if result["status"] not in {"applied", "noop"}:
+        raise ProjectError(f"{result['error']}; état: {result['status']}; conflits de restauration: {result['rollback_conflicts']}")
+
+
+def _agent_result(entries: list[dict[str, Any]], changed: list[str]) -> dict[str, list[str]]:
+    return {key: [entry["path"] for entry in entries if entry["path"] in AGENT_PATHS.values()
+                  and entry["path"] in changed and (entry["action"] == "delete") == deleting]
+            for key, deleting in (("updated", False), ("removed", True))}
+
+
+def apply_model_choices(workspace: Path, choices: dict[str, Any], expected_digest: str, catalog: dict[str, Any] | None) -> dict[str, Any]:
+    """Préparer modèles et agents avant toute écriture, puis restaurer ensemble en cas d’échec."""
+    workspace = _workspace(workspace)
+    models = _models()
+    old = _read(workspace, ".cstack/models.json")
+    if _sha(old or b"") != expected_digest:
+        raise ProjectError("models.json a changé depuis la prévisualisation; le relire avant d’enregistrer")
+    models.validate(choices, catalog, check_available=True)
+    config = _models_config(old, choices, models)
+    snapshots = {relative: _read(workspace, relative) for relative in AGENT_PATHS.values()}
+    entries = [_entry(".cstack/models.json", old, (json.dumps(config, indent=2, ensure_ascii=False) + "\n").encode())]
+    ignore = _read(workspace, ".cstack/.gitignore")
+    if ignore is None:
+        entries.append(_entry(".cstack/.gitignore", None, b"*\n"))
+    entries.extend(_entry(relative, snapshots[relative], new)
+                   for relative, new in _agent_changes(None, snapshots, config, models).items())
+    result = _apply_changes(workspace, [entry for entry in entries if entry["action"] != "unchanged"])
+    _require_applied(result)
+    return {"saved": config, "agents": _agent_result(entries, result["changed"])}
 
 
 def managed_agents(workspace: Path) -> list[str]:
@@ -589,8 +612,14 @@ def apply_plan(workspace: Path, supplied_plan: Any, raw_options: Any, catalog: d
         if current_hash != entry["current_sha256"]:
             raise ProjectError(f"fichier modifié avant la préparation: {entry['path']}")
         changes.append(entry)
+    result = _apply_changes(workspace, changes)
+    result["plan_sha256"] = plan["plan_sha256"]
+    return result
+
+
+def _apply_changes(workspace: Path, changes: list[dict[str, Any]]) -> dict[str, Any]:
     if not changes:
-        return {"status": "noop", "changed": [], "plan_sha256": plan["plan_sha256"]}
+        return {"status": "noop", "changed": []}
     staged: list[tuple[dict[str, Any], Path | None, bytes | None]] = []
     replaced: list[tuple[dict[str, Any], bytes | None]] = []
     created_dirs: list[Path] = []
@@ -618,7 +647,7 @@ def apply_plan(workspace: Path, supplied_plan: Any, raw_options: Any, catalog: d
             else:
                 os.replace(temp, target)
             replaced.append((entry, old))
-        return {"status": "applied", "changed": [entry["path"] for entry, _ in replaced], "plan_sha256": plan["plan_sha256"]}
+        return {"status": "applied", "changed": [entry["path"] for entry, _ in replaced]}
     except InterruptedApply:
         raise
     except KeyboardInterrupt as error:
@@ -629,7 +658,7 @@ def apply_plan(workspace: Path, supplied_plan: Any, raw_options: Any, catalog: d
         rolled_back, conflicts = [], []
         for entry, old in reversed(replaced):
             (rolled_back if _restore(_path(workspace, entry["path"], write=True), old, entry["new_sha256"]) else conflicts).append(entry["path"])
-        return {"status": "rolled_back" if not conflicts else "partial", "error": str(error), "rolled_back": rolled_back, "rollback_conflicts": conflicts, "plan_sha256": plan["plan_sha256"]}
+        return {"status": "rolled_back" if not conflicts else "partial", "error": str(error), "rolled_back": rolled_back, "rollback_conflicts": conflicts}
     finally:
         for _, temp, _ in staged:
             if temp is not None:

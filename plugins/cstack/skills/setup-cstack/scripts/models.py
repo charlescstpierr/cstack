@@ -314,10 +314,8 @@ def main():
         elif args.command == "preflight":
             result = preflight(config, args.roles, catalog)
         else:
-            saved = apply_choices(path, json.loads(args.choices.read_text()),
-                                  args.expected_sha256, catalog)
-            agents = project_helper().sync_agents(args.workspace, saved) if has_agents else {"updated": [], "removed": []}
-            result = {"saved": saved, "agents": agents}
+            result = project_helper().apply_model_choices(args.workspace, json.loads(args.choices.read_text()),
+                                                          args.expected_sha256, catalog)
     except (OSError, ValueError, KeyError, TypeError) as error:
         parser.exit(2, f"modèles cstack: {error}\n")
     print(json.dumps(result, indent=2, ensure_ascii=False))
