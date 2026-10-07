@@ -1,6 +1,8 @@
 import importlib.util
 import json
 import os
+import shutil
+import socket
 import subprocess
 import tempfile
 import unittest
@@ -19,6 +21,91 @@ RUNNER_SPEC.loader.exec_module(verify_behavior)
 
 
 class BehaviorScenarioGeneratorTests(unittest.TestCase):
+    def test_execution_case_mutations_are_rejected_before_any_launch(self):
+        for field in ("prompt", "prompts", "sandbox", "ephemeral", "cwd", "bundle", "case-hash-removed"):
+            with self.subTest(field=field), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                project = behavior_scenarios.create_project(root, "alder", {"file.txt": "original"}, [])
+                bundle = root / "bundle"
+                skill = bundle / "skills/cstack/SKILL.md"
+                skill.parent.mkdir(parents=True)
+                skill.write_text("skill")
+                cases, expectations = [], []
+                behavior_scenarios.register(cases, expectations, case_id="one", project=project,
+                    bundle=bundle, skill="cstack", roles=[], body="Read the code.")
+                if field == "case-hash-removed":
+                    expectations[0].pop("case_sha256")
+                elif field in ("cwd", "bundle"):
+                    changed = root / ("other-" + field)
+                    shutil.copytree(project if field == "cwd" else bundle, changed)
+                    cases[0][field] = str(changed)
+                elif field == "prompts":
+                    cases[0].pop("prompt")
+                    cases[0]["prompts"] = ["Perform another task."]
+                else:
+                    cases[0][field] = {"prompt": "Perform another task.", "sandbox": "read-only", "ephemeral": True}[field]
+                case_path, expected_path = root / "cases.json", root / "expectations.json"
+                case_path.write_text(json.dumps(cases))
+                expected_path.write_text(json.dumps({"schema_version": 1, "cases": expectations}))
+                with patch.object(verify_behavior, "build_command", return_value=["fake"]) as build, \
+                     patch.object(verify_behavior, "run_case", return_value={"id": "one", "status": "completed"}) as launch:
+                    with self.assertRaisesRegex(verify_behavior.HarnessError, "empreinte.*cas"):
+                        verify_behavior.main(["--cases", str(case_path), "--expectations", str(expected_path),
+                            "--output", str(root / "results")])
+                    build.assert_not_called()
+                    launch.assert_not_called()
+                self.assertFalse((root / "results").exists())
+
+    @unittest.skipUnless(hasattr(os, "mkfifo") and hasattr(socket, "AF_UNIX"), "Unix entries required")
+    def test_nonregular_entries_are_rejected_by_hashes_and_before_launch(self):
+        for kind in ("fifo", "socket", "linked-device"):
+            for scope in ("project", "bundle"):
+                with self.subTest(kind=kind, scope=scope), tempfile.TemporaryDirectory() as directory:
+                    root = Path(directory)
+                    project = behavior_scenarios.create_project(root, "alder", {"file.txt": "original"}, [])
+                    bundle = root / "bundle"
+                    skill = bundle / "skills/cstack/SKILL.md"
+                    skill.parent.mkdir(parents=True)
+                    skill.write_text("skill")
+                    cases, expectations = [], []
+                    behavior_scenarios.register(cases, expectations, case_id="one", project=project,
+                        bundle=bundle, skill="cstack", roles=[], body="Read the code.")
+                    entry = (project if scope == "project" else bundle) / "unsupported"
+                    live_socket = None
+                    try:
+                        if kind == "fifo":
+                            os.mkfifo(entry)
+                        elif kind == "socket":
+                            live_socket = socket.socket(socket.AF_UNIX)
+                            live_socket.bind(str(entry))
+                        else:
+                            entry.symlink_to("/dev/null")
+                        case_path, expected_path = root / "cases.json", root / "expectations.json"
+                        case_path.write_text(json.dumps(cases))
+                        expected_path.write_text(json.dumps({"schema_version": 1, "cases": expectations}))
+                        with patch.object(verify_behavior, "build_command", return_value=["fake"]) as build, \
+                             patch.object(verify_behavior, "run_case", return_value={"id": "one", "status": "completed"}) as launch:
+                            with self.assertRaisesRegex(verify_behavior.HarnessError, "réguli"):
+                                verify_behavior.main(["--cases", str(case_path), "--expectations", str(expected_path),
+                                    "--output", str(root / "results")])
+                            build.assert_not_called()
+                            launch.assert_not_called()
+                        with self.assertRaisesRegex(ValueError, "réguli"):
+                            behavior_scenarios.tree_hash(entry.parent)
+                        with self.assertRaisesRegex(verify_behavior.HarnessError, "réguli"):
+                            verify_behavior.tree_hash(entry.parent, None)
+                        self.assertFalse((root / "results").exists())
+                        with patch.object(verify_behavior, "build_command", return_value=["fake"]) as build, \
+                             patch.object(verify_behavior, "run_case") as launch:
+                            with self.assertRaisesRegex(verify_behavior.HarnessError, "réguli"):
+                                verify_behavior.main(["--cases", str(case_path), "--output", str(root / "legacy-results")])
+                            build.assert_not_called()
+                            launch.assert_not_called()
+                        self.assertFalse((root / "legacy-results").exists())
+                    finally:
+                        if live_socket is not None:
+                            live_socket.close()
+
     def test_chmod_of_project_bundle_or_file_link_target_invalidates_provenance(self):
         for scope in ("project", "bundle", "file-link"):
             with self.subTest(scope=scope), tempfile.TemporaryDirectory() as directory:
@@ -40,6 +127,7 @@ class BehaviorScenarioGeneratorTests(unittest.TestCase):
                 else:
                     expectation["project_sha256"] = digest
                 case = {"id": "one", "cwd": project, "bundle": bundle, "prompts": ["Read."]}
+                expectation["case_sha256"] = behavior_scenarios.case_hash(case)
                 verify_behavior.verify_provenance(case, expectation)
                 script.chmod(0o644)
                 with self.assertRaises(PermissionError):
@@ -63,6 +151,7 @@ class BehaviorScenarioGeneratorTests(unittest.TestCase):
                 (external / "file.txt").write_text("external code")
                 case = {"id": "one", "cwd": project, "bundle": bundle, "prompts": ["Read."]}
                 expectation = {"id": "one", "hash_algorithm": "cstack-tree-sha256-v2"}
+                expectation["case_sha256"] = behavior_scenarios.case_hash(case)
                 hashed = project if scope == "project" else bundle
                 digest = behavior_scenarios.tree_hash(hashed)
                 if scope == "project":
@@ -96,6 +185,7 @@ class BehaviorScenarioGeneratorTests(unittest.TestCase):
             expected = behavior_scenarios.tree_hash(root)
             case = {"id": "one", "cwd": root, "bundle": None, "prompts": ["Read."]}
             expectation = {"id": "one", "project_sha256": expected, "hash_algorithm": "cstack-tree-sha256-v2"}
+            expectation["case_sha256"] = behavior_scenarios.case_hash(case)
             verify_behavior.verify_provenance(case, expectation)
             (root / "a.bin").write_bytes(b"xb.bin\0y")
             (root / "b.bin").unlink()
@@ -195,6 +285,7 @@ class BehaviorScenarioGeneratorTests(unittest.TestCase):
             old_case = verify_behavior.read_cases(case_path)[0]
             verify_behavior.verify_provenance(old_case, old_expectation)
             old_case["prompts"] = ["No source path supplied."]
+            old_expectation["case_sha256"] = behavior_scenarios.case_hash(old_case)
             with self.assertRaisesRegex(verify_behavior.HarnessError, "skill_path"):
                 verify_behavior.verify_provenance(old_case, old_expectation)
             verify_behavior.verify_provenance(old_case, {"id": "one"})
@@ -207,10 +298,22 @@ class BehaviorScenarioGeneratorTests(unittest.TestCase):
             with patch.object(verify_behavior, "build_command", return_value=["fake"]), \
                  patch.object(verify_behavior, "run_case", side_effect=complete) as launch:
                 code = verify_behavior.main(["--cases", str(case_path), "--expectations", str(expected_path),
-                    "--case-id", "one", "--output", str(root / "results"), "--repeats", "2"])
+                    "--case-id", "one", "--output", str(root / "results"), "--repeats", "2",
+                    "--model", "native-choice", "--effort", "max", "--turn-timeout", "12"])
             self.assertEqual(code, 0)
             self.assertEqual(launch.call_count, 2)
             self.assertEqual((Path(cases[0]["cwd"]) / "events.py").read_text(), "original")
+            receipts = json.loads((root / "results/summary.json").read_text())["cases"]
+            for receipt in receipts:
+                self.assertEqual(receipt["source_case_id"], "one")
+                self.assertEqual(receipt["case_sha256"], expectations[0]["case_sha256"])
+                self.assertTrue(receipt["case_hash_verified"])
+                self.assertEqual(receipt["effective_case_sha256"], behavior_scenarios.case_hash(receipt["effective_case"]))
+                self.assertNotEqual(receipt["effective_case_sha256"], receipt["case_sha256"])
+                self.assertEqual(receipt["effective_case"]["id"], receipt["id"])
+                self.assertEqual(receipt["effective_case"]["cwd"], receipt["cwd"])
+                self.assertEqual(receipt["requested_runtime_config"], {
+                    "model": "native-choice", "effort": "max", "turn_timeout": 12.0, "trace_routes": False})
 
             def change_source_after_first_run(case, *args):
                 skill.write_text("source changed between repeats")

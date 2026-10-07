@@ -34,6 +34,20 @@ def state():
 
 
 class BehaviorRunnerTests(unittest.TestCase):
+    def test_case_hash_normalizes_prompt_and_defaults_but_preserves_turn_order(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            raw = {"id": "one", "cwd": str(root), "prompt": "Read."}
+            cases = root / "cases.json"
+            cases.write_text(json.dumps([raw]))
+            normalized = verify_behavior.read_cases(cases)[0]
+            self.assertEqual(verify_behavior.case_hash(raw), verify_behavior.case_hash(normalized))
+            equivalent = dict(normalized, prompts=["Read."])
+            self.assertEqual(verify_behavior.case_hash(raw), verify_behavior.case_hash(equivalent))
+            first = dict(normalized, prompts=["Read.", "Fix."])
+            second = dict(normalized, prompts=["Fix.", "Read."])
+            self.assertNotEqual(verify_behavior.case_hash(first), verify_behavior.case_hash(second))
+
     def test_output_cannot_overlap_bundle_or_its_ancestors(self):
         for placement in ("descendant", "equal", "ancestor"):
             with self.subTest(placement=placement), tempfile.TemporaryDirectory() as directory:

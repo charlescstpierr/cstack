@@ -49,15 +49,31 @@ def tree_hash(root: Path) -> str:
                 raise ValueError(f"empreinte non prise en charge pour un dossier symbolique: {path / name}")
         for filename in sorted(filenames):
             item = path / filename
-            if not item.is_file():
-                continue
+            try:
+                mode = item.stat().st_mode
+            except OSError as error:
+                raise ValueError(f"entrée non régulière ou inaccessible: {item}") from error
+            if not stat.S_ISREG(mode):
+                raise ValueError(f"entrée non régulière non prise en charge: {item}")
             # File links have the same representation as their materialized copies.
             relative = item.relative_to(root).as_posix().encode()
-            mode = item.stat().st_mode
             effective_mode = stat.S_IFMT(mode) | stat.S_IMODE(mode)
             digest.update(effective_mode.to_bytes(2, "big") + len(relative).to_bytes(8, "big") + relative)
             digest.update(hashlib.sha256(item.read_bytes()).digest())
     return digest.hexdigest()
+
+
+def case_configuration(case: dict[str, Any]) -> dict[str, Any]:
+    return {"id": case["id"], "cwd": str(Path(case["cwd"]).expanduser().resolve()),
+            "bundle": str(Path(case["bundle"]).expanduser().resolve()) if case.get("bundle") else None,
+            "prompts": list(case["prompts"]) if "prompts" in case else [case["prompt"]],
+            "sandbox": case.get("sandbox", "workspace-write"), "ephemeral": case.get("ephemeral", True)}
+
+
+def case_hash(case: dict[str, Any]) -> str:
+    canonical = json.dumps(case_configuration(case), sort_keys=True, separators=(",", ":"),
+                           ensure_ascii=False, allow_nan=False)
+    return hashlib.sha256(canonical.encode()).hexdigest()
 
 
 def copy_bundle(source: Path, output: Path, label: str) -> Path:
@@ -151,6 +167,7 @@ def register(
     skill_path = bundle / "skills" / skill / "SKILL.md"
     expectation: dict[str, Any] = {
         "id": case_id,
+        "case_sha256": case_hash(case),
         "project_sha256": tree_hash(project),
         "hash_algorithm": TREE_HASH_ALGORITHM,
         "source_sha256": {

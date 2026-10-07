@@ -415,10 +415,15 @@ def tree_hash(root, excluded):
                 raise HarnessError(f"empreinte non prise en charge pour un dossier symbolique: {path / name}")
         for filename in sorted(filenames):
             item = path / filename
-            if not item.is_file() or (excluded and (item == excluded or excluded in item.parents)):
+            if excluded and (item == excluded or excluded in item.parents):
                 continue
+            try:
+                mode = item.stat().st_mode
+            except OSError as error:
+                raise HarnessError(f"entrée non régulière ou inaccessible: {item}") from error
+            if not stat.S_ISREG(mode):
+                raise HarnessError(f"entrée non régulière non prise en charge: {item}")
             relative = item.relative_to(root).as_posix().encode()
-            mode = item.stat().st_mode
             effective_mode = stat.S_IFMT(mode) | stat.S_IMODE(mode)
             digest.update(effective_mode.to_bytes(2, "big") + len(relative).to_bytes(8, "big") + relative)
             content_digest = hashlib.sha256()
@@ -429,6 +434,19 @@ def tree_hash(root, excluded):
             digest.update(content_digest.digest())
             files += 1
     return {"sha256": digest.hexdigest(), "algorithm": TREE_HASH_ALGORITHM, "files": files, "bytes": total_bytes}
+
+
+def case_configuration(case):
+    return {"id": case["id"], "cwd": str(Path(case["cwd"]).expanduser().resolve()),
+            "bundle": str(Path(case["bundle"]).expanduser().resolve()) if case.get("bundle") else None,
+            "prompts": list(case["prompts"]) if "prompts" in case else [case["prompt"]],
+            "sandbox": case.get("sandbox", "workspace-write"), "ephemeral": case.get("ephemeral", True)}
+
+
+def case_hash(case):
+    canonical = json.dumps(case_configuration(case), sort_keys=True, separators=(",", ":"),
+                           ensure_ascii=False, allow_nan=False)
+    return hashlib.sha256(canonical.encode()).hexdigest()
 
 
 OPENED_PATH = re.compile(r'openat2?\([^\n]*?, "((?:[^"\\]|\\.)+)"[^\n]*?\)\s+=\s+(\d+)')
@@ -532,7 +550,7 @@ def read_expectations(path):
             raise HarnessError("identifiant d’attente absent ou dupliqué")
         case_id = row["id"]
         if set(row) - {"id", "expected_children", "min_children", "routing", "expected_artifacts",
-                       "outcome_checks", "project_sha256", "source_sha256", "skill_path", "role_metadata", "hash_algorithm"}:
+                       "outcome_checks", "project_sha256", "source_sha256", "skill_path", "role_metadata", "hash_algorithm", "case_sha256"}:
             raise HarnessError(f"{case_id}: champs d’attente inconnus")
         hashes = row.get("source_sha256", {})
         if not isinstance(hashes, dict) or set(hashes) - {"bundle", "skill"}:
@@ -540,7 +558,9 @@ def read_expectations(path):
         if (row.get("hash_algorithm", TREE_HASH_ALGORITHM) != TREE_HASH_ALGORITHM
                 or (("project_sha256" in row or hashes) and "hash_algorithm" not in row)):
             raise HarnessError(f"{case_id}: algorithme d’empreinte ancien ou absent ; régénérer les attentes")
-        for digest in list(hashes.values()) + ([row["project_sha256"]] if "project_sha256" in row else []):
+        if ("project_sha256" in row or hashes) and "case_sha256" not in row:
+            raise HarnessError(f"{case_id}: empreinte de configuration de cas absente ; régénérer les attentes")
+        for digest in list(hashes.values()) + [row[key] for key in ("project_sha256", "case_sha256") if key in row]:
             if not isinstance(digest, str) or not re.fullmatch(r"[0-9a-f]{64}", digest):
                 raise HarnessError(f"{case_id}: empreinte SHA-256 invalide")
         if "skill_path" in row:
@@ -597,7 +617,7 @@ def read_expectations(path):
     return expectations
 
 
-def verify_provenance(case, expectation):
+def verify_provenance(case, expectation, execution_case=None):
     """Check generator digests against the inputs before launching the native turn."""
     def matches(label, actual, expected):
         if actual != expected:
@@ -606,16 +626,22 @@ def verify_provenance(case, expectation):
     source = expectation.get("source_sha256", {})
     if ("project_sha256" in expectation or source) and expectation.get("hash_algorithm") != TREE_HASH_ALGORITHM:
         raise HarnessError(f"{case['id']}: algorithme d’empreinte ancien ou absent ; régénérer les attentes")
+    if ("project_sha256" in expectation or source) and "case_sha256" not in expectation:
+        raise HarnessError(f"{case['id']}: empreinte de configuration de cas absente ; régénérer les attentes")
+    if "case_sha256" in expectation:
+        matches("configuration de cas", case_hash(execution_case or case), expectation["case_sha256"])
     try:
+        project_hash = tree_hash(case["cwd"], None)["sha256"]
         if "project_sha256" in expectation:
-            matches("projet", tree_hash(case["cwd"], None)["sha256"], expectation["project_sha256"])
-        if not source:
+            matches("projet", project_hash, expectation["project_sha256"])
+        bundle = case.get("bundle")
+        if bundle is None and not source:
             return
-        bundle = case["bundle"]
         if bundle is None:
             raise HarnessError(f"{case['id']}: empreintes source exigent un bundle explicite")
+        bundle_hash = tree_hash(bundle, None)["sha256"]
         if "bundle" in source:
-            matches("bundle", tree_hash(bundle, None)["sha256"], source["bundle"])
+            matches("bundle", bundle_hash, source["bundle"])
         if "skill" in source:
             relative = expectation.get("skill_path")
             if relative is None:
@@ -1007,7 +1033,10 @@ def main(argv=None):
                 run["id"] = f"{case['id']}__run_{repeat:02d}"
                 run["cwd"] = output / "isolated-projects" / run["id"]
                 shutil.copytree(case["cwd"], run["cwd"])
-            verify_provenance(run, expectations.get(case["id"], {}))
+            verify_provenance(run, expectation, execution_case=case)
+            source_case_digest = case_hash(case)
+            effective_config = case_configuration(run)
+            effective_case_digest = case_hash(effective_config)
             print(f"[{run['id']}] démarrage", flush=True)
             try:
                 result = run_case(run, output, command, args.model, args.effort,
@@ -1017,6 +1046,11 @@ def main(argv=None):
                     result["route_score"] = score_routes(result["route_observation"], expectations[case["id"]])
             except Exception as error:
                 result = {"id": run["id"], "cwd": str(run["cwd"]), "status": "infra_error", "error": str(error)}
+            result.update(source_case_id=case["id"], case_sha256=source_case_digest,
+                          case_hash_verified="case_sha256" in expectation,
+                          effective_case_sha256=effective_case_digest, effective_case=effective_config,
+                          requested_runtime_config={"model": args.model, "effort": args.effort,
+                                                    "turn_timeout": args.turn_timeout, "trace_routes": args.trace_routes})
             result["verdicts"] = evaluate_case(result, expectation, args.verify_outcomes)
             if ((workflow_requested and result["verdicts"]["workflow"]["status"] == "unverified")
                     or (args.verify_outcomes and result["verdicts"]["outcome"]["status"] == "unverified")):
