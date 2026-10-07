@@ -57,6 +57,12 @@ class ModeHookTests(unittest.TestCase):
             "$cstack:cstack Ne l'active pas.",
             "$cstack:cstack Ne l’active pas.",
             "$cstack:cstack Ne l'utilise pas.",
+            "$cstack:cstack explique la compétence, mais ne pas activer cstack",
+            "$cstack:cstack Explique la compétence. Ne pas utiliser cstack.",
+            "$cstack:cstack Explique la compétence. Ne pas l'activer.",
+            "$cstack:cstack Explique la compétence. Ne pas l'utiliser.",
+            "$cstack:cstack Explique la compétence. Ne pas l’appliquer.",
+            "[$cstack:cstack](/plugins/cstack/skills/cstack/SKILL.md) Explique la compétence. Ne pas appliquer cstack.",
             "$cstack:cstack pour expliquer sa signification. Ne l'active pas.",
             "[$cstack:cstack](/plugins/cstack/skills/cstack/SKILL.md) Explain the skill. Do not activate it.",
             "$cstack:cstack N'active pas cstack.",
@@ -103,6 +109,9 @@ class ModeHookTests(unittest.TestCase):
             "$cstack:cstack Fix this. Don't activate the network adapter.",
             "$cstack:cstack Fix this. Do not activate this debug mode.",
             "$cstack:cstack Corrige ceci. N'active pas le mode debug.",
+            "$cstack:cstack Corrige ceci, mais ne pas activer le mode debug.",
+            "$cstack:cstack Corrige ceci. Ne pas utiliser le réseau.",
+            "$cstack:cstack Corrige ceci. Ne pas appliquer la configuration réseau.",
             "[$cstack:cstack](/plugins/cstack/skills/cstack/SKILL.md) Corrige ceci. N'active pas le réseau.",
         )):
             with self.subTest(prompt=text):
