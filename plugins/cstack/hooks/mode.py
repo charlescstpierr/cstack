@@ -46,7 +46,7 @@ def _activation_requested(prompt: str) -> bool:
     # Un refus qui cible cstack reste prioritaire, même plus loin dans le message.
     refusal = re.search(
         r"\b(?:ne\s+l['’](?:activ|utilis|appliqu)\w*\s+pas\b"
-        r"|(?:ne\s+|n['’])activ\w*\s+pas\s+(?:cstack|\$cstack:cstack)\b"
+        r"|(?:ne\s+|n['’])(?:activ|utilis|appliqu)\w*\s+pas\s+(?:cstack|\$cstack:cstack)\b"
         r"|ne\s+pas\s+(?:l['’](?:activer|utiliser|appliquer)\b"
         r"|(?:activer|utiliser|appliquer)\s+(?:cstack|\$cstack:cstack)\b)"
         r"|(?:do\s+not|don['’]t)\s+(?:activate|use|invoke)\s+"
