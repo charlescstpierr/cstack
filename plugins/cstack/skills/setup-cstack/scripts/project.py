@@ -567,6 +567,8 @@ def _restore(path: Path, old: bytes | None, new_hash: str) -> bool:
         if path.is_symlink() or (path.exists() and not path.is_file()):
             return False
         current = path.read_bytes() if path.exists() else None
+        if current == old:
+            return True
         if (None if current is None else _sha(current)) != new_hash:
             return False
         if old is None:
@@ -642,17 +644,19 @@ def _apply_changes(workspace: Path, changes: list[dict[str, Any]], *, resume_on_
             if current_hash != entry["current_sha256"]:
                 raise ProjectError(f"fichier modifié pendant la préparation: {entry['path']}")
             target = _path(workspace, entry["path"], write=True)
+            # Couvrir aussi une interruption après l’effet de replace/unlink, avant son retour.
+            replaced.append((entry, old))
             if temp is None:
                 target.unlink()
             else:
                 os.replace(temp, target)
-            replaced.append((entry, old))
         return {"status": "applied", "changed": [entry["path"] for entry, _ in replaced]}
     except InterruptedApply:
         raise
     except (Exception, KeyboardInterrupt) as error:
         if isinstance(error, KeyboardInterrupt) and resume_on_interrupt:
-            done = [entry["path"] for entry, _ in replaced]
+            done = [entry["path"] for entry, _ in replaced
+                    if _read(workspace, entry["path"]) == (None if entry["action"] == "delete" else entry["new_content"].encode())]
             skipped = [entry["path"] for entry in changes if entry["path"] not in done]
             raise InterruptedApply(done, skipped) from error
         rolled_back, conflicts = [], []

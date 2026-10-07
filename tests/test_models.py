@@ -86,8 +86,15 @@ class ModelSetupTests(unittest.TestCase):
             self.check_failed_cli_rollback(project, Path(directory), True, "gpt-6-astra",
                                            "KeyboardInterrupt", "cstack-explorer.toml")
 
+    def test_apply_cli_rolls_back_interruption_after_replace_returns(self):
+        project = models.project_helper()
+        for existing in (True, False):
+            with self.subTest(existing_models=existing), tempfile.TemporaryDirectory() as directory:
+                self.check_failed_cli_rollback(project, Path(directory), existing, "gpt-6-astra",
+                                               "KeyboardInterrupt", "models.json", after_write=True)
+
     def check_failed_cli_rollback(self, project, workspace, existing, explorer,
-                                 failure="OSError", failing_target="cstack-reviewer.toml"):
+                                 failure="OSError", failing_target="cstack-reviewer.toml", after_write=False):
         directory = str(workspace)
         options = {"native_agents": True}
         plan = project.preview_plan(workspace, options, None)
@@ -107,15 +114,21 @@ import os, runpy, sys
 from pathlib import Path
 failure = getattr(__import__("builtins"), sys.argv.pop(1))
 failing_target = sys.argv.pop(1)
+after_write = sys.argv.pop(1) == "True"
+injected = False
 replace = os.replace
 def fail_write(source, target):
-    if Path(target).name == failing_target:
+    global injected
+    if Path(target).name == failing_target and not injected:
+        injected = True
+        if after_write:
+            replace(source, target)
         raise failure("échec écriture simulé")
     replace(source, target)
 os.replace = fail_write
 runpy.run_path(sys.argv.pop(1), run_name="__main__")
 '''
-        result = subprocess.run([sys.executable, "-c", runner, failure, failing_target,
+        result = subprocess.run([sys.executable, "-c", runner, failure, failing_target, str(after_write),
                                  str(SCRIPT), "--workspace", directory,
                                  "--catalog", str(catalog), "apply", "--choices", str(choices),
                                  "--expected-sha256", digest], capture_output=True, text=True)
