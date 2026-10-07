@@ -43,6 +43,9 @@ def tree_hash(root: Path) -> str:
     for directory, names, filenames in os.walk(root, topdown=True):
         path = Path(directory)
         names[:] = sorted(name for name in names if name not in IGNORED_DIRS)
+        for name in names:
+            if (path / name).is_symlink():
+                raise ValueError(f"empreinte non prise en charge pour un dossier symbolique: {path / name}")
         for filename in sorted(filenames):
             item = path / filename
             if not item.is_file():

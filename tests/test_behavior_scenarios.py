@@ -18,6 +18,45 @@ RUNNER_SPEC.loader.exec_module(verify_behavior)
 
 
 class BehaviorScenarioGeneratorTests(unittest.TestCase):
+    def test_directory_links_cannot_receive_project_or_bundle_provenance(self):
+        for scope in ("project", "bundle"):
+            with self.subTest(scope=scope), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                project, bundle = root / "project", root / "bundle"
+                project.mkdir()
+                skill = bundle / "skills/cstack/SKILL.md"
+                skill.parent.mkdir(parents=True)
+                skill.write_text("skill")
+                external = root / "external"
+                external.mkdir()
+                (external / "file.txt").write_text("external code")
+                case = {"id": "one", "cwd": project, "bundle": bundle, "prompts": ["Read."]}
+                expectation = {"id": "one", "hash_algorithm": "cstack-tree-sha256-v2"}
+                hashed = project if scope == "project" else bundle
+                digest = behavior_scenarios.tree_hash(hashed)
+                if scope == "project":
+                    expectation["project_sha256"] = digest
+                else:
+                    expectation["source_sha256"] = {"bundle": digest}
+                (hashed / "external-code").symlink_to(external, target_is_directory=True)
+                with self.assertRaisesRegex(verify_behavior.HarnessError, "symbolique"):
+                    verify_behavior.verify_provenance(case, expectation)
+                with self.assertRaisesRegex(ValueError, "symbolique"):
+                    behavior_scenarios.tree_hash(hashed)
+
+    def test_excluded_directory_links_remain_outside_declared_hash_scope(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            project, external = root / "project", root / "external"
+            project.mkdir()
+            external.mkdir()
+            (project / "file.txt").write_text("code")
+            before = behavior_scenarios.tree_hash(project)
+            for name in (".git", "node_modules", "__pycache__"):
+                (project / name).symlink_to(external, target_is_directory=True)
+            self.assertEqual(behavior_scenarios.tree_hash(project), before)
+            self.assertEqual(verify_behavior.tree_hash(project, None)["sha256"], before)
+
     def test_tree_digest_distinguishes_file_boundaries(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

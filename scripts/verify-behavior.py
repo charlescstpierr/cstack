@@ -409,6 +409,9 @@ def tree_hash(root, excluded):
     for directory, names, filenames in os.walk(root, topdown=True, followlinks=False):
         path = Path(directory)
         names[:] = sorted(name for name in names if name not in SKIP_DIRS and not (excluded and (path / name).resolve() == excluded))
+        for name in names:
+            if (path / name).is_symlink():
+                raise HarnessError(f"empreinte non prise en charge pour un dossier symbolique: {path / name}")
         for filename in sorted(filenames):
             item = path / filename
             if not item.is_file() or (excluded and (item == excluded or excluded in item.parents)):
@@ -965,9 +968,11 @@ def main(argv=None):
             raise HarnessError(f"attentes absentes pour: {', '.join(sorted(missing))}")
     output = args.output.expanduser().resolve()
     for case in cases:
+        for label, source_root in (("cwd", case["cwd"]), ("bundle", case["bundle"])):
+            if source_root is not None and (
+                    output == source_root or source_root in output.parents or output in source_root.parents):
+                raise HarnessError(f"la sortie doit être située hors du {label} du scénario: {case['id']}")
         verify_provenance(case, expectations.get(case["id"], {}))
-        if output == case["cwd"] or case["cwd"] in output.parents or output in case["cwd"].parents:
-            raise HarnessError(f"la sortie doit être située hors du cwd du scénario: {case['id']}")
         if args.repeats > 1:
             if not (case["cwd"] / ".git").exists():
                 for parent in case["cwd"].parents:

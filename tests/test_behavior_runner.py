@@ -34,6 +34,31 @@ def state():
 
 
 class BehaviorRunnerTests(unittest.TestCase):
+    def test_output_cannot_overlap_bundle_or_its_ancestors(self):
+        for placement in ("descendant", "equal", "ancestor"):
+            with self.subTest(placement=placement), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                project = root / "project"
+                project.mkdir()
+                bundle = root / "sources/bundle"
+                skill = bundle / "skills/cstack/SKILL.md"
+                skill.parent.mkdir(parents=True)
+                skill.write_text("skill")
+                output = {"descendant": bundle / "results", "equal": bundle, "ancestor": bundle.parent}[placement]
+                cases = root / "cases.json"
+                cases.write_text(json.dumps([{"id": "one", "cwd": str(project), "bundle": str(bundle), "prompt": "Read."}]))
+                before = verify_behavior.tree_hash(bundle, None)
+                with patch.object(verify_behavior, "build_command", return_value=["fake"]) as build, \
+                     patch.object(verify_behavior, "run_case", return_value={"id": "one", "status": "completed"}) as launch:
+                    with self.assertRaisesRegex(verify_behavior.HarnessError, "bundle"):
+                        verify_behavior.main(["--cases", str(cases), "--output", str(output)])
+                    build.assert_not_called()
+                    launch.assert_not_called()
+                self.assertEqual(verify_behavior.tree_hash(bundle, None), before)
+                self.assertFalse((output / "summary.json").exists())
+                if placement == "descendant":
+                    self.assertFalse(output.exists())
+
     def test_completed_turn_with_missing_required_route_fails_requested_verification(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
