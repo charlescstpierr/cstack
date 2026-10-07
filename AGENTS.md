@@ -12,30 +12,15 @@ Carte du dépôt : `plugins/cstack/` est le livrable ; `scripts/` et `tests/` va
 
 Python 3.9 ou plus récent exécute les assistants et toute la suite de tests. L'analyse du `config.toml` de Codex dans `scripts/verify-behavior.py` nécessite Python 3.11 ou plus récent.
 
-Exécutez les contrôles depuis la racine de ce dépôt, dans cet ordre. Installez les dépendances des assistants avant tout `tsc`. Revenez à la racine du dépôt avant l'invocation `tsc` racine. Ces commandes correspondent à `.github/workflows/validate.yml`.
+La commande complète de validation locale et CI est :
 
 ```sh
-bun scripts/generate-facts.mjs --check
-bun scripts/validate.ts
-python3 -m unittest discover -s tests -p 'test_*.py'
-bun test tests
-cd plugins/cstack/skills/cstack/scripts
-bun install --frozen-lockfile
-bun run test
-bun run typecheck
-cd ../../../../..
-plugins/cstack/skills/cstack/scripts/node_modules/.bin/tsc -p tsconfig.json
-bash -n plugins/cstack/scripts/run-tool.sh plugins/cstack/skills/cstack/scripts/worktree-audit.sh plugins/cstack/skills/show-me-your-work/scripts/log.sh install.sh
-docker run --rm -v "$PWD:/repo:ro" -w /repo \
-  koalaman/shellcheck:v0.10.0@sha256:2097951f02e735b613f4a34de20c40f937a6c8f18ecb170612c88c34517221fb \
-  --severity=warning plugins/cstack/scripts/run-tool.sh plugins/cstack/skills/cstack/scripts/worktree-audit.sh plugins/cstack/skills/show-me-your-work/scripts/log.sh install.sh
-docker run --rm -v "$PWD:/repo:ro" -w /repo \
-  rhysd/actionlint:1.7.12@sha256:b1934ee5f1c509618f2508e6eb47ee0d3520686341fec936f3b79331f9315667 \
-  -no-color .github/workflows/*.yml plugins/cstack/automations/intake/templates/github-intake.yml
-git diff --check
+bash scripts/check.sh
 ```
 
-`bun run typecheck` est le contrôle strict de watch-pr. La ligne `tsc -p tsconfig.json` vérifie les types du `tsconfig.json` du dépôt avec le binaire `tsc` que `bun install` vient de créer, après retour à la racine du dépôt. Les tests Python utilisent le lanceur `unittest` de la bibliothèque standard. L'achèvement exige le comportement pertinent observé ainsi que des contrôles verts ; un nombre d'appels plus faible ne suffit pas à établir de meilleurs résultats.
+Elle conserve l’ordre des contrôles : faits générés, validateur du paquet, tests Python et Bun, installation verrouillée des assistants, types stricts et racine, syntaxe Bash, ShellCheck, Actionlint et espacement. Les images de lint sont épinglées dans ce script. Python 3.9 ou plus récent, Bun 1.4.0 et Docker sont nécessaires. La CI utilise Python 3.9.
+
+L’achèvement exige le comportement pertinent observé ainsi que des contrôles verts ; un nombre d’appels plus faible ne suffit pas à établir de meilleurs résultats.
 
 ## Agent skills
 

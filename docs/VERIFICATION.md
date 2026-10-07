@@ -10,7 +10,9 @@ Le reçu garde `status` pour le tour natif et ajoute `verdicts.turn`, `verdicts.
 
 `--verify-outcomes` autorise explicitement les commandes `outcome_checks` du fichier d’attentes de confiance. Chaque commande fournit `id`, `argv` sans shell et un `timeout` facultatif de 30 secondes, plafonné à 300. Le champ facultatif `expected_json` exige une sortie standard contenant un résultat JSON complet égal à cette attente, en plus du code de sortie nul. La comparaison utilise une représentation JSON canonique : l’ordre des clés ne compte pas, mais un booléen ne vaut pas un nombre. Le runner effectue la comparaison hors du processus candidat, sans assertion supprimable par Python `-O`. Les trois scénarios de correction bornée du générateur utilisent ce contrôle.
 
-Les attentes sont chargées avant le lancement et leur empreinte est rattachée au reçu. Place les vérificateurs hors du projet modifiable. Un test écrit ou affaibli par le candidat ne constitue pas une preuve indépendante. Sans `expected_json`, le code de sortie reste le contrat de la commande de vérification fournie.
+Les attentes sont chargées avant le lancement et leur empreinte est rattachée au reçu. Les champs inconnus sont refusés. Lorsqu'elles sont fournies, `project_sha256` et les empreintes `source_sha256` du bundle et de la skill sont comparées aux fichiers avant lancement et avant chaque répétition. Le générateur fournit `skill_path`, relatif au bundle. Une ancienne attente sans ce champ exige un chemin SKILL.md unique dans le prompt. Les empreintes excluent `.git`, `__pycache__`, `node_modules` et les fichiers symboliques, comme le générateur.
+
+Place les vérificateurs hors du projet modifiable. Un test écrit ou affaibli par le candidat ne constitue pas une preuve indépendante. Sans `expected_json`, le code de sortie reste le contrat de la commande de vérification fournie.
 
 Un code de vérificateur non nul donne `fail`. Une commande inaccessible ou expirée reste `unverified`, sans empêcher les vérifications suivantes. Sans cette option, aucun vérificateur n’est exécuté et le résultat reste `unverified`. Les sorties conservées sont bornées à 4096 caractères par flux et nettoyées par le filtre de secrets du reçu.
 
@@ -19,7 +21,7 @@ python3 scripts/verify-behavior.py --cases <cases.json> --expectations <expectat
   --verify-outcomes --output <résultats> [--trace-routes]
 ```
 
-Avec des attentes demandées, une contrainte échouée rend le code 1 ; une preuve demandée mais non vérifiée rend le code 2. Le code 0 indique que les contrôles demandés passent. Sans attentes, le comportement historique du code de sortie est conservé : la fin du tour n’atteste toujours pas le workflow ni le résultat.
+Avec des attentes demandées, une contrainte échouée rend le code 1 ; une preuve demandée mais non vérifiée rend le code 2. Le code 0 indique que les contrôles demandés passent. Une vérification limitée au résultat peut donc réussir pendant que le workflow non demandé reste `unverified` dans le reçu. Les commandes de résultat restent désactivées sans `--verify-outcomes`, même si le fichier en contient. Sans attentes, le comportement historique du code de sortie est conservé : la fin du tour n’atteste toujours pas le workflow ni le résultat.
 
 `--repeats` copie les fixtures avant chaque passage. Les répétitions refusent les dépôts Git liés avant tout lancement : copier leur fichier ou lien `.git` partagerait l’index et la branche de la fixture originale. Les sous-dossiers de dépôts sont aussi refusés, car leur copie pourrait découvrir un dépôt Git dans ses nouveaux ancêtres. Les liens symboliques vers des dossiers sont refusés pour empêcher de copier un dépôt lié externe. Une fixture placée à la racine d’un dépôt autonome reste prise en charge.
 
