@@ -617,7 +617,8 @@ function actionSignals(value: unknown, headRefOid: string): readonly T.Check[] {
   }
   if (runs.length !== expected)
     throw new ChecksUnavailable("la liste Actions est tronquée pour le head demandé");
-  const latest = new Map<string, { readonly id: number; readonly run: Record<string, unknown> }>();
+  const latest = new Map<string, { readonly started: number; readonly runs: readonly Record<string, unknown>[] }>();
+  const active: Record<string, unknown>[] = [];
   const seen = new Set<number>();
   for (const item of runs) {
     const run = record(item, "workflow run");
@@ -628,15 +629,28 @@ function actionSignals(value: unknown, headRefOid: string): readonly T.Check[] {
     if (string(run.head_sha, "workflow run.head_sha") !== headRefOid) continue;
     if (typeof run.workflow_id !== "number" || !Number.isSafeInteger(run.workflow_id) || run.workflow_id <= 0)
       missing("workflow run.workflow_id", run.workflow_id);
+    if (typeof run.run_attempt !== "number" || !Number.isSafeInteger(run.run_attempt) || run.run_attempt <= 0)
+      missing("workflow run.run_attempt", run.run_attempt);
     const key = `${run.workflow_id}:${string(run.event, "workflow run.event")}`;
-    if ((latest.get(key)?.id ?? 0) < run.id) latest.set(key, { id: run.id, run });
+    if (string(run.status, "workflow run.status") !== "completed") {
+      active.push(run);
+      continue;
+    }
+    const started = Date.parse(string(run.run_started_at, "workflow run.run_started_at"));
+    if (!Number.isFinite(started))
+      throw new ChecksUnavailable(`chronologie Actions inconnue pour ${headRefOid}, run=${run.id}`);
+    const previous = latest.get(key);
+    if (previous === undefined || started > previous.started)
+      latest.set(key, { started, runs: [run] });
+    else if (started === previous.started)
+      latest.set(key, { started, runs: [...previous.runs, run] });
   }
-  return [...latest.values()].map(({ run }): T.Check => {
+  return [...active, ...[...latest.values()].flatMap((entry) => entry.runs)].map((run): T.Check => {
     const status = string(run.status, "workflow run.status");
     const conclusion = optionalString(run.conclusion, "workflow run.conclusion");
     const details = {
       name: `Actions: ${string(run.name, "workflow run.name") || `workflow ${run.workflow_id}`}`,
-      description: `workflow run ${run.id}, head=${headRefOid}`,
+      description: `workflow run ${run.id}, attempt=${run.run_attempt}, head=${headRefOid}`,
       link: string(run.html_url, "workflow run.html_url"),
       workflow: String(run.workflow_id),
     };

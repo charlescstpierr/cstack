@@ -19,6 +19,8 @@ const workflowRun = {
   name: "",
   status: "completed",
   conclusion: "startup_failure",
+  run_attempt: 1,
+  run_started_at: "2026-10-07T17:00:00Z",
   html_url: "https://github.com/owner/repo/actions/runs/37642917873",
 };
 const summary = {
@@ -90,6 +92,45 @@ esac
 }
 
 describe("signaux du head lus via gh", () => {
+  it("conserve chaque run actif même si un ID plus grand est déjà vert", async () => {
+    for (const status of ["queued", "in_progress"]) {
+      for (const started of ["2026-10-07T16:00:00Z", "2026-10-07T18:00:00Z", null]) {
+        const row = await snapshotFromGh({ runs: [
+          { ...workflowRun, id: 100, run_attempt: 2, status, conclusion: null, run_started_at: started },
+          { ...workflowRun, id: 101, conclusion: "success" },
+        ] });
+        expect(classifyPr(row)).toMatchObject({
+          kind: "waiting", pending: [{ reportedState: status.toUpperCase() }],
+        });
+      }
+    }
+  });
+
+  it("conserve les résultats contradictoires quand leur chronologie est identique", async () => {
+    const row = await snapshotFromGh({ runs: [
+      { ...workflowRun, id: 100, conclusion: "failure" },
+      { ...workflowRun, id: 101, conclusion: "success" },
+    ] });
+    expect(classifyPr(row)).toMatchObject({
+      kind: "blocker", blocker: { kind: "failing-checks" },
+    });
+  });
+
+  it("ordonne les résultats terminés par tentative récente, pas par ID", async () => {
+    const newerSuccess = await snapshotFromGh({ runs: [
+      { ...workflowRun, id: 100, run_attempt: 2, conclusion: "success", run_started_at: "2026-10-07T18:00:00Z" },
+      { ...workflowRun, id: 101, conclusion: "cancelled" },
+    ] });
+    expect(classifyPr(newerSuccess)).toMatchObject({ kind: "ready" });
+    const newerCancelled = await snapshotFromGh({ runs: [
+      { ...workflowRun, id: 100, run_attempt: 2, conclusion: "cancelled", run_started_at: "2026-10-07T18:00:00Z" },
+      { ...workflowRun, id: 101, conclusion: "success" },
+    ] });
+    expect(classifyPr(newerCancelled)).toMatchObject({
+      kind: "blocker", blocker: { kind: "failing-checks" },
+    });
+  });
+
   it("attend le commentaire Codex Running rattaché au SHA abrégé actuel", async () => {
     const row = await snapshotFromGh({ comments: [summary] });
     expect(classifyPr(row)).toMatchObject({
@@ -132,7 +173,7 @@ describe("signaux du head lus via gh", () => {
 
   it("remplace une ancienne exécution échouée et un ancien résumé Running par leurs résultats récents", async () => {
     const row = await snapshotFromGh({
-      runs: [workflowRun, { ...workflowRun, id: workflowRun.id + 1, conclusion: "success" }],
+      runs: [workflowRun, { ...workflowRun, id: workflowRun.id + 1, conclusion: "success", run_started_at: "2026-10-07T18:00:00Z" }],
       comments: [summary, {
         ...summary,
         updated_at: "2026-10-07T16:00:00Z",
@@ -164,6 +205,9 @@ describe("signaux du head lus via gh", () => {
       { runs: [workflowRun, workflowRun] },
       { runs: [{ ...workflowRun, status: "future_state" }] },
       { runs: [{ ...workflowRun, conclusion: null }] },
+      { runs: [{ ...workflowRun, conclusion: "success", run_started_at: null }] },
+      { runs: [{ ...workflowRun, conclusion: "success", run_started_at: "unknown" }] },
+      { runs: [{ ...workflowRun, conclusion: "success", run_attempt: 0 }] },
       { comments: [{ ...summary, body: summary.body.replace("Running", "Starting") }] },
       { comments: [{ ...summary, body: summary.body.replace("84c02ea", "unknown") }] },
     ];
