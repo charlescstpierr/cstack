@@ -2,11 +2,34 @@
 
 Ce fichier distingue le catalogue courant des campagnes datées. Les nombres historiques restent ceux de leur campagne.
 
+## Verdicts indépendants des scénarios
+
+Le reçu garde `status` pour le tour natif et ajoute `verdicts.turn`, `verdicts.workflow` et `verdicts.outcome`. `completed` n’accorde pas un verdict de réussite aux deux autres dimensions.
+
+`--expectations` contrôle les contraintes observables déclarées : lectures de routes selon le traçage, nombre d’enfants et présence des artefacts. Les lectures non attribuées et le traçage absent restent `unverified`. Un artefact présent ne prouve pas sa correction, et les lectures ne prouvent pas que toutes les instructions du workflow ont été exécutées. Les contraintes non déclarées ne sont pas évaluées.
+
+`--verify-outcomes` autorise explicitement les commandes `outcome_checks` du fichier d’attentes de confiance. Chaque commande fournit `id`, `argv` sans shell et un `timeout` facultatif de 30 secondes, plafonné à 300. Le champ facultatif `expected_json` exige une sortie standard contenant un résultat JSON complet égal à cette attente, en plus du code de sortie nul. La comparaison utilise une représentation JSON canonique : l’ordre des clés ne compte pas, mais un booléen ne vaut pas un nombre. Le runner effectue la comparaison hors du processus candidat, sans assertion supprimable par Python `-O`. Les trois scénarios de correction bornée du générateur utilisent ce contrôle.
+
+Les attentes sont chargées avant le lancement et leur empreinte est rattachée au reçu. Place les vérificateurs hors du projet modifiable. Un test écrit ou affaibli par le candidat ne constitue pas une preuve indépendante. Sans `expected_json`, le code de sortie reste le contrat de la commande de vérification fournie.
+
+Un code de vérificateur non nul donne `fail`. Une commande inaccessible ou expirée reste `unverified`, sans empêcher les vérifications suivantes. Sans cette option, aucun vérificateur n’est exécuté et le résultat reste `unverified`. Les sorties conservées sont bornées à 4096 caractères par flux et nettoyées par le filtre de secrets du reçu.
+
+```sh
+python3 scripts/verify-behavior.py --cases <cases.json> --expectations <expectations.json> \
+  --verify-outcomes --output <résultats> [--trace-routes]
+```
+
+Avec des attentes demandées, une contrainte échouée rend le code 1 ; une preuve demandée mais non vérifiée rend le code 2. Le code 0 indique que les contrôles demandés passent. Sans attentes, le comportement historique du code de sortie est conservé : la fin du tour n’atteste toujours pas le workflow ni le résultat.
+
+`--repeats` copie les fixtures avant chaque passage. Les répétitions refusent les dépôts Git liés avant tout lancement : copier leur fichier ou lien `.git` partagerait l’index et la branche de la fixture originale. Les sous-dossiers de dépôts sont aussi refusés, car leur copie pourrait découvrir un dépôt Git dans ses nouveaux ancêtres. Les liens symboliques vers des dossiers sont refusés pour empêcher de copier un dépôt lié externe. Une fixture placée à la racine d’un dépôt autonome reste prise en charge.
+
+Le traçage ne conserve pas le répertoire courant ni les descripteurs de dossier de chaque processus. Une ouverture relative reste donc ambiguë. Elle empêche de conclure à l’absence d’une lecture attendue ou interdite.
+
 ## Scénarios natifs persistants
 
 `scripts/verify-behavior.py` conserve le booléen `ephemeral` de chaque scénario jusqu'à `thread/start`. Les valeurs autres que `true` ou `false` sont refusées ; un scénario fourni sans ce champ garde le défaut éphémère. Le générateur `scripts/behavior-scenarios.py` demande explicitement des fils persistants pour permettre la délégation native. Ces conversations restent dans l'historique du `CODEX_HOME` courant, et les fixtures ainsi que leurs preuves sont conservées dans les dossiers de sortie.
 
-Le reçu `native_child_thread_ids` exclut le fil parent, y compris lorsqu'un événement arrive avant la réponse de `thread/start`. Les dispatchs bruts restent conservés et les métadonnées d'un enfant fermé restent une lacune d'observation. Le statut `completed` décrit la fin du tour ; il ne prouve ni le résultat de la tâche ni la conformité du workflow. La confrontation des attentes de routage aux lectures observées reste le périmètre distinct de la PR #43.
+Le reçu `native_child_thread_ids` exclut le fil parent, y compris lorsqu'un événement arrive avant la réponse de `thread/start`. Les dispatchs bruts restent conservés et les métadonnées d'un enfant fermé restent une lacune d'observation. Le statut `completed` décrit la fin du tour ; il ne prouve ni le résultat de la tâche ni la conformité du workflow. L’observation de routage reprend l’instrumentation de la PR #43, intégrée avec la conservation des fils persistants.
 
 Le [reçu du 6 octobre 2026](evidence/behavior-runner-2026-10-06.json) enregistre une sonde via l'interface CLI corrigée. Le parent est persistant, un enfant est confirmé par ses métadonnées et le parent est absent de la liste d'enfants. La correction du message et une assertion indépendante sur sa sortie passent. Le bundle source était chargé directement, sans observation des hooks installés. C'est un essai unique, pas une campagne comparative ni une preuve générale de conformité des workflows.
 

@@ -1,6 +1,8 @@
 import importlib.util
 import json
 import os
+import shutil
+import subprocess
 import sys
 import tempfile
 import types
@@ -32,6 +34,295 @@ def state():
 
 
 class BehaviorRunnerTests(unittest.TestCase):
+    def test_completed_turn_with_missing_required_route_fails_requested_verification(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            project = root / "project"
+            project.mkdir()
+            cases = root / "cases.json"
+            cases.write_text(json.dumps([{"id": "missing-review", "cwd": str(project),
+                                         "bundle": str(MODULE_PATH.parents[1] / "plugins/cstack"),
+                                         "prompt": "Review the fix."}]))
+            expectations = root / "expectations.json"
+            expectations.write_text(json.dumps({"schema_version": 1, "cases": [{
+                "id": "missing-review", "routing": {"expected": ["skills/interrogate/SKILL.md"], "forbidden": []}}]}))
+            completed = {"id": "missing-review", "status": "completed", "cwd": str(project),
+                         "route_observation": {"opened": [], "direct_reads": [],
+                                               "ambiguous_path": False, "trace_files": 1}}
+            with patch.object(verify_behavior, "require_route_trace"), \
+                 patch.object(verify_behavior, "build_command", return_value=["fake"]), \
+                 patch.object(verify_behavior, "run_case", return_value=completed):
+                code = verify_behavior.main(["--cases", str(cases), "--output", str(root / "results"),
+                                             "--trace-routes", "--expectations", str(expectations)])
+            self.assertEqual(code, 1, "a completed turn must not hide a missing required review")
+            result = json.loads((root / "results/summary.json").read_text())["cases"][0]
+            self.assertEqual(result["status"], "completed")
+            self.assertEqual(result["verdicts"]["workflow"]["status"], "fail")
+            self.assertEqual(result["verdicts"]["outcome"]["status"], "unverified")
+
+    def test_workflow_checks_delegation_and_keeps_missing_observations_unverified(self):
+        result = {"status": "completed", "native_child_thread_ids": [], "cwd": "/unused"}
+        report = verify_behavior.evaluate_case(result, {"expected_children": 1})
+        self.assertEqual(report["turn"], "completed")
+        self.assertEqual(report["workflow"]["status"], "fail")
+        ambiguous = {"status": "completed", "route_score": {
+            "false_negative": [], "false_positive": [],
+            "unknown_expected": ["skills/how/SKILL.md"], "unknown_forbidden": []}}
+        report = verify_behavior.evaluate_case(ambiguous, {"routing": {
+            "expected": ["skills/how/SKILL.md"], "forbidden": []}})
+        self.assertEqual(report["workflow"]["status"], "unverified")
+        self.assertEqual(verify_behavior.evaluate_case({"status": "completed"}, {})["outcome"]["status"], "unverified")
+
+    def test_frozen_outcome_check_runs_real_code_and_rejects_wrong_fix(self):
+        with tempfile.TemporaryDirectory() as directory:
+            project = Path(directory)
+            target = project / "message.txt"
+            target.write_text("could not proccess invoice")
+            result = {"status": "completed", "cwd": directory, "native_child_thread_ids": []}
+            expectation = {"expected_children": 0, "outcome_checks": [{
+                "id": "correct-message", "argv": [sys.executable, "-c",
+                "from pathlib import Path; assert Path('message.txt').read_text() == 'could not process invoice'"]}]}
+            failed = verify_behavior.evaluate_case(result, expectation, verify_outcomes=True)
+            self.assertEqual(failed["turn"], "completed")
+            self.assertEqual(failed["workflow"]["status"], "pass")
+            self.assertEqual(failed["outcome"]["status"], "fail")
+            self.assertNotEqual(failed["outcome"]["checks"][0]["returncode"], 0)
+            target.write_text("could not process invoice")
+            passed = verify_behavior.evaluate_case(result, expectation, verify_outcomes=True)
+            self.assertEqual(passed["outcome"]["status"], "pass")
+            passive = verify_behavior.evaluate_case(result, expectation)
+            self.assertEqual(passive["outcome"]["status"], "unverified")
+
+    def test_outcome_check_timeout_is_unverified_and_later_checks_still_run(self):
+        with tempfile.TemporaryDirectory() as directory:
+            expectation = {"outcome_checks": [
+                {"id": "slow", "argv": [sys.executable, "-c", "import time; time.sleep(2)"], "timeout": 0.05},
+                {"id": "wrong", "argv": [sys.executable, "-c", "raise SystemExit(1)"]}]}
+            report = verify_behavior.evaluate_case({"status": "completed", "cwd": directory}, expectation, True)
+            self.assertEqual(report["outcome"]["checks"][0]["status"], "unverified")
+            self.assertEqual(report["outcome"]["checks"][1]["status"], "fail")
+            self.assertEqual(report["outcome"]["status"], "fail")
+
+    def test_outcome_commands_require_opt_in_and_a_completed_turn(self):
+        with tempfile.TemporaryDirectory() as directory:
+            marker = Path(directory) / "executed.txt"
+            expectation = {"outcome_checks": [{"id": "marker", "argv": [sys.executable, "-c",
+                "from pathlib import Path; Path('executed.txt').write_text('executed')"]}]}
+            verify_behavior.evaluate_case({"status": "completed", "cwd": directory}, expectation)
+            self.assertFalse(marker.exists())
+            verify_behavior.evaluate_case({"status": "needs_input", "cwd": directory}, expectation, True)
+            self.assertFalse(marker.exists())
+            report = verify_behavior.evaluate_case({"status": "completed", "cwd": directory}, expectation, True)
+            self.assertEqual(report["outcome"]["status"], "pass")
+            self.assertTrue(marker.exists())
+
+    def test_outcome_output_is_scrubbed_before_truncation(self):
+        with tempfile.TemporaryDirectory() as directory:
+            expectation = {"outcome_checks": [{"id": "no-secret", "argv": [sys.executable, "-c",
+                "print('api_key=' + 'A' * 5000)"]}]}
+            report = verify_behavior.evaluate_case({"status": "completed", "cwd": directory}, expectation, True)
+            output = report["outcome"]["checks"][0]["stdout"]
+            self.assertIn("<REDACTED>", output)
+            self.assertNotIn("A" * 100, output)
+            self.assertLessEqual(len(output), 4096)
+
+    def test_malformed_expectations_fail_before_launch(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "expectations.json"
+            for rows in ([{"id": "one", "expected_children": True}],
+                         [{"id": "one"}, {"id": "one"}],
+                         [{"id": "one", "routing": {"expected": ["x"], "forbidden": ["x"]}}],
+                         [{"id": "one", "outcome_checks": [{"id": "test", "argv": "echo yes"}]}],
+                         [{"id": "one", "outcome_checks": [{"id": "test", "argv": ["true"], "timeout": float("nan")}]}]):
+                with self.subTest(rows=rows):
+                    path.write_text(json.dumps({"schema_version": 1, "cases": rows}))
+                    with self.assertRaises(verify_behavior.HarnessError):
+                        verify_behavior.read_expectations(path)
+
+    def test_cli_verifies_outcome_without_route_trace_and_refuses_missing_proof(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            project = root / "project"
+            project.mkdir()
+            target = project / "message.txt"
+            target.write_text("wrong")
+            cases = root / "cases.json"
+            cases.write_text(json.dumps([{"id": "one", "cwd": str(project), "prompt": "Fix the message."}]))
+            expectations = root / "expectations.json"
+            checks = [{"id": "message", "argv": [sys.executable, "-c",
+                       "from pathlib import Path; assert Path('message.txt').read_text() == 'correct'"]}]
+            row = {"id": "one", "expected_children": 0, "outcome_checks": checks}
+            expectations.write_text(json.dumps({"schema_version": 1, "cases": [row]}))
+            completed = {"id": "one", "status": "completed", "cwd": str(project), "native_child_thread_ids": []}
+            with patch.object(verify_behavior, "build_command", return_value=["fake"]), \
+                 patch.object(verify_behavior, "run_case", return_value=completed):
+                for label, text, expected in (("wrong", "wrong", 1), ("correct", "correct", 0)):
+                    target.write_text(text)
+                    code = verify_behavior.main(["--cases", str(cases), "--output", str(root / label),
+                                                 "--expectations", str(expectations), "--verify-outcomes"])
+                    self.assertEqual(code, expected)
+                expectations.write_text(json.dumps({"schema_version": 1, "cases": [{"id": "one"}]}))
+                code = verify_behavior.main(["--cases", str(cases), "--output", str(root / "unverified"),
+                                             "--expectations", str(expectations), "--verify-outcomes"])
+                self.assertEqual(code, 2)
+            result = json.loads((root / "correct/summary.json").read_text())["cases"][0]
+            self.assertEqual(result["verdicts"]["outcome"]["status"], "pass")
+            self.assertEqual(len(result["expectation_sha256"]), 64)
+
+    def test_route_trace_scores_actual_opens_and_negative_routes(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory) / "resources" / "candidate"
+            prefix = Path(directory) / "route-open"
+            (Path(directory) / "route-open.101").write_text(
+                f'openat(AT_FDCWD, "{bundle}/skills/cstack/playbooks/feature.md", O_RDONLY) = 3\n'
+                f'openat(AT_FDCWD, "{bundle}/skills/how/SKILL.md", O_RDONLY) = 4\n'
+                f'openat(AT_FDCWD, "{bundle}/skills/arena/SKILL.md", O_RDONLY) = -1 ENOENT\n'
+            )
+            opened = verify_behavior.observed_routes(prefix, bundle, [
+                f"cat {bundle}/skills/cstack/playbooks/feature.md",
+                f"sed -n '1,80p' {bundle}/skills/how/SKILL.md",
+            ], Path(directory))
+            score = verify_behavior.score_routes(opened, {"routing": {
+                "expected": ["skills/cstack/playbooks/feature.md", "skills/arena/SKILL.md"],
+                "forbidden": ["skills/how/SKILL.md", "skills/why/SKILL.md"],
+            }})
+        self.assertEqual(score["true_positive"], ["skills/cstack/playbooks/feature.md"])
+        self.assertEqual(score["false_negative"], ["skills/arena/SKILL.md"])
+        self.assertEqual(score["false_positive"], ["skills/how/SKILL.md"])
+        self.assertEqual(score["known_true_negative"], ["skills/why/SKILL.md"])
+
+    def test_bulk_scan_is_unknown_not_a_loaded_capability(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory) / "resources" / "candidate"
+            prefix = Path(directory) / "route-open"
+            (Path(directory) / "route-open.101").write_text(
+                f'openat(AT_FDCWD, "{bundle}/skills/arena/SKILL.md", O_RDONLY) = 3\n'
+            )
+            opened = verify_behavior.observed_routes(
+                prefix, bundle, [f"rg arena {bundle}/skills"], Path(directory)
+            )
+            required = verify_behavior.score_routes(opened, {"routing": {
+                "expected": ["skills/arena/SKILL.md"], "forbidden": [],
+            }})
+            forbidden = verify_behavior.score_routes(opened, {"routing": {
+                "expected": [], "forbidden": ["skills/arena/SKILL.md"],
+            }})
+        self.assertEqual(opened["direct_reads"], [])
+        self.assertEqual(required["unknown_expected"], ["skills/arena/SKILL.md"])
+        self.assertEqual(forbidden["unknown_forbidden"], ["skills/arena/SKILL.md"])
+        self.assertEqual(required["true_positive"], [])
+        self.assertEqual(forbidden["false_positive"], [])
+
+    def test_repeats_copy_fixtures_and_preserve_original(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            project = root / "project"
+            project.mkdir()
+            (project / "source.txt").write_text("original")
+            cases = root / "cases.json"
+            cases.write_text(json.dumps([{"id": "one", "cwd": str(project), "prompt": "Lecture seule."}]))
+
+            def fake_run(case, output, command, model, effort, timeout, trace_routes=False):
+                (case["cwd"] / "source.txt").write_text("changed")
+                return {"id": case["id"], "status": "completed"}
+
+            with patch.object(verify_behavior, "build_command", return_value=["codex"]), \
+                 patch.object(verify_behavior, "run_case", side_effect=fake_run):
+                self.assertEqual(verify_behavior.main([
+                    "--cases", str(cases), "--output", str(root / "results"), "--repeats", "3"
+                ]), 0)
+            summary = json.loads((root / "results" / "summary.json").read_text())
+            self.assertEqual([case["id"] for case in summary["cases"]],
+                             ["one__run_01", "one__run_02", "one__run_03"])
+            self.assertEqual((project / "source.txt").read_text(), "original")
+
+    def test_repeats_reject_linked_git_worktrees_before_launch(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            original, linked = root / "original", root / "linked"
+            original.mkdir()
+            subprocess.run(["git", "init", "-q", str(original)], check=True)
+            (original / "source.txt").write_text("original")
+            subprocess.run(["git", "-C", str(original), "add", "."], check=True)
+            subprocess.run(["git", "-C", str(original), "-c", "user.name=test",
+                            "-c", "user.email=test@example.invalid", "commit", "-qm", "initial"], check=True)
+            subprocess.run(["git", "-C", str(original), "worktree", "add", "-qb", "linked", str(linked)], check=True)
+            head = subprocess.check_output(["git", "-C", str(linked), "rev-parse", "HEAD"])
+            index = Path(subprocess.check_output(["git", "-C", str(linked), "rev-parse",
+                                                "--git-path", "index"], text=True).strip())
+            before_index = index.read_bytes()
+            cases = root / "cases.json"
+            (linked / "subdir").mkdir()
+            project = root / "project"
+            project.mkdir()
+            subprocess.run(["git", "init", "-q", str(project)], check=True)
+            (project / "linked-dependency").symlink_to(linked, target_is_directory=True)
+            for cwd in (linked, linked / "subdir", project):
+                with self.subTest(cwd=cwd):
+                    cases.write_text(json.dumps([{"id": "linked", "cwd": str(cwd), "prompt": "Commit a fix."}]))
+                    with patch.object(verify_behavior, "build_command", return_value=["fake"]), \
+                         patch.object(verify_behavior, "run_case", return_value={"id": "linked", "status": "completed"}) as launch:
+                        with self.assertRaisesRegex(verify_behavior.HarnessError, "dépôt Git|symbolique"):
+                            verify_behavior.main(["--cases", str(cases), "--output", str(root / "results"), "--repeats", "2"])
+                        launch.assert_not_called()
+            self.assertEqual(subprocess.check_output(["git", "-C", str(linked), "rev-parse", "HEAD"]), head)
+            self.assertEqual(index.read_bytes(), before_index)
+            self.assertFalse((root / "results").exists())
+
+    def test_repeated_standalone_git_commits_leave_fixture_head_and_index_intact(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            project = root / "project"
+            project.mkdir()
+
+            def git(cwd, *args):
+                return subprocess.check_output(["git", "-C", str(cwd), "-c", "user.name=test",
+                    "-c", "user.email=test@example.invalid", *args], stderr=subprocess.DEVNULL)
+
+            git(project, "init", "-q")
+            (project / "source.txt").write_text("original")
+            git(project, "add", ".")
+            git(project, "commit", "-qm", "initial")
+            head, index = git(project, "rev-parse", "HEAD"), (project / ".git/index").read_bytes()
+            cases = root / "cases.json"
+            cases.write_text(json.dumps([{"id": "one", "cwd": str(project), "prompt": "Commit the fix."}]))
+
+            def commit_fix(case, *args):
+                self.assertEqual(git(case["cwd"], "rev-parse", "HEAD"), head)
+                (case["cwd"] / "source.txt").write_text("fixed")
+                git(case["cwd"], "add", ".")
+                git(case["cwd"], "commit", "-qm", "fix")
+                return {"id": case["id"], "status": "completed"}
+
+            with patch.object(verify_behavior, "build_command", return_value=["fake"]), \
+                 patch.object(verify_behavior, "run_case", side_effect=commit_fix) as launch:
+                self.assertEqual(verify_behavior.main(["--cases", str(cases), "--output", str(root / "results"),
+                                                      "--repeats", "2"]), 0)
+                self.assertEqual(launch.call_count, 2)
+            self.assertEqual(git(project, "rev-parse", "HEAD"), head)
+            self.assertEqual((project / ".git/index").read_bytes(), index)
+            self.assertEqual((project / "source.txt").read_text(), "original")
+
+    @unittest.skipUnless(shutil.which("strace"), "strace requis")
+    def test_relative_strace_open_cannot_be_a_known_negative(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            bundle = root / "bundle"
+            skill = bundle / "skills/how/SKILL.md"
+            skill.parent.mkdir(parents=True)
+            skill.write_text("how")
+            prefix = root / "route-open"
+            subprocess.run(["strace", "-ff", "-e", "trace=openat,openat2", "-o", str(prefix),
+                            "cat", "bundle/skills/how/SKILL.md"], cwd=root, check=True,
+                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            observed = verify_behavior.observed_routes(prefix, bundle, ["cat bundle/skills/how/SKILL.md"], root)
+            score = verify_behavior.score_routes(observed, {"routing": {
+                "expected": [], "forbidden": ["skills/how/SKILL.md"]}})
+            self.assertEqual(score["known_true_negative"], [])
+            self.assertEqual(score["unknown_forbidden"], ["skills/how/SKILL.md"])
+            self.assertTrue(observed["ambiguous_path"])
+
+
     def test_dispatch_never_counts_parent_as_child(self):
         current = state()
         verify_behavior.update_state({

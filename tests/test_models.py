@@ -5,6 +5,8 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
+import subprocess
+import sys
 from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -24,6 +26,162 @@ RUNTIME_CATALOG = {"runtimes": {
 
 
 class ModelSetupTests(unittest.TestCase):
+    def test_apply_cli_updates_models_and_removes_agent_assigned_to_external_runtime(self):
+        project = models.project_helper()
+        with tempfile.TemporaryDirectory() as directory:
+            workspace = Path(directory)
+            options = {"native_agents": True}
+            plan = project.preview_plan(workspace, options, None)
+            project.apply_plan(workspace, plan, options, None)
+            choices = workspace / "choices.json"
+            choices.write_text('{"how explorer":{"runtime":"claude-code"}}')
+            path = workspace / ".cstack/models.json"
+            _, digest = models.read_config(path)
+            result = subprocess.run([sys.executable, str(SCRIPT), "--workspace", directory,
+                                     "apply", "--choices", str(choices), "--expected-sha256", digest],
+                                    capture_output=True, text=True)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(json.loads(result.stdout), {
+                "saved": {"how explorer": {"runtime": "claude-code"}},
+                "agents": {"updated": [], "removed": [".codex/agents/cstack-explorer.toml"]}})
+            self.assertEqual(json.loads(path.read_bytes()), {"how explorer": {"runtime": "claude-code"}})
+            self.assertFalse((workspace / ".codex/agents/cstack-explorer.toml").exists())
+            self.assertEqual((path.parent / ".gitignore").read_text(), "*\n")
+
+    def test_apply_cli_preserves_models_and_agents_when_agent_target_is_not_regular(self):
+        project = models.project_helper()
+        with tempfile.TemporaryDirectory() as directory:
+            workspace = Path(directory)
+            options = {"native_agents": True}
+            plan = project.preview_plan(workspace, options, None)
+            project.apply_plan(workspace, plan, options, None)
+            path = workspace / ".cstack/models.json"
+            path.parent.mkdir(exist_ok=True)
+            path.write_bytes(b'{}\n')
+            worker = workspace / ".codex/agents/cstack-worker.toml"
+            worker.unlink()
+            worker.mkdir()
+            before = {p: p.read_bytes() for p in workspace.rglob("*") if p.is_file()}
+            choices = workspace / "choices.json"
+            choices.write_text('{"how explorer":{"runtime":"claude-code"}}')
+            _, digest = models.read_config(path)
+            result = subprocess.run([sys.executable, str(SCRIPT), "--workspace", directory,
+                                     "apply", "--choices", str(choices), "--expected-sha256", digest],
+                                    capture_output=True, text=True)
+            self.assertEqual(result.returncode, 2, result.stderr)
+            self.assertIn("fichier régulier", result.stderr)
+            self.assertEqual({p: p.read_bytes() for p in before}, before)
+            self.assertTrue(worker.is_dir())
+            self.assertFalse((path.parent / ".gitignore").exists())
+
+    def test_apply_cli_rolls_back_models_and_first_agent_after_later_write_fails(self):
+        project = models.project_helper()
+        for existing, explorer in ((True, "gpt-6-astra"), (False, {"runtime": "claude-code"})):
+            with self.subTest(existing_models=existing), tempfile.TemporaryDirectory() as directory:
+                self.check_failed_cli_rollback(project, Path(directory), existing, explorer)
+
+    def test_apply_cli_rolls_back_interruption_after_model_write(self):
+        project = models.project_helper()
+        with tempfile.TemporaryDirectory() as directory:
+            self.check_failed_cli_rollback(project, Path(directory), True, "gpt-6-astra",
+                                           "KeyboardInterrupt", "cstack-explorer.toml")
+
+    def test_apply_cli_rolls_back_interruption_after_replace_returns(self):
+        project = models.project_helper()
+        for existing in (True, False):
+            with self.subTest(existing_models=existing), tempfile.TemporaryDirectory() as directory:
+                self.check_failed_cli_rollback(project, Path(directory), existing, "gpt-6-astra",
+                                               "KeyboardInterrupt", "models.json", after_write=True)
+
+    def check_failed_cli_rollback(self, project, workspace, existing, explorer,
+                                 failure="OSError", failing_target="cstack-reviewer.toml", after_write=False):
+        directory = str(workspace)
+        options = {"native_agents": True}
+        plan = project.preview_plan(workspace, options, None)
+        project.apply_plan(workspace, plan, options, None)
+        path = workspace / ".cstack/models.json"
+        path.parent.mkdir(exist_ok=True)
+        if existing:
+            path.write_bytes(b'{}\n')
+        before = {p: p.read_bytes() for p in workspace.rglob("*") if p.is_file()}
+        choices = workspace / "choices.json"
+        choices.write_text(json.dumps({"how explorer": explorer, "judgment and prose": "gpt-6-astra"}))
+        catalog = workspace / "catalog.json"
+        catalog.write_text(json.dumps(CATALOG))
+        _, digest = models.read_config(path)
+        runner = '''
+import os, runpy, sys
+from pathlib import Path
+failure = getattr(__import__("builtins"), sys.argv.pop(1))
+failing_target = sys.argv.pop(1)
+after_write = sys.argv.pop(1) == "True"
+injected = False
+replace = os.replace
+def fail_write(source, target):
+    global injected
+    if Path(target).name == failing_target and not injected:
+        injected = True
+        if after_write:
+            replace(source, target)
+        raise failure("échec écriture simulé")
+    replace(source, target)
+os.replace = fail_write
+runpy.run_path(sys.argv.pop(1), run_name="__main__")
+'''
+        result = subprocess.run([sys.executable, "-c", runner, failure, failing_target, str(after_write),
+                                 str(SCRIPT), "--workspace", directory,
+                                 "--catalog", str(catalog), "apply", "--choices", str(choices),
+                                 "--expected-sha256", digest], capture_output=True, text=True)
+        self.assertEqual(result.returncode, 2, result.stderr)
+        self.assertIn("échec écriture simulé", result.stderr)
+        self.assertEqual({p: p.read_bytes() for p in before}, before)
+        self.assertEqual(path.exists(), existing)
+        self.assertFalse((path.parent / ".gitignore").exists())
+
+    def test_preflight_checks_all_required_roles_without_substitution(self):
+        config = {"how explorer": "gpt-6-astra", "judgment and prose": "missing-reviewer",
+                  "documentation": "unused-missing-model"}
+        before = json.dumps(config)
+        report = models.preflight(config, ["how explorer", "judgment and prose"], CATALOG)
+        self.assertEqual(report["status"], "blocked")
+        self.assertEqual(report["resolved"], {"how explorer": [{"model": "gpt-6-astra"}]})
+        self.assertEqual(set(report["errors"]), {"judgment and prose"})
+        self.assertIn("missing-reviewer", report["errors"]["judgment and prose"])
+        self.assertEqual(json.dumps(config), before)
+
+    def test_preflight_inheritance_needs_no_catalog_and_panels_keep_exact_selections(self):
+        self.assertEqual(models.preflight({}, ["how explorer", "judgment and prose"], None),
+                         {"status": "ready", "resolved": {"how explorer": [{}], "judgment and prose": [{}]}, "errors": {}})
+        report = models.preflight({"interrogate reviewers": ["inherit-parent", {
+            "runtime": "claude-code", "model": "shared-slug", "reasoning_effort": "sonnet"}]},
+            ["interrogate reviewers"], RUNTIME_CATALOG)
+        self.assertEqual(report["status"], "ready")
+        self.assertEqual(report["resolved"]["interrogate reviewers"][1],
+                         {"runtime": "claude-code", "model": "shared-slug", "reasoning_effort": "sonnet"})
+
+    def test_preflight_reports_each_unavailable_role_and_rejects_unknown_roles(self):
+        report = models.preflight({"how explorer": "missing", "judgment and prose": {
+            "model": "gpt-6-astra", "reasoning_effort": "unsupported"}},
+            ["how explorer", "judgment and prose"], CATALOG)
+        self.assertEqual(set(report["errors"]), {"how explorer", "judgment and prose"})
+        with self.assertRaises(ValueError):
+            models.preflight({}, ["typo-role"], CATALOG)
+
+    def test_preflight_cli_returns_blocked_json_without_writing_project(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            path = root / ".cstack/models.json"
+            path.parent.mkdir()
+            path.write_text('{"judgment and prose":"missing-reviewer"}\n')
+            before = path.read_bytes()
+            report = subprocess.run([sys.executable, str(SCRIPT), "--workspace", directory,
+                                     "preflight", "how explorer", "judgment and prose"],
+                                    capture_output=True, text=True)
+            self.assertEqual(report.returncode, 2, report.stderr)
+            self.assertEqual(json.loads(report.stdout)["status"], "blocked")
+            self.assertEqual(path.read_bytes(), before)
+            self.assertEqual(sorted(p.name for p in path.parent.iterdir()), ["models.json"])
+
     def test_recommended_setup_resolves_exact_model_and_effort_for_every_role(self):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / ".cstack/models.json"

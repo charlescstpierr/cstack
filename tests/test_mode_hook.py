@@ -24,7 +24,7 @@ class ModeHookTests(unittest.TestCase):
         env = {key: value for key, value in os.environ.items() if key != "PLUGIN_DATA"}
         if data:
             env["PLUGIN_DATA"] = str(self.data)
-        result = subprocess.run([sys.executable, str(HOOK)], input=raw if raw is not None else json.dumps(event),
+        result = subprocess.run([sys.executable, "-S", str(HOOK)], input=raw if raw is not None else json.dumps(event),
                                 capture_output=True, text=True, env=env, check=False)
         self.assertEqual(result.returncode, 0, result.stderr)
         return result.stdout
@@ -44,6 +44,52 @@ class ModeHookTests(unittest.TestCase):
         self.assertEqual(self.prompt("Autre conversation.", session="s2"), "")
         # Le rappel reste court, comme le `reminder:` de pstack, bien sous la limite d'injection.
         self.assertLess(len(first.split()), 30)
+
+    def test_mentions_and_explicit_refusals_do_not_activate(self):
+        prompts = (
+            "Explique ce que signifie la chaîne « $cstack:cstack ». Ne l’active pas.",
+            "Ne lance pas $cstack:cstack.",
+            "`$cstack:cstack` est-il un skill ?",
+            "\"$cstack:cstack\"",
+            "```\n$cstack:cstack\n```",
+            "Explique [$cstack:cstack](/plugins/cstack/skills/cstack/SKILL.md).",
+            "`[$cstack:cstack](/plugins/cstack/skills/cstack/SKILL.md)`",
+            "$cstack:cstack Ne l'active pas.",
+            "$cstack:cstack Ne l’active pas.",
+            "$cstack:cstack Ne l'utilise pas.",
+            "$cstack:cstack pour expliquer sa signification. Ne l'active pas.",
+            "[$cstack:cstack](/plugins/cstack/skills/cstack/SKILL.md) Explain the skill. Do not activate it.",
+            "$cstack:cstack N'active pas cstack.",
+            "$cstack:cstack Do not activate it.",
+            "$cstack:cstack Don't activate it.",
+            "[$cstack:cstack](/plugins/cstack/skills/cstack/SKILL.md) Do not activate it.",
+            "[$cstack](/plugins/cstack/skills/how/SKILL.md) Corrige ce bug.",
+            "$cstack:cstack-extra Corrige ce bug.",
+        )
+        for index, text in enumerate(prompts):
+            with self.subTest(prompt=text):
+                session = f"mention-{index}"
+                self.assertEqual(self.prompt(text, session=session), "")
+                self.assertEqual(self.prompt("Une autre question.", session=session), "")
+                self.assertEqual(self.run_hook({"hook_event_name": "SessionStart", "session_id": session,
+                                               "source": "resume"}), "")
+        self.assertFalse((self.data / "sessions").exists())
+
+    def test_explicit_commands_and_skill_links_activate(self):
+        for index, text in enumerate((
+            "$cstack:cstack",
+            "  $cstack:cstack\nCorrige ce bug.",
+            "Utilise $cstack:cstack pour cette tâche.",
+            "Use $cstack:cstack to fix the bug.",
+            "$cstack:cstack Corrige ce bug. Ne modifie pas la configuration.",
+            "$cstack:cstack Corrige ce bug. N'utilise pas de réseau.",
+            "$cstack:cstack Fix the bug. Do not use the network.",
+            "[$cstack:cstack](/plugins/cstack/skills/cstack/SKILL.md) Corrige ce bug.",
+            "[$cstack](/plugins/cstack/skills/cstack/SKILL.md) Corrige ce bug.",
+            "Utilise [$cstack:cstack](</plugins/cstack/skills/cstack/SKILL.md>) pour cette tâche.",
+        )):
+            with self.subTest(prompt=text):
+                self.assertIn("Mode cstack actif", self.prompt(text, session=f"command-{index}"))
 
     def test_stop_request_ends_the_reminder(self):
         self.prompt("$cstack:cstack Refactorise ce module.")

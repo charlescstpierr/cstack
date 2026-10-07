@@ -11,6 +11,7 @@ from pathlib import Path
 import re
 import shutil
 import subprocess
+import sys
 from typing import Any
 
 
@@ -123,6 +124,7 @@ def register(
     expected_artifacts: list[str] | None = None,
     expected_routes: list[str] | None = None,
     forbidden_routes: list[str] | None = None,
+    outcome_checks: list[dict[str, Any]] | None = None,
 ) -> None:
     if not (project / ".git").exists():
         seed_git(project)
@@ -133,7 +135,8 @@ def register(
         raise ValueError(f"{case_id}: fournissez body ou bodies")
     texts = bodies if bodies is not None else [body]
     prompts = [prompt(bundle, skill, text, french) for text in texts if text is not None]
-    case: dict[str, Any] = {"id": case_id, "cwd": str(project), "sandbox": sandbox, "ephemeral": False}
+    case: dict[str, Any] = {"id": case_id, "cwd": str(project), "sandbox": sandbox,
+                            "ephemeral": False, "bundle": str(bundle.resolve())}
     case["prompts" if bodies is not None else "prompt"] = prompts if bodies is not None else prompts[0]
     cases.append(case)
     skill_path = bundle / "skills" / skill / "SKILL.md"
@@ -154,6 +157,8 @@ def register(
         expectation["min_children"] = min_children
     if expected_artifacts is not None:
         expectation["expected_artifacts"] = expected_artifacts
+    if outcome_checks is not None:
+        expectation["outcome_checks"] = outcome_checks
     if expected_routes is not None or forbidden_routes is not None:
         expected = sorted(expected_routes or [])
         forbidden = sorted(forbidden_routes or [])
@@ -304,7 +309,11 @@ def filter_events(events, start, today):
         register(cases, expectations, case_id=case_id,
                  project=create_project(output, name, event_files, ["bug-fix"], catalog),
                  bundle=bundle, skill="cstack", roles=["bug-fix"],
-                 body=correction, expected_children=0)
+                 body=correction, expected_children=0,
+                 outcome_checks=[{"id": "event-boundaries", "argv": [sys.executable, "-c",
+                     "import json; from events import filter_events; events = [{'date': n} for n in (0, 1, 2, 3)]; "
+                     "print(json.dumps(filter_events(events, 1, 2)))"],
+                     "expected_json": [{"date": 1}, {"date": 2}]}])
 
     archive_files = {
         "storage.py": "def save_record(record, existing):\n    if record[\"id\"] not in existing:\n        raise KeyError(record[\"id\"])\n    return record\n",
@@ -469,7 +478,9 @@ if __name__ == "__main__":
              expected_routes=["skills/cstack/playbooks/bug-fix.md"],
              forbidden_routes=[
                  "skills/cstack/references/principles/laziness-protocol.md",
-             ])
+             ], outcome_checks=[{"id": "invoice-message", "argv": [sys.executable, "-c",
+                 "import json; from src.errors import fail; print(json.dumps(fail('demo')))"],
+                 "expected_json": "Error: could not process invoice demo"}])
 
     typed_boundary = """Use $cstack:cstack. Operators hand-edit config.yaml and the service reads it at startup. Give the configuration a typed shape and write the loader that produces it. Operators regularly ship a missing key, a quoted number where an integer belongs, or an endpoint with no scheme."""
     register(cases, expectations, case_id="routing_typed_external_boundary",
@@ -525,6 +536,54 @@ if __name__ == "__main__":
                  "skills/cstack/playbooks/authoring-a-skill.md",
                  "skills/cstack/references/rule-pressure-tests.md",
              ])
+    route_specs = [
+        ("simple_feature", "Add an optional greeting suffix to greet() without changing its callers.",
+         "feature", ["how/SKILL.md"], ["arena/SKILL.md", "interrogate/SKILL.md"]),
+        ("stateful_feature", "Add a pending-to-complete transition to the job record and persist it across restart.",
+         "feature", ["cstack/references/principles/model-the-domain.md", "architect/SKILL.md"],
+         ["interrogate/SKILL.md"]),
+        ("cross_module_feature", "Add a token expiry check in src/auth.py and update the shared contract used by src/api.py and src/session.py.",
+         "feature", ["architect/SKILL.md", "blast-radius/SKILL.md"], ["arena/SKILL.md"]),
+        ("competing_feature_shapes", "Implement a retry policy. A queue-based and a scheduled design are both feasible; compare their failure behavior before choosing.",
+         "feature", ["arena/SKILL.md", "architect/SKILL.md"], ["interrogate/SKILL.md"]),
+        ("contested_design", "The team disputes whether retries belong to the API or worker. Settle the architecture using independent critical review before implementation.",
+         "feature", ["interrogate/SKILL.md", "architect/SKILL.md"], []),
+        ("read_only_why", "Why did the service keep two retry counters? Inspect the history and answer with evidence; change nothing.",
+         "investigation", ["how/SKILL.md", "why/SKILL.md"], ["architect/SKILL.md"]),
+        ("one_off_performance", "The request takes 900 ms. Diagnose the bottleneck and improve it against a measured baseline.",
+         "perf-issue", [], ["cstack/playbooks/hillclimb.md"]),
+        ("iterative_metric", "Increase requests per second to 500 through repeated measured iterations; keep only improvements.",
+         "hillclimb", [], ["cstack/playbooks/perf-issue.md"]),
+        ("captured_trace", "Diagnose the CPU bottleneck from the captured trace.json. The process is no longer running. Report a finding only.",
+         "trace-forensics", [], ["cstack/playbooks/runtime-forensics.md"]),
+        ("throwaway_prototype", "Build a disposable sketch to compare two pagination layouts, observe the result, then recommend one.",
+         "prototype", [], ["cstack/playbooks/feature.md"]),
+        ("skill_authoring", "Create a small SKILL.md for inspecting the service health endpoint.",
+         "authoring-a-skill", [], ["cstack/playbooks/feature.md"]),
+        ("typescript_boundary", "Add typed parsing of an untrusted JSON config in src/config.ts and a function that uses the parsed settings.",
+         "feature", ["typescript-best-practices/SKILL.md", "cstack/references/principles/boundary-discipline.md",
+                     "cstack/references/principles/type-system-discipline.md"], []),
+        ("shared_writers", "Two independent workers write the same checkpoint file. Change the design so concurrent writes cannot corrupt state.",
+         "bug-fix", ["cstack/references/principles/separate-before-serializing-shared-state.md"], []),
+    ]
+    for index, (name, body, primary, required, forbidden) in enumerate(route_specs):
+        project = create_project(output, f"route-{index:02d}", {
+            "src/service.py": "import time\n\ndef greet(name):\n    return 'Hello ' + name\n\ndef request(name):\n    time.sleep(0.9)\n    return greet(name)\n",
+            "src/auth.py": "def verify(token):\n    return bool(token)\n",
+            "src/api.py": "from .auth import verify\n\ndef handle(token):\n    return verify(token)\n",
+            "src/session.py": "from .auth import verify\n\ndef open_session(token):\n    return verify(token)\n",
+            "src/job.py": "class Job:\n    def __init__(self):\n        self.status = 'pending'\n",
+            "src/worker.py": "from pathlib import Path\n\ndef checkpoint(value):\n    Path('checkpoint.json').write_text(value)\n",
+            "src/retry.py": "api_retries = 0\nworker_retries = 0\n",
+            "src/config.ts": "export const settings = JSON.parse('{}');\n",
+            "trace.json": '{"sampled_cpu_ms": 800, "function": "greet"}\n',
+        }, [], catalog)
+        register(cases, expectations, case_id="routing_" + name,
+                 project=project, bundle=new, skill="cstack", roles=[],
+                 body="Use $cstack:cstack. " + body, expected_children=None,
+                 expected_routes=["skills/cstack/playbooks/" + primary + ".md"]
+                                 + ["skills/" + route for route in required],
+                 forbidden_routes=["skills/" + route for route in forbidden])
     return cases, expectations
 
 
