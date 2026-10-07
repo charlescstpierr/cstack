@@ -62,6 +62,9 @@ class ModeHookTests(unittest.TestCase):
             "$cstack:cstack N'active pas cstack.",
             "$cstack:cstack Do not activate it.",
             "$cstack:cstack Explain its behavior, but do not activate cstack.",
+            "$cstack:cstack Explain it, but do not activate this skill",
+            "$cstack:cstack Explain it, but do not activate this cstack skill.",
+            "[$cstack:cstack](/plugins/cstack/skills/cstack/SKILL.md) Explain it, but do not activate the cstack skill.",
             "$cstack:cstack Do not activate $cstack:cstack.",
             "$cstack:cstack N'active pas $cstack:cstack.",
             "$cstack:cstack Don't activate it.",
@@ -98,6 +101,7 @@ class ModeHookTests(unittest.TestCase):
         for index, text in enumerate((
             "$cstack:cstack fix this, but do not activate debug mode",
             "$cstack:cstack Fix this. Don't activate the network adapter.",
+            "$cstack:cstack Fix this. Do not activate this debug mode.",
             "$cstack:cstack Corrige ceci. N'active pas le mode debug.",
             "[$cstack:cstack](/plugins/cstack/skills/cstack/SKILL.md) Corrige ceci. N'active pas le réseau.",
         )):

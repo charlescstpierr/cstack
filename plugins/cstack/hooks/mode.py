@@ -47,7 +47,8 @@ def _activation_requested(prompt: str) -> bool:
     refusal = re.search(
         r"\b(?:ne\s+l['’](?:activ|utilis|appliqu)\w*\s+pas\b"
         r"|(?:ne\s+|n['’])activ\w*\s+pas\s+(?:cstack|\$cstack:cstack)\b"
-        r"|(?:do\s+not|don['’]t)\s+(?:activate|use|invoke)\s+(?:it|cstack|\$cstack:cstack)\b)",
+        r"|(?:do\s+not|don['’]t)\s+(?:activate|use|invoke)\s+"
+        r"(?:it|cstack|\$cstack:cstack|(?:this|the)\s+(?:cstack\s+)?skill)\b)",
         prompt[invocation.end():],
         re.IGNORECASE,
     )
