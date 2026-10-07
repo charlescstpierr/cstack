@@ -61,6 +61,9 @@ class ModeHookTests(unittest.TestCase):
             "[$cstack:cstack](/plugins/cstack/skills/cstack/SKILL.md) Explain the skill. Do not activate it.",
             "$cstack:cstack N'active pas cstack.",
             "$cstack:cstack Do not activate it.",
+            "$cstack:cstack Explain its behavior, but do not activate cstack.",
+            "$cstack:cstack Do not activate $cstack:cstack.",
+            "$cstack:cstack N'active pas $cstack:cstack.",
             "$cstack:cstack Don't activate it.",
             "[$cstack:cstack](/plugins/cstack/skills/cstack/SKILL.md) Do not activate it.",
             "[$cstack](/plugins/cstack/skills/how/SKILL.md) Corrige ce bug.",
@@ -90,6 +93,19 @@ class ModeHookTests(unittest.TestCase):
         )):
             with self.subTest(prompt=text):
                 self.assertIn("Mode cstack actif", self.prompt(text, session=f"command-{index}"))
+
+    def test_activation_refusals_for_other_features_do_not_disable_cstack(self):
+        for index, text in enumerate((
+            "$cstack:cstack fix this, but do not activate debug mode",
+            "$cstack:cstack Fix this. Don't activate the network adapter.",
+            "$cstack:cstack Corrige ceci. N'active pas le mode debug.",
+            "[$cstack:cstack](/plugins/cstack/skills/cstack/SKILL.md) Corrige ceci. N'active pas le réseau.",
+        )):
+            with self.subTest(prompt=text):
+                session = f"feature-{index}"
+                first = self.prompt(text, session=session)
+                self.assertIn("Mode cstack actif", first)
+                self.assertEqual(self.prompt("Continue cette tâche.", session=session), first)
 
     def test_stop_request_ends_the_reminder(self):
         self.prompt("$cstack:cstack Refactorise ce module.")
