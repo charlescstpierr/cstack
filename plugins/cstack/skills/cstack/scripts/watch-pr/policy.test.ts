@@ -91,6 +91,22 @@ describe("table de vérité de l’état prêt", () => {
 });
 
 describe("planification des requêtes de snapshot", () => {
+  it("garde un échec GraphQL indépendant comme bloqueur pendant une relance REST", async () => {
+    const row = await readSnapshot({
+      reader: fakeReader({
+        rollupPages: [{ kind: "contexts", checks: [failedCheck("Independent workflow")], endCursor: null }],
+        headSignals: [pendingCheck("Actions: Retry workflow")],
+      }),
+      context: context(1), pendingHistory: "include", allowDraft: false,
+    });
+    expect(classifyPr(row)).toMatchObject({
+      kind: "blocker", blocker: { kind: "failing-checks", ci: {
+        failed: [{ name: "Independent workflow" }],
+        pending: [{ name: "Actions: Retry workflow" }],
+      } },
+    });
+  });
+
   it("attend la revue Codex annoncée Running même sans check GitHub", async () => {
     const row = await readSnapshot({
       reader: fakeReader({

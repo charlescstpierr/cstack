@@ -47,17 +47,21 @@ This comment shows the latest Codex review activity on this pull request.
 
 async function snapshotFromGh(args: {
   readonly runs?: readonly unknown[];
+  readonly targetRuns?: readonly unknown[];
   readonly comments?: readonly unknown[];
   readonly actionsPages?: unknown;
   readonly commentsPages?: unknown;
   readonly actionsError?: boolean;
   readonly commentsError?: boolean;
+  readonly targetError?: boolean;
 }): Promise<PrSnapshot> {
   const directory = await mkdtemp(join(tmpdir(), "watch-head-signals-gh-"));
   const gh = join(directory, "gh");
   const runs = args.runs ?? [];
   const actions = args.actionsPages ?? [{ total_count: runs.length, workflow_runs: runs }];
   const comments = args.commentsPages ?? [args.comments ?? []];
+  const targetRuns = args.targetRuns ?? [];
+  const targets = [{ total_count: targetRuns.length, workflow_runs: targetRuns }];
   await writeFile(gh, `#!/bin/bash
 case "$*" in
   *"repos/owner/repo/actions/runs?head_sha=${head}&per_page=100"*)
@@ -71,6 +75,12 @@ ACTIONS_JSON
     cat <<'COMMENTS_JSON'
 ${JSON.stringify(comments)}
 COMMENTS_JSON
+    ;;
+  *"repos/owner/repo/actions/runs?event=pull_request_target&per_page=100"*)
+    ${args.targetError ? 'echo "HTTP 502" >&2; exit 1' : ""}
+    cat <<'TARGET_JSON'
+${JSON.stringify(targets)}
+TARGET_JSON
     ;;
   *) echo "appel gh inattendu: $*" >&2; exit 2;;
 esac
@@ -98,6 +108,51 @@ esac
 }
 
 describe("signaux du head lus via gh", () => {
+  it("découvre pull_request_target dont le run SHA est celui de la branche de base", async () => {
+    const target = { ...workflowRun, event: "pull_request_target", head_sha: oldHead, head_branch: "main" };
+    const row = await snapshotFromGh({ targetRuns: [{ ...target, status: "in_progress", conclusion: null }] });
+    expect(classifyPr(row)).toMatchObject({ kind: "waiting" });
+    await expect(snapshotFromGh({ targetRuns: [target] })).rejects.toThrow("CI indisponible: Actions startup_failure");
+  });
+
+  it("rattache target à notre association courante sans compter les autres PR ni les anciens heads", async () => {
+    const target = { ...workflowRun, event: "pull_request_target", head_sha: oldHead, head_branch: "main" };
+    const foreign = { ...target, id: target.id + 1, pull_requests: [{ ...target.pull_requests[0], number: 91 }] };
+    const stale = { ...target, id: target.id + 2, pull_requests: [{ ...target.pull_requests[0], head: { sha: oldHead, ref: "feature" } }] };
+    expect(classifyPr(await snapshotFromGh({ targetRuns: [foreign, stale] }))).toMatchObject({
+      kind: "ready", pr: { proof: { ci: { kind: "ci-none" } } },
+    });
+    await expect(snapshotFromGh({ targetRuns: [target, { ...foreign, conclusion: "success", run_started_at: "2026-10-07T18:00:00Z" }] })).rejects.toThrow("CI indisponible: Actions startup_failure");
+    await expect(snapshotFromGh({ targetRuns: [{ ...target, pull_requests: [] }] })).rejects.toBeInstanceOf(WatcherQueryError);
+  });
+
+  it("compte target une seule fois quand base et head ont le même SHA", async () => {
+    const target = { ...workflowRun, event: "pull_request_target", status: "queued", conclusion: null };
+    const row = await snapshotFromGh({ runs: [target], targetRuns: [target] });
+    expect(classifyPr(row)).toMatchObject({
+      kind: "waiting", pending: [{ reportedState: "QUEUED" }],
+    });
+    if (row.kind !== "open") throw new Error("snapshot ouvert attendu");
+    expect(row.ci.pending).toHaveLength(1);
+  });
+
+  it("attend la nouvelle tentative active plutôt que de terminer sur l’ancien échec", async () => {
+    const row = await snapshotFromGh({ runs: [
+      { ...workflowRun, id: 100, conclusion: "failure" },
+      { ...workflowRun, id: 101, status: "in_progress", conclusion: null, run_started_at: "2026-10-07T18:00:00Z" },
+    ] });
+    expect(classifyPr(row)).toMatchObject({ kind: "waiting" });
+  });
+
+  it("réessaie quand l’ordre entre la relance active et l’ancien échec est inconnu", async () => {
+    for (const started of [null, workflowRun.run_started_at]) {
+      await expect(snapshotFromGh({ runs: [
+        { ...workflowRun, id: 100, conclusion: "failure" },
+        { ...workflowRun, id: 101, status: "queued", conclusion: null, run_started_at: started },
+      ] })).rejects.toBeInstanceOf(WatcherQueryError);
+    }
+  });
+
   it("attend le résumé du nouveau SHA après un push tant que seul un ancien résumé existe", async () => {
     for (const state of ["Running", "Completed"]) {
       const row = await snapshotFromGh({ comments: [{
@@ -262,6 +317,7 @@ describe("signaux du head lus via gh", () => {
     const invalid = [
       { actionsError: true },
       { commentsError: true },
+      { targetError: true },
       { actionsPages: [] },
       { commentsPages: [] },
       { actionsPages: [{ total_count: 1, workflow_runs: [] }] },
@@ -275,6 +331,8 @@ describe("signaux du head lus via gh", () => {
       { runs: [{ ...workflowRun, conclusion: "success", pull_requests: null }] },
       { runs: [{ ...workflowRun, conclusion: "success", pull_requests: [{ number: "90" }] }] },
       { runs: [{ ...workflowRun, conclusion: "success", pull_requests: [{ ...workflowRun.pull_requests[0], head: { sha: oldHead, ref: "feature" } }] }] },
+      { targetRuns: [{ ...workflowRun, event: "push" }] },
+      { targetRuns: [{ ...workflowRun, event: "pull_request_target", head_sha: oldHead, pull_requests: null }] },
       { comments: [{ ...summary, body: summary.body.replace("Running", "Starting") }] },
       { comments: [{ ...summary, body: summary.body.replace("84c02ea", "unknown") }] },
     ];

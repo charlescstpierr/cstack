@@ -605,7 +605,8 @@ function actionSignals(
   value: unknown,
   context: T.PrContext,
   headRefOid: string,
-  headRefName: string
+  headRefName: string,
+  source: "head" | "target"
 ): readonly T.Check[] {
   const pages = list(value, "actions pages");
   if (pages.length === 0) missing("actions pages");
@@ -624,6 +625,8 @@ function actionSignals(
     throw new ChecksUnavailable("la liste Actions est tronquée pour le head demandé");
   const latest = new Map<string, { readonly started: number; readonly runs: readonly Record<string, unknown>[] }>();
   const active: Record<string, unknown>[] = [];
+  const activeStarted = new Map<string, number>();
+  const activeUndated = new Set<string>();
   const seen = new Set<number>();
   for (const item of runs) {
     const run = record(item, "workflow run");
@@ -631,8 +634,11 @@ function actionSignals(
       missing("workflow run.id", run.id);
     if (seen.has(run.id)) throw new ChecksUnavailable("la pagination Actions contient un run en double");
     seen.add(run.id);
-    if (string(run.head_sha, "workflow run.head_sha") !== headRefOid) continue;
     const event = string(run.event, "workflow run.event");
+    if (source === "head" && event === "pull_request_target") continue;
+    if (source === "target" && event !== "pull_request_target")
+      throw new ChecksUnavailable("la découverte pull_request_target a renvoyé un autre event");
+    if (event !== "pull_request_target" && string(run.head_sha, "workflow run.head_sha") !== headRefOid) continue;
     const associations = list(run.pull_requests, "workflow run.pull_requests");
     if (associations.length > 0) {
       let matches = false;
@@ -646,12 +652,16 @@ function actionSignals(
         if (repositoryUrl.toLowerCase() !== `https://api.github.com/repos/${context.owner}/${context.repo}`.toLowerCase()) continue;
         const head = record(association.head, "workflow run.pull_requests head");
         if (string(head.sha, "workflow run.pull_requests head.sha") !== headRefOid ||
-            string(head.ref, "workflow run.pull_requests head.ref") !== headRefName)
+            string(head.ref, "workflow run.pull_requests head.ref") !== headRefName) {
+          if (event === "pull_request_target") continue;
           throw new ChecksUnavailable(`association PR Actions incohérente pour #${context.number}, run=${run.id}`);
+        }
         matches = true;
       }
       if (!matches) continue;
     } else {
+      if (event === "pull_request_target")
+        throw new ChecksUnavailable(`association PR pull_request_target indisponible pour #${context.number}, run=${run.id}`);
       if (headRefName.length === 0)
         throw new ChecksUnavailable("branche du head indisponible pour les signaux Actions");
       if (string(run.head_branch, "workflow run.head_branch") !== headRefName) continue;
@@ -665,6 +675,14 @@ function actionSignals(
     const key = `${run.workflow_id}:${event}`;
     if (string(run.status, "workflow run.status") !== "completed") {
       active.push(run);
+      if (run.run_started_at === null || run.run_started_at === undefined) {
+        activeUndated.add(key);
+      } else {
+        const started = Date.parse(string(run.run_started_at, "workflow run.run_started_at"));
+        if (!Number.isFinite(started))
+          throw new ChecksUnavailable(`chronologie Actions inconnue pour ${headRefOid}, run=${run.id}`);
+        activeStarted.set(key, Math.max(activeStarted.get(key) ?? -Infinity, started));
+      }
       continue;
     }
     const started = Date.parse(string(run.run_started_at, "workflow run.run_started_at"));
@@ -676,7 +694,16 @@ function actionSignals(
     else if (started === previous.started)
       latest.set(key, { started, runs: [...previous.runs, run] });
   }
-  return [...active, ...[...latest.values()].flatMap((entry) => entry.runs)].map((run): T.Check => {
+  const completed = [...latest.entries()].flatMap(([key, entry]) => {
+    const started = activeStarted.get(key);
+    if (started !== undefined && started > entry.started) return [];
+    if ((activeUndated.has(key) || started === entry.started) && entry.runs.some((run) =>
+      !["success", "neutral", "skipped"].includes(String(run.conclusion))
+    ))
+      throw new ChecksUnavailable(`ordre de relance Actions inconnu pour ${headRefOid}, workflow/event=${key}`);
+    return entry.runs;
+  });
+  return [...active, ...completed].map((run): T.Check => {
     const status = string(run.status, "workflow run.status");
     const conclusion = optionalString(run.conclusion, "workflow run.conclusion");
     const details = {
@@ -765,7 +792,15 @@ export class GhGitHubReader implements T.GitHubReader {
       "gh", "api", "--paginate", "--slurp",
       `${repository}/issues/${context.number}/comments?per_page=100`,
     ]);
-    return [...actionSignals(runs, context, headRefOid, headRefName), ...codexReviewSignals(comments, headRefOid)];
+    const targets = await runJson([
+      "gh", "api", "--paginate", "--slurp",
+      `${repository}/actions/runs?event=pull_request_target&per_page=100`,
+    ]);
+    return [
+      ...actionSignals(runs, context, headRefOid, headRefName, "head"),
+      ...actionSignals(targets, context, headRefOid, headRefName, "target"),
+      ...codexReviewSignals(comments, headRefOid),
+    ];
   }
   async originRepo(): Promise<T.Repository | null> {
     const result = await run(["git", "remote", "get-url", "origin"]);
