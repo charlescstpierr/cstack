@@ -28,10 +28,36 @@ def _stop_requested(prompt: str) -> bool:
     return len(words) == 2 and words[0] in STOP_VERBS and words[1] == "cstack"
 
 
+def _activation_requested(prompt: str) -> bool:
+    import re
+
+    # Le hook n'a pas le signal structuré du sélecteur : n'accepter que les formes
+    # de commande explicites, jamais une mention citée ou insérée dans une explication.
+    invocation = re.match(
+        r"\s*(?:(?i:utilise|applique|active|use|invoke|activate)\s+)?"
+        r"(?:\$cstack:cstack|\[\$cstack(?::cstack)?\]\((?P<path>[^)\r\n]+)\))(?=\s|$)",
+        prompt,
+    )
+    if not invocation:
+        return False
+    path = invocation.group("path")
+    if path and not path.strip("<>").endswith("/skills/cstack/SKILL.md"):
+        return False
+    # Un refus plus loin dans le message reste prioritaire sur sa sélection en tête.
+    refusal = re.search(
+        r"\b(?:(?:ne\s+(?:l['’])?|n['’])activ\w*\s+pas\b"
+        r"|ne\s+l['’](?:utilis|appliqu)\w*\s+pas\b"
+        r"|(?:do\s+not|don['’]t)\s+(?:activate\b|(?:use|invoke)\s+(?:it|cstack)\b))",
+        prompt[invocation.end():],
+        re.IGNORECASE,
+    )
+    return refusal is None
+
+
 def reminder(raw: str, data: str) -> str:
     sessions = os.path.join(data, "sessions")
     # Chemin chaud : hors cstack, sortir avant tout import ou accès disque coûteux.
-    if ACTIVATE not in raw and not os.path.isdir(sessions):
+    if ACTIVATE not in raw and "[$cstack]" not in raw and not os.path.isdir(sessions):
         return ""
     import hashlib
     import json
@@ -51,7 +77,7 @@ def reminder(raw: str, data: str) -> str:
         except FileNotFoundError:
             pass
         return ""
-    if ACTIVATE in prompt:
+    if _activation_requested(prompt):
         os.makedirs(sessions, exist_ok=True)
         open(marker, "a").close()
     return REMINDER if os.path.exists(marker) else ""
