@@ -147,6 +147,7 @@ def register(
             "bundle": tree_hash(bundle),
             "skill": hashlib.sha256(skill_path.read_bytes()).hexdigest(),
         },
+        "skill_path": skill_path.relative_to(bundle).as_posix(),
         "role_metadata": model_config(roles),
     }
     if expected_children is not None and min_children is not None:

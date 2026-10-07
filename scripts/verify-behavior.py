@@ -514,13 +514,39 @@ def score_routes(observed, expectation):
 def read_expectations(path):
     payload = json.loads(path.read_text())
     if (not isinstance(payload, dict) or type(payload.get("schema_version")) is not int
-            or payload["schema_version"] != 1 or not isinstance(payload.get("cases"), list)):
+            or payload["schema_version"] != 1 or not isinstance(payload.get("cases"), list)
+            or set(payload) - {"schema_version", "cases"}):
         raise HarnessError("expectations.json doit contenir schema_version: 1 et un tableau cases")
     expectations = {}
     for row in payload["cases"]:
         if not isinstance(row, dict) or not isinstance(row.get("id"), str) or not row["id"] or row["id"] in expectations:
             raise HarnessError("identifiant d’attente absent ou dupliqué")
         case_id = row["id"]
+        if set(row) - {"id", "expected_children", "min_children", "routing", "expected_artifacts",
+                       "outcome_checks", "project_sha256", "source_sha256", "skill_path", "role_metadata"}:
+            raise HarnessError(f"{case_id}: champs d’attente inconnus")
+        hashes = row.get("source_sha256", {})
+        if not isinstance(hashes, dict) or set(hashes) - {"bundle", "skill"}:
+            raise HarnessError(f"{case_id}: source_sha256 invalide")
+        for digest in list(hashes.values()) + ([row["project_sha256"]] if "project_sha256" in row else []):
+            if not isinstance(digest, str) or not re.fullmatch(r"[0-9a-f]{64}", digest):
+                raise HarnessError(f"{case_id}: empreinte SHA-256 invalide")
+        if "skill_path" in row:
+            relative = row["skill_path"]
+            if (not isinstance(relative, str) or len(Path(relative).parts) != 3
+                    or Path(relative).parts[0] != "skills" or Path(relative).parts[-1] != "SKILL.md"
+                    or Path(relative).is_absolute() or ".." in Path(relative).parts):
+                raise HarnessError(f"{case_id}: skill_path doit désigner skills/<skill>/SKILL.md")
+        roles = row.get("role_metadata", {})
+        if not isinstance(roles, dict):
+            raise HarnessError(f"{case_id}: role_metadata doit être un objet")
+        for role, entries in roles.items():
+            entries = entries if isinstance(entries, list) else [entries]
+            if (not role or not entries or any(
+                    not isinstance(entry, dict) or set(entry) != {"model", "reasoning_effort"}
+                    or any(not isinstance(value, str) or not value for value in entry.values())
+                    for entry in entries)):
+                raise HarnessError(f"{case_id}: métadonnées de modèle invalides")
         for key in ("expected_children", "min_children"):
             if key in row and (type(row[key]) is not int or row[key] < 0):
                 raise HarnessError(f"{case_id}: {key} doit être un entier positif ou nul")
@@ -557,6 +583,41 @@ def read_expectations(path):
             ids.add(check["id"])
         expectations[case_id] = row
     return expectations
+
+
+def verify_provenance(case, expectation):
+    """Check generator digests against the inputs before launching the native turn."""
+    def matches(label, actual, expected):
+        if actual != expected:
+            raise HarnessError(f"{case['id']}: empreinte {label} différente des attentes")
+
+    try:
+        if "project_sha256" in expectation:
+            matches("projet", tree_hash(case["cwd"], None)["sha256"], expectation["project_sha256"])
+        source = expectation.get("source_sha256", {})
+        if not source:
+            return
+        bundle = case["bundle"]
+        if bundle is None:
+            raise HarnessError(f"{case['id']}: empreintes source exigent un bundle explicite")
+        if "bundle" in source:
+            matches("bundle", tree_hash(bundle, None)["sha256"], source["bundle"])
+        if "skill" in source:
+            relative = expectation.get("skill_path")
+            if relative is None:
+                # Older generated prompts name the source file explicitly.
+                paths = [path for path in bundle.glob("skills/*/SKILL.md")
+                         if any(str(path) in prompt for prompt in case["prompts"])]
+                if len(paths) != 1:
+                    raise HarnessError(f"{case['id']}: empreinte skill exige skill_path non ambigu")
+                skill = paths[0]
+            else:
+                skill = bundle / relative
+            if not skill.resolve().is_relative_to(bundle.resolve()):
+                raise HarnessError(f"{case['id']}: skill_path sort du bundle")
+            matches("skill", hashlib.sha256(skill.read_bytes()).hexdigest(), source["skill"])
+    except OSError as error:
+        raise HarnessError(f"{case['id']}: impossible de vérifier les empreintes source/projet") from error
 
 
 def check_verdict(checks):
@@ -710,6 +771,8 @@ def read_cases(path):
         if not isinstance(row, dict) or not isinstance(row.get("id"), str) or not SAFE_ID.fullmatch(row["id"]):
             raise HarnessError("chaque scénario nécessite un identifiant textuel sûr")
         case_id = row["id"]
+        if set(row) - {"id", "cwd", "prompt", "prompts", "sandbox", "bundle", "ephemeral"}:
+            raise HarnessError(f"{case_id}: champs de scénario inconnus")
         if case_id in ids:
             raise HarnessError(f"identifiant de scénario dupliqué: {case_id}")
         ids.add(case_id)
@@ -882,17 +945,19 @@ def main(argv=None):
     expectations = {}
     if args.expectations:
         expectations = read_expectations(args.expectations)
-        missing = {case["id"] for case in cases} - set(expectations)
-        if missing:
-            raise HarnessError(f"attentes absentes pour: {', '.join(sorted(missing))}")
     if args.case_ids:
         wanted = set(args.case_ids)
         unknown = wanted - {case["id"] for case in cases}
         if unknown:
             raise HarnessError(f"identifiant de scénario inconnu: {', '.join(sorted(unknown))}")
         cases = [case for case in cases if case["id"] in wanted]
+    if args.expectations:
+        missing = {case["id"] for case in cases} - set(expectations)
+        if missing:
+            raise HarnessError(f"attentes absentes pour: {', '.join(sorted(missing))}")
     output = args.output.expanduser().resolve()
     for case in cases:
+        verify_provenance(case, expectations.get(case["id"], {}))
         if output == case["cwd"] or case["cwd"] in output.parents or output in case["cwd"].parents:
             raise HarnessError(f"la sortie doit être située hors du cwd du scénario: {case['id']}")
         if args.repeats > 1:
@@ -914,14 +979,19 @@ def main(argv=None):
     output.mkdir(parents=True, exist_ok=True)
     command = build_command()
     results = []
+    unverified_requested = False
     selected_case_ids = [case["id"] for case in cases]
     for case in cases:
+        expectation = expectations.get(case["id"], {})
+        workflow_requested = any(key in expectation for key in
+                                 ("routing", "expected_children", "min_children", "expected_artifacts"))
         for repeat in range(1, args.repeats + 1):
             run = dict(case)
             if args.repeats > 1:
                 run["id"] = f"{case['id']}__run_{repeat:02d}"
                 run["cwd"] = output / "isolated-projects" / run["id"]
                 shutil.copytree(case["cwd"], run["cwd"])
+            verify_provenance(run, expectations.get(case["id"], {}))
             print(f"[{run['id']}] démarrage", flush=True)
             try:
                 result = run_case(run, output, command, args.model, args.effort,
@@ -931,8 +1001,10 @@ def main(argv=None):
                     result["route_score"] = score_routes(result["route_observation"], expectations[case["id"]])
             except Exception as error:
                 result = {"id": run["id"], "cwd": str(run["cwd"]), "status": "infra_error", "error": str(error)}
-            expectation = expectations.get(case["id"], {})
             result["verdicts"] = evaluate_case(result, expectation, args.verify_outcomes)
+            if ((workflow_requested and result["verdicts"]["workflow"]["status"] == "unverified")
+                    or (args.verify_outcomes and result["verdicts"]["outcome"]["status"] == "unverified")):
+                unverified_requested = True
             if expectation:
                 result["expectation_sha256"] = hashlib.sha256(
                     json.dumps(expectation, sort_keys=True, ensure_ascii=False).encode()).hexdigest()
@@ -947,9 +1019,7 @@ def main(argv=None):
     if any(result["verdicts"][stage]["status"] == "fail"
            for result in results for stage in ("workflow", "outcome")):
         return 1
-    if any((args.expectations and result["verdicts"]["workflow"]["status"] == "unverified")
-           or (args.verify_outcomes and result["verdicts"]["outcome"]["status"] == "unverified")
-           for result in results):
+    if unverified_requested:
         return 2
     print(f"résumé : {output / 'summary.json'}", flush=True)
     return 0

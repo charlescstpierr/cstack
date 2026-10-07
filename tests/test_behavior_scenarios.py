@@ -18,6 +18,87 @@ RUNNER_SPEC.loader.exec_module(verify_behavior)
 
 
 class BehaviorScenarioGeneratorTests(unittest.TestCase):
+    def test_generated_provenance_rejects_changed_project_bundle_and_skill_before_launch(self):
+        for mutation in ("project", "bundle", "skill"):
+            with self.subTest(mutation=mutation), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                project = behavior_scenarios.create_project(root, "alder", {"events.py": "original"}, [])
+                bundle = root / "bundle"
+                skill = bundle / "skills/cstack/SKILL.md"
+                skill.parent.mkdir(parents=True)
+                skill.write_text("original skill")
+                cases, expectations = [], []
+                behavior_scenarios.register(cases, expectations, case_id="one", project=project,
+                    bundle=bundle, skill="cstack", roles=[], body="Read the code.")
+                if mutation == "project":
+                    (project / ".cstack/models.json").write_text('{"changed":true}')
+                elif mutation == "bundle":
+                    (bundle / "extra.txt").write_text("changed")
+                else:
+                    skill.write_text("changed skill")
+                    # Keep the bundle digest current to exercise the skill hash separately.
+                    expectations[0]["source_sha256"]["bundle"] = behavior_scenarios.tree_hash(bundle)
+                case_path, expected_path = root / "cases.json", root / "expectations.json"
+                case_path.write_text(json.dumps(cases))
+                expected_path.write_text(json.dumps({"schema_version": 1, "cases": expectations}))
+                with patch.object(verify_behavior, "build_command", return_value=["fake"]), \
+                     patch.object(verify_behavior, "run_case", return_value={"id": "one", "status": "completed"}) as launch:
+                    with self.assertRaisesRegex(verify_behavior.HarnessError, "empreinte"):
+                        verify_behavior.main(["--cases", str(case_path), "--expectations", str(expected_path),
+                                              "--output", str(root / "results"), "--repeats", "2"])
+                    launch.assert_not_called()
+                self.assertFalse((root / "results").exists())
+
+    def test_provenance_uses_generator_hash_and_selected_cases_for_repeats(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            bundle = root / "bundle"
+            skill = bundle / "skills/cstack/SKILL.md"
+            skill.parent.mkdir(parents=True)
+            skill.write_text("original skill")
+            cases, expectations = [], []
+            for name in ("one", "two"):
+                project = behavior_scenarios.create_project(root, name, {"events.py": "original"}, [])
+                behavior_scenarios.register(cases, expectations, case_id=name, project=project,
+                    bundle=bundle, skill="cstack", roles=[], body="Read the code.")
+                self.assertEqual(verify_behavior.tree_hash(project, None)["sha256"], expectations[-1]["project_sha256"])
+            (Path(cases[1]["cwd"]) / "events.py").write_text("stale unselected project")
+            case_path, expected_path = root / "cases.json", root / "expectations.json"
+            case_path.write_text(json.dumps(cases))
+            expected_path.write_text(json.dumps({"schema_version": 1, "cases": expectations[:1]}))
+            old_expectation = dict(expectations[0])
+            old_expectation.pop("skill_path")
+            old_case = verify_behavior.read_cases(case_path)[0]
+            verify_behavior.verify_provenance(old_case, old_expectation)
+            old_case["prompts"] = ["No source path supplied."]
+            with self.assertRaisesRegex(verify_behavior.HarnessError, "skill_path"):
+                verify_behavior.verify_provenance(old_case, old_expectation)
+            verify_behavior.verify_provenance(old_case, {"id": "one"})
+
+            def complete(case, *args):
+                self.assertEqual(verify_behavior.tree_hash(case["cwd"], None)["sha256"], expectations[0]["project_sha256"])
+                (case["cwd"] / "events.py").write_text("changed during run")
+                return {"id": case["id"], "cwd": str(case["cwd"]), "status": "completed", "native_child_thread_ids": []}
+
+            with patch.object(verify_behavior, "build_command", return_value=["fake"]), \
+                 patch.object(verify_behavior, "run_case", side_effect=complete) as launch:
+                code = verify_behavior.main(["--cases", str(case_path), "--expectations", str(expected_path),
+                    "--case-id", "one", "--output", str(root / "results"), "--repeats", "2"])
+            self.assertEqual(code, 0)
+            self.assertEqual(launch.call_count, 2)
+            self.assertEqual((Path(cases[0]["cwd"]) / "events.py").read_text(), "original")
+
+            def change_source_after_first_run(case, *args):
+                skill.write_text("source changed between repeats")
+                return {"id": case["id"], "cwd": str(case["cwd"]), "status": "completed", "native_child_thread_ids": []}
+
+            with patch.object(verify_behavior, "build_command", return_value=["fake"]), \
+                 patch.object(verify_behavior, "run_case", side_effect=change_source_after_first_run) as launch:
+                with self.assertRaisesRegex(verify_behavior.HarnessError, "empreinte bundle"):
+                    verify_behavior.main(["--cases", str(case_path), "--expectations", str(expected_path),
+                        "--case-id", "one", "--output", str(root / "source-drift"), "--repeats", "2"])
+                self.assertEqual(launch.call_count, 1, "source drift must block the next native launch")
+
     def test_frozen_outcomes_reject_early_exit_and_optimized_wrong_results(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -73,6 +154,9 @@ class BehaviorScenarioGeneratorTests(unittest.TestCase):
             self.assertEqual(result, 0)
             cases = json.loads((output / "cases.json").read_text(encoding="utf-8"))
             expectations = json.loads((output / "expectations.json").read_text(encoding="utf-8"))["cases"]
+            validated = verify_behavior.read_expectations(output / "expectations.json")
+            for case in verify_behavior.read_cases(output / "cases.json"):
+                verify_behavior.verify_provenance(case, validated[case["id"]])
             self.assertEqual(len(cases), 37)
             self.assertEqual(len(expectations), 37)
             self.assertEqual(len({case["cwd"] for case in cases}), len(cases))

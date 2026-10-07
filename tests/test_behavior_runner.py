@@ -130,6 +130,11 @@ class BehaviorRunnerTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "expectations.json"
             for rows in ([{"id": "one", "expected_children": True}],
+                         [{"id": "one", "expected_artifact": "missing.txt"}],
+                         [{"id": "one", "project_sha256": "not-a-hash"}],
+                         [{"id": "one", "source_sha256": {"unexpected": "a" * 64}}],
+                         [{"id": "one", "role_metadata": []}],
+                         [{"id": "one", "skill_path": "../SKILL.md"}],
                          [{"id": "one"}, {"id": "one"}],
                          [{"id": "one", "routing": {"expected": ["x"], "forbidden": ["x"]}}],
                          [{"id": "one", "outcome_checks": [{"id": "test", "argv": "echo yes"}]}],
@@ -138,6 +143,38 @@ class BehaviorRunnerTests(unittest.TestCase):
                     path.write_text(json.dumps({"schema_version": 1, "cases": rows}))
                     with self.assertRaises(verify_behavior.HarnessError):
                         verify_behavior.read_expectations(path)
+
+    def test_outcome_only_success_does_not_require_an_undeclared_workflow(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            project = root / "project"
+            project.mkdir()
+            cases = root / "cases.json"
+            cases.write_text(json.dumps([{"id": "one", "cwd": str(project), "prompt": "Verify."}]))
+            expectations = root / "expectations.json"
+            expectations.write_text(json.dumps({"schema_version": 1, "cases": [{"id": "one", "outcome_checks": [
+                {"id": "ok", "argv": [sys.executable, "-c", "print(1)"], "expected_json": 1}]}]}))
+            completed = {"id": "one", "status": "completed", "cwd": str(project)}
+            with patch.object(verify_behavior, "build_command", return_value=["fake"]), \
+                 patch.object(verify_behavior, "run_case", return_value=completed):
+                code = verify_behavior.main(["--cases", str(cases), "--expectations", str(expectations),
+                                             "--output", str(root / "results"), "--verify-outcomes"])
+            self.assertEqual(code, 0)
+            receipt = json.loads((root / "results/summary.json").read_text())["cases"][0]
+            self.assertEqual(receipt["verdicts"]["workflow"]["status"], "unverified")
+            self.assertEqual(receipt["verdicts"]["outcome"]["status"], "pass")
+
+    def test_unknown_case_and_envelope_fields_are_rejected(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            cases = root / "cases.json"
+            cases.write_text(json.dumps([{"id": "one", "cwd": str(root), "prompt": "Verify.", "promt": "typo"}]))
+            with self.assertRaises(verify_behavior.HarnessError):
+                verify_behavior.read_cases(cases)
+            expectations = root / "expectations.json"
+            expectations.write_text(json.dumps({"schema_version": 1, "cases": [{"id": "one"}], "expected_child": 1}))
+            with self.assertRaises(verify_behavior.HarnessError):
+                verify_behavior.read_expectations(expectations)
 
     def test_cli_verifies_outcome_without_route_trace_and_refuses_missing_proof(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -161,6 +198,11 @@ class BehaviorRunnerTests(unittest.TestCase):
                     code = verify_behavior.main(["--cases", str(cases), "--output", str(root / label),
                                                  "--expectations", str(expectations), "--verify-outcomes"])
                     self.assertEqual(code, expected)
+                code = verify_behavior.main(["--cases", str(cases), "--output", str(root / "workflow-only"),
+                                             "--expectations", str(expectations)])
+                self.assertEqual(code, 0, "outcome checks remain opt-in when only workflow was requested")
+                passive = json.loads((root / "workflow-only/summary.json").read_text())["cases"][0]
+                self.assertEqual(passive["verdicts"]["outcome"]["status"], "unverified")
                 expectations.write_text(json.dumps({"schema_version": 1, "cases": [{"id": "one"}]}))
                 code = verify_behavior.main(["--cases", str(cases), "--output", str(root / "unverified"),
                                              "--expectations", str(expectations), "--verify-outcomes"])
