@@ -28,6 +28,28 @@ def _stop_requested(prompt: str) -> bool:
     return len(words) == 2 and words[0] in STOP_VERBS and words[1] == "cstack"
 
 
+def _instruction_text(text: str) -> str:
+    import re
+
+    # Ignorer le contenu cité, sauf une cible seule dans « ne pas activer `cstack` ».
+    # Une apostrophe dans un mot reste du texte pour n'utilise/don't.
+    def quoted(match):
+        content = match.group().strip("`~«»“”‘’\"' \t\r\n")
+        target = re.fullmatch(
+            r"(?:it|cstack|\$cstack:cstack|(?:this|the)\s+(?:cstack\s+)?skill)",
+            content,
+            re.IGNORECASE,
+        )
+        return content if target else " "
+
+    return re.sub(
+        r"(?P<code>`+|~{3,})[\s\S]*?(?P=code)|«[^»]*»|“[^”]*”|‘[\s\S]*?’(?!\w)"
+        r"|\"[^\"\n]*\"|(?<!\w)'[\s\S]*?'(?!\w)",
+        quoted,
+        text,
+    )
+
+
 def _activation_requested(prompt: str) -> bool:
     import re
 
@@ -51,7 +73,7 @@ def _activation_requested(prompt: str) -> bool:
         r"|(?:activer|utiliser|appliquer)\s+(?:cstack|\$cstack:cstack)\b)"
         r"|(?:do\s+not|don['’]t)\s+(?:activate|use|invoke)\s+"
         r"(?:it|cstack|\$cstack:cstack|(?:this|the)\s+(?:cstack\s+)?skill)\b)",
-        prompt[invocation.end():],
+        _instruction_text(prompt[invocation.end():]),
         re.IGNORECASE,
     )
     return refusal is None

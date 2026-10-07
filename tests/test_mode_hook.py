@@ -80,6 +80,11 @@ class ModeHookTests(unittest.TestCase):
             "$cstack:cstack Explain it, but do not activate this cstack skill.",
             "[$cstack:cstack](/plugins/cstack/skills/cstack/SKILL.md) Explain it, but do not activate the cstack skill.",
             "$cstack:cstack Do not activate $cstack:cstack.",
+            "$cstack:cstack Explique la compétence, mais ne pas activer « cstack ».",
+            "$cstack:cstack Explique la compétence, mais n'utilise pas \"cstack\".",
+            "$cstack:cstack Explain the skill, but do not activate `cstack`.",
+            "$cstack:cstack Explain the skill, but do not activate 'cstack'.",
+            "$cstack:cstack Explain the skill, but don't activate “this skill”.",
             "$cstack:cstack N'active pas $cstack:cstack.",
             "$cstack:cstack Don't activate it.",
             "[$cstack:cstack](/plugins/cstack/skills/cstack/SKILL.md) Do not activate it.",
@@ -129,6 +134,34 @@ class ModeHookTests(unittest.TestCase):
                 first = self.prompt(text, session=session)
                 self.assertIn("Mode cstack actif", first)
                 self.assertEqual(self.prompt("Continue cette tâche.", session=session), first)
+
+    def test_quoted_refusals_are_content_and_unquoted_refusals_still_apply(self):
+        for index, content in enumerate((
+            "« ne pas utiliser cstack »",
+            '"ne pas utiliser cstack"',
+            "'do not activate cstack'",
+            "'don't activate it; ne pas utiliser cstack'",
+            "“n’utilise pas cstack”",
+            "‘don't activate it’",
+            "‘don’t activate it; ne pas utiliser cstack’",
+            "`ne pas utiliser cstack`",
+            "``ne pas utiliser cstack``",
+            "```text\nne pas utiliser cstack\n```",
+            "~~~text\nne pas utiliser cstack\n~~~",
+        )):
+            with self.subTest(content=content):
+                prompt = f"$cstack:cstack Ajoute au README la phrase {content}"
+                active_session = f"quoted-{index}"
+                first = self.prompt(prompt, session=active_session)
+                self.assertIn("Mode cstack actif", first)
+                self.assertEqual(self.prompt("Continue cette tâche.", session=active_session), first)
+                markers = set((self.data / "sessions").iterdir())
+                refused_session = f"unquoted-refusal-{index}"
+                self.assertEqual(self.prompt(prompt + ". Ne l'active pas.", session=refused_session), "")
+                self.assertEqual(self.prompt("Une autre question.", session=refused_session), "")
+                self.assertEqual(self.run_hook({"hook_event_name": "SessionStart", "session_id": refused_session,
+                                               "source": "resume"}), "")
+                self.assertEqual(set((self.data / "sessions").iterdir()), markers)
 
     def test_stop_request_ends_the_reminder(self):
         self.prompt("$cstack:cstack Refactorise ce module.")
