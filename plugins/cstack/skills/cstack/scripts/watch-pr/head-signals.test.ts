@@ -21,6 +21,7 @@ const workflowRun = {
   conclusion: "startup_failure",
   run_attempt: 1,
   run_started_at: "2026-10-07T17:00:00Z",
+  created_at: "2026-10-07T16:00:00Z",
   head_branch: "feature",
   pull_requests: [{
     number: 90,
@@ -54,6 +55,8 @@ async function snapshotFromGh(args: {
   readonly actionsError?: boolean;
   readonly commentsError?: boolean;
   readonly targetError?: boolean;
+  readonly createdAt?: string;
+  readonly targetIgnoreRange?: boolean;
 }): Promise<PrSnapshot> {
   const directory = await mkdtemp(join(tmpdir(), "watch-head-signals-gh-"));
   const gh = join(directory, "gh");
@@ -61,7 +64,24 @@ async function snapshotFromGh(args: {
   const actions = args.actionsPages ?? [{ total_count: runs.length, workflow_runs: runs }];
   const comments = args.commentsPages ?? [args.comments ?? []];
   const targetRuns = args.targetRuns ?? [];
-  const targets = [{ total_count: targetRuns.length, workflow_runs: targetRuns }];
+  const targetFixture = join(directory, "targets.mjs");
+  await writeFile(targetFixture, `
+const rows = ${JSON.stringify(targetRuns)};
+const endpoint = Bun.argv.find(arg => arg.includes("/actions/runs?event=pull_request_target"));
+const range = new URL("https://api.github.com/" + endpoint).searchParams.get("created");
+const parts = range?.split("..");
+const from = range?.startsWith(">=") ? Date.parse(range.slice(2)) : parts ? Date.parse(parts[0]) : -Infinity;
+const until = parts?.length === 2 ? Date.parse(parts[1]) : Infinity;
+const filtered = rows.filter(row => {
+  if (${JSON.stringify(args.targetIgnoreRange ?? false)}) return true;
+  const created = Date.parse(row.created_at);
+  return !Number.isFinite(created) || (created >= from && created <= until);
+}).sort((a, b) => b.id - a.id);
+const pages = [];
+for (let i = 0; i < Math.min(filtered.length, 1000); i += 100) pages.push({ total_count: filtered.length, workflow_runs: filtered.slice(i, i + 100) });
+if (pages.length === 0) pages.push({ total_count: 0, workflow_runs: [] });
+process.stdout.write(JSON.stringify(Bun.argv.includes("--slurp") ? pages : pages[0]));
+`);
   await writeFile(gh, `#!/bin/bash
 case "$*" in
   *"repos/owner/repo/actions/runs?head_sha=${head}&per_page=100"*)
@@ -78,9 +98,7 @@ COMMENTS_JSON
     ;;
   *"repos/owner/repo/actions/runs?event=pull_request_target&per_page=100"*)
     ${args.targetError ? 'echo "HTTP 502" >&2; exit 1' : ""}
-    cat <<'TARGET_JSON'
-${JSON.stringify(targets)}
-TARGET_JSON
+    bun '${targetFixture}' "$@"
     ;;
   *) echo "appel gh inattendu: $*" >&2; exit 2;;
 esac
@@ -91,13 +109,13 @@ esac
   try {
     const client = new GhGitHubReader();
     const base = fakeReader({
-      facts: { headRefOid: head },
+      facts: { headRefOid: head, ...(args.createdAt === undefined ? {} : { createdAt: args.createdAt }) },
       fastPath: { kind: "none-reported" },
       commitRollups: [{ oid: head, state: null }],
     });
     const reader: GitHubReader = {
       ...base,
-      headSignals: (pr, sha, branch) => client.headSignals(pr, sha, branch),
+      headSignals: (pr, sha, branch, created) => client.headSignals(pr, sha, branch, created),
     };
     return await readSnapshot({ reader, context, pendingHistory: "include", allowDraft: false });
   } finally {
@@ -108,6 +126,46 @@ esac
 }
 
 describe("signaux du head lus via gh", () => {
+  it("borne l’historique target à la naissance de la PR sans perdre un ancien ID encore actif", async () => {
+    const historical = Array.from({ length: 1001 }, (_, index) => ({
+      ...workflowRun, id: index + 200, event: "pull_request_target", head_sha: oldHead,
+      created_at: "2026-10-06T16:00:00Z", conclusion: "success",
+      pull_requests: [{ ...workflowRun.pull_requests[0], number: 91 }],
+    }));
+    const active = { ...workflowRun, id: 100, event: "pull_request_target", head_sha: oldHead, status: "in_progress", conclusion: null };
+    expect(classifyPr(await snapshotFromGh({ targetRuns: [...historical, active] }))).toMatchObject({ kind: "waiting" });
+  });
+
+  it("partitionne plus de 1000 target runs après la naissance de la PR et retrouve le plus ancien actif", async () => {
+    const runs = Array.from({ length: 1001 }, (_, index) => ({
+      ...workflowRun, id: index + 100, event: "pull_request_target", head_sha: oldHead,
+      created_at: new Date(Date.parse("2026-10-07T16:00:00Z") + index * 1000).toISOString(),
+      status: index === 0 ? "in_progress" : "completed", conclusion: index === 0 ? null : "success",
+      pull_requests: [{ ...workflowRun.pull_requests[0], number: index === 0 ? 90 : 91 }],
+    }));
+    expect(classifyPr(await snapshotFromGh({ targetRuns: runs, createdAt: "2026-10-07T16:00:00Z" }))).toMatchObject({ kind: "waiting" });
+  });
+
+  it("refuse une seconde target de plus de 1000 runs plutôt que prétendre la recherche complète", async () => {
+    const runs = Array.from({ length: 1001 }, (_, index) => ({
+      ...workflowRun, id: index + 100, event: "pull_request_target", head_sha: oldHead,
+    }));
+    await expect(snapshotFromGh({ targetRuns: runs, createdAt: workflowRun.created_at })).rejects.toThrow("plus de 1000 runs target dans une seule seconde");
+  });
+
+  it("ignore un auteur supprimé", async () => {
+    expect(classifyPr(await snapshotFromGh({ comments: [{ ...summary, user: null }] }))).toMatchObject({ kind: "ready" });
+  });
+
+  it("accepte le nom nullable d’un workflow", async () => {
+    const row = await snapshotFromGh({ runs: [{ ...workflowRun, name: null, conclusion: "success" }] });
+    expect(classifyPr(row)).toMatchObject({ kind: "ready" });
+  });
+
+  it("arrondit la naissance de la PR vers le bas sans perdre les runs de sa seconde", async () => {
+    const target = { ...workflowRun, event: "pull_request_target", status: "in_progress", conclusion: null };
+    expect(classifyPr(await snapshotFromGh({ targetRuns: [target], createdAt: "2026-10-07T16:00:00.500Z" }))).toMatchObject({ kind: "waiting" });
+  });
   it("découvre pull_request_target dont le run SHA est celui de la branche de base", async () => {
     const target = { ...workflowRun, event: "pull_request_target", head_sha: oldHead, head_branch: "main" };
     const row = await snapshotFromGh({ targetRuns: [{ ...target, status: "in_progress", conclusion: null }] });
@@ -333,6 +391,12 @@ describe("signaux du head lus via gh", () => {
       { runs: [{ ...workflowRun, conclusion: "success", pull_requests: [{ ...workflowRun.pull_requests[0], head: { sha: oldHead, ref: "feature" } }] }] },
       { targetRuns: [{ ...workflowRun, event: "push" }] },
       { targetRuns: [{ ...workflowRun, event: "pull_request_target", head_sha: oldHead, pull_requests: null }] },
+      { targetRuns: [{ ...workflowRun, event: "pull_request_target", created_at: "2026-10-06T16:00:00Z" }], targetIgnoreRange: true },
+      { targetRuns: [{ ...workflowRun, event: "pull_request_target", created_at: null }] },
+      { targetRuns: [{ ...workflowRun, event: "pull_request_target" }, { ...workflowRun, event: "pull_request_target" }] },
+      { createdAt: "invalid" },
+      { runs: [{ ...workflowRun, name: 42 }] },
+      { comments: [{ ...summary, user: { login: 42 } }] },
       { comments: [{ ...summary, body: summary.body.replace("Running", "Starting") }] },
       { comments: [{ ...summary, body: summary.body.replace("84c02ea", "unknown") }] },
     ];

@@ -68,6 +68,7 @@ export function fakeReader(
   };
   const defaults: PullRequestFacts = {
     context,
+    createdAt: "2026-10-07T15:00:00Z",
     mergeable: "MERGEABLE",
     mergeStateStatus: "CLEAN",
     reviewDecision: "APPROVED",

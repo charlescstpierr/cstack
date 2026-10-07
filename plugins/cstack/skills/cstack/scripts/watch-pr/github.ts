@@ -532,6 +532,7 @@ export function parsePullRequest(
     missing("pull request.isDraft", object.isDraft);
   return {
     context,
+    createdAt: string(object.createdAt, "pull request.createdAt"),
     mergeable: enumValue(
       object.mergeable,
       ["MERGEABLE", "CONFLICTING", "UNKNOWN"] as const,
@@ -601,6 +602,69 @@ export function parseOpenPullRequests(
     };
   });
 }
+function createdSeconds(value: unknown, label: string): number {
+  const timestamp = Date.parse(string(value, label));
+  if (!Number.isFinite(timestamp) || timestamp % 1000 !== 0) missing(label, value);
+  return timestamp / 1000;
+}
+
+async function readTargetHistory(repository: string, createdAt: string): Promise<readonly unknown[]> {
+  const iso = (seconds: number): string => new Date(seconds * 1000).toISOString().replace(".000Z", "Z");
+  const seen = new Set<number>();
+  async function read(from: number, until: number | null): Promise<readonly unknown[]> {
+    const range = until === null ? `>=${iso(from)}` : `${iso(from)}..${iso(until)}`;
+    const endpoint = `${repository}/actions/runs?event=pull_request_target&per_page=100&created=${encodeURIComponent(range)}`;
+    const first = record(await runJson(["gh", "api", endpoint]), "target history page");
+    const count = first.total_count;
+    if (typeof count !== "number" || !Number.isSafeInteger(count) || count < 0)
+      missing("target history.total_count", count);
+    const initial = list(first.workflow_runs, "target history.workflow_runs");
+    function created(item: unknown): number {
+      const run = record(item, "target history run");
+      const timestamp = createdSeconds(run.created_at, "target history run.created_at");
+      if (timestamp < from || (until !== null && timestamp > until))
+        throw new ChecksUnavailable("un run target est hors de la tranche de création demandée");
+      return timestamp;
+    }
+    const timestamps = initial.map(created);
+    if (initial.length > count) throw new ChecksUnavailable("compte de la tranche target incohérent");
+    if (count > 1000) {
+      if (until === from) throw new ChecksUnavailable("plus de 1000 runs target dans une seule seconde");
+      const pivot = until === null
+        ? timestamps.reduce((latest, timestamp) => Math.max(latest, timestamp), -Infinity)
+        : Math.floor(from + (until - from) / 2);
+      if (!Number.isFinite(pivot) || pivot < from || (until !== null && pivot >= until))
+        throw new ChecksUnavailable("la recherche target ne peut pas progresser dans ses partitions");
+      const left = await read(from, pivot);
+      const right = await read(pivot + 1, until);
+      if (left.length + right.length !== count)
+        throw new ChecksUnavailable("le compte target a changé pendant le partitionnement");
+      return [...left, ...right];
+    }
+    const pages = count === initial.length ? [first] : list(
+      await runJson(["gh", "api", "--paginate", "--slurp", endpoint]), "target history pages"
+    );
+    const runs = pages.flatMap((item) => {
+      const page = record(item, "target history page");
+      if (page.total_count !== count) throw new ChecksUnavailable("le compte target a changé pendant la pagination");
+      return list(page.workflow_runs, "target history.workflow_runs");
+    });
+    if (runs.length !== count) throw new ChecksUnavailable("la tranche target est tronquée");
+    for (const item of runs) {
+      created(item);
+      const run = record(item, "target history run");
+      if (typeof run.id !== "number" || !Number.isSafeInteger(run.id) || run.id <= 0)
+        missing("target history run.id", run.id);
+      if (seen.has(run.id)) throw new ChecksUnavailable("un run target apparaît dans plusieurs pages ou tranches");
+      seen.add(run.id);
+    }
+    return runs;
+  }
+  const birth = Date.parse(string(createdAt, "pull request.createdAt"));
+  if (!Number.isFinite(birth)) missing("pull request.createdAt", createdAt);
+  return read(Math.floor(birth / 1000), null);
+}
+
 function actionSignals(
   value: unknown,
   context: T.PrContext,
@@ -707,7 +771,7 @@ function actionSignals(
     const status = string(run.status, "workflow run.status");
     const conclusion = optionalString(run.conclusion, "workflow run.conclusion");
     const details = {
-      name: `Actions: ${string(run.name, "workflow run.name") || `workflow ${run.workflow_id}`}`,
+      name: `Actions: ${optionalString(run.name, "workflow run.name") || `workflow ${run.workflow_id}`}`,
       description: `workflow run ${run.id}, attempt=${run.run_attempt}, head=${headRefOid}`,
       link: string(run.html_url, "workflow run.html_url"),
       workflow: String(run.workflow_id),
@@ -738,6 +802,7 @@ function codexReviewSignals(value: unknown, headRefOid: string): readonly T.Chec
   let expected = false;
   for (const item of pages.flatMap((page) => list(page, "comments page"))) {
     const comment = record(item, "issue comment");
+    if (comment.user === null) continue;
     const user = record(comment.user, "issue comment.user");
     if (string(user.login, "issue comment.user.login") !== "chatgpt-codex-connector[bot]") continue;
     const body = string(comment.body, "issue comment.body");
@@ -782,7 +847,7 @@ function codexReviewSignals(value: unknown, headRefOid: string): readonly T.Chec
 }
 
 export class GhGitHubReader implements T.GitHubReader {
-  async headSignals(context: T.PrContext, headRefOid: string, headRefName: string): Promise<readonly T.Check[]> {
+  async headSignals(context: T.PrContext, headRefOid: string, headRefName: string, createdAt: string): Promise<readonly T.Check[]> {
     const repository = `repos/${context.owner}/${context.repo}`;
     const runs = await runJson([
       "gh", "api", "--paginate", "--slurp",
@@ -792,10 +857,8 @@ export class GhGitHubReader implements T.GitHubReader {
       "gh", "api", "--paginate", "--slurp",
       `${repository}/issues/${context.number}/comments?per_page=100`,
     ]);
-    const targets = await runJson([
-      "gh", "api", "--paginate", "--slurp",
-      `${repository}/actions/runs?event=pull_request_target&per_page=100`,
-    ]);
+    const targetRuns = await readTargetHistory(repository, createdAt);
+    const targets = [{ total_count: targetRuns.length, workflow_runs: targetRuns }];
     return [
       ...actionSignals(runs, context, headRefOid, headRefName, "head"),
       ...actionSignals(targets, context, headRefOid, headRefName, "target"),
@@ -827,7 +890,7 @@ export class GhGitHubReader implements T.GitHubReader {
         "--repo",
         `${context.owner}/${context.repo}`,
         "--json",
-        "mergeable,mergeStateStatus,reviewDecision,headRefOid,headRefName,baseRefName,state,mergedAt,isDraft",
+        "createdAt,mergeable,mergeStateStatus,reviewDecision,headRefOid,headRefName,baseRefName,state,mergedAt,isDraft",
       ]),
       context
     );
