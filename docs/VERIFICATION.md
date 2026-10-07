@@ -12,7 +12,7 @@ Le reçu garde `status` pour le tour natif et ajoute `verdicts.turn`, `verdicts.
 
 Les attentes sont chargées avant le lancement et leur empreinte est rattachée au reçu. Les champs inconnus sont refusés. Lorsqu'elles sont fournies, `project_sha256` et les empreintes `source_sha256` du bundle et de la skill sont comparées aux fichiers avant lancement et avant chaque répétition. Le générateur fournit `skill_path`, relatif au bundle. Une attente sans ce champ exige un chemin SKILL.md unique dans le prompt.
 
-Les attentes avec empreintes exigent `hash_algorithm: cstack-tree-sha256-v2`. Cette version sépare chaque chemin et son contenu par une longueur de chemin et un digest de contenu de taille fixe, avec un préfixe de version. Les anciens fichiers générés avec empreintes non versionnées sont refusés et doivent être régénérés ; les cas sans empreintes restent acceptés. Les dossiers `.git`, `__pycache__` et `node_modules` sont exclus. Le contenu des liens vers des fichiers réguliers est mesuré comme celui de leurs copies matérialisées. Les liens vers des dossiers restent refusés pour les répétitions.
+Les attentes avec empreintes exigent `hash_algorithm: cstack-tree-sha256-v2`. Cette version sépare chaque chemin et son contenu par une longueur de chemin et un digest de contenu de taille fixe, avec un préfixe de version. Les anciens fichiers générés avec empreintes non versionnées sont refusés et doivent être régénérés ; les cas sans empreintes restent acceptés. Les dossiers `.git`, `__pycache__` et `node_modules` sont exclus. Le contenu des liens vers des fichiers réguliers est mesuré comme celui de leurs copies matérialisées. Chaque arbre haché refuse les liens vers des dossiers hors de ces exclusions, même sans répétition.
 
 Place les vérificateurs hors du projet modifiable. Un test écrit ou affaibli par le candidat ne constitue pas une preuve indépendante. Sans `expected_json`, le code de sortie reste le contrat de la commande de vérification fournie.
 
@@ -26,6 +26,8 @@ python3 scripts/verify-behavior.py --cases <cases.json> --expectations <expectat
 Avec des attentes demandées, une contrainte échouée rend le code 1 ; une preuve demandée mais non vérifiée rend le code 2. Le code 0 indique que les contrôles demandés passent. Une vérification limitée au résultat peut donc réussir pendant que le workflow non demandé reste `unverified` dans le reçu. Les commandes de résultat restent désactivées sans `--verify-outcomes`, même si le fichier en contient. Sans attentes, le comportement historique du code de sortie est conservé : la fin du tour n’atteste toujours pas le workflow ni le résultat.
 
 `--repeats` copie les fixtures avant chaque passage. Les répétitions refusent les dépôts Git liés avant tout lancement : copier leur fichier ou lien `.git` partagerait l’index et la branche de la fixture originale. Les sous-dossiers de dépôts sont aussi refusés, car leur copie pourrait découvrir un dépôt Git dans ses nouveaux ancêtres. Les liens symboliques vers des dossiers sont refusés pour empêcher de copier un dépôt lié externe. Une fixture placée à la racine d’un dépôt autonome reste prise en charge.
+
+Le dossier de résultats doit rester hors des projets et des bundles, sans chevauchement avec leurs ancêtres. Ce contrôle précède toute création de dossier ou de reçu pour préserver l’arbre source vérifié.
 
 Le traçage ne conserve pas le répertoire courant ni les descripteurs de dossier de chaque processus. Une ouverture relative reste donc ambiguë. Elle empêche de conclure à l’absence d’une lecture attendue ou interdite.
 
