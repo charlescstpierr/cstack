@@ -43,11 +43,12 @@ def _activation_requested(prompt: str) -> bool:
     path = invocation.group("path")
     if path and not path.strip("<>").endswith("/skills/cstack/SKILL.md"):
         return False
-    # Un refus plus loin dans le message reste prioritaire sur sa sélection en tête.
+    # Un refus qui cible cstack reste prioritaire, même plus loin dans le message.
     refusal = re.search(
-        r"\b(?:(?:ne\s+(?:l['’])?|n['’])activ\w*\s+pas\b"
-        r"|ne\s+l['’](?:utilis|appliqu)\w*\s+pas\b"
-        r"|(?:do\s+not|don['’]t)\s+(?:activate\b|(?:use|invoke)\s+(?:it|cstack)\b))",
+        r"\b(?:ne\s+l['’](?:activ|utilis|appliqu)\w*\s+pas\b"
+        r"|(?:ne\s+|n['’])activ\w*\s+pas\s+(?:cstack|\$cstack:cstack)\b"
+        r"|(?:do\s+not|don['’]t)\s+(?:activate|use|invoke)\s+"
+        r"(?:it|cstack|\$cstack:cstack|(?:this|the)\s+(?:cstack\s+)?skill)\b)",
         prompt[invocation.end():],
         re.IGNORECASE,
     )

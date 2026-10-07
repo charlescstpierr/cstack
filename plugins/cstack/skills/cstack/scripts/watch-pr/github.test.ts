@@ -225,6 +225,7 @@ describe("correspondance des nœuds rollup", () => {
 
 describe("analyse ferme des énumérations", () => {
   const rawPullRequest = {
+    createdAt: "2026-10-07T15:00:00Z",
     mergeable: "MERGEABLE",
     mergeStateStatus: "CLEAN",
     reviewDecision: "APPROVED",

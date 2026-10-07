@@ -91,6 +91,59 @@ describe("table de vérité de l’état prêt", () => {
 });
 
 describe("planification des requêtes de snapshot", () => {
+  it("garde un échec GraphQL indépendant comme bloqueur pendant une relance REST", async () => {
+    const row = await readSnapshot({
+      reader: fakeReader({
+        rollupPages: [{ kind: "contexts", checks: [failedCheck("Independent workflow")], endCursor: null }],
+        headSignals: [pendingCheck("Actions: Retry workflow")],
+      }),
+      context: context(1), pendingHistory: "include", allowDraft: false,
+    });
+    expect(classifyPr(row)).toMatchObject({
+      kind: "blocker", blocker: { kind: "failing-checks", ci: {
+        failed: [{ name: "Independent workflow" }],
+        pending: [{ name: "Actions: Retry workflow" }],
+      } },
+    });
+  });
+
+  it("attend la revue Codex annoncée Running même sans check GitHub", async () => {
+    const row = await readSnapshot({
+      reader: fakeReader({
+        fastPath: { kind: "none-reported" },
+        commitRollups: [{ oid: "head", state: null }],
+        headSignals: [{ ...pendingCheck("Codex Code Review"), description: "Running pour head" }],
+      }),
+      context: context(1), pendingHistory: "include", allowDraft: false,
+    });
+    expect(classifyPr(row)).toMatchObject({ kind: "waiting" });
+    expect(row).toMatchObject({ reviewAutomationRunning: true });
+  });
+
+  it("bloque les échecs Actions du SHA même si aucun check n’a été créé", async () => {
+    const row = await readSnapshot({
+      reader: fakeReader({
+        fastPath: { kind: "none-reported" },
+        commitRollups: [{ oid: "head", state: null }],
+        headSignals: [{ ...failedCheck("Actions: Validate"), reportedState: "FAILURE" }],
+      }),
+      context: context(1), pendingHistory: "include", allowDraft: false,
+    });
+    expect(classifyPr(row)).toMatchObject({
+      kind: "blocker", blocker: { kind: "failing-checks" },
+    });
+  });
+
+  it("ne produit aucun verdict si les signaux du head sont indisponibles", async () => {
+    const base = fakeReader();
+    const reader: GitHubReader = { ...base, async headSignals() {
+      throw new WatcherQueryError({ kind: "command-exit", retryable: true, code: 1, detail: "HTTP 502" });
+    } };
+    await expect(readSnapshot({
+      reader, context: context(1), pendingHistory: "include", allowDraft: false,
+    })).rejects.toBeInstanceOf(WatcherQueryError);
+  });
+
   it("refuse un head remplacé après les checks verts de l’ancien commit", async () => {
     const base = fakeReader();
     let pushed = false;
@@ -161,6 +214,7 @@ describe("planification des requêtes de snapshot", () => {
       "pullRequest",
       "reviewThreads",
       "checkRollupPage:null",
+      "headSignals",
       "pullRequest",
     ]);
   });

@@ -1317,6 +1317,10 @@
     {
       "path": "plugins/cstack/skills/cstack/references/rule-pressure-tests.md",
       "reason": "Méthode propre à cstack pour tester une règle de compétence contre une base sans elle, lue à la demande depuis authoring-a-skill ; inspirée de obra/superpowers (voir NOTICE.md), réécrite sans copie."
+    },
+    {
+      "path": "plugins/cstack/skills/cstack/scripts/watch-pr/head-signals.test.ts",
+      "reason": "Tests propres à cstack des signaux Actions et de la revue Codex liés au head, y compris démarrage CI indisponible et revue encore en cours."
     }
   ]
 }

@@ -132,6 +132,7 @@ describe("rendu", () => {
         context,
         facts: {
           context,
+          createdAt: "2026-07-26T00:00:00Z",
           mergeable: "MERGEABLE",
           mergeStateStatus: "CLEAN",
           reviewDecision: "APPROVED",

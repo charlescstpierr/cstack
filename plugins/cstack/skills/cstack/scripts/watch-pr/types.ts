@@ -40,6 +40,7 @@ export type ReviewDecision =
   | null;
 export interface PullRequestFacts {
   readonly context: PrContext;
+  readonly createdAt: string;
   readonly mergeable: "MERGEABLE" | "CONFLICTING" | "UNKNOWN";
   readonly mergeStateStatus: MergeStateStatus;
   readonly reviewDecision: ReviewDecision;
@@ -90,7 +91,7 @@ export type FailedCheck = Extract<Check, { readonly kind: "failed" }>;
 export type PendingCheck = Extract<Check, { readonly kind: "pending" }>;
 export interface ReportedChecks {
   readonly kind: "reported";
-  readonly source: "gh-pr-checks" | "graphql-rollup";
+  readonly source: "gh-pr-checks" | "graphql-rollup" | "head-signals";
   readonly checks: NonEmpty<Check>;
 }
 /** `resolveChecks` owns what counts as `no-checks`. */
@@ -446,6 +447,7 @@ export interface GitHubReader {
   ): Promise<RollupPage>;
   reviewThreads(context: PrContext): Promise<readonly ReviewThread[]>;
   commitRollups(context: PrContext): Promise<readonly CommitRollup[]>;
+  headSignals(context: PrContext, headRefOid: string, headRefName: string, createdAt: string): Promise<readonly Check[]>;
 }
 export interface PollingOptions {
   readonly interval: number;

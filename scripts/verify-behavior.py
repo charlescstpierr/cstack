@@ -13,6 +13,7 @@ import re
 import selectors
 import shlex
 import shutil
+import stat
 import subprocess
 import sys
 import tempfile
@@ -22,6 +23,7 @@ import time
 DEFAULT_TURN_SECONDS = 300.0
 MAX_TURN_SECONDS = 900.0
 SKIP_DIRS = {".git", "__pycache__", "node_modules"}
+TREE_HASH_ALGORITHM = "cstack-tree-sha256-v2"
 SAFE_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
 # Key-name policy: a dict key or assignment/flag/header name is secret when
 # its normalized form contains a marker below or ends with "token". Markers
@@ -398,28 +400,56 @@ def project_metadata(value):
 
 
 def tree_hash(root, excluded):
-    digest = hashlib.sha256()
+    def unreadable(error):
+        raise HarnessError(f"parcours d’empreinte incomplet: {error.filename}") from error
+
+    digest = hashlib.sha256((TREE_HASH_ALGORITHM + "\0").encode())
     files = 0
     total_bytes = 0
     root = root.resolve()
     excluded = excluded.resolve() if excluded else None
     if excluded and root not in excluded.parents:
         excluded = None
-    for directory, names, filenames in os.walk(root, topdown=True, followlinks=False):
+    for directory, names, filenames in os.walk(root, topdown=True, followlinks=False, onerror=unreadable):
         path = Path(directory)
         names[:] = sorted(name for name in names if name not in SKIP_DIRS and not (excluded and (path / name).resolve() == excluded))
+        for name in names:
+            if (path / name).is_symlink():
+                raise HarnessError(f"empreinte non prise en charge pour un dossier symbolique: {path / name}")
         for filename in sorted(filenames):
             item = path / filename
-            if item.is_symlink() or not item.is_file() or (excluded and (item == excluded or excluded in item.parents)):
+            if excluded and (item == excluded or excluded in item.parents):
                 continue
+            try:
+                mode = item.stat().st_mode
+            except OSError as error:
+                raise HarnessError(f"entrée non régulière ou inaccessible: {item}") from error
+            if not stat.S_ISREG(mode):
+                raise HarnessError(f"entrée non régulière non prise en charge: {item}")
             relative = item.relative_to(root).as_posix().encode()
-            digest.update(relative + b"\0")
+            effective_mode = stat.S_IFMT(mode) | stat.S_IMODE(mode)
+            digest.update(effective_mode.to_bytes(2, "big") + len(relative).to_bytes(8, "big") + relative)
+            content_digest = hashlib.sha256()
             with item.open("rb") as stream:
                 while chunk := stream.read(1024 * 1024):
-                    digest.update(chunk)
+                    content_digest.update(chunk)
                     total_bytes += len(chunk)
+            digest.update(content_digest.digest())
             files += 1
-    return {"sha256": digest.hexdigest(), "files": files, "bytes": total_bytes}
+    return {"sha256": digest.hexdigest(), "algorithm": TREE_HASH_ALGORITHM, "files": files, "bytes": total_bytes}
+
+
+def case_configuration(case):
+    return {"id": case["id"], "cwd": str(Path(case["cwd"]).expanduser().resolve()),
+            "bundle": str(Path(case["bundle"]).expanduser().resolve()) if case.get("bundle") else None,
+            "prompts": list(case["prompts"]) if "prompts" in case else [case["prompt"]],
+            "sandbox": case.get("sandbox", "workspace-write"), "ephemeral": case.get("ephemeral", True)}
+
+
+def case_hash(case):
+    canonical = json.dumps(case_configuration(case), sort_keys=True, separators=(",", ":"),
+                           ensure_ascii=False, allow_nan=False)
+    return hashlib.sha256(canonical.encode()).hexdigest()
 
 
 OPENED_PATH = re.compile(r'openat2?\([^\n]*?, "((?:[^"\\]|\\.)+)"[^\n]*?\)\s+=\s+(\d+)')
@@ -514,13 +544,44 @@ def score_routes(observed, expectation):
 def read_expectations(path):
     payload = json.loads(path.read_text())
     if (not isinstance(payload, dict) or type(payload.get("schema_version")) is not int
-            or payload["schema_version"] != 1 or not isinstance(payload.get("cases"), list)):
+            or payload["schema_version"] != 1 or not isinstance(payload.get("cases"), list)
+            or set(payload) - {"schema_version", "cases"}):
         raise HarnessError("expectations.json doit contenir schema_version: 1 et un tableau cases")
     expectations = {}
     for row in payload["cases"]:
         if not isinstance(row, dict) or not isinstance(row.get("id"), str) or not row["id"] or row["id"] in expectations:
             raise HarnessError("identifiant d’attente absent ou dupliqué")
         case_id = row["id"]
+        if set(row) - {"id", "expected_children", "min_children", "routing", "expected_artifacts",
+                       "outcome_checks", "project_sha256", "source_sha256", "skill_path", "role_metadata", "hash_algorithm", "case_sha256"}:
+            raise HarnessError(f"{case_id}: champs d’attente inconnus")
+        hashes = row.get("source_sha256", {})
+        if not isinstance(hashes, dict) or set(hashes) - {"bundle", "skill"}:
+            raise HarnessError(f"{case_id}: source_sha256 invalide")
+        if (row.get("hash_algorithm", TREE_HASH_ALGORITHM) != TREE_HASH_ALGORITHM
+                or (("project_sha256" in row or hashes) and "hash_algorithm" not in row)):
+            raise HarnessError(f"{case_id}: algorithme d’empreinte ancien ou absent ; régénérer les attentes")
+        if ("project_sha256" in row or hashes) and "case_sha256" not in row:
+            raise HarnessError(f"{case_id}: empreinte de configuration de cas absente ; régénérer les attentes")
+        for digest in list(hashes.values()) + [row[key] for key in ("project_sha256", "case_sha256") if key in row]:
+            if not isinstance(digest, str) or not re.fullmatch(r"[0-9a-f]{64}", digest):
+                raise HarnessError(f"{case_id}: empreinte SHA-256 invalide")
+        if "skill_path" in row:
+            relative = row["skill_path"]
+            if (not isinstance(relative, str) or len(Path(relative).parts) != 3
+                    or Path(relative).parts[0] != "skills" or Path(relative).parts[-1] != "SKILL.md"
+                    or Path(relative).is_absolute() or ".." in Path(relative).parts):
+                raise HarnessError(f"{case_id}: skill_path doit désigner skills/<skill>/SKILL.md")
+        roles = row.get("role_metadata", {})
+        if not isinstance(roles, dict):
+            raise HarnessError(f"{case_id}: role_metadata doit être un objet")
+        for role, entries in roles.items():
+            entries = entries if isinstance(entries, list) else [entries]
+            if (not role or not entries or any(
+                    not isinstance(entry, dict) or set(entry) != {"model", "reasoning_effort"}
+                    or any(not isinstance(value, str) or not value for value in entry.values())
+                    for entry in entries)):
+                raise HarnessError(f"{case_id}: métadonnées de modèle invalides")
         for key in ("expected_children", "min_children"):
             if key in row and (type(row[key]) is not int or row[key] < 0):
                 raise HarnessError(f"{case_id}: {key} doit être un entier positif ou nul")
@@ -557,6 +618,49 @@ def read_expectations(path):
             ids.add(check["id"])
         expectations[case_id] = row
     return expectations
+
+
+def verify_provenance(case, expectation, execution_case=None):
+    """Check generator digests against the inputs before launching the native turn."""
+    def matches(label, actual, expected):
+        if actual != expected:
+            raise HarnessError(f"{case['id']}: empreinte {label} différente des attentes")
+
+    source = expectation.get("source_sha256", {})
+    if ("project_sha256" in expectation or source) and expectation.get("hash_algorithm") != TREE_HASH_ALGORITHM:
+        raise HarnessError(f"{case['id']}: algorithme d’empreinte ancien ou absent ; régénérer les attentes")
+    if ("project_sha256" in expectation or source) and "case_sha256" not in expectation:
+        raise HarnessError(f"{case['id']}: empreinte de configuration de cas absente ; régénérer les attentes")
+    if "case_sha256" in expectation:
+        matches("configuration de cas", case_hash(execution_case or case), expectation["case_sha256"])
+    try:
+        project_hash = tree_hash(case["cwd"], None)["sha256"]
+        if "project_sha256" in expectation:
+            matches("projet", project_hash, expectation["project_sha256"])
+        bundle = case.get("bundle")
+        if bundle is None and not source:
+            return
+        if bundle is None:
+            raise HarnessError(f"{case['id']}: empreintes source exigent un bundle explicite")
+        bundle_hash = tree_hash(bundle, None)["sha256"]
+        if "bundle" in source:
+            matches("bundle", bundle_hash, source["bundle"])
+        if "skill" in source:
+            relative = expectation.get("skill_path")
+            if relative is None:
+                # Older generated prompts name the source file explicitly.
+                paths = [path for path in bundle.glob("skills/*/SKILL.md")
+                         if any(str(path) in prompt for prompt in case["prompts"])]
+                if len(paths) != 1:
+                    raise HarnessError(f"{case['id']}: empreinte skill exige skill_path non ambigu")
+                skill = paths[0]
+            else:
+                skill = bundle / relative
+            if not skill.resolve().is_relative_to(bundle.resolve()):
+                raise HarnessError(f"{case['id']}: skill_path sort du bundle")
+            matches("skill", hashlib.sha256(skill.read_bytes()).hexdigest(), source["skill"])
+    except OSError as error:
+        raise HarnessError(f"{case['id']}: impossible de vérifier les empreintes source/projet") from error
 
 
 def check_verdict(checks):
@@ -710,6 +814,8 @@ def read_cases(path):
         if not isinstance(row, dict) or not isinstance(row.get("id"), str) or not SAFE_ID.fullmatch(row["id"]):
             raise HarnessError("chaque scénario nécessite un identifiant textuel sûr")
         case_id = row["id"]
+        if set(row) - {"id", "cwd", "prompt", "prompts", "sandbox", "bundle", "ephemeral"}:
+            raise HarnessError(f"{case_id}: champs de scénario inconnus")
         if case_id in ids:
             raise HarnessError(f"identifiant de scénario dupliqué: {case_id}")
         ids.add(case_id)
@@ -882,19 +988,23 @@ def main(argv=None):
     expectations = {}
     if args.expectations:
         expectations = read_expectations(args.expectations)
-        missing = {case["id"] for case in cases} - set(expectations)
-        if missing:
-            raise HarnessError(f"attentes absentes pour: {', '.join(sorted(missing))}")
     if args.case_ids:
         wanted = set(args.case_ids)
         unknown = wanted - {case["id"] for case in cases}
         if unknown:
             raise HarnessError(f"identifiant de scénario inconnu: {', '.join(sorted(unknown))}")
         cases = [case for case in cases if case["id"] in wanted]
+    if args.expectations:
+        missing = {case["id"] for case in cases} - set(expectations)
+        if missing:
+            raise HarnessError(f"attentes absentes pour: {', '.join(sorted(missing))}")
     output = args.output.expanduser().resolve()
     for case in cases:
-        if output == case["cwd"] or case["cwd"] in output.parents or output in case["cwd"].parents:
-            raise HarnessError(f"la sortie doit être située hors du cwd du scénario: {case['id']}")
+        for label, source_root in (("cwd", case["cwd"]), ("bundle", case["bundle"])):
+            if source_root is not None and (
+                    output == source_root or source_root in output.parents or output in source_root.parents):
+                raise HarnessError(f"la sortie doit être située hors du {label} du scénario: {case['id']}")
+        verify_provenance(case, expectations.get(case["id"], {}))
         if args.repeats > 1:
             if not (case["cwd"] / ".git").exists():
                 for parent in case["cwd"].parents:
@@ -914,14 +1024,22 @@ def main(argv=None):
     output.mkdir(parents=True, exist_ok=True)
     command = build_command()
     results = []
+    unverified_requested = False
     selected_case_ids = [case["id"] for case in cases]
     for case in cases:
+        expectation = expectations.get(case["id"], {})
+        workflow_requested = any(key in expectation for key in
+                                 ("routing", "expected_children", "min_children", "expected_artifacts"))
         for repeat in range(1, args.repeats + 1):
             run = dict(case)
             if args.repeats > 1:
                 run["id"] = f"{case['id']}__run_{repeat:02d}"
                 run["cwd"] = output / "isolated-projects" / run["id"]
                 shutil.copytree(case["cwd"], run["cwd"])
+            verify_provenance(run, expectation, execution_case=case)
+            source_case_digest = case_hash(case)
+            effective_config = case_configuration(run)
+            effective_case_digest = case_hash(effective_config)
             print(f"[{run['id']}] démarrage", flush=True)
             try:
                 result = run_case(run, output, command, args.model, args.effort,
@@ -931,8 +1049,15 @@ def main(argv=None):
                     result["route_score"] = score_routes(result["route_observation"], expectations[case["id"]])
             except Exception as error:
                 result = {"id": run["id"], "cwd": str(run["cwd"]), "status": "infra_error", "error": str(error)}
-            expectation = expectations.get(case["id"], {})
+            result.update(source_case_id=case["id"], case_sha256=source_case_digest,
+                          case_hash_verified="case_sha256" in expectation,
+                          effective_case_sha256=effective_case_digest, effective_case=effective_config,
+                          requested_runtime_config={"model": args.model, "effort": args.effort,
+                                                    "turn_timeout": args.turn_timeout, "trace_routes": args.trace_routes})
             result["verdicts"] = evaluate_case(result, expectation, args.verify_outcomes)
+            if ((workflow_requested and result["verdicts"]["workflow"]["status"] == "unverified")
+                    or (args.verify_outcomes and result["verdicts"]["outcome"]["status"] == "unverified")):
+                unverified_requested = True
             if expectation:
                 result["expectation_sha256"] = hashlib.sha256(
                     json.dumps(expectation, sort_keys=True, ensure_ascii=False).encode()).hexdigest()
@@ -947,9 +1072,7 @@ def main(argv=None):
     if any(result["verdicts"][stage]["status"] == "fail"
            for result in results for stage in ("workflow", "outcome")):
         return 1
-    if any((args.expectations and result["verdicts"]["workflow"]["status"] == "unverified")
-           or (args.verify_outcomes and result["verdicts"]["outcome"]["status"] == "unverified")
-           for result in results):
+    if unverified_requested:
         return 2
     print(f"résumé : {output / 'summary.json'}", flush=True)
     return 0

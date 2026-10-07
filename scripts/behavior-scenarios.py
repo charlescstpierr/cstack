@@ -10,6 +10,7 @@ import os
 from pathlib import Path
 import re
 import shutil
+import stat
 import subprocess
 import sys
 from typing import Any
@@ -17,6 +18,7 @@ from typing import Any
 
 MODEL = {"model": "gpt-5.6-luna", "reasoning_effort": "max"}
 IGNORED_DIRS = {".git", "__pycache__", "node_modules"}
+TREE_HASH_ALGORITHM = "cstack-tree-sha256-v2"
 FORBIDDEN_PROMPT_LABELS = re.compile(r"\b(?:eval|test|judge|candidate|benchmark)\b", re.IGNORECASE)
 PANEL_LENGTHS = {"interrogate reviewers": 3, "arena runners": 3, "arena cross-judge pool": 1}
 GIT_NAME = "scénario cstack"
@@ -38,17 +40,43 @@ def write_text(root: Path, relative: str, content: str) -> None:
 
 
 def tree_hash(root: Path) -> str:
-    digest = hashlib.sha256()
-    for directory, names, filenames in os.walk(root, topdown=True):
+    def unreadable(error: OSError) -> None:
+        raise ValueError(f"parcours d’empreinte incomplet: {error.filename}") from error
+
+    digest = hashlib.sha256((TREE_HASH_ALGORITHM + "\0").encode())
+    for directory, names, filenames in os.walk(root, topdown=True, onerror=unreadable):
         path = Path(directory)
         names[:] = sorted(name for name in names if name not in IGNORED_DIRS)
+        for name in names:
+            if (path / name).is_symlink():
+                raise ValueError(f"empreinte non prise en charge pour un dossier symbolique: {path / name}")
         for filename in sorted(filenames):
             item = path / filename
-            if item.is_symlink() or not item.is_file():
-                continue
-            digest.update(item.relative_to(root).as_posix().encode() + b"\0")
-            digest.update(item.read_bytes())
+            try:
+                mode = item.stat().st_mode
+            except OSError as error:
+                raise ValueError(f"entrée non régulière ou inaccessible: {item}") from error
+            if not stat.S_ISREG(mode):
+                raise ValueError(f"entrée non régulière non prise en charge: {item}")
+            # File links have the same representation as their materialized copies.
+            relative = item.relative_to(root).as_posix().encode()
+            effective_mode = stat.S_IFMT(mode) | stat.S_IMODE(mode)
+            digest.update(effective_mode.to_bytes(2, "big") + len(relative).to_bytes(8, "big") + relative)
+            digest.update(hashlib.sha256(item.read_bytes()).digest())
     return digest.hexdigest()
+
+
+def case_configuration(case: dict[str, Any]) -> dict[str, Any]:
+    return {"id": case["id"], "cwd": str(Path(case["cwd"]).expanduser().resolve()),
+            "bundle": str(Path(case["bundle"]).expanduser().resolve()) if case.get("bundle") else None,
+            "prompts": list(case["prompts"]) if "prompts" in case else [case["prompt"]],
+            "sandbox": case.get("sandbox", "workspace-write"), "ephemeral": case.get("ephemeral", True)}
+
+
+def case_hash(case: dict[str, Any]) -> str:
+    canonical = json.dumps(case_configuration(case), sort_keys=True, separators=(",", ":"),
+                           ensure_ascii=False, allow_nan=False)
+    return hashlib.sha256(canonical.encode()).hexdigest()
 
 
 def copy_bundle(source: Path, output: Path, label: str) -> Path:
@@ -142,11 +170,14 @@ def register(
     skill_path = bundle / "skills" / skill / "SKILL.md"
     expectation: dict[str, Any] = {
         "id": case_id,
+        "case_sha256": case_hash(case),
         "project_sha256": tree_hash(project),
+        "hash_algorithm": TREE_HASH_ALGORITHM,
         "source_sha256": {
             "bundle": tree_hash(bundle),
             "skill": hashlib.sha256(skill_path.read_bytes()).hexdigest(),
         },
+        "skill_path": skill_path.relative_to(bundle).as_posix(),
         "role_metadata": model_config(roles),
     }
     if expected_children is not None and min_children is not None:
