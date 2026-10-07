@@ -601,7 +601,116 @@ export function parseOpenPullRequests(
     };
   });
 }
+function actionSignals(value: unknown, headRefOid: string): readonly T.Check[] {
+  const pages = list(value, "actions pages");
+  if (pages.length === 0) missing("actions pages");
+  const runs: unknown[] = [];
+  let expected: number | null = null;
+  for (const item of pages) {
+    const page = record(item, "actions page");
+    if (typeof page.total_count !== "number" || !Number.isSafeInteger(page.total_count) || page.total_count < 0)
+      missing("actions total_count", page.total_count);
+    if (expected !== null && expected !== page.total_count)
+      throw new ChecksUnavailable("la liste Actions a changé pendant la pagination");
+    expected = page.total_count;
+    runs.push(...list(page.workflow_runs, "workflow_runs"));
+  }
+  if (runs.length !== expected)
+    throw new ChecksUnavailable("la liste Actions est tronquée pour le head demandé");
+  const latest = new Map<string, { readonly id: number; readonly run: Record<string, unknown> }>();
+  const seen = new Set<number>();
+  for (const item of runs) {
+    const run = record(item, "workflow run");
+    if (typeof run.id !== "number" || !Number.isSafeInteger(run.id) || run.id <= 0)
+      missing("workflow run.id", run.id);
+    if (seen.has(run.id)) throw new ChecksUnavailable("la pagination Actions contient un run en double");
+    seen.add(run.id);
+    if (string(run.head_sha, "workflow run.head_sha") !== headRefOid) continue;
+    if (typeof run.workflow_id !== "number" || !Number.isSafeInteger(run.workflow_id) || run.workflow_id <= 0)
+      missing("workflow run.workflow_id", run.workflow_id);
+    const key = `${run.workflow_id}:${string(run.event, "workflow run.event")}`;
+    if ((latest.get(key)?.id ?? 0) < run.id) latest.set(key, { id: run.id, run });
+  }
+  return [...latest.values()].map(({ run }): T.Check => {
+    const status = string(run.status, "workflow run.status");
+    const conclusion = optionalString(run.conclusion, "workflow run.conclusion");
+    const details = {
+      name: `Actions: ${string(run.name, "workflow run.name") || `workflow ${run.workflow_id}`}`,
+      description: `workflow run ${run.id}, head=${headRefOid}`,
+      link: string(run.html_url, "workflow run.html_url"),
+      workflow: String(run.workflow_id),
+    };
+    let check: T.Check;
+    if (["queued", "in_progress", "waiting", "pending", "requested"].includes(status))
+      check = { ...details, kind: "pending", reportedState: status.toUpperCase() };
+    else if (status !== "completed")
+      throw new ChecksUnavailable(`état Actions inconnu pour ${headRefOid}: ${status}`);
+    else if (conclusion === "startup_failure")
+      throw new ChecksUnavailable(`CI indisponible: Actions startup_failure pour ${headRefOid}, run=${run.id}, ${details.link}`);
+    else if (conclusion === "success")
+      check = { ...details, kind: "passed", reportedState: "SUCCESS" };
+    else if (conclusion === "neutral" || conclusion === "skipped")
+      check = { ...details, kind: "skipped", reportedState: conclusion.toUpperCase() };
+    else if (conclusion !== null && ["failure", "timed_out", "cancelled", "action_required", "stale"].includes(conclusion))
+      check = { ...details, kind: "failed", reportedState: conclusion.toUpperCase() };
+    else
+      throw new ChecksUnavailable(`conclusion Actions inconnue pour ${headRefOid}: ${conclusion}`);
+    return check;
+  });
+}
+
+function codexReviewSignals(value: unknown, headRefOid: string): readonly T.Check[] {
+  const pages = list(value, "comments pages");
+  if (pages.length === 0) missing("comments pages");
+  let latest: { readonly updated: number; readonly checks: readonly T.Check[] } | null = null;
+  for (const item of pages.flatMap((page) => list(page, "comments page"))) {
+    const comment = record(item, "issue comment");
+    const user = record(comment.user, "issue comment.user");
+    if (string(user.login, "issue comment.user.login") !== "chatgpt-codex-connector[bot]") continue;
+    const body = string(comment.body, "issue comment.body");
+    if (!body.includes("<!-- codex-pull-request-review-summary -->")) continue;
+    const updated = Date.parse(string(comment.updated_at, "issue comment.updated_at"));
+    if (!Number.isFinite(updated)) missing("issue comment.updated_at", comment.updated_at);
+    const rows = body.split(/\r?\n/).filter((line) => /\|[^|]*\bCode Review\b[^|]*\|/.test(line));
+    if (rows.length === 0) throw new ChecksUnavailable("résumé Codex sans état Code Review lisible");
+    const checks: T.Check[] = [];
+    let current = false;
+    for (const row of rows) {
+      const cells = row.split("|").slice(1, -1);
+      const sha = cells[2]?.match(/`([0-9a-f]{7,40})`/i)?.[1]?.toLowerCase();
+      if (sha === undefined) throw new ChecksUnavailable("résumé Codex sans SHA vérifiable");
+      if (!headRefOid.toLowerCase().startsWith(sha)) continue;
+      current = true;
+      const state = cells[1]?.match(/\b(Running|Queued|Pending|Completed|Failed|Cancelled|Error)\b/i)?.[1]?.toLowerCase();
+      if (state === undefined) throw new ChecksUnavailable(`état de revue Codex inconnu pour ${headRefOid}`);
+      if (state === "completed") continue;
+      checks.push({
+        kind: ["running", "queued", "pending"].includes(state) ? "pending" : "failed",
+        name: "Codex Code Review",
+        reportedState: state.toUpperCase(),
+        description: `résumé Codex ${state}, head=${headRefOid}`,
+        link: string(comment.html_url, "issue comment.html_url"),
+        workflow: "",
+      });
+    }
+    if (current && (latest === null || updated >= latest.updated)) latest = { updated, checks };
+  }
+  return latest?.checks ?? [];
+}
+
 export class GhGitHubReader implements T.GitHubReader {
+  async headSignals(context: T.PrContext, headRefOid: string): Promise<readonly T.Check[]> {
+    const repository = `repos/${context.owner}/${context.repo}`;
+    const runs = await runJson([
+      "gh", "api", "--paginate", "--slurp",
+      `${repository}/actions/runs?head_sha=${encodeURIComponent(headRefOid)}&per_page=100`,
+    ]);
+    const comments = await runJson([
+      "gh", "api", "--paginate", "--slurp",
+      `${repository}/issues/${context.number}/comments?per_page=100`,
+    ]);
+    return [...actionSignals(runs, headRefOid), ...codexReviewSignals(comments, headRefOid)];
+  }
   async originRepo(): Promise<T.Repository | null> {
     const result = await run(["git", "remote", "get-url", "origin"]);
     return result.code === 0 ? parseRemote(result.stdout) : null;
