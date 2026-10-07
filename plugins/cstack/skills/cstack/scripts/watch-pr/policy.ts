@@ -154,7 +154,7 @@ export async function readSnapshot(args: {
     throw new ChecksUnavailable("le SHA du head de la PR est indisponible");
   const threads = await args.reader.reviewThreads(args.context);
   const rollup = await resolveChecks(args.reader, args.context, facts.headRefOid);
-  const signals = await args.reader.headSignals(args.context, facts.headRefOid);
+  const signals = await args.reader.headSignals(args.context, facts.headRefOid, facts.headRefName);
   const all = nonEmpty([
     ...(rollup.kind === "reported" ? rollup.checks : []),
     ...signals,

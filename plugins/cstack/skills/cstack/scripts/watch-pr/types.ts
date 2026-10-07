@@ -446,7 +446,7 @@ export interface GitHubReader {
   ): Promise<RollupPage>;
   reviewThreads(context: PrContext): Promise<readonly ReviewThread[]>;
   commitRollups(context: PrContext): Promise<readonly CommitRollup[]>;
-  headSignals(context: PrContext, headRefOid: string): Promise<readonly Check[]>;
+  headSignals(context: PrContext, headRefOid: string, headRefName: string): Promise<readonly Check[]>;
 }
 export interface PollingOptions {
   readonly interval: number;

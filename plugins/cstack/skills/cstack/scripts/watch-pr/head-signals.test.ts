@@ -21,6 +21,12 @@ const workflowRun = {
   conclusion: "startup_failure",
   run_attempt: 1,
   run_started_at: "2026-10-07T17:00:00Z",
+  head_branch: "feature",
+  pull_requests: [{
+    number: 90,
+    head: { sha: head, ref: "feature" },
+    base: { repo: { url: "https://api.github.com/repos/owner/repo" } },
+  }],
   html_url: "https://github.com/owner/repo/actions/runs/37642917873",
 };
 const summary = {
@@ -81,7 +87,7 @@ esac
     });
     const reader: GitHubReader = {
       ...base,
-      headSignals: (pr, sha) => client.headSignals(pr, sha),
+      headSignals: (pr, sha, branch) => client.headSignals(pr, sha, branch),
     };
     return await readSnapshot({ reader, context, pendingHistory: "include", allowDraft: false });
   } finally {
@@ -92,6 +98,64 @@ esac
 }
 
 describe("signaux du head lus via gh", () => {
+  it("attend le résumé du nouveau SHA après un push tant que seul un ancien résumé existe", async () => {
+    for (const state of ["Running", "Completed"]) {
+      const row = await snapshotFromGh({ comments: [{
+        ...summary,
+        body: summary.body.replace("84c02ea", oldHead.slice(0, 7)).replace("Running", state),
+      }] });
+      expect(classifyPr(row)).toMatchObject({
+        kind: "waiting", pending: [{ name: "Codex Code Review" }],
+      });
+    }
+  });
+
+  it("ne remplace pas notre échec par le succès d’une autre PR au même SHA", async () => {
+    const row = await snapshotFromGh({ runs: [
+      { ...workflowRun, conclusion: "failure" },
+      { ...workflowRun, id: workflowRun.id + 1, conclusion: "success", run_started_at: "2026-10-07T18:00:00Z", pull_requests: [{ ...workflowRun.pull_requests[0], number: 91 }] },
+    ] });
+    expect(classifyPr(row)).toMatchObject({
+      kind: "blocker", blocker: { kind: "failing-checks" },
+    });
+  });
+
+  it("garde startup_failure de notre PR et ignore les échecs des autres PR", async () => {
+    const foreign = { ...workflowRun, id: workflowRun.id + 1, conclusion: "success", run_started_at: "2026-10-07T18:00:00Z", pull_requests: [{ ...workflowRun.pull_requests[0], number: 91 }] };
+    await expect(snapshotFromGh({ runs: [workflowRun, foreign] })).rejects.toThrow("CI indisponible: Actions startup_failure");
+    expect(classifyPr(await snapshotFromGh({ runs: [{ ...foreign, conclusion: "failure" }] }))).toMatchObject({
+      kind: "ready", pr: { proof: { ci: { kind: "ci-none" } } },
+    });
+  });
+
+  it("lie push et workflow_dispatch non associés à la branche exacte de notre PR", async () => {
+    const unassociated: readonly unknown[] = [];
+    for (const event of ["push", "workflow_dispatch"]) {
+      const own = { ...workflowRun, event, pull_requests: unassociated, conclusion: "failure" };
+      const otherBranch = { ...own, id: workflowRun.id + 1, conclusion: "success", head_branch: "other-feature", run_started_at: "2026-10-07T18:00:00Z" };
+      expect(classifyPr(await snapshotFromGh({ runs: [own, otherBranch] }))).toMatchObject({
+        kind: "blocker", blocker: { kind: "failing-checks" },
+      });
+      expect(classifyPr(await snapshotFromGh({ runs: [otherBranch] }))).toMatchObject({
+        kind: "ready", pr: { proof: { ci: { kind: "ci-none" } } },
+      });
+    }
+    const foreignUnassociated = { ...workflowRun, pull_requests: unassociated, head_branch: "other-feature" };
+    expect(classifyPr(await snapshotFromGh({ runs: [foreignUnassociated] }))).toMatchObject({
+      kind: "ready", pr: { proof: { ci: { kind: "ci-none" } } },
+    });
+  });
+
+  it("accepte un résumé courant Completed même si un ancien commentaire obsolète est plus récent", async () => {
+    const row = await snapshotFromGh({ comments: [
+      { ...summary, body: summary.body.replace("Running", "Completed") },
+      { ...summary, updated_at: "2026-10-07T18:00:00Z", body: summary.body.replace("84c02ea", oldHead.slice(0, 7)) },
+    ] });
+    expect(classifyPr(row)).toMatchObject({
+      kind: "ready", pr: { proof: { ci: { kind: "ci-none" } } },
+    });
+  });
+
   it("conserve chaque run actif même si un ID plus grand est déjà vert", async () => {
     for (const status of ["queued", "in_progress"]) {
       for (const started of ["2026-10-07T16:00:00Z", "2026-10-07T18:00:00Z", null]) {
@@ -160,11 +224,10 @@ describe("signaux du head lus via gh", () => {
     });
   });
 
-  it("ignore les signaux d’un autre SHA et les marqueurs copiés par un humain", async () => {
+  it("ignore les actions d’un autre SHA et les marqueurs copiés par un humain", async () => {
     const row = await snapshotFromGh({
       runs: [{ ...workflowRun, head_sha: oldHead }],
       comments: [
-        { ...summary, body: summary.body.replace("84c02ea", oldHead.slice(0, 7)) },
         { ...summary, user: { login: "human" } },
       ],
     });
@@ -208,6 +271,10 @@ describe("signaux du head lus via gh", () => {
       { runs: [{ ...workflowRun, conclusion: "success", run_started_at: null }] },
       { runs: [{ ...workflowRun, conclusion: "success", run_started_at: "unknown" }] },
       { runs: [{ ...workflowRun, conclusion: "success", run_attempt: 0 }] },
+      { runs: [{ ...workflowRun, conclusion: "success", pull_requests: [] }] },
+      { runs: [{ ...workflowRun, conclusion: "success", pull_requests: null }] },
+      { runs: [{ ...workflowRun, conclusion: "success", pull_requests: [{ number: "90" }] }] },
+      { runs: [{ ...workflowRun, conclusion: "success", pull_requests: [{ ...workflowRun.pull_requests[0], head: { sha: oldHead, ref: "feature" } }] }] },
       { comments: [{ ...summary, body: summary.body.replace("Running", "Starting") }] },
       { comments: [{ ...summary, body: summary.body.replace("84c02ea", "unknown") }] },
     ];

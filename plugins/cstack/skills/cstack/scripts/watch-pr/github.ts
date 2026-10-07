@@ -601,7 +601,12 @@ export function parseOpenPullRequests(
     };
   });
 }
-function actionSignals(value: unknown, headRefOid: string): readonly T.Check[] {
+function actionSignals(
+  value: unknown,
+  context: T.PrContext,
+  headRefOid: string,
+  headRefName: string
+): readonly T.Check[] {
   const pages = list(value, "actions pages");
   if (pages.length === 0) missing("actions pages");
   const runs: unknown[] = [];
@@ -627,11 +632,37 @@ function actionSignals(value: unknown, headRefOid: string): readonly T.Check[] {
     if (seen.has(run.id)) throw new ChecksUnavailable("la pagination Actions contient un run en double");
     seen.add(run.id);
     if (string(run.head_sha, "workflow run.head_sha") !== headRefOid) continue;
+    const event = string(run.event, "workflow run.event");
+    const associations = list(run.pull_requests, "workflow run.pull_requests");
+    if (associations.length > 0) {
+      let matches = false;
+      for (const item of associations) {
+        const association = record(item, "workflow run.pull_requests entry");
+        if (typeof association.number !== "number" || !Number.isSafeInteger(association.number) || association.number <= 0)
+          missing("workflow run.pull_requests number", association.number);
+        if (association.number !== context.number) continue;
+        const base = record(at(association, ["base", "repo"]), "workflow run.pull_requests base repo");
+        const repositoryUrl = string(base.url, "workflow run.pull_requests base repo.url");
+        if (repositoryUrl.toLowerCase() !== `https://api.github.com/repos/${context.owner}/${context.repo}`.toLowerCase()) continue;
+        const head = record(association.head, "workflow run.pull_requests head");
+        if (string(head.sha, "workflow run.pull_requests head.sha") !== headRefOid ||
+            string(head.ref, "workflow run.pull_requests head.ref") !== headRefName)
+          throw new ChecksUnavailable(`association PR Actions incohérente pour #${context.number}, run=${run.id}`);
+        matches = true;
+      }
+      if (!matches) continue;
+    } else {
+      if (headRefName.length === 0)
+        throw new ChecksUnavailable("branche du head indisponible pour les signaux Actions");
+      if (string(run.head_branch, "workflow run.head_branch") !== headRefName) continue;
+      if (event === "pull_request" || event === "pull_request_target")
+        throw new ChecksUnavailable(`association PR Actions indisponible pour #${context.number}, run=${run.id}`);
+    }
     if (typeof run.workflow_id !== "number" || !Number.isSafeInteger(run.workflow_id) || run.workflow_id <= 0)
       missing("workflow run.workflow_id", run.workflow_id);
     if (typeof run.run_attempt !== "number" || !Number.isSafeInteger(run.run_attempt) || run.run_attempt <= 0)
       missing("workflow run.run_attempt", run.run_attempt);
-    const key = `${run.workflow_id}:${string(run.event, "workflow run.event")}`;
+    const key = `${run.workflow_id}:${event}`;
     if (string(run.status, "workflow run.status") !== "completed") {
       active.push(run);
       continue;
@@ -677,12 +708,14 @@ function codexReviewSignals(value: unknown, headRefOid: string): readonly T.Chec
   const pages = list(value, "comments pages");
   if (pages.length === 0) missing("comments pages");
   let latest: { readonly updated: number; readonly checks: readonly T.Check[] } | null = null;
+  let expected = false;
   for (const item of pages.flatMap((page) => list(page, "comments page"))) {
     const comment = record(item, "issue comment");
     const user = record(comment.user, "issue comment.user");
     if (string(user.login, "issue comment.user.login") !== "chatgpt-codex-connector[bot]") continue;
     const body = string(comment.body, "issue comment.body");
     if (!body.includes("<!-- codex-pull-request-review-summary -->")) continue;
+    expected = true;
     const updated = Date.parse(string(comment.updated_at, "issue comment.updated_at"));
     if (!Number.isFinite(updated)) missing("issue comment.updated_at", comment.updated_at);
     const rows = body.split(/\r?\n/).filter((line) => /\|[^|]*\bCode Review\b[^|]*\|/.test(line));
@@ -709,11 +742,20 @@ function codexReviewSignals(value: unknown, headRefOid: string): readonly T.Chec
     }
     if (current && (latest === null || updated >= latest.updated)) latest = { updated, checks };
   }
-  return latest?.checks ?? [];
+  if (latest !== null) return latest.checks;
+  if (!expected) return [];
+  return [{
+    kind: "pending",
+    name: "Codex Code Review",
+    reportedState: "AWAITING_CURRENT_HEAD",
+    description: `revue Codex attendue pour le head ${headRefOid}; seul un ancien résumé est disponible`,
+    link: "",
+    workflow: "",
+  }];
 }
 
 export class GhGitHubReader implements T.GitHubReader {
-  async headSignals(context: T.PrContext, headRefOid: string): Promise<readonly T.Check[]> {
+  async headSignals(context: T.PrContext, headRefOid: string, headRefName: string): Promise<readonly T.Check[]> {
     const repository = `repos/${context.owner}/${context.repo}`;
     const runs = await runJson([
       "gh", "api", "--paginate", "--slurp",
@@ -723,7 +765,7 @@ export class GhGitHubReader implements T.GitHubReader {
       "gh", "api", "--paginate", "--slurp",
       `${repository}/issues/${context.number}/comments?per_page=100`,
     ]);
-    return [...actionSignals(runs, headRefOid), ...codexReviewSignals(comments, headRefOid)];
+    return [...actionSignals(runs, context, headRefOid, headRefName), ...codexReviewSignals(comments, headRefOid)];
   }
   async originRepo(): Promise<T.Repository | null> {
     const result = await run(["git", "remote", "get-url", "origin"]);
