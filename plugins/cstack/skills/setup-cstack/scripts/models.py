@@ -236,6 +236,18 @@ def resolve(config, role, catalog):
     return [selection(entry) for entry in selections(role, value)]
 
 
+def preflight(config, roles, catalog):
+    if not roles or any(role not in ROLES for role in roles):
+        raise ValueError("le contrôle préalable exige des rôles connus")
+    resolved, errors = {}, {}
+    for role in dict.fromkeys(roles):
+        try:
+            resolved[role] = resolve(config, role, catalog)
+        except ValueError as error:
+            errors[role] = str(error)
+    return {"status": "blocked" if errors else "ready", "resolved": resolved, "errors": errors}
+
+
 def apply_choices(path, choices, expected_digest, catalog):
     config, digest = read_config(path)
     if digest != expected_digest:
@@ -279,6 +291,10 @@ def main():
     resolver = commands.add_parser("resolve", add_help=False)
     resolver.add_argument("-h", "--help", action="help", help="afficher ce message d’aide et quitter")
     resolver.add_argument("role", choices=sorted(ROLES))
+    checker = commands.add_parser("preflight", add_help=False)
+    checker.add_argument("-h", "--help", action="help", help="afficher ce message d’aide et quitter")
+    checker.add_argument("roles", nargs="+", choices=sorted(ROLES),
+                         help="rôles nécessaires au workflow, vérifiés sans écriture ni génération")
     writer = commands.add_parser("apply", add_help=False)
     writer.add_argument("-h", "--help", action="help", help="afficher ce message d’aide et quitter")
     writer.add_argument("--choices", type=Path, required=True)
@@ -295,6 +311,8 @@ def main():
             result["managed_agents"] = project_helper().managed_agents(args.workspace) if has_agents else []
         elif args.command == "resolve":
             result = resolve(config, args.role, catalog)
+        elif args.command == "preflight":
+            result = preflight(config, args.roles, catalog)
         else:
             saved = apply_choices(path, json.loads(args.choices.read_text()),
                                   args.expected_sha256, catalog)
@@ -303,7 +321,8 @@ def main():
     except (OSError, ValueError, KeyError, TypeError) as error:
         parser.exit(2, f"modèles cstack: {error}\n")
     print(json.dumps(result, indent=2, ensure_ascii=False))
+    return 2 if args.command == "preflight" and result["status"] == "blocked" else 0
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

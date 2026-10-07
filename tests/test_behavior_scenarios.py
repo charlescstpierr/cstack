@@ -89,6 +89,8 @@ class BehaviorScenarioGeneratorTests(unittest.TestCase):
             self.assertEqual(arena["expected_children"], 5)
             self.assertEqual(len(arena["role_metadata"]["arena runners"]), 3)
             self.assertEqual(len(arena["role_metadata"]["arena cross-judge pool"]), 1)
+            for case_id in ("clear_python_correction_baseline", "clear_python_correction_proposed", "routing_one_word_user_string"):
+                self.assertTrue(by_id[case_id]["outcome_checks"])
             authoring = by_id["authoring_rule_baseline_first"]
             self.assertEqual(authoring["routing"], {
                 "expected": [

@@ -11,6 +11,7 @@ from pathlib import Path
 import re
 import shutil
 import subprocess
+import sys
 from typing import Any
 
 
@@ -123,6 +124,7 @@ def register(
     expected_artifacts: list[str] | None = None,
     expected_routes: list[str] | None = None,
     forbidden_routes: list[str] | None = None,
+    outcome_checks: list[dict[str, Any]] | None = None,
 ) -> None:
     if not (project / ".git").exists():
         seed_git(project)
@@ -155,6 +157,8 @@ def register(
         expectation["min_children"] = min_children
     if expected_artifacts is not None:
         expectation["expected_artifacts"] = expected_artifacts
+    if outcome_checks is not None:
+        expectation["outcome_checks"] = outcome_checks
     if expected_routes is not None or forbidden_routes is not None:
         expected = sorted(expected_routes or [])
         forbidden = sorted(forbidden_routes or [])
@@ -305,7 +309,10 @@ def filter_events(events, start, today):
         register(cases, expectations, case_id=case_id,
                  project=create_project(output, name, event_files, ["bug-fix"], catalog),
                  bundle=bundle, skill="cstack", roles=["bug-fix"],
-                 body=correction, expected_children=0)
+                 body=correction, expected_children=0,
+                 outcome_checks=[{"id": "event-boundaries", "argv": [sys.executable, "-c",
+                     "from events import filter_events; events = [{'date': n} for n in (0, 1, 2, 3)]; "
+                     "assert filter_events(events, 1, 2) == events[1:3]"]}])
 
     archive_files = {
         "storage.py": "def save_record(record, existing):\n    if record[\"id\"] not in existing:\n        raise KeyError(record[\"id\"])\n    return record\n",
@@ -470,7 +477,8 @@ if __name__ == "__main__":
              expected_routes=["skills/cstack/playbooks/bug-fix.md"],
              forbidden_routes=[
                  "skills/cstack/references/principles/laziness-protocol.md",
-             ])
+             ], outcome_checks=[{"id": "invoice-message", "argv": [sys.executable, "-c",
+                 "from src.errors import fail; assert fail('demo') == 'Error: could not process invoice demo'"]}])
 
     typed_boundary = """Use $cstack:cstack. Operators hand-edit config.yaml and the service reads it at startup. Give the configuration a typed shape and write the loader that produces it. Operators regularly ship a missing key, a quoted number where an integer belongs, or an endpoint with no scheme."""
     register(cases, expectations, case_id="routing_typed_external_boundary",

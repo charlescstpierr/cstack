@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 import os
 from pathlib import Path
 import re
@@ -504,6 +505,101 @@ def score_routes(observed, expectation):
             "unlabelled_opened": sorted(opened - expected - forbidden)}
 
 
+def read_expectations(path):
+    payload = json.loads(path.read_text())
+    if (not isinstance(payload, dict) or type(payload.get("schema_version")) is not int
+            or payload["schema_version"] != 1 or not isinstance(payload.get("cases"), list)):
+        raise HarnessError("expectations.json doit contenir schema_version: 1 et un tableau cases")
+    expectations = {}
+    for row in payload["cases"]:
+        if not isinstance(row, dict) or not isinstance(row.get("id"), str) or not row["id"] or row["id"] in expectations:
+            raise HarnessError("identifiant d’attente absent ou dupliqué")
+        case_id = row["id"]
+        for key in ("expected_children", "min_children"):
+            if key in row and (type(row[key]) is not int or row[key] < 0):
+                raise HarnessError(f"{case_id}: {key} doit être un entier positif ou nul")
+        if "expected_children" in row and "min_children" in row:
+            raise HarnessError(f"{case_id}: expected_children et min_children s’excluent")
+        routing = row.get("routing", {})
+        if not isinstance(routing, dict) or set(routing) - {"expected", "forbidden"}:
+            raise HarnessError(f"{case_id}: attentes de routage invalides")
+        for key in ("expected", "forbidden"):
+            values = routing.get(key, [])
+            if not isinstance(values, list) or any(not isinstance(p, str) or not p for p in values):
+                raise HarnessError(f"{case_id}: routes {key} invalides")
+        if set(routing.get("expected", [])) & set(routing.get("forbidden", [])):
+            raise HarnessError(f"{case_id}: route à la fois requise et interdite")
+        artifacts = row.get("expected_artifacts", [])
+        if not isinstance(artifacts, list) or any(
+                not isinstance(p, str) or not p or Path(p).is_absolute() or ".." in Path(p).parts
+                for p in artifacts):
+            raise HarnessError(f"{case_id}: les artefacts doivent rester dans le projet")
+        checks = row.get("outcome_checks", [])
+        if not isinstance(checks, list):
+            raise HarnessError(f"{case_id}: outcome_checks doit être un tableau")
+        ids = set()
+        for check in checks:
+            if (not isinstance(check, dict) or set(check) - {"id", "argv", "timeout"}
+                    or not isinstance(check.get("id"), str) or not check["id"] or check["id"] in ids
+                    or not isinstance(check.get("argv"), list) or not check["argv"]
+                    or any(not isinstance(arg, str) or "\0" in arg for arg in check["argv"])
+                    or not check["argv"][0]):
+                raise HarnessError(f"{case_id}: vérificateur de résultat invalide")
+            timeout = check.get("timeout", 30)
+            if type(timeout) not in (int, float) or not math.isfinite(timeout) or not 0 < timeout <= 300:
+                raise HarnessError(f"{case_id}: délai de vérification invalide, maximum 300 secondes")
+            ids.add(check["id"])
+        expectations[case_id] = row
+    return expectations
+
+
+def check_verdict(checks):
+    states = {check["status"] for check in checks}
+    return {"status": "fail" if "fail" in states else "pass" if states == {"pass"} else "unverified",
+            "checks": checks}
+
+
+def evaluate_case(result, expectation, verify_outcomes=False):
+    workflow, outcome = [], []
+    if result["status"] != "completed":
+        return {"turn": result["status"], "workflow": check_verdict([]), "outcome": check_verdict([])}
+    if "routing" in expectation:
+        score = result.get("route_score")
+        if score is None:
+            status = "unverified"
+        elif score["false_negative"] or score["false_positive"]:
+            status = "fail"
+        else:
+            status = "unverified" if score["unknown_expected"] or score["unknown_forbidden"] else "pass"
+        workflow.append({"id": "routing", "status": status})
+    if "expected_children" in expectation or "min_children" in expectation:
+        children = result.get("native_child_thread_ids")
+        if children is None:
+            status = "unverified"
+        else:
+            count = len(set(children))
+            matches = (count == expectation["expected_children"] if "expected_children" in expectation
+                       else count >= expectation["min_children"])
+            status = "pass" if matches else "fail"
+        workflow.append({"id": "delegation", "status": status})
+    for pattern in expectation.get("expected_artifacts", []):
+        exists = any(p.is_file() for p in Path(result["cwd"]).glob(pattern))
+        workflow.append({"id": "artifact:" + pattern, "status": "pass" if exists else "fail"})
+    if verify_outcomes:
+        for check in expectation.get("outcome_checks", []):
+            record = {"id": check["id"]}
+            try:
+                process = subprocess.run(check["argv"], cwd=result["cwd"], stdin=subprocess.DEVNULL,
+                                         capture_output=True, text=True, errors="replace",
+                                         timeout=check.get("timeout", 30), check=False)
+                record.update(status="pass" if process.returncode == 0 else "fail", returncode=process.returncode,
+                              stdout=scrub_text(process.stdout)[-4096:], stderr=scrub_text(process.stderr)[-4096:])
+            except (OSError, subprocess.TimeoutExpired) as error:
+                record.update(status="unverified", error=scrub_text(str(error)))
+            outcome.append(record)
+    return {"turn": result["status"], "workflow": check_verdict(workflow), "outcome": check_verdict(outcome)}
+
+
 def require_route_trace():
     if not shutil.which("strace"):
         raise HarnessError("--trace-routes exige strace sous Linux")
@@ -751,6 +847,8 @@ def main(argv=None):
     parser.add_argument("--effort", help="effort de raisonnement natif facultatif")
     parser.add_argument("--trace-routes", action="store_true", help="trace les ouvertures des skills avec strace Linux")
     parser.add_argument("--expectations", type=Path, help="expectations.json généré avec les scénarios")
+    parser.add_argument("--verify-outcomes", action="store_true",
+                        help="autorise les commandes outcome_checks du fichier d’attentes de confiance")
     parser.add_argument("--repeats", type=int, default=1, help="nombre de passages indépendants par cas (1 à 10)")
     parser.add_argument("--turn-timeout", type=float, default=DEFAULT_TURN_SECONDS, help="délai maximal par tour en secondes, maximum 900")
     args = parser.parse_args(argv)
@@ -763,12 +861,11 @@ def main(argv=None):
     cases = read_cases(args.cases)
     if args.trace_routes and any(case["bundle"] is None for case in cases):
         raise HarnessError("--trace-routes exige des scénarios générés avec bundle explicite")
-    if args.expectations and not args.trace_routes:
-        raise HarnessError("--expectations exige --trace-routes")
+    if args.verify_outcomes and not args.expectations:
+        raise HarnessError("--verify-outcomes exige --expectations")
     expectations = {}
     if args.expectations:
-        payload = json.loads(args.expectations.read_text())
-        expectations = {row["id"]: row for row in payload["cases"]}
+        expectations = read_expectations(args.expectations)
         missing = {case["id"] for case in cases} - set(expectations)
         if missing:
             raise HarnessError(f"attentes absentes pour: {', '.join(sorted(missing))}")
@@ -804,12 +901,26 @@ def main(argv=None):
                     result["route_score"] = score_routes(result["route_observation"], expectations[case["id"]])
             except Exception as error:
                 result = {"id": run["id"], "cwd": str(run["cwd"]), "status": "infra_error", "error": str(error)}
+            expectation = expectations.get(case["id"], {})
+            result["verdicts"] = evaluate_case(result, expectation, args.verify_outcomes)
+            if expectation:
+                result["expectation_sha256"] = hashlib.sha256(
+                    json.dumps(expectation, sort_keys=True, ensure_ascii=False).encode()).hexdigest()
             results.append(result)
-            print(f"[{run['id']}] {result['status']} ({result.get('wall_seconds', 0)}s)", flush=True)
+            verdicts = result["verdicts"]
+            print(f"[{run['id']}] tour={verdicts['turn']} workflow={verdicts['workflow']['status']} "
+                  f"résultat={verdicts['outcome']['status']} ({result.get('wall_seconds', 0)}s)", flush=True)
             write_summary(output, results, selected_case_ids)
     write_summary(output, results, selected_case_ids)
     if any(result["status"] != "completed" for result in results):
         return 2 if any(result["status"] == "needs_input" for result in results) else 1
+    if any(result["verdicts"][stage]["status"] == "fail"
+           for result in results for stage in ("workflow", "outcome")):
+        return 1
+    if any((args.expectations and result["verdicts"]["workflow"]["status"] == "unverified")
+           or (args.verify_outcomes and result["verdicts"]["outcome"]["status"] == "unverified")
+           for result in results):
+        return 2
     print(f"résumé : {output / 'summary.json'}", flush=True)
     return 0
 

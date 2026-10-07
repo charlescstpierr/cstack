@@ -5,6 +5,8 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
+import subprocess
+import sys
 from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -24,6 +26,50 @@ RUNTIME_CATALOG = {"runtimes": {
 
 
 class ModelSetupTests(unittest.TestCase):
+    def test_preflight_checks_all_required_roles_without_substitution(self):
+        config = {"how explorer": "gpt-6-astra", "judgment and prose": "missing-reviewer",
+                  "documentation": "unused-missing-model"}
+        before = json.dumps(config)
+        report = models.preflight(config, ["how explorer", "judgment and prose"], CATALOG)
+        self.assertEqual(report["status"], "blocked")
+        self.assertEqual(report["resolved"], {"how explorer": [{"model": "gpt-6-astra"}]})
+        self.assertEqual(set(report["errors"]), {"judgment and prose"})
+        self.assertIn("missing-reviewer", report["errors"]["judgment and prose"])
+        self.assertEqual(json.dumps(config), before)
+
+    def test_preflight_inheritance_needs_no_catalog_and_panels_keep_exact_selections(self):
+        self.assertEqual(models.preflight({}, ["how explorer", "judgment and prose"], None),
+                         {"status": "ready", "resolved": {"how explorer": [{}], "judgment and prose": [{}]}, "errors": {}})
+        report = models.preflight({"interrogate reviewers": ["inherit-parent", {
+            "runtime": "claude-code", "model": "shared-slug", "reasoning_effort": "sonnet"}]},
+            ["interrogate reviewers"], RUNTIME_CATALOG)
+        self.assertEqual(report["status"], "ready")
+        self.assertEqual(report["resolved"]["interrogate reviewers"][1],
+                         {"runtime": "claude-code", "model": "shared-slug", "reasoning_effort": "sonnet"})
+
+    def test_preflight_reports_each_unavailable_role_and_rejects_unknown_roles(self):
+        report = models.preflight({"how explorer": "missing", "judgment and prose": {
+            "model": "gpt-6-astra", "reasoning_effort": "unsupported"}},
+            ["how explorer", "judgment and prose"], CATALOG)
+        self.assertEqual(set(report["errors"]), {"how explorer", "judgment and prose"})
+        with self.assertRaises(ValueError):
+            models.preflight({}, ["typo-role"], CATALOG)
+
+    def test_preflight_cli_returns_blocked_json_without_writing_project(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            path = root / ".cstack/models.json"
+            path.parent.mkdir()
+            path.write_text('{"judgment and prose":"missing-reviewer"}\n')
+            before = path.read_bytes()
+            report = subprocess.run([sys.executable, str(SCRIPT), "--workspace", directory,
+                                     "preflight", "how explorer", "judgment and prose"],
+                                    capture_output=True, text=True)
+            self.assertEqual(report.returncode, 2, report.stderr)
+            self.assertEqual(json.loads(report.stdout)["status"], "blocked")
+            self.assertEqual(path.read_bytes(), before)
+            self.assertEqual(sorted(p.name for p in path.parent.iterdir()), ["models.json"])
+
     def test_recommended_setup_resolves_exact_model_and_effort_for_every_role(self):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / ".cstack/models.json"
