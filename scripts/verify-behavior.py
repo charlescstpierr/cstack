@@ -601,7 +601,11 @@ def evaluate_case(result, expectation, verify_outcomes=False):
                 passed = process.returncode == 0
                 if "expected_json" in check:
                     try:
-                        passed = passed and json.loads(process.stdout) == check["expected_json"]
+                        # Canonical JSON preserves scalar types: Python equality
+                        # would accept true in place of 1, even inside objects.
+                        passed = passed and (
+                            json.dumps(json.loads(process.stdout), sort_keys=True, allow_nan=False)
+                            == json.dumps(check["expected_json"], sort_keys=True, allow_nan=False))
                     except (ValueError, RecursionError):
                         passed = False
                 record.update(status="pass" if passed else "fail", returncode=process.returncode,
@@ -901,6 +905,9 @@ def main(argv=None):
                 git_path = Path(directory) / ".git"
                 if ".git" in files or git_path.is_symlink():
                     raise HarnessError(f"répétitions non prises en charge pour un dépôt Git lié: {git_path}")
+                for name in names:
+                    if (Path(directory) / name).is_symlink():
+                        raise HarnessError(f"répétitions non prises en charge pour un dossier symbolique: {Path(directory) / name}")
                 names[:] = [name for name in names if name != ".git"]
     if output.exists() and any(output.iterdir()):
         raise HarnessError("le dossier de sortie doit être absent ou vide ; refus d’écraser les preuves")

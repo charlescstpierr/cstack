@@ -253,12 +253,16 @@ class BehaviorRunnerTests(unittest.TestCase):
             before_index = index.read_bytes()
             cases = root / "cases.json"
             (linked / "subdir").mkdir()
-            for cwd in (linked, linked / "subdir"):
+            project = root / "project"
+            project.mkdir()
+            subprocess.run(["git", "init", "-q", str(project)], check=True)
+            (project / "linked-dependency").symlink_to(linked, target_is_directory=True)
+            for cwd in (linked, linked / "subdir", project):
                 with self.subTest(cwd=cwd):
                     cases.write_text(json.dumps([{"id": "linked", "cwd": str(cwd), "prompt": "Commit a fix."}]))
                     with patch.object(verify_behavior, "build_command", return_value=["fake"]), \
                          patch.object(verify_behavior, "run_case", return_value={"id": "linked", "status": "completed"}) as launch:
-                        with self.assertRaisesRegex(verify_behavior.HarnessError, "dépôt Git"):
+                        with self.assertRaisesRegex(verify_behavior.HarnessError, "dépôt Git|symbolique"):
                             verify_behavior.main(["--cases", str(cases), "--output", str(root / "results"), "--repeats", "2"])
                         launch.assert_not_called()
             self.assertEqual(subprocess.check_output(["git", "-C", str(linked), "rev-parse", "HEAD"]), head)

@@ -36,8 +36,11 @@ class BehaviorScenarioGeneratorTests(unittest.TestCase):
                 check = by_id[case_id]["outcome_checks"][0]
                 target = projects[case_id] / filename
                 early = wrong.replace('return []', 'raise SystemExit(0)').replace('return "wrong"', 'raise SystemExit(0)')
-                for label, code, optimized in (("early-exit", early, False), ("optimized", wrong, True),
-                                               ("correct", valid, True)):
+                candidates = [("early-exit", early, False), ("optimized", wrong, True), ("correct", valid, True)]
+                if filename == "events.py":
+                    candidates.append(("boolean-date", 'def filter_events(events, start, today):\n'
+                        '    return [{"date": True}, {"date": 2}]\n', False))
+                for label, code, optimized in candidates:
                     with self.subTest(case_id=case_id, label=label):
                         target.write_text(code)
                         env = dict(os.environ, PYTHONOPTIMIZE="1" if optimized else "0", PYTHONDONTWRITEBYTECODE="1")
