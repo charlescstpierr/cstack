@@ -176,6 +176,18 @@ class BehaviorRunnerTests(unittest.TestCase):
             with self.assertRaises(verify_behavior.HarnessError):
                 verify_behavior.read_expectations(expectations)
 
+    def test_unversioned_or_old_tree_hashes_require_regeneration(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "expectations.json"
+            for version in (None, "cstack-tree-sha256-v1"):
+                with self.subTest(version=version):
+                    row = {"id": "one", "project_sha256": "a" * 64}
+                    if version is not None:
+                        row["hash_algorithm"] = version
+                    path.write_text(json.dumps({"schema_version": 1, "cases": [row]}))
+                    with self.assertRaisesRegex(verify_behavior.HarnessError, "régén"):
+                        verify_behavior.read_expectations(path)
+
     def test_cli_verifies_outcome_without_route_trace_and_refuses_missing_proof(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

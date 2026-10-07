@@ -17,6 +17,7 @@ from typing import Any
 
 MODEL = {"model": "gpt-5.6-luna", "reasoning_effort": "max"}
 IGNORED_DIRS = {".git", "__pycache__", "node_modules"}
+TREE_HASH_ALGORITHM = "cstack-tree-sha256-v2"
 FORBIDDEN_PROMPT_LABELS = re.compile(r"\b(?:eval|test|judge|candidate|benchmark)\b", re.IGNORECASE)
 PANEL_LENGTHS = {"interrogate reviewers": 3, "arena runners": 3, "arena cross-judge pool": 1}
 GIT_NAME = "scénario cstack"
@@ -38,16 +39,18 @@ def write_text(root: Path, relative: str, content: str) -> None:
 
 
 def tree_hash(root: Path) -> str:
-    digest = hashlib.sha256()
+    digest = hashlib.sha256((TREE_HASH_ALGORITHM + "\0").encode())
     for directory, names, filenames in os.walk(root, topdown=True):
         path = Path(directory)
         names[:] = sorted(name for name in names if name not in IGNORED_DIRS)
         for filename in sorted(filenames):
             item = path / filename
-            if item.is_symlink() or not item.is_file():
+            if not item.is_file():
                 continue
-            digest.update(item.relative_to(root).as_posix().encode() + b"\0")
-            digest.update(item.read_bytes())
+            # File links have the same representation as their materialized copies.
+            relative = item.relative_to(root).as_posix().encode()
+            digest.update(len(relative).to_bytes(8, "big") + relative)
+            digest.update(hashlib.sha256(item.read_bytes()).digest())
     return digest.hexdigest()
 
 
@@ -143,6 +146,7 @@ def register(
     expectation: dict[str, Any] = {
         "id": case_id,
         "project_sha256": tree_hash(project),
+        "hash_algorithm": TREE_HASH_ALGORITHM,
         "source_sha256": {
             "bundle": tree_hash(bundle),
             "skill": hashlib.sha256(skill_path.read_bytes()).hexdigest(),

@@ -18,6 +18,57 @@ RUNNER_SPEC.loader.exec_module(verify_behavior)
 
 
 class BehaviorScenarioGeneratorTests(unittest.TestCase):
+    def test_tree_digest_distinguishes_file_boundaries(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "a.bin").write_bytes(b"x")
+            (root / "b.bin").write_bytes(b"y")
+            expected = behavior_scenarios.tree_hash(root)
+            case = {"id": "one", "cwd": root, "bundle": None, "prompts": ["Read."]}
+            expectation = {"id": "one", "project_sha256": expected, "hash_algorithm": "cstack-tree-sha256-v2"}
+            verify_behavior.verify_provenance(case, expectation)
+            (root / "a.bin").write_bytes(b"xb.bin\0y")
+            (root / "b.bin").unlink()
+            with self.assertRaisesRegex(verify_behavior.HarnessError, "empreinte projet"):
+                verify_behavior.verify_provenance(case, expectation)
+            self.assertNotEqual(behavior_scenarios.tree_hash(root), expected)
+            self.assertEqual(behavior_scenarios.tree_hash(root), verify_behavior.tree_hash(root, None)["sha256"])
+
+    def test_file_links_are_hashed_as_materialized_copies_and_repeats_stay_isolated(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            project = behavior_scenarios.create_project(root, "alder", {"a.bin": "original"}, [])
+            alias = project / "alias.bin"
+            alias.symlink_to("a.bin")
+            bundle = root / "bundle"
+            skill = bundle / "skills/cstack/SKILL.md"
+            skill.parent.mkdir(parents=True)
+            skill.write_text("skill")
+            cases, expectations = [], []
+            behavior_scenarios.register(cases, expectations, case_id="one", project=project,
+                bundle=bundle, skill="cstack", roles=[], body="Read the code.")
+            case_path, expected_path = root / "cases.json", root / "expectations.json"
+            case_path.write_text(json.dumps(cases))
+            expected_path.write_text(json.dumps({"schema_version": 1, "cases": expectations}))
+
+            def modify_copy(case, *args):
+                copied = case["cwd"] / "alias.bin"
+                self.assertFalse(copied.is_symlink())
+                self.assertEqual(verify_behavior.tree_hash(case["cwd"], None)["sha256"], expectations[0]["project_sha256"])
+                copied.write_text("changed")
+                self.assertEqual((case["cwd"] / "a.bin").read_text(), "original")
+                return {"id": case["id"], "cwd": str(case["cwd"]), "status": "completed", "native_child_thread_ids": []}
+
+            with patch.object(verify_behavior, "build_command", return_value=["fake"]), \
+                 patch.object(verify_behavior, "run_case", side_effect=modify_copy) as launch:
+                code = verify_behavior.main(["--cases", str(case_path), "--expectations", str(expected_path),
+                    "--output", str(root / "results"), "--repeats", "2"])
+                self.assertEqual(code, 0)
+                self.assertEqual(launch.call_count, 2)
+            self.assertTrue(alias.is_symlink())
+            self.assertEqual(alias.read_text(), "original")
+            self.assertEqual((project / "a.bin").read_text(), "original")
+
     def test_generated_provenance_rejects_changed_project_bundle_and_skill_before_launch(self):
         for mutation in ("project", "bundle", "skill"):
             with self.subTest(mutation=mutation), tempfile.TemporaryDirectory() as directory:

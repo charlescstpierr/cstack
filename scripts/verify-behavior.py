@@ -22,6 +22,7 @@ import time
 DEFAULT_TURN_SECONDS = 300.0
 MAX_TURN_SECONDS = 900.0
 SKIP_DIRS = {".git", "__pycache__", "node_modules"}
+TREE_HASH_ALGORITHM = "cstack-tree-sha256-v2"
 SAFE_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
 # Key-name policy: a dict key or assignment/flag/header name is secret when
 # its normalized form contains a marker below or ends with "token". Markers
@@ -398,7 +399,7 @@ def project_metadata(value):
 
 
 def tree_hash(root, excluded):
-    digest = hashlib.sha256()
+    digest = hashlib.sha256((TREE_HASH_ALGORITHM + "\0").encode())
     files = 0
     total_bytes = 0
     root = root.resolve()
@@ -410,16 +411,18 @@ def tree_hash(root, excluded):
         names[:] = sorted(name for name in names if name not in SKIP_DIRS and not (excluded and (path / name).resolve() == excluded))
         for filename in sorted(filenames):
             item = path / filename
-            if item.is_symlink() or not item.is_file() or (excluded and (item == excluded or excluded in item.parents)):
+            if not item.is_file() or (excluded and (item == excluded or excluded in item.parents)):
                 continue
             relative = item.relative_to(root).as_posix().encode()
-            digest.update(relative + b"\0")
+            digest.update(len(relative).to_bytes(8, "big") + relative)
+            content_digest = hashlib.sha256()
             with item.open("rb") as stream:
                 while chunk := stream.read(1024 * 1024):
-                    digest.update(chunk)
+                    content_digest.update(chunk)
                     total_bytes += len(chunk)
+            digest.update(content_digest.digest())
             files += 1
-    return {"sha256": digest.hexdigest(), "files": files, "bytes": total_bytes}
+    return {"sha256": digest.hexdigest(), "algorithm": TREE_HASH_ALGORITHM, "files": files, "bytes": total_bytes}
 
 
 OPENED_PATH = re.compile(r'openat2?\([^\n]*?, "((?:[^"\\]|\\.)+)"[^\n]*?\)\s+=\s+(\d+)')
@@ -523,11 +526,14 @@ def read_expectations(path):
             raise HarnessError("identifiant d’attente absent ou dupliqué")
         case_id = row["id"]
         if set(row) - {"id", "expected_children", "min_children", "routing", "expected_artifacts",
-                       "outcome_checks", "project_sha256", "source_sha256", "skill_path", "role_metadata"}:
+                       "outcome_checks", "project_sha256", "source_sha256", "skill_path", "role_metadata", "hash_algorithm"}:
             raise HarnessError(f"{case_id}: champs d’attente inconnus")
         hashes = row.get("source_sha256", {})
         if not isinstance(hashes, dict) or set(hashes) - {"bundle", "skill"}:
             raise HarnessError(f"{case_id}: source_sha256 invalide")
+        if (row.get("hash_algorithm", TREE_HASH_ALGORITHM) != TREE_HASH_ALGORITHM
+                or (("project_sha256" in row or hashes) and "hash_algorithm" not in row)):
+            raise HarnessError(f"{case_id}: algorithme d’empreinte ancien ou absent ; régénérer les attentes")
         for digest in list(hashes.values()) + ([row["project_sha256"]] if "project_sha256" in row else []):
             if not isinstance(digest, str) or not re.fullmatch(r"[0-9a-f]{64}", digest):
                 raise HarnessError(f"{case_id}: empreinte SHA-256 invalide")
@@ -591,10 +597,12 @@ def verify_provenance(case, expectation):
         if actual != expected:
             raise HarnessError(f"{case['id']}: empreinte {label} différente des attentes")
 
+    source = expectation.get("source_sha256", {})
+    if ("project_sha256" in expectation or source) and expectation.get("hash_algorithm") != TREE_HASH_ALGORITHM:
+        raise HarnessError(f"{case['id']}: algorithme d’empreinte ancien ou absent ; régénérer les attentes")
     try:
         if "project_sha256" in expectation:
             matches("projet", tree_hash(case["cwd"], None)["sha256"], expectation["project_sha256"])
-        source = expectation.get("source_sha256", {})
         if not source:
             return
         bundle = case["bundle"]
