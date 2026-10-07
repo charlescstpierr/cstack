@@ -21,6 +21,111 @@ RUNNER_SPEC.loader.exec_module(verify_behavior)
 
 
 class BehaviorScenarioGeneratorTests(unittest.TestCase):
+    def test_git_hash_ignores_cache_timestamps_and_preserves_normalized_copies(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            project = behavior_scenarios.interrogate_project(root, "alder", None)
+            (project / "alias.md").symlink_to("README.md")
+            behavior_scenarios.git(project, "add", "alias.md")
+            index = project / ".git/index"
+            before = index.read_bytes()
+            expected = behavior_scenarios.git_hash(project)
+            self.assertEqual(index.read_bytes(), before, "provenance reads must not rewrite index cache")
+            self.assertEqual(verify_behavior.git_hash(project), expected)
+            self.assertEqual(index.read_bytes(), before)
+            os.utime(project / "README.md", None)
+            subprocess.run(["git", "-C", str(project), "update-index", "--refresh"],
+                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            self.assertEqual(behavior_scenarios.git_hash(project), expected)
+            copied = root / "copied"
+            shutil.copytree(project, copied)
+            self.assertFalse((copied / "alias.md").is_symlink())
+            self.assertEqual(behavior_scenarios.tree_hash(copied), behavior_scenarios.tree_hash(project))
+            self.assertEqual(behavior_scenarios.git_hash(copied), expected)
+            self.assertEqual(verify_behavior.git_hash(copied), expected)
+            behavior_scenarios.git(project, "config", "core.worktree", str(project))
+            copied_absolute = root / "copied-absolute"
+            shutil.copytree(project, copied_absolute)
+            with self.assertRaisesRegex(ValueError, "racine Git"):
+                behavior_scenarios.git_hash(copied_absolute)
+            with self.assertRaisesRegex(verify_behavior.HarnessError, "racine Git"):
+                verify_behavior.git_hash(copied_absolute)
+
+    def test_git_review_inputs_are_frozen_even_when_worktree_bytes_are_unchanged(self):
+        for mutation in ("unstage", "commit", "ref", "intent-to-add"):
+            with self.subTest(mutation=mutation), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                factory = behavior_scenarios.interrogate_project if mutation == "unstage" else behavior_scenarios.partial_set_project
+                project = factory(root, "alder", None)
+                if mutation == "intent-to-add":
+                    (project / "empty").touch()
+                    behavior_scenarios.git(project, "add", "-N", "empty")
+                bundle = root / "bundle"
+                skill = bundle / "skills/cstack/SKILL.md"
+                skill.parent.mkdir(parents=True)
+                skill.write_text("skill")
+                cases, expectations = [], []
+                behavior_scenarios.register(cases, expectations, case_id="one", project=project,
+                    bundle=bundle, skill="cstack", roles=[], body="Review the staged change.")
+                if mutation == "unstage":
+                    behavior_scenarios.git(project, "reset", "HEAD", "--", "README.md")
+                elif mutation == "commit":
+                    behavior_scenarios.git(project, "-c", "user.name=fixture", "-c", "user.email=fixture@example.invalid",
+                        "commit", "-m", "move HEAD")
+                elif mutation == "ref":
+                    behavior_scenarios.git(project, "branch", "inspection-ref")
+                else:
+                    behavior_scenarios.git(project, "add", "empty")
+                self.assertEqual(behavior_scenarios.tree_hash(project), expectations[0]["project_sha256"])
+                case_path, expected_path = root / "cases.json", root / "expectations.json"
+                case_path.write_text(json.dumps(cases))
+                expected_path.write_text(json.dumps({"schema_version": 1, "cases": expectations}))
+                with patch.object(verify_behavior, "build_command", return_value=["fake"]) as build, \
+                     patch.object(verify_behavior, "run_case", return_value={"id": "one", "status": "completed"}) as launch:
+                    with self.assertRaisesRegex(verify_behavior.HarnessError, "empreinte.*Git"):
+                        verify_behavior.main(["--cases", str(case_path), "--expectations", str(expected_path),
+                            "--output", str(root / "results")])
+                    build.assert_not_called()
+                    launch.assert_not_called()
+                self.assertFalse((root / "results").exists())
+
+    def test_empty_directories_and_directory_permissions_are_in_the_frozen_tree(self):
+        for mutation in ("project-empty", "bundle-empty", "root-mode", "nested-mode"):
+            with self.subTest(mutation=mutation), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                project = behavior_scenarios.create_project(root, "alder", {"folder/input.txt": "original"}, [])
+                bundle = root / "bundle"
+                skill = bundle / "skills/cstack/SKILL.md"
+                skill.parent.mkdir(parents=True)
+                skill.write_text("skill")
+                cases, expectations = [], []
+                behavior_scenarios.register(cases, expectations, case_id="one", project=project,
+                    bundle=bundle, skill="cstack", roles=[], body="Read the code.")
+                try:
+                    if mutation.endswith("empty"):
+                        ((project if mutation == "project-empty" else bundle) / "empty").mkdir()
+                    elif mutation == "root-mode":
+                        project.chmod(0o555)
+                        if os.geteuid() != 0:
+                            with self.assertRaises(PermissionError):
+                                (project / "denied.txt").write_text("denied")
+                    else:
+                        (project / "folder").chmod(0o700)
+                    case_path, expected_path = root / "cases.json", root / "expectations.json"
+                    case_path.write_text(json.dumps(cases))
+                    expected_path.write_text(json.dumps({"schema_version": 1, "cases": expectations}))
+                    with patch.object(verify_behavior, "build_command", return_value=["fake"]) as build, \
+                         patch.object(verify_behavior, "run_case", return_value={"id": "one", "status": "completed"}) as launch:
+                        with self.assertRaisesRegex(verify_behavior.HarnessError, "empreinte"):
+                            verify_behavior.main(["--cases", str(case_path), "--expectations", str(expected_path),
+                                "--output", str(root / "results")])
+                        build.assert_not_called()
+                        launch.assert_not_called()
+                    self.assertFalse((root / "results").exists())
+                finally:
+                    project.chmod(0o755)
+                    (project / "folder").chmod(0o755)
+
     @unittest.skipUnless(hasattr(os, "geteuid") and hasattr(os, "seteuid"), "Unix permissions required")
     def test_unreadable_directory_refuses_hashing_and_launch_before_output(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -61,7 +166,7 @@ class BehaviorScenarioGeneratorTests(unittest.TestCase):
                 unreadable.chmod(0o700)
 
     def test_execution_case_mutations_are_rejected_before_any_launch(self):
-        for field in ("prompt", "prompts", "sandbox", "ephemeral", "cwd", "bundle", "case-hash-removed"):
+        for field in ("prompt", "prompts", "sandbox", "ephemeral", "cwd", "bundle", "case-hash-removed", "git-hash-removed"):
             with self.subTest(field=field), tempfile.TemporaryDirectory() as directory:
                 root = Path(directory)
                 project = behavior_scenarios.create_project(root, "alder", {"file.txt": "original"}, [])
@@ -74,6 +179,8 @@ class BehaviorScenarioGeneratorTests(unittest.TestCase):
                     bundle=bundle, skill="cstack", roles=[], body="Read the code.")
                 if field == "case-hash-removed":
                     expectations[0].pop("case_sha256")
+                elif field == "git-hash-removed":
+                    expectations[0].pop("git_sha256")
                 elif field in ("cwd", "bundle"):
                     changed = root / ("other-" + field)
                     shutil.copytree(project if field == "cwd" else bundle, changed)
@@ -88,7 +195,7 @@ class BehaviorScenarioGeneratorTests(unittest.TestCase):
                 expected_path.write_text(json.dumps({"schema_version": 1, "cases": expectations}))
                 with patch.object(verify_behavior, "build_command", return_value=["fake"]) as build, \
                      patch.object(verify_behavior, "run_case", return_value={"id": "one", "status": "completed"}) as launch:
-                    with self.assertRaisesRegex(verify_behavior.HarnessError, "empreinte.*cas"):
+                    with self.assertRaisesRegex(verify_behavior.HarnessError, "empreinte.*(?:cas|Git)"):
                         verify_behavior.main(["--cases", str(case_path), "--expectations", str(expected_path),
                             "--output", str(root / "results")])
                     build.assert_not_called()
@@ -167,6 +274,7 @@ class BehaviorScenarioGeneratorTests(unittest.TestCase):
                     expectation["project_sha256"] = digest
                 case = {"id": "one", "cwd": project, "bundle": bundle, "prompts": ["Read."]}
                 expectation["case_sha256"] = behavior_scenarios.case_hash(case)
+                expectation["git_sha256"] = behavior_scenarios.git_hash(project)
                 verify_behavior.verify_provenance(case, expectation)
                 script.chmod(0o644)
                 with self.assertRaises(PermissionError):
@@ -191,6 +299,7 @@ class BehaviorScenarioGeneratorTests(unittest.TestCase):
                 case = {"id": "one", "cwd": project, "bundle": bundle, "prompts": ["Read."]}
                 expectation = {"id": "one", "hash_algorithm": "cstack-tree-sha256-v2"}
                 expectation["case_sha256"] = behavior_scenarios.case_hash(case)
+                expectation["git_sha256"] = behavior_scenarios.git_hash(project)
                 hashed = project if scope == "project" else bundle
                 digest = behavior_scenarios.tree_hash(hashed)
                 if scope == "project":
@@ -225,6 +334,7 @@ class BehaviorScenarioGeneratorTests(unittest.TestCase):
             case = {"id": "one", "cwd": root, "bundle": None, "prompts": ["Read."]}
             expectation = {"id": "one", "project_sha256": expected, "hash_algorithm": "cstack-tree-sha256-v2"}
             expectation["case_sha256"] = behavior_scenarios.case_hash(case)
+            expectation["git_sha256"] = behavior_scenarios.git_hash(root)
             verify_behavior.verify_provenance(case, expectation)
             (root / "a.bin").write_bytes(b"xb.bin\0y")
             (root / "b.bin").unlink()
@@ -347,6 +457,8 @@ class BehaviorScenarioGeneratorTests(unittest.TestCase):
                 self.assertEqual(receipt["source_case_id"], "one")
                 self.assertEqual(receipt["case_sha256"], expectations[0]["case_sha256"])
                 self.assertTrue(receipt["case_hash_verified"])
+                self.assertTrue(receipt["git_hash_verified"])
+                self.assertEqual(receipt["git_sha256"], expectations[0]["git_sha256"])
                 self.assertEqual(receipt["effective_case_sha256"], behavior_scenarios.case_hash(receipt["effective_case"]))
                 self.assertNotEqual(receipt["effective_case_sha256"], receipt["case_sha256"])
                 self.assertEqual(receipt["effective_case"]["id"], receipt["id"])
