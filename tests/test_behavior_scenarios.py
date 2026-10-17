@@ -408,6 +408,23 @@ class BehaviorScenarioGeneratorTests(unittest.TestCase):
             )
             self.assertIs(cases[0].get("ephemeral"), False)
 
+    def test_horizon_handoff_scenario_preserves_graph_and_stops_before_implementation(self):
+        with tempfile.TemporaryDirectory() as directory:
+            cases, expectations = behavior_scenarios.build_cases(
+                ROOT / "plugins/cstack", ROOT / "plugins/cstack", Path(directory), None)
+            case = next(row for row in cases if row["id"] == "horizon_orchestrate_handoff_resume")
+            project = Path(case["cwd"])
+            def metadata(path):
+                return json.loads(path.read_text().split("```horizon\n")[1].split("```")[0])
+            plan = project / ".cstack/horizon/delivery"
+            self.assertEqual(metadata(plan / "units/C.md")["blocked_by"], ["A"])
+            self.assertEqual(metadata(plan / "units/D.md")["blocked_by"], ["B", "C"])
+            self.assertEqual(len(case["prompts"]), 2)
+            self.assertIn("aucune action distante", case["prompts"][0])
+            expected = next(row for row in expectations if row["id"] == case["id"])
+            self.assertEqual(expected["expected_children"], 0)
+            self.assertTrue(expected["outcome_checks"])
+
     def test_routing_expectations_match_current_bundle_layout(self):
         with tempfile.TemporaryDirectory() as directory:
             output = Path(directory) / "cases"
@@ -423,8 +440,8 @@ class BehaviorScenarioGeneratorTests(unittest.TestCase):
             validated = verify_behavior.read_expectations(output / "expectations.json")
             for case in verify_behavior.read_cases(output / "cases.json"):
                 verify_behavior.verify_provenance(case, validated[case["id"]])
-            self.assertEqual(len(cases), 37)
-            self.assertEqual(len(expectations), 37)
+            self.assertEqual(len(cases), 38)
+            self.assertEqual(len(expectations), 38)
             self.assertEqual(len({case["cwd"] for case in cases}), len(cases))
             self.assertTrue(all(Path(case["bundle"]).is_dir() for case in cases))
 

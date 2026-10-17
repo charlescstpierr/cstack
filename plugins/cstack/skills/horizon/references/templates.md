@@ -165,3 +165,77 @@ Le parent vérifie chaque artefact face à sa question, son angle et ses citatio
 ```
 
 La spec est le pont décision-vers-build. Chaque unité traverse les couches pertinentes et se vérifie indépendamment; choisis le playbook cstack existant seulement après l'achèvement de ce handoff.
+
+## Contrat de handoff vers Orchestrate
+
+Pour le playbook `orchestrate`, la spec contient exactement un bloc `horizon` au format JSON. Chaque fichier d'unité contient également un seul bloc `horizon`. Ces blocs rendent la définition importable sans déduire des dépendances depuis la prose. Les décisions complètes restent dans leurs tickets.
+
+Exemple de bloc dans `spec.md` :
+
+```horizon
+{
+  "schema": 1,
+  "status": "ready",
+  "goal": "Permettre de rechercher puis exporter les archives conservées.",
+  "out_of_scope": ["Ne pas modifier les durées de conservation."],
+  "context": ["README.md décrit le format actuel des archives."],
+  "decisions": ["tickets/01-format.md"],
+  "units": ["units/A-index.md", "units/B-export.md", "units/C-search.md", "units/D-interface.md"]
+}
+```
+
+`schema` vaut `1` et `status` vaut `ready` seulement quand la définition est complète. `goal` énonce la destination. `out_of_scope` et `context` sont des listes non vides. `decisions` contient les chemins des tickets cités. Une destination claire sans décision ouverte peut utiliser `decisions: []`, avec la demande fixée et les preuves utiles dans `context`. `units` contient au moins un chemin d'unité.
+
+Les chemins de `decisions` et `units` se résolvent depuis le dossier de la spec et doivent rester dans ce dossier après résolution. Chaque décision citée possède un frontmatter YAML avec une seule ligne `status: resolved` et une section `## Réponse` ou `## Answer` renseignée sans placeholder. Chaque fichier `tickets/*.md` absent de `decisions` porte explicitement `status: out-of-scope`. Une décision `waiting`, manquante, incomplète ou omise empêche donc l'import. Les tickets hors portée font aussi partie des sources dont l'import conserve l'empreinte. Pour un tracker distant, les fichiers de décision sont des copies locales vérifiées qui citent les références distantes. Préparer ces copies ne donne aucune autorité d'écriture au tracker.
+
+Exemple de fichier A-index dans le dossier `units/` :
+
+````markdown
+# Index consultable des archives
+
+```horizon
+{
+  "id": "A",
+  "goal": "Retrouver une archive existante par son identifiant.",
+  "blocked_by": [],
+  "acceptance": ["Un identifiant connu retourne l'archive attendue; un identifiant absent retourne un résultat vide."],
+  "writable": ["src/archive-index", "tests/archive-index"],
+  "forbidden": ["Ne pas modifier le stockage des archives."],
+  "context": ["README.md décrit les identifiants d'archives."],
+  "verify": ["bun test tests/archive-index"]
+}
+```
+````
+
+Les IDs sont stables et uniques dans la spec. Ils commencent par une lettre ASCII ou un chiffre, puis contiennent seulement des lettres ASCII, des chiffres, `_` ou `-`. `blocked_by` contient des IDs d'unités de cette même spec, jamais des chemins ni des IDs de tickets. Les références inconnues et les cycles empêchent l'import.
+
+Les listes `acceptance`, `writable`, `forbidden`, `context` et `verify` sont non vides. Chaque entrée est une chaîne renseignée sur une ligne, sans doublon ni placeholder `TODO`, `TBD` ou `<...>`. `acceptance` décrit des observations vérifiables. `verify` nomme les commandes ou contrôles exacts qui les vérifient. `writable` contient des chemins précis, relatifs à la racine du dépôt, sans chemin absolu, segment `.` ou `..`, double `/`, glob, antislash, ni racine `.git` ou `.cstack`. `forbidden` conserve les chemins et opérations exclus. Le coordinateur vérifie que les critères et frontières sont suffisants avant de marquer la spec `ready`; la validation de forme ne remplace pas ce jugement.
+
+Pour l'exemple à quatre unités, les fichiers déclarent ce graphe :
+
+| ID | Résultat | `blocked_by` |
+| --- | --- | --- |
+| A | Index consultable | `[]` |
+| B | Export des archives | `[]` |
+| C | Recherche utilisant l'index | `["A"]` |
+| D | Interface de recherche et d'export | `["B", "C"]` |
+
+Avec des frontières inscriptibles distinctes, A et B sont prêtes au départ. C attend la preuve vérifiée de A. D attend celles de B et C. Avant de réserver une unité dépendante, sa branche locale doit déjà contenir les commits vérifiés de ses bloqueurs. Les unités qui partagent un chemin d'écriture se réservent successivement, même si le graphe ne les relie pas.
+
+L'import traduit les champs vers le brief existant :
+
+| Définition Horizon | Brief Orchestrate |
+| --- | --- |
+| `goal` de l'unité | `GOAL` |
+| `writable` | `SCOPE`, avec affectation d'une branche et d'un worktree exclusifs avant dispatch |
+| Chemins de spec et d'unité, version SHA256, décisions, `blocked_by`, `context` | `CONTEXT` |
+| `acceptance` | `ACCEPTANCE` |
+| `verify` | `VERIFY` |
+| `out_of_scope` et `forbidden` | `FORBIDDEN`, avec les limites d'autorité existantes |
+| Contrat de rapport Orchestrate | `REPORT` avec statut, branche, SHA, PR éventuelle, contrôles et preuves |
+
+Le brief inclut aussi `TIMEBOX` et `STANDING`. Le coordinateur fixe la limite de durée et transmet les ordres permanents courants dans le message d'affectation.
+
+Horizon possède la définition dans la spec, les tickets et les unités. L'import conserve les empreintes SHA256 de ces sources et la définition dans `.cstack/orchestrate/<slug>/horizon.json`. Ce reçu note seulement la fin de la transaction d'import avec `committed`; il ne suit aucun achèvement d'unité. Les propriétaires et la progression restent dans `units.tsv`, les verdicts dans `ledger.tsv`, et les événements dans `inbox/`.
+
+Un import répété de sources inchangées réutilise les unités et les briefs. Une modification des sources, un brief différent ou une collision d'ID bloque la reprise sans écraser les propriétaires ni les preuves. La [procédure Orchestrate](../../cstack/playbooks/orchestrate.md#reprendre-un-handoff-horizon) décrit l'import, la réservation avant dispatch et la réconciliation des interruptions.
