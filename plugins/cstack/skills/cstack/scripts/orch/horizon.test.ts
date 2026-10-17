@@ -1,5 +1,5 @@
 import { afterEach, expect, it } from "bun:test";
-import { mkdtemp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, mkdir, readFile, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { openStore, type Store } from "./store.ts";
@@ -220,4 +220,62 @@ it("rejects duplicate writable entries after trailing slash normalization", asyn
   const f = await fixture();
   await writeFile(join(f.horizon,"units/A.md"),block({...f.definitions[0],writable:["src/A", "src/A/"]}));
   await expect(f.store.handoff.import(f.spec)).rejects.toThrow("doublons");
+});
+
+
+it("blocks symlinked writable scopes while preserving independent eligibility", async () => {
+  const f = await fixture();
+  await mkdir(join(f.root, "src"));
+  await writeFile(join(f.root, "src/shared.ts"), "shared\n");
+  await writeFile(join(f.horizon, "units/A.md"), block({...f.definitions[0], writable:["src/shared.ts"]}));
+  await writeFile(join(f.horizon, "units/B.md"), block({...f.definitions[1], writable:["alias/shared.ts"]}));
+  await f.store.handoff.import(f.spec);
+  expect((await f.store.handoff.ready(f.root)).ready).toEqual(["A", "B"]);
+  await f.claim("A");
+  await symlink("src", join(f.root, "alias"));
+  const ready = await f.store.handoff.ready(f.root);
+  expect(ready.ready).toEqual([]);
+  expect(ready.blocked.find(row => row.id === "B")?.reason).toContain("symbolique");
+  await expect(f.claim("B")).rejects.toThrow("non dispatchable");
+  expect((await f.store.units.get("B")).owner).toBeUndefined();
+});
+
+it("rejects symlinked existing ancestors and leaves missing in-repo scopes eligible", async () => {
+  for (const target of ["README.md", "missing/deep/new.ts"]) {
+    const f = await fixture();
+    const external = await mkdtemp(join(tmpdir(), "horizon-outside-")); roots.push(external);
+    await writeFile(join(f.horizon, "units/A.md"), block({...f.definitions[0], writable:[`escape/${target}`]}));
+    await f.store.handoff.import(f.spec);
+    await symlink(external, join(f.root, "escape"));
+    expect((await f.store.handoff.ready(f.root)).ready).toEqual(["B"]);
+    await expect(f.claim("A")).rejects.toThrow("non dispatchable");
+    expect((await f.claim("B")).owner).toBe("owner-B");
+  }
+});
+
+for (const branch of ["work/A^{commit}", "work/A~0", "work/A@{0}", "@{-1}", "work/alias"]) {
+  it(`rejects nonliteral or aliased branch ${branch} without acquiring an owner`, async () => {
+    const f = await fixture(); await f.store.handoff.import(f.spec); await f.claim("A");
+    git(f.root, "symbolic-ref", "refs/heads/work/alias", "refs/heads/work/A");
+    await expect(f.store.handoff.claim({id:"B", owner:"owner-B", branch, repo:f.root})).rejects.toThrow("branche locale littérale");
+    expect((await f.store.units.get("B")).owner).toBeUndefined();
+    expect((await f.claim("B")).branch).toBe("work/B");
+  });
+}
+
+it("blocks a writable directory containing a descendant symlink to another unit", async () => {
+  const f = await fixture();
+  await mkdir(join(f.root, "src/nested"), {recursive:true});
+  await mkdir(join(f.root, "other"));
+  await writeFile(join(f.root, "other/shared.ts"), "shared\n");
+  await writeFile(join(f.horizon, "units/A.md"), block({...f.definitions[0], writable:["src"]}));
+  await writeFile(join(f.horizon, "units/B.md"), block({...f.definitions[1], writable:["other"]}));
+  await f.store.handoff.import(f.spec);
+  expect((await f.store.handoff.ready(f.root)).ready).toEqual(["A", "B"]);
+  await symlink("../../other", join(f.root, "src/nested/alias"));
+  const ready = await f.store.handoff.ready(f.root);
+  expect(ready.ready).toEqual(["B"]);
+  expect(ready.blocked.find(row => row.id === "A")?.reason).toContain("src/nested/alias");
+  await expect(f.claim("A")).rejects.toThrow("non dispatchable");
+  expect((await f.claim("B")).owner).toBe("owner-B");
 });

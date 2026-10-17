@@ -7,13 +7,14 @@ import {
   mkdir,
   readFile,
   readdir,
+  realpath,
   rename,
   rm,
   rmdir,
   unlink,
   writeFile,
 } from "node:fs/promises";
-import { basename, dirname, join, resolve } from "node:path";
+import { basename, dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 
 import { loadHorizon, horizonBrief, overlappingScopes, type HorizonDefinition } from "./horizon.ts";
 
@@ -1401,9 +1402,66 @@ async function checkHandoffFiles(store: string, definition: HorizonDefinition, c
   return rows;
 }
 
+function literalBranchRef(repo: string, branch: string): string {
+  const ref = `refs/heads/${branch}`;
+  try {
+    if (!branch || branch.startsWith("-")) throw new Error("nom vide ou option");
+    commandOutput({command: "git", args: ["check-ref-format", ref], repo: resolve(repo), label: `format de branche ${branch}`});
+    // --branch alone expands @{-1}; a full ref plus canonical identity also
+    // rejects symbolic aliases that would evade the stored branch comparison.
+    const canonical = commandOutput({command: "git", args: ["rev-parse", "--symbolic-full-name", "--verify", ref], repo: resolve(repo), label: `identité de branche ${branch}`});
+    if (canonical !== ref) throw new Error("alias symbolique");
+  } catch {
+    throw new UserError(`branche locale littérale existante requise, sans expression ni alias: ${branch}`);
+  }
+  return ref;
+}
+
+function exactRefHead(repo: string, ref: string): string {
+  return commandOutput({command: "git", args: ["show-ref", "--hash", "--verify", ref], repo: resolve(repo), label: `head local ${ref}`});
+}
+
 function localHead(repo: string, branch: string): string {
-  if (!branch) throw new UserError("branche locale manquante");
-  return commandOutput({command: "git", args: ["rev-parse", "--verify", `refs/heads/${branch}`], repo: resolve(repo), label: `head local ${branch}`});
+  return exactRefHead(repo, literalBranchRef(repo, branch));
+}
+
+function outside(root: string, path: string): boolean {
+  const part = relative(root, path);
+  return part === ".." || part.startsWith(`..${sep}`) || isAbsolute(part);
+}
+
+async function writableScopeBlocker(repo: string, scopes: readonly string[]): Promise<string | null> {
+  for (const scope of scopes) {
+    const target = resolve(repo, scope);
+    if (outside(repo, target)) return `frontière inscriptible hors dépôt: ${scope}`;
+    let current = repo;
+    let present = true;
+    for (const part of relative(repo, target).split(sep)) {
+      current = join(current, part);
+      let info: Stats;
+      try { info = await lstat(current); } catch (error) {
+        // A new path is allowed only after all existing ancestors were checked.
+        if (errorCode(error) === "ENOENT") { present = false; break; }
+        return `frontière inscriptible inaccessible: ${scope}`;
+      }
+      if (info.isSymbolicLink()) return `frontière inscriptible avec lien symbolique: ${scope}`;
+      if (outside(repo, await realpath(current))) return `frontière inscriptible hors dépôt: ${scope}`;
+    }
+    // Owning a directory includes its descendants: an alias below it can
+    // overlap another unit even when the declared directory itself is literal.
+    const pending = present ? [target] : [];
+    while (pending.length) {
+      const path = pending.pop();
+      if (path === undefined) break;
+      try {
+        const info = await lstat(path);
+        if (info.isSymbolicLink()) return `frontière inscriptible avec lien symbolique: ${relative(repo, path)}`;
+        if (outside(repo, await realpath(path))) return `frontière inscriptible hors dépôt: ${scope}`;
+        if (info.isDirectory()) pending.push(...(await readdir(path)).map(name => join(path, name)));
+      } catch { return `frontière inscriptible inaccessible: ${relative(repo, path)}`; }
+    }
+  }
+  return null;
 }
 
 async function readyHandoff(store: string, repo: string): Promise<ReadyUnits> {
@@ -1411,6 +1469,7 @@ async function readyHandoff(store: string, repo: string): Promise<ReadyUnits> {
   if (!receipt.committed) throw new UserError("handoff incomplet; reprendre import avant dispatch");
   const rows = await checkHandoffFiles(store, receipt.definition, true);
   const ledger = await readLedger(store);
+  const repoRoot = await realpath(commandOutput({command: "git", args: ["rev-parse", "--show-toplevel"], repo: resolve(repo), label: "racine du dépôt de handoff"}));
   const verified = async (id: string): Promise<boolean> => {
     const row = rows.find(row => row.id === id);
     if (!row || row.state !== "done" || !row.owner || !row.sha || !row.pr) return false;
@@ -1424,6 +1483,7 @@ async function readyHandoff(store: string, repo: string): Promise<ReadyUnits> {
   for (const unit of receipt.definition.units) {
     const row = rows.find(row => row.id === unit.id);
     let reason = row?.state !== "pending" || row.owner ? `état ${row?.state}; owner ${row?.owner || "aucun"}` : "";
+    if (!reason) reason = await writableScopeBlocker(repoRoot, unit.writable) ?? "";
     for (const blocker of unit.blocked_by) {
       if (!reason && !(await verified(blocker))) reason = `bloqueur ${blocker} sans preuve de comportement au head local courant`;
     }
@@ -1505,6 +1565,8 @@ export function openStore(
         await beginWrite();
         const owner = requiredCell(params.owner, "owner");
         const branch = requiredCell(params.branch, "branch");
+        if (branch !== params.branch) throw new UserError("branche locale littérale requise; aucune normalisation implicite");
+        const branchRef = literalBranchRef(params.repo, branch);
         if (!(await readyHandoff(store, params.repo)).ready.includes(params.id)) throw new UserError(`unité ${params.id} non dispatchable; aucune nouvelle revendication`);
         const rows = [...await readUnits(store)];
         if (rows.some(row => row.branch === branch)) throw new UserError(`branche déjà attribuée: ${branch}`);
@@ -1513,13 +1575,13 @@ export function openStore(
         for (const id of unit?.blocked_by ?? []) {
           const blocker = rows.find(row => row.id === id);
           try {
-            commandOutput({command: "git", args: ["merge-base", "--is-ancestor", blocker?.sha ?? "", `refs/heads/${branch}`], repo: resolve(params.repo), label: `intégration de ${id}`});
+            commandOutput({command: "git", args: ["merge-base", "--is-ancestor", blocker?.sha ?? "", branchRef], repo: resolve(params.repo), label: `intégration de ${id}`});
           } catch { throw new UserError(`intégrer le head vérifié de ${id} dans ${branch} avant dispatch`); }
         }
         const index = rows.findIndex(row => row.id === params.id);
         const old = rows[index];
         if (!old) throw new NotFoundError(params.id);
-        const row: Unit = {...old, state: "claimed", owner, branch, sha: localHead(params.repo, branch)};
+        const row: Unit = {...old, state: "claimed", owner, branch, sha: exactRefHead(params.repo, branchRef)};
         rows[index] = row;
         await saveUnits(store, rows);
         return row;

@@ -72,7 +72,7 @@ Cette procédure s'applique quand le coordinateur `$cstack:cstack` reçoit une s
 1. Lis la spec et vérifie les critères observables, les exclusions et les frontières inscriptibles. Conserve les IDs et `blocked_by`; ne redécoupe pas les unités depuis la prose. Une décision `waiting` empêche l'import. En mode Plan ou en lecture seule, retourne le brouillon sans exécuter ces commandes d'écriture.
 2. Initialise ou reprends le même magasin et importe la spec. L'import valide toutes les sources avant de préparer les briefs. Il conserve leur provenance et ajoute les unités avec l'état `pending`, sans propriétaire.
 3. Consulte `handoff ready --repo <repo-dir>`. Cette commande retourne les IDs prêts et les raisons de blocage. La liste dépend des définitions, de `units.tsv`, du ledger et des heads locaux courants. `frontier.json` conserve sa fonction de frontière de merge GitHub.
-4. Pour chaque unité choisie, prépare une branche locale existante et un worktree exclusifs. Intègre les commits vérifiés de chaque bloqueur dans cette branche avant la réservation, par merge local ou fast-forward autorisé. Enregistre le chemin du worktree dans `overview.md`. Exécute `handoff claim` avec un `owner` stable avant l'appel natif. La commande revérifie l'éligibilité et l'ascendance des commits sous le verrou du magasin, puis enregistre `claimed`, le propriétaire, la branche et son SHA. Une branche déjà enregistrée pour une autre unité et une unité déjà revendiquée sont refusées. Les frontières d'écriture partagées attendent la fin de l'unité qui les possède.
+4. Pour chaque unité choisie, prépare une branche locale existante et un worktree exclusifs. Intègre les commits vérifiés de chaque bloqueur dans cette branche avant la réservation, par merge local ou fast-forward autorisé. Enregistre le chemin du worktree dans `overview.md`. Exécute `handoff claim` avec un `owner` stable et `--repo` pointant vers ce worktree avant l'appel natif. Les contrôles de fichiers utilisent ce checkout, sans changer de branche. La commande revérifie l'éligibilité et l'ascendance des commits sous le verrou du magasin, puis enregistre `claimed`, le propriétaire, la branche et son SHA. Une branche déjà enregistrée pour une autre unité et une unité déjà revendiquée sont refusées. Le nom de branche est littéral; les expressions Git et alias symboliques sont refusés. Les frontières d'écriture partagées attendent la fin de l'unité qui les possède. Les liens symboliques des chemins inscriptibles et de leurs sous-dossiers existants bloquent l'unité.
 5. Après une réservation réussie, lance le propriétaire avec le brief généré. Complète le message avec le worktree, la branche, la limite de durée et les ordres permanents courants sans modifier le fichier de brief. Enregistre le handle natif dans le suivi existant. Ces commandes ne lancent aucun agent et n'accordent aucune autorité externe.
 
 Exemple depuis la racine du dépôt, après résolution de `CSTACK_PLUGIN_ROOT` vers la racine du plugin :
@@ -85,10 +85,10 @@ orch handoff import .cstack/horizon/archives/spec.md
 orch handoff ready --repo "$PWD"
 ```
 
-Pour le graphe A et B indépendantes, C bloquée par A, puis D bloquée par B et C, la première liste contient A et B. Après préparation de la branche locale `horizon/A` et de son worktree exclusif :
+Pour le graphe A et B indépendantes, C bloquée par A, puis D bloquée par B et C, la première liste contient A et B. Après préparation de la branche locale `horizon/A` et de son worktree exclusif, définis `HORIZON_A_WORKTREE` vers ce chemin :
 
 ```bash
-orch handoff claim A --owner worker-A --branch horizon/A --repo "$PWD"
+orch handoff claim A --owner worker-A --branch horizon/A --repo "$HORIZON_A_WORKTREE"
 ```
 
 Réserve B de la même façon avec son propre propriétaire et sa propre branche. Aucune liste `ready` mise en cache ne remplace la réservation. Après lancement, utilise `orch unit set` pour enregistrer `working`, `verifying`, `done` ou `blocked`. Le helper préserve le propriétaire et interdit le retour à `pending`, une nouvelle revendication ou le remplacement silencieux de la branche. L'état `done` est terminal et ne peut pas être rouvert.
