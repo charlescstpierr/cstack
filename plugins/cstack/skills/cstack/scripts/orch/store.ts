@@ -7,15 +7,19 @@ import {
   mkdir,
   readFile,
   readdir,
+  realpath,
   rename,
   rm,
   rmdir,
   unlink,
   writeFile,
 } from "node:fs/promises";
-import { basename, dirname, join, resolve } from "node:path";
+import { basename, dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 
-const UNIT_HEADER = "id\ttrack\tstate\tbranch\tpr\tsha\tbrief";
+import { loadHorizon, horizonBrief, overlappingScopes, type HorizonDefinition } from "./horizon.ts";
+
+const LEGACY_UNIT_HEADER = "id\ttrack\tstate\tbranch\tpr\tsha\tbrief";
+const UNIT_HEADER = `${LEGACY_UNIT_HEADER}\towner`;
 const LEDGER_HEADER = "pr\tsha\tverdict\tevidence\tverifier\tts";
 const LOCK_FILE = ".orch.lock";
 const LOCK_CONFLICT_CODES = new Set(["EEXIST", "ENOTEMPTY", "ENOTDIR", "EISDIR", "EPERM"]);
@@ -28,6 +32,7 @@ export type Verdict =
   | "verifier-failed";
 
 export interface Unit {
+  readonly owner?: string;
   readonly id: string;
   readonly track: string;
   readonly state: string;
@@ -184,7 +189,17 @@ export interface OpenStoreOptions {
   readonly onStaleLock?: (holder: string) => void;
 }
 
+export interface ReadyUnits {
+  readonly ready: readonly string[];
+  readonly blocked: readonly { readonly id: string; readonly reason: string }[];
+}
+
 export interface Store {
+  readonly handoff: {
+    readonly import: (spec: string) => Promise<{ readonly added: readonly string[]; readonly reused: readonly string[]; readonly digest: string }>;
+    readonly ready: (repo: string) => Promise<ReadyUnits>;
+    readonly claim: (params: { readonly id: string; readonly owner: string; readonly branch: string; readonly repo: string }) => Promise<Unit>;
+  };
   readonly units: {
     readonly add: (params: AddUnitParams) => Promise<Unit>;
     readonly set: (params: SetUnitParams) => Promise<Unit>;
@@ -383,7 +398,7 @@ async function firstLineOf(path: string): Promise<string | null> {
 async function requireInitializedStore(store: string): Promise<void> {
   const unitsHeader = await firstLineOf(join(store, "units.tsv"));
   const ledgerHeader = await firstLineOf(join(store, "ledger.tsv"));
-  if (unitsHeader !== UNIT_HEADER || ledgerHeader !== LEDGER_HEADER) {
+  if ((unitsHeader !== UNIT_HEADER && unitsHeader !== LEGACY_UNIT_HEADER) || ledgerHeader !== LEDGER_HEADER) {
     throw new UserError(
       `le magasin n'est pas initialise dans ${store}; lancer orch init`
     );
@@ -552,7 +567,9 @@ async function writeTsv(
 }
 
 async function readUnits(store: string): Promise<readonly Unit[]> {
-  return (await readTsv(join(store, "units.tsv"), UNIT_HEADER, 7)).map(
+  const header = await firstLineOf(join(store, "units.tsv"));
+  const legacy = header === LEGACY_UNIT_HEADER;
+  return (await readTsv(join(store, "units.tsv"), legacy ? LEGACY_UNIT_HEADER : UNIT_HEADER, legacy ? 7 : 8)).map(
     (row) => ({
       id: row[0] ?? "",
       track: row[1] ?? "",
@@ -561,6 +578,7 @@ async function readUnits(store: string): Promise<readonly Unit[]> {
       pr: row[4] ?? "",
       sha: row[5] ?? "",
       brief: row[6] ?? "",
+      ...(row[7] ? { owner: row[7] } : {}),
     })
   );
 }
@@ -574,14 +592,15 @@ function unitCells(unit: Unit): readonly string[] {
     unit.pr,
     unit.sha,
     unit.brief,
+    unit.owner ?? "",
   ];
 }
 
 async function saveUnits(store: string, rows: readonly Unit[]): Promise<void> {
   await writeTsv(
     join(store, "units.tsv"),
-    UNIT_HEADER,
-    rows.map(unitCells)
+    rows.some(row => row.owner) ? UNIT_HEADER : LEGACY_UNIT_HEADER,
+    rows.map(row => rows.some(unit => unit.owner) ? unitCells(row) : unitCells(row).slice(0, 7))
   );
 }
 
@@ -1019,7 +1038,7 @@ Genere: ${new Date().toISOString()}
 Etats: ${countLine(currentSummary.unitStates)}
 
 ${table(
-  ["ID", "Piste", "Etat", "Branche", "PR", "SHA", "Brief"],
+  ["ID", "Piste", "Etat", "Branche", "PR", "SHA", "Brief", "Owner"],
   unitRows.map(unitCells)
 )}
 
@@ -1344,6 +1363,139 @@ function validateFrontierPin({
   throw new UserError(`l'ancrage de frontiere ne correspond pas: ${drift.join("; ")}`);
 }
 
+interface HandoffReceipt {
+  readonly definition: HorizonDefinition;
+  readonly committed: boolean;
+}
+
+async function handoffReceipt(store: string): Promise<HandoffReceipt> {
+  const raw: unknown = JSON.parse(await requiredFile(join(store, "horizon.json")));
+  if (!isRecord(raw) || !isRecord(raw.definition) || typeof raw.definition.spec !== "string" || typeof raw.committed !== "boolean") {
+    throw new UserError("reçu Horizon invalide");
+  }
+  const current = await loadHorizon(raw.definition.spec);
+  if (JSON.stringify(raw.definition) !== JSON.stringify(current)) {
+    const before = isRecord(raw.definition.sources) ? raw.definition.sources : {};
+    const paths = new Set([...Object.keys(before), ...Object.keys(current.sources)]);
+    const changed = [...paths].filter(path => before[path] !== current.sources[path]);
+    throw new UserError(`dérive Horizon; aucune définition, propriété ou preuve écrasée: ${changed.join(", ") || "métadonnées du reçu"}`);
+  }
+  return { definition: current, committed: raw.committed };
+}
+
+function briefPath(store: string, id: string): string { return join(store, "briefs", `${id}.md`); }
+
+async function checkHandoffFiles(store: string, definition: HorizonDefinition, complete: boolean): Promise<readonly Unit[]> {
+  const rows = await readUnits(store);
+  const imported = rows.filter(row => definition.units.some(unit => unit.id === row.id));
+  if (imported.length !== 0 && imported.length !== definition.units.length) throw new UserError("handoff partiel dans units.tsv; réconcilier sans recréer les unités manquantes");
+  if (new Set(imported.map(row => row.id)).size !== imported.length) throw new UserError("ids dupliqués dans units.tsv");
+  if (complete && imported.length !== definition.units.length) throw new UserError("handoff incomplet; reprendre import avant dispatch");
+  for (const unit of definition.units) {
+    const path = briefPath(store, unit.id);
+    if (await exists(path)) {
+      if (await readFile(path, "utf8") !== horizonBrief(definition, unit)) throw new UserError(`dérive du brief ${path}; écrasement interdit`);
+    } else if (complete) throw new UserError(`brief manquant: ${path}`);
+    const row = imported.find(row => row.id === unit.id);
+    if (row && (row.brief !== path || row.track !== "horizon")) throw new UserError(`collision d'unité Horizon: ${unit.id}`);
+  }
+  return rows;
+}
+
+function literalBranchRef(repo: string, branch: string): string {
+  const ref = `refs/heads/${branch}`;
+  try {
+    if (!branch || branch.startsWith("-")) throw new Error("nom vide ou option");
+    commandOutput({command: "git", args: ["check-ref-format", ref], repo: resolve(repo), label: `format de branche ${branch}`});
+    // --branch alone expands @{-1}; a full ref plus canonical identity also
+    // rejects symbolic aliases that would evade the stored branch comparison.
+    const canonical = commandOutput({command: "git", args: ["rev-parse", "--symbolic-full-name", "--verify", ref], repo: resolve(repo), label: `identité de branche ${branch}`});
+    if (canonical !== ref) throw new Error("alias symbolique");
+  } catch {
+    throw new UserError(`branche locale littérale existante requise, sans expression ni alias: ${branch}`);
+  }
+  return ref;
+}
+
+function exactRefHead(repo: string, ref: string): string {
+  return commandOutput({command: "git", args: ["show-ref", "--hash", "--verify", ref], repo: resolve(repo), label: `head local ${ref}`});
+}
+
+function localHead(repo: string, branch: string): string {
+  return exactRefHead(repo, literalBranchRef(repo, branch));
+}
+
+function outside(root: string, path: string): boolean {
+  const part = relative(root, path);
+  return part === ".." || part.startsWith(`..${sep}`) || isAbsolute(part);
+}
+
+async function writableScopeBlocker(repo: string, scopes: readonly string[]): Promise<string | null> {
+  for (const scope of scopes) {
+    const target = resolve(repo, scope);
+    if (outside(repo, target)) return `frontière inscriptible hors dépôt: ${scope}`;
+    let current = repo;
+    let present = true;
+    for (const part of relative(repo, target).split(sep)) {
+      current = join(current, part);
+      let info: Stats;
+      try { info = await lstat(current); } catch (error) {
+        // A new path is allowed only after all existing ancestors were checked.
+        if (errorCode(error) === "ENOENT") { present = false; break; }
+        return `frontière inscriptible inaccessible: ${scope}`;
+      }
+      if (info.isSymbolicLink()) return `frontière inscriptible avec lien symbolique: ${scope}`;
+      if (outside(repo, await realpath(current))) return `frontière inscriptible hors dépôt: ${scope}`;
+    }
+    // Owning a directory includes its descendants: an alias below it can
+    // overlap another unit even when the declared directory itself is literal.
+    const pending = present ? [target] : [];
+    while (pending.length) {
+      const path = pending.pop();
+      if (path === undefined) break;
+      try {
+        const info = await lstat(path);
+        if (info.isSymbolicLink()) return `frontière inscriptible avec lien symbolique: ${relative(repo, path)}`;
+        if (outside(repo, await realpath(path))) return `frontière inscriptible hors dépôt: ${scope}`;
+        if (info.isDirectory()) pending.push(...(await readdir(path)).map(name => join(path, name)));
+      } catch { return `frontière inscriptible inaccessible: ${relative(repo, path)}`; }
+    }
+  }
+  return null;
+}
+
+async function readyHandoff(store: string, repo: string): Promise<ReadyUnits> {
+  const receipt = await handoffReceipt(store);
+  if (!receipt.committed) throw new UserError("handoff incomplet; reprendre import avant dispatch");
+  const rows = await checkHandoffFiles(store, receipt.definition, true);
+  const ledger = await readLedger(store);
+  const repoRoot = await realpath(commandOutput({command: "git", args: ["rev-parse", "--show-toplevel"], repo: resolve(repo), label: "racine du dépôt de handoff"}));
+  const verified = async (id: string): Promise<boolean> => {
+    const row = rows.find(row => row.id === id);
+    if (!row || row.state !== "done" || !row.owner || !row.sha || !row.pr) return false;
+    try { if (localHead(repo, row.branch) !== row.sha) return false; } catch { return false; }
+    const proof = ledger.find(entry => entry.pr === row.pr && entry.sha === row.sha);
+    if (!proof || !["unit-test-verified", "live-ui-verified"].includes(proof.verdict) || !proof.verifier || proof.verifier === row.owner) return false;
+    try { return (await readFile(resolve(repo, proof.evidence), "utf8")).trim().length > 0; } catch { return false; }
+  };
+  const ready: string[] = [];
+  const blocked: { id: string; reason: string }[] = [];
+  for (const unit of receipt.definition.units) {
+    const row = rows.find(row => row.id === unit.id);
+    let reason = row?.state !== "pending" || row.owner ? `état ${row?.state}; owner ${row?.owner || "aucun"}` : "";
+    if (!reason) reason = await writableScopeBlocker(repoRoot, unit.writable) ?? "";
+    for (const blocker of unit.blocked_by) {
+      if (!reason && !(await verified(blocker))) reason = `bloqueur ${blocker} sans preuve de comportement au head local courant`;
+    }
+    for (const other of receipt.definition.units) {
+      const active = rows.find(row => row.id === other.id);
+      if (!reason && other.id !== unit.id && active?.owner && active.state !== "done" && overlappingScopes(unit, other)) reason = `écritures partagées avec ${other.id}`;
+    }
+    if (reason) blocked.push({id: unit.id, reason}); else ready.push(unit.id);
+  }
+  return {ready, blocked};
+}
+
 export function openStore(
   directory: string,
   options: OpenStoreOptions = {}
@@ -1384,7 +1536,57 @@ export function openStore(
     await ensureLock();
   };
 
-  return {
+  const api: Store = {
+    handoff: {
+      import: async (spec) => {
+        await beginWrite();
+        const definition = await loadHorizon(spec);
+        const receiptPath = join(store, "horizon.json");
+        const previous = await exists(receiptPath) ? await handoffReceipt(store) : null;
+        if (previous && JSON.stringify(previous.definition) !== JSON.stringify(definition)) throw new UserError("dérive Horizon: ce magasin appartient déjà à une autre spec");
+        const rows = await checkHandoffFiles(store, definition, previous?.committed ?? false);
+        const imported = rows.filter(row => definition.units.some(unit => unit.id === row.id));
+        if (!previous && imported.length) throw new UserError("collision: unités déjà présentes sans provenance Horizon");
+        // Pin before writing briefs. Claims require the committed receipt, so a
+        // crash can resume preparation without confusing it with execution.
+        if (!previous) await atomicWrite(receiptPath, `${JSON.stringify({definition, committed: false}, null, 2)}\n`);
+        await mkdir(join(store, "briefs"), {recursive: true});
+        for (const unit of definition.units) await writeIfMissing(briefPath(store, unit.id), horizonBrief(definition, unit));
+        const added = imported.length ? [] : definition.units.map(unit => unit.id);
+        if (added.length) await saveUnits(store, [...rows, ...definition.units.map(unit => ({id: unit.id, track: "horizon", state: "pending", branch: "", pr: "", sha: "", brief: briefPath(store, unit.id)}))]);
+        await atomicWrite(receiptPath, `${JSON.stringify({definition, committed: true}, null, 2)}\n`);
+        return {added, reused: imported.map(row => row.id), digest: definition.digest};
+      },
+      ready: async (repo) => {
+        await beginWrite();
+        return readyHandoff(store, repo);
+      },
+      claim: async (params) => {
+        await beginWrite();
+        const owner = requiredCell(params.owner, "owner");
+        const branch = requiredCell(params.branch, "branch");
+        if (branch !== params.branch) throw new UserError("branche locale littérale requise; aucune normalisation implicite");
+        const branchRef = literalBranchRef(params.repo, branch);
+        if (!(await readyHandoff(store, params.repo)).ready.includes(params.id)) throw new UserError(`unité ${params.id} non dispatchable; aucune nouvelle revendication`);
+        const rows = [...await readUnits(store)];
+        if (rows.some(row => row.branch === branch)) throw new UserError(`branche déjà attribuée: ${branch}`);
+        const {definition} = await handoffReceipt(store);
+        const unit = definition.units.find(unit => unit.id === params.id);
+        for (const id of unit?.blocked_by ?? []) {
+          const blocker = rows.find(row => row.id === id);
+          try {
+            commandOutput({command: "git", args: ["merge-base", "--is-ancestor", blocker?.sha ?? "", branchRef], repo: resolve(params.repo), label: `intégration de ${id}`});
+          } catch { throw new UserError(`intégrer le head vérifié de ${id} dans ${branch} avant dispatch`); }
+        }
+        const index = rows.findIndex(row => row.id === params.id);
+        const old = rows[index];
+        if (!old) throw new NotFoundError(params.id);
+        const row: Unit = {...old, state: "claimed", owner, branch, sha: exactRefHead(params.repo, branchRef)};
+        rows[index] = row;
+        await saveUnits(store, rows);
+        return row;
+      },
+    },
     units: {
       add: async (params) => {
         await beginWrite();
@@ -1417,6 +1619,15 @@ export function openStore(
         const old = rows[index];
         if (index < 0 || old === undefined) {
           throw new NotFoundError(`unité ${id} introuvable`);
+        }
+        if (await exists(join(store, "horizon.json"))) {
+          const {definition} = await handoffReceipt(store);
+          if (definition.units.some(unit => unit.id === id)) {
+            if (old.state === "done" && state !== "done") throw new UserError("unité Horizon terminée; réouverture implicite interdite");
+            if (!old.owner || state === "pending" || state === "claimed") throw new UserError("unité Horizon: utiliser handoff claim; réattribution interdite");
+            if (!["working", "verifying", "done", "blocked"].includes(state)) throw new UserError("état Horizon invalide");
+            if (params.branch !== undefined && params.branch !== old.branch) throw new UserError("branche Horizon attribuée; changement silencieux interdit");
+          }
         }
         const row: Unit = {
           ...old,
@@ -1718,7 +1929,7 @@ export function openStore(
       ensureOpen();
       await mkdir(store, { recursive: true });
       await ensureLock();
-      await writeIfMissing(join(store, "units.tsv"), `${UNIT_HEADER}\n`);
+      await writeIfMissing(join(store, "units.tsv"), `${LEGACY_UNIT_HEADER}\n`);
       await writeIfMissing(join(store, "ledger.tsv"), `${LEDGER_HEADER}\n`);
       await mkdir(join(store, "inbox"), { recursive: true });
       await writeIfMissing(join(store, "gates.md"), "");
@@ -1744,5 +1955,30 @@ export function openStore(
         await lock.release();
       }
     },
+  };
+  // The directory lock excludes other handles/processes. A queue also excludes
+  // overlapping async mutations through this same handle (including claim vs add).
+  let writes: Promise<void> = Promise.resolve();
+  const serial = <T>(operation: () => Promise<T>): Promise<T> => {
+    const result = writes.then(operation);
+    writes = result.then(() => {}, () => {});
+    return result;
+  };
+  return {
+    ...api,
+    init: () => serial(api.init),
+    close: () => serial(api.close),
+    handoff: {
+      import: spec => serial(() => api.handoff.import(spec)),
+      ready: repo => serial(() => api.handoff.ready(repo)),
+      claim: params => serial(() => api.handoff.claim(params)),
+    },
+    units: {...api.units, add: params => serial(() => api.units.add(params)), set: params => serial(() => api.units.set(params))},
+    ledger: {...api.ledger, record: params => serial(() => api.ledger.record(params))},
+    inbox: {...api.inbox, drain: () => serial(api.inbox.drain)},
+    gates: {...api.gates, park: params => serial(() => api.gates.park(params)), resolve: params => serial(() => api.gates.resolve(params))},
+    frontier: {...api.frontier, set: params => serial(() => api.frontier.set(params))},
+    standing: {...api.standing, add: params => serial(() => api.standing.add(params))},
+    status: {render: () => serial(api.status.render)},
   };
 }

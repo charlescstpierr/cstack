@@ -277,6 +277,22 @@ function createProgram(io: Io): Command {
     )
   );
 
+  const handoff = program.command("handoff").description("transmettre une définition Horizon sans dispatch ni action distante")
+    .action(() => requireSubcommand(program));
+  leaf(handoff, "import <spec>", "valider et importer une spec Horizon, ou reprendre le même import")
+    .action((spec: string) => runStore(program, io, store => store.handoff.import(spec), result =>
+      `ajoutées=${result.added.join(",") || "aucune"} réutilisées=${result.reused.join(",") || "aucune"} version=${result.digest}`));
+  leaf(handoff, "ready", "calculer les unités exécutables depuis leurs vrais bloqueurs")
+    .requiredOption("--repo <dir>", "dépôt des branches locales et preuves")
+    .action((options: { readonly repo: string }) => runStore(program, io, store => store.handoff.ready(options.repo), result =>
+      `prêtes=${result.ready.join(",") || "aucune"}\n${result.blocked.map(unit => `${unit.id}: ${unit.reason}`).join("\n")}`));
+  leaf(handoff, "claim <id>", "revendiquer une unité prête avant tout appel natif")
+    .requiredOption("--repo <dir>", "dépôt des branches locales et preuves")
+    .requiredOption("--owner <owner>", "identité stable du propriétaire")
+    .requiredOption("--branch <branch>", "branche locale exclusive existante")
+    .action((id: string, options: { readonly repo: string; readonly owner: string; readonly branch: string }) =>
+      runStore(program, io, store => store.handoff.claim({id, ...options}), unitLine));
+
   const unit = program
     .command("unit")
     .description("gérer les unités de travail")

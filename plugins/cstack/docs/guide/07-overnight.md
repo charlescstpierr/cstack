@@ -37,6 +37,24 @@ Le travail avance par unités vérifiables. `$cstack:swarm` peut répartir des t
 
 Une planification récurrente n'est utilisée que si un planificateur natif est disponible et demandé explicitement. cstack ne simule pas de webhook, de cron ou d'agent persistant.
 
+## Passer d'Horizon à l'exécution
+
+Pour un grand objectif qui traverse plusieurs phases ou sessions, commencez par la planification :
+
+```text
+$cstack:horizon planifie la migration progressive de notre moteur de recherche. Garde les artefacts locaux sous .cstack/horizon/recherche/.
+```
+
+Invoqué directement, Horizon s'arrête à son résultat de planification. Quand le handoff est prêt, demandez son exécution :
+
+```text
+$cstack:cstack exécute .cstack/horizon/recherche/spec.md avec le playbook orchestrate existant. Respecte le périmètre convenu. Ne crée aucun ticket distant, ne merge pas et ne déploie pas.
+```
+
+Le chemin général est `.cstack/horizon/<slug>/spec.md`. cstack conserve les identifiants, les dépendances et les critères d'acceptation des unités, puis sélectionne celles réellement prêtes. Une unité déjà revendiquée (`claimed`) ou terminée (`done`) n'est jamais relancée silencieusement. Si les sources importées ou les briefs dérivent, l'exécution se bloque au lieu de remplacer la définition et ses preuves.
+
+Quand une demande `$cstack:cstack` autorise déjà l'implémentation et passe par Horizon, le coordinateur peut continuer avec ce handoff dans les limites de cette demande. Le handoff n'ajoute aucune permission de créer des tickets distants, de merger ou de déployer. Une petite fonctionnalité réalisable en une session suit le playbook cstack ordinaire, sans détour par Horizon. Le [playbook orchestrate](../../skills/cstack/playbooks/orchestrate.md) décrit la reprise et les vérifications.
+
 ## L'audit du matin
 
 Relisez l'objectif, le journal, le diff et les commandes exécutées. Rejouez la vérification finale. Un rapport d'agent est un indice ; la preuve vient du fichier, du processus ou de la valeur observée.

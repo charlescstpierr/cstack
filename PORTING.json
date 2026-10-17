@@ -1321,6 +1321,14 @@
     {
       "path": "plugins/cstack/skills/cstack/scripts/watch-pr/head-signals.test.ts",
       "reason": "Tests propres à cstack des signaux Actions et de la revue Codex liés au head, y compris démarrage CI indisponible et revue encore en cours."
+    },
+    {
+      "path": "plugins/cstack/skills/cstack/scripts/orch/horizon.ts",
+      "reason": "Adaptateur interne propre à cstack pour le contrat Markdown Horizon, validation du graphe et briefs avec provenance; demandé par issue #93, sans registre de progression supplémentaire."
+    },
+    {
+      "path": "plugins/cstack/skills/cstack/scripts/orch/horizon.test.ts",
+      "reason": "Régressions propres à cstack du handoff Horizon vers le store Orchestrate existant : graphe, reprise, dérive, revendication exclusive et preuves au head courant."
     }
   ]
 }

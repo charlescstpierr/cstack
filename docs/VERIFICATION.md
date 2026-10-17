@@ -43,6 +43,17 @@ Le reçu `native_child_thread_ids` exclut le fil parent, y compris lorsqu'un év
 
 Le [reçu du 6 octobre 2026](evidence/behavior-runner-2026-10-06.json) enregistre une sonde via l'interface CLI corrigée. Le parent est persistant, un enfant est confirmé par ses métadonnées et le parent est absent de la liste d'enfants. La correction du message et une assertion indépendante sur sa sortie passent. Le bundle source était chargé directement, sans observation des hooks installés. C'est un essai unique, pas une campagne comparative ni une preuve générale de conformité des workflows.
 
+## Handoff Horizon → Orchestrate (#93)
+
+La [campagne du 17 octobre 2026](evidence/horizon-handoff.md) distingue la
+reproduction sur `8f50de1`, les régressions déterministes, quatre workers Codex
+App sur le graphe A/B indépendantes, C dépendante de A, D dépendante de B/C,
+et un scénario natif de reprise en deux tours.
+Le [reçu natif](evidence/horizon-handoff-native.json) conserve les artefacts et
+les sources effectivement exercées. Le harnais CLI reste bloqué avant le modèle
+par la configuration de cet hôte; aucun verdict de harnais passant ni gain de
+tokens n'est déduit de la démonstration App.
+
 ## État 0.8.0
 
 Le catalogue 0.8.0 contient 29 skills, 23 références de principes et 23 guides d'exécution. La couverture conserve 158 fichiers source, épinglés sur pstack 0.15.5.

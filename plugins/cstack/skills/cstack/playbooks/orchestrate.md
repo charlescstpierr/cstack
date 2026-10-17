@@ -28,7 +28,8 @@ Crée `.cstack/orchestrate/<project-slug>/` dans le workspace cible. Chaque fich
 
 - `preferences.md` contient les ordres permanents numérotés, une contrainte par ligne.
 - `overview.md` enregistre les faits durables de PR et d’issue. Ajouter plutôt que réécrire l’historique.
-- `units.tsv` enregistre unité, piste, état, branche, PR, SHA head et chemin de brief.
+- `units.tsv` enregistre unité, piste, état, branche, PR, SHA head, chemin de brief et `owner` quand l'unité est revendiquée.
+- Pour un handoff Horizon, `horizon.json` conserve la définition, les empreintes des sources et la fin de l'import; `briefs/<id>.md` contient les briefs générés. La progression reste dans les tableaux existants.
 - `frontier.json` enregistre la frontière de merge calculée.
 - `ledger.tsv` enregistre les verdicts par PR et SHA head.
 - `inbox/` contient les pointeurs d’achèvement.
@@ -37,6 +38,8 @@ Crée `.cstack/orchestrate/<project-slug>/` dans le workspace cible. Chaque fich
 - `status.md` est généré depuis les tableaux à chaque drain.
 
 N’écris pas l’état du programme dans le répertoire de plugin installé.
+
+Les magasins hérités conservent leur en-tête `units.tsv` à sept colonnes jusqu'à l'enregistrement d'un propriétaire. Le helper ajoute alors la colonne `owner`. Utilise cette version du helper pour reprendre un magasin avec propriétaires; un ancien helper à sept colonnes ne peut pas le lire.
 
 Le verrou interne `.orch.lock/` contient un marqueur `owner.<pid>.<uuid>` propre à chaque acquisition. Une reprise vise uniquement le marqueur observé et la fermeture retire uniquement celui du détenteur. Les anciens fichiers PID sont migrés sous le verrou temporaire `.orch.lock.migration/`, récupérable après la mort de son détenteur.
 
@@ -62,12 +65,55 @@ STANDING     instructions preferences.md courantes
 
 Passe le contexte par chemin de dépôt ou en citant seulement le résultat amont nécessaire. Les sous-agents natifs ne voient pas automatiquement les résultats frères. Un champ manquant signifie que l’unité n’est pas prête à assigner. Les prompts de suivi répètent le brief courant complet.
 
+#### Reprendre un handoff Horizon
+
+Cette procédure s'applique quand le coordinateur `$cstack:cstack` reçoit une spec Horizon dans une demande d'exécution déjà autorisée. Horizon directement invoqué s'arrête à la définition. Une petite tâche d'une session garde son playbook ordinaire. Lis à la demande `../../horizon/references/templates.md`, section « Contrat de handoff vers Orchestrate », pour les champs et le graphe importés.
+
+1. Lis la spec et vérifie les critères observables, les exclusions et les frontières inscriptibles. Conserve les IDs et `blocked_by`; ne redécoupe pas les unités depuis la prose. Une décision `waiting` empêche l'import. En mode Plan ou en lecture seule, retourne le brouillon sans exécuter ces commandes d'écriture.
+2. Initialise ou reprends le même magasin et importe la spec. L'import valide toutes les sources avant de préparer les briefs. Il conserve leur provenance et ajoute les unités avec l'état `pending`, sans propriétaire.
+3. Consulte `handoff ready --repo <repo-dir>`. Cette commande retourne les IDs prêts et les raisons de blocage. La liste dépend des définitions, de `units.tsv`, du ledger et des heads locaux courants. `frontier.json` conserve sa fonction de frontière de merge GitHub.
+4. Pour chaque unité choisie, prépare une branche locale existante et un worktree exclusifs. Intègre les commits vérifiés de chaque bloqueur dans cette branche avant la réservation, par merge local ou fast-forward autorisé. Enregistre le chemin du worktree dans `overview.md`. Exécute `handoff claim` avec un `owner` stable et `--repo` pointant vers ce worktree avant l'appel natif. Les contrôles de fichiers utilisent ce checkout, sans changer de branche. La commande revérifie l'éligibilité et l'ascendance des commits sous le verrou du magasin, puis enregistre `claimed`, le propriétaire, la branche et son SHA. Une branche déjà enregistrée pour une autre unité et une unité déjà revendiquée sont refusées. Le nom de branche est littéral; les expressions Git et alias symboliques sont refusés. Les frontières d'écriture partagées attendent la fin de l'unité qui les possède. Les liens symboliques des chemins inscriptibles et de leurs sous-dossiers existants bloquent l'unité.
+5. Après une réservation réussie, lance le propriétaire avec le brief généré. Complète le message avec le worktree, la branche, la limite de durée et les ordres permanents courants sans modifier le fichier de brief. Enregistre le handle natif dans le suivi existant. Ces commandes ne lancent aucun agent et n'accordent aucune autorité externe.
+
+Exemple depuis la racine du dépôt, après résolution de `CSTACK_PLUGIN_ROOT` vers la racine du plugin :
+
+```bash
+export ORCH_STORE="$PWD/.cstack/orchestrate/archives"
+orch() { bash "$CSTACK_PLUGIN_ROOT/scripts/run-tool.sh" orch/orch.ts "$@"; }
+orch init
+orch handoff import .cstack/horizon/archives/spec.md
+orch handoff ready --repo "$PWD"
+```
+
+Pour le graphe A et B indépendantes, C bloquée par A, puis D bloquée par B et C, la première liste contient A et B. Après préparation de la branche locale `horizon/A` et de son worktree exclusif, définis `HORIZON_A_WORKTREE` vers ce chemin :
+
+```bash
+orch handoff claim A --owner worker-A --branch horizon/A --repo "$HORIZON_A_WORKTREE"
+```
+
+Réserve B de la même façon avec son propre propriétaire et sa propre branche. Aucune liste `ready` mise en cache ne remplace la réservation. Après lancement, utilise `orch unit set` pour enregistrer `working`, `verifying`, `done` ou `blocked`. Le helper préserve le propriétaire et interdit le retour à `pending`, une nouvelle revendication ou le remplacement silencieux de la branche. L'état `done` est terminal et ne peut pas être rouvert.
+
+Un bloqueur satisfait le handoff seulement si tous ces faits sont présents :
+
+- Son état vaut `done`, avec un propriétaire, une branche, un SHA et une PR réelle enregistrés.
+- Le SHA enregistré correspond encore au head de cette branche locale dans le dépôt passé à `--repo`.
+- Le ledger contient un verdict `unit-test-verified` ou `live-ui-verified` pour cette PR et ce SHA exacts, avec un vérificateur renseigné et différent du propriétaire.
+- Le champ `evidence` désigne un fichier lisible et non vide. Un chemin relatif se résout depuis le dépôt passé à `--repo`.
+
+Enregistre les faits avec `orch unit set <id> --state done --pr <pr> --sha <sha>` et `orch ledger record <pr> <sha> <verdict> --verifier <acteur> --evidence <fichier>`. Relance ensuite `handoff ready`. C devient éligible après la preuve de A; D attend celles de B et C. `type-check-only`, un résultat natif seul ou une ancienne preuve sur un head différent ne débloque rien. Le handoff exige le SHA exact, sans exception de patch ID.
+
+Ces contrôles établissent la preuve au head local. Rafraîchis séparément les faits GitHub et les barrières de livraison avant toute affirmation sur une PR distante ou tout merge. Le ledger actuel exige une PR réelle; si la demande interdit sa création, conserve ce blocage sans inventer de numéro ni élargir l'autorité. La configuration du tracker n'autorise aucune création d'issue. Push, PR, merge et déploiement restent soumis au contrat d'exécution et à la demande courante.
+
+**Reprise.** Répéter `handoff import` avec les mêmes sources conserve les états, propriétaires et preuves. Le reçu réserve la définition avant l'écriture des briefs et marque l'import terminé seulement après la publication des unités. Une interruption de préparation se reprend par la même commande. Une partie seulement des lignes d'unités, un brief modifié ou des sources différentes provoquent une erreur; le helper ne recrée pas silencieusement du travail manquant.
+
+Si la spec, une unité ou un ticket de décision change, arrête les nouvelles affectations et montre la dérive. Préserve le reçu, les briefs et les preuves pour réconcilier la révision. Ne supprime pas le reçu, ne renomme pas l'unité et ne crée pas un autre magasin pour contourner une revendication. Après une interruption entre `claim` et l'enregistrement du handle natif, l'unité reste `claimed`. Inspecte les tâches natives et les artefacts avant toute décision de reprise; un handle absent ne prouve pas qu'aucun dispatch n'a eu lieu. Une exécution encore incertaine reste bloquée, sans relance implicite.
+
 #### Étapes
 
 1. **Cadrer.** Énonce un prédicat de fin comptable, le nombre d’unités, l’effort approximatif, la forme de PR attendue et le budget temps. Si un agent peut terminer dans la session, bascule vers `autonomous-run.md`. Nomme les pistes indépendantes. Utilise `../../arena/SKILL.md` avant une décomposition disputée. Pour une capacité manquante, applique [Orchestration requise](../references/runtime/orchestration.md) avec `route: Arena`. Applique la portée de livraison du contrat d’exécution aux unités d’implémentation. Confirme séparément si la demande autorise les messages externes ou les merges. Continue la préparation locale réversible sans ces actions.
-2. **Initialiser l’état.** Lance `orch init` via le lanceur du plugin. Écris les ordres permanents avant d’assigner le travail. Amorçe `frontier.json` depuis les faits git courants et PR GitHub avec `orch frontier set --repo <repo-dir>`.
+2. **Initialiser l’état.** Lance `orch init` via le lanceur du plugin. Écris les ordres permanents avant d’assigner le travail. Si Horizon fournit le plan, applique le [handoff](#reprendre-un-handoff-horizon) sans recréer ses unités avec `unit add`. Amorçe `frontier.json` depuis les faits git courants et PR GitHub avec `orch frontier set --repo <repo-dir>` quand la pile existe.
 3. **Piloter une unité.** Mène une unité représentative à travers brief, implémentation, vérification, entrée de pile, ligne de ledger et livraison autorisée. Utilise le pilote pour tester le brief, la taille d’unité et la recette de contrôle. Pour les unités répétées bon marché, la première unité ordinaire est le pilote.
-4. **Monter en charge avec une fenêtre roulante.** Remplis à nouveau les emplacements de sous-agents natifs quand les propriétaires terminent. Commence le travail dépendant seulement après que son contexte requis existe. Audite un brief échantillonné par piste sans bloquer la vague courante.
+4. **Monter en charge avec une fenêtre roulante.** Remplis à nouveau les emplacements de sous-agents natifs quand les propriétaires terminent. Commence le travail dépendant seulement après que son contexte requis existe. Pour Horizon, réserve chaque unité avec `handoff claim`, qui vérifie les preuves de ses bloqueurs. Audite un brief échantillonné par piste sans bloquer la vague courante.
 5. **Drainer les résultats.** Utilise la procédure de file ci-dessous à chaque frontière sûre.
 6. **Intégrer continuellement.** Intègre les unités vérifiées dès le début. Garde un seul rédacteur de topologie par pile. Avance `frontier.json` seulement après un merge confirmé ou un nouveau head rapporté. Crée des PR selon la portée de livraison du contrat d’exécution. Fusionne seulement quand l’utilisateur a autorisé le merge. Après le merge confirmé et la vérification d’une unité, réconcilie les utilisateurs de son worktree ; applique le mode **Après une livraison terminée** dans [nettoyage de worktree](worktree-cleanup.md) une fois que ses propriétaires, vérificateurs et dépendants ont libéré le chemin créé par la tâche enregistré.
 7. **Fermer.** Réconcilie chaque unité assignée vers une ligne terminale. Vérifie le prédicat sur l’artéfact réel. Confirme que chaque PR livrée a un verdict pour son head courant. Audite la trace de décisions et préserve `.cstack/orchestrate/<project-slug>/` dans un workspace survivant. Termine tout nettoyage post-merge admissible et rapporte les worktrees conservés avec leurs raisons.
@@ -77,7 +123,7 @@ Passe le contexte par chemin de dépôt ou en citant seulement le résultat amon
 - À l’achèvement, lance `orch inbox push <agent> <unit> <status> [--report PATH]`. Termine la section critique courante avant la revue profonde.
 - Draine après une section critique, un rollup de piste, un réveil du watcher de frontière et avant un rapport utilisateur. Commence avec `orch inbox drain`. Les arrivées pendant un drain attendent le drain suivant.
 - Les sections critiques incluent l’écriture d’un brief, le changement de topologie de pile, la résolution d’un conflit, l’écriture d’une barrière et la mise à jour du ledger ou de la frontière.
-- Classe chaque pointeur comme landed, needs verification, failed, stale ou noise. Écris le résultat avec `orch unit add`, `orch unit set` et `orch ledger record`. Puis lance `orch status` et assigne la prochaine vague prête.
+- Classe chaque pointeur comme landed, needs verification, failed, stale ou noise. Écris le résultat avec `orch unit add`, `orch unit set` et `orch ledger record`. Pour une unité Horizon déjà importée, conserve sa ligne avec `unit set`. Puis lance `orch status` et réserve la prochaine vague prête, avec `handoff ready` puis `handoff claim` pour Horizon.
 - Comptabilise chaque enfant comme terminé, remplacé, abandonné ou absorbé avec une raison. Ne cache pas les résultats manquants en les refaisant silencieusement.
 
 #### Sûreté de pile GitHub

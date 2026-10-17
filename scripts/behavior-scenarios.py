@@ -488,6 +488,60 @@ if __name__ == "__main__":
              bundle=new, skill="horizon", roles=["how explorer"],
              bodies=[horizon_first, horizon_second], expected_children=4)
 
+    def handoff_block(value: dict[str, Any]) -> str:
+        return "```horizon\n" + json.dumps(value, ensure_ascii=False, indent=2) + "\n```\n"
+
+    handoff_files = {
+        "README.md": "# Livraison locale\nA et B indépendantes; C attend A; D attend B et C.\n",
+        ".cstack/horizon/delivery/spec.md": handoff_block({
+            "schema": 1, "status": "ready", "goal": "Livrer les quatre unités définies",
+            "out_of_scope": ["Actions distantes et changements hors unité"],
+            "context": ["README.md"], "decisions": [],
+            "units": [f"units/{unit}.md" for unit in "ABCD"],
+        }),
+    }
+    for unit in "ABCD":
+        handoff_files[f".cstack/horizon/delivery/units/{unit}.md"] = handoff_block({
+            "id": unit, "goal": f"Livrer le résultat {unit}",
+            "blocked_by": ["A"] if unit == "C" else ["B", "C"] if unit == "D" else [],
+            "acceptance": [f"Le fichier results/{unit}.txt contient exactement {unit}"],
+            "writable": [f"results/{unit}.txt"], "forbidden": ["Aucune action distante"],
+            "context": ["README.md"], "verify": [f"cat results/{unit}.txt"],
+        })
+    handoff_project = create_project(output, "sequoia", handoff_files, [], catalog)
+    seed_git(handoff_project)
+    git(handoff_project, "branch", "work/A")
+    handoff_first = """Utilise $cstack:cstack pour valider le passage du plan Horizon existant vers Orchestrate, sans replanifier les unités. La tâche autorise uniquement la préparation locale : aucune action distante, aucun changement de code produit, aucun sous-agent ni objectif natif. Initialise .cstack/orchestrate/delivery et importe .cstack/horizon/delivery/spec.md avec le helper orch. Vérifie les unités prêtes : seules A et B doivent être éligibles. Revendique uniquement A avec owner coordinateur-A et la branche existante work/A, puis arrête avant tout dispatch. Conserve les sources Horizon intactes. Cette interruption est intentionnelle : ne remets pas A à pending."""
+    handoff_second = """Utilise $cstack:cstack pour reprendre la même préparation locale. Relance le même import Horizon puis consulte les unités prêtes. Conserve la revendication de A et ne la relance pas. B reste prête, C et D restent bloquées sans preuve; aucune unité ne doit être ajoutée en double. N'implémente rien, ne crée aucun enfant, ne fabrique aucune preuve ni numéro de PR et n'effectue aucune action distante. Rapporte les chemins de briefs, leurs sources, les dépendances et la raison du blocage."""
+    handoff_digests = {
+        name: hashlib.sha256(content.encode("utf-8")).hexdigest()
+        for name, content in handoff_files.items()
+    }
+    handoff_check = f"import csv,json,pathlib,hashlib,subprocess\nexpected_sources={handoff_digests!r}\n" + r"""p=pathlib.Path('.cstack/orchestrate/delivery')
+for name,digest in expected_sources.items():
+    if hashlib.sha256(pathlib.Path(name).read_bytes()).hexdigest() != digest: raise SystemExit('source initiale modifiée')
+rows=list(csv.DictReader((p/'units.tsv').open(), delimiter='\t'))
+if [r['id'] for r in rows] != list('ABCD'): raise SystemExit('unités dupliquées ou manquantes')
+if rows[0]['state'] != 'claimed' or rows[0].get('owner') != 'coordinateur-A': raise SystemExit('claim perdu')
+if any(r['state'] != 'pending' for r in rows[1:]): raise SystemExit('unité débloquée sans preuve')
+receipt=json.loads((p/'horizon.json').read_text())
+if not receipt['committed']: raise SystemExit('import incomplet')
+definition=receipt['definition']
+if [u['blocked_by'] for u in definition['units']] != [[],[],['A'],['B','C']]: raise SystemExit('graphe perdu')
+for name,digest in definition['sources'].items():
+    if hashlib.sha256(pathlib.Path(name).read_bytes()).hexdigest() != digest: raise SystemExit('source modifiée')
+for row in rows:
+    brief=pathlib.Path(row['brief']).read_text()
+    if definition['spec'] not in brief or definition['digest'] not in brief: raise SystemExit('provenance manquante')
+if len((p/'ledger.tsv').read_text().splitlines()) != 1: raise SystemExit('preuve fabriquée')
+if subprocess.check_output(['git','remote'],text=True).strip(): raise SystemExit('remote inattendu')
+"""
+    register(cases, expectations, case_id="horizon_orchestrate_handoff_resume",
+             project=handoff_project, bundle=new, skill="cstack", roles=[],
+             bodies=[handoff_first, handoff_second], expected_children=0,
+             expected_artifacts=[".cstack/orchestrate/delivery/units.tsv", ".cstack/orchestrate/delivery/horizon.json"],
+             outcome_checks=[{"id": "handoff-resume", "argv": [sys.executable, "-c", handoff_check]}])
+
     audit_files = {
         "src/users.py": 'def username(user):\n    return user["name"].strip().lower()\n',
         "src/orders.py": 'def owner_name(order):\n    return order["owner"].strip().lower()\n',

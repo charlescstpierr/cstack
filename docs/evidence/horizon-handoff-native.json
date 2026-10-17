@@ -1,0 +1,787 @@
+{
+  "date": "2026-10-17",
+  "base_commit": "8f50de116a1bb9d437de45d93c971203d0fded9f",
+  "scope": "Live App-native execution of a local four-unit fixture using real staged orch CLI and generated briefs; no remote fixture PRs",
+  "source_sha256": {
+    "plugins/cstack/skills/cstack/scripts/orch/store.ts": "522e2963ef037c423bea809dde45666453bbc1aa2c87242e0908499f6a1c7363",
+    "plugins/cstack/skills/cstack/scripts/orch/orch.ts": "67eb237e66048fae876cfcb5c455a488737696c4b15826f7b4d3b79837654283",
+    "plugins/cstack/skills/cstack/scripts/orch/horizon.ts": "a4cc6b6c00e5947c85d7c9bfe80dd5872695d7a9f63ab4cd204bf6e6d5ac43f5"
+  },
+  "fixture_files": {
+    "README.md": "# Horizon handoff native demonstration\nA: normalize_lines(text) strips each line and removes empty lines.\nB: clamp_limit(value) bounds an integer between 0 and 10.\nC: count_items(text) counts normalized nonempty lines using A.\nD: remaining_slots(text, limit) returns max(0, clamp_limit(limit)-count_items(text)).\nEach unit owns only its src/<letter>.py file. The coordinator owns all verification and store state.\nNo remote actions are allowed in this fixture. Work is integrated only through local commits.\n",
+    "verify.py": "import sys\nunit = sys.argv[1]\nif unit == \"A\":\n    from src.a import normalize_lines\n    assert normalize_lines(\" a \\n\\n b\\n  \") == [\"a\", \"b\"]\n    assert normalize_lines(\"\") == []\nelif unit == \"B\":\n    from src.b import clamp_limit\n    assert [clamp_limit(x) for x in [-4, 0, 5, 10, 99]] == [0, 0, 5, 10, 10]\nelif unit == \"C\":\n    from src.c import count_items\n    assert count_items(\" a \\n\\n b\\n  \") == 2\n    assert count_items(\"\") == 0\nelif unit == \"D\":\n    from src.d import remaining_slots\n    assert remaining_slots(\" a \\n\\n b\\n  \", 5) == 3\n    assert remaining_slots(\"x\", -1) == 0\n    assert remaining_slots(\"\", 42) == 10\nelse:\n    raise ValueError(unit)\nprint(f\"{unit}: PASS\")\n",
+    ".cstack/horizon/demo/spec.md": "# Native fixture spec\n\n```horizon\n{\n  \"schema\": 1,\n  \"status\": \"ready\",\n  \"goal\": \"Compose verified text capacity operations with dependent native workers\",\n  \"out_of_scope\": [\n    \"Network access, remote tickets, pushes, PRs, merges and deployment\"\n  ],\n  \"context\": [\n    \"README.md\"\n  ],\n  \"decisions\": [],\n  \"units\": [\n    \"units/A.md\",\n    \"units/B.md\",\n    \"units/C.md\",\n    \"units/D.md\"\n  ]\n}\n```\n",
+    ".cstack/horizon/demo/units/A.md": "# Unit A\n\n```horizon\n{\n  \"id\": \"A\",\n  \"goal\": \"Implement normalize_lines(text): strip each line and remove empty lines\",\n  \"blocked_by\": [],\n  \"acceptance\": [\n    \"python3 verify.py A passes without changing verification or predecessor implementation\"\n  ],\n  \"writable\": [\n    \"src/a.py\"\n  ],\n  \"forbidden\": [\n    \"Do not edit other files, do not launch children, do not perform remote actions\"\n  ],\n  \"context\": [\n    \"README.md\",\n    \"verify.py\"\n  ],\n  \"verify\": [\n    \"python3 verify.py A\"\n  ]\n}\n```\n",
+    ".cstack/horizon/demo/units/B.md": "# Unit B\n\n```horizon\n{\n  \"id\": \"B\",\n  \"goal\": \"Implement clamp_limit(value): bound an integer between 0 and 10\",\n  \"blocked_by\": [],\n  \"acceptance\": [\n    \"python3 verify.py B passes without changing verification or predecessor implementation\"\n  ],\n  \"writable\": [\n    \"src/b.py\"\n  ],\n  \"forbidden\": [\n    \"Do not edit other files, do not launch children, do not perform remote actions\"\n  ],\n  \"context\": [\n    \"README.md\",\n    \"verify.py\"\n  ],\n  \"verify\": [\n    \"python3 verify.py B\"\n  ]\n}\n```\n",
+    ".cstack/horizon/demo/units/C.md": "# Unit C\n\n```horizon\n{\n  \"id\": \"C\",\n  \"goal\": \"Implement count_items(text) using normalize_lines from src.a\",\n  \"blocked_by\": [\n    \"A\"\n  ],\n  \"acceptance\": [\n    \"python3 verify.py C passes without changing verification or predecessor implementation\"\n  ],\n  \"writable\": [\n    \"src/c.py\"\n  ],\n  \"forbidden\": [\n    \"Do not edit other files, do not launch children, do not perform remote actions\"\n  ],\n  \"context\": [\n    \"README.md\",\n    \"verify.py\"\n  ],\n  \"verify\": [\n    \"python3 verify.py C\"\n  ]\n}\n```\n",
+    ".cstack/horizon/demo/units/D.md": "# Unit D\n\n```horizon\n{\n  \"id\": \"D\",\n  \"goal\": \"Implement remaining_slots(text, limit) using clamp_limit from src.b and count_items from src.c\",\n  \"blocked_by\": [\n    \"B\",\n    \"C\"\n  ],\n  \"acceptance\": [\n    \"python3 verify.py D passes without changing verification or predecessor implementation\"\n  ],\n  \"writable\": [\n    \"src/d.py\"\n  ],\n  \"forbidden\": [\n    \"Do not edit other files, do not launch children, do not perform remote actions\"\n  ],\n  \"context\": [\n    \"README.md\",\n    \"verify.py\"\n  ],\n  \"verify\": [\n    \"python3 verify.py D\"\n  ]\n}\n```\n"
+  },
+  "workers": [
+    {
+      "unit": "A",
+      "native_handle": "/root/native_a",
+      "runtime": "codex-native",
+      "model_requested": "inherited",
+      "effort_requested": "inherited",
+      "branch": "native/A",
+      "commit": "b3afd335d2a03fa3bbba0108030e0378d18620f4",
+      "owned_path": "src/a.py",
+      "code": "def normalize_lines(text):\n    lines = (line.strip() for line in text.splitlines())\n    return [line for line in lines if line]\n",
+      "independent_verification": {
+        "unit": "A",
+        "sha": "b3afd335d2a03fa3bbba0108030e0378d18620f4",
+        "changed": [
+          "src/a.py"
+        ],
+        "command": [
+          "python3",
+          "verify.py",
+          "A"
+        ],
+        "exit": 0,
+        "stdout": "A: PASS\n",
+        "verifier": "root-independent-verifier",
+        "code_sha256": "147e79c9de888342c2eabbacd295068f3715a61e4345d6eec53cd6e27f63d3e4"
+      }
+    },
+    {
+      "unit": "B",
+      "native_handle": "/root/native_b",
+      "runtime": "codex-native",
+      "model_requested": "inherited",
+      "effort_requested": "inherited",
+      "branch": "native/B",
+      "commit": "6a711636e4387eabe19afb1726f0bd4d43faffa9",
+      "owned_path": "src/b.py",
+      "code": "def clamp_limit(value):\n    return max(0, min(10, value))\n",
+      "independent_verification": {
+        "unit": "B",
+        "sha": "6a711636e4387eabe19afb1726f0bd4d43faffa9",
+        "changed": [
+          "src/b.py"
+        ],
+        "command": [
+          "python3",
+          "verify.py",
+          "B"
+        ],
+        "exit": 0,
+        "stdout": "B: PASS\n",
+        "verifier": "root-independent-verifier",
+        "code_sha256": "efa3cfe5552face2c9635799429aa8cb500eaec9f331ee5ddfb777856376f87e"
+      }
+    },
+    {
+      "unit": "C",
+      "native_handle": "/root/native_c",
+      "runtime": "codex-native",
+      "model_requested": "inherited",
+      "effort_requested": "inherited",
+      "branch": "native/C",
+      "commit": "217faca187c4333ae3674ceeb89c85df7a153ad7",
+      "owned_path": "src/c.py",
+      "code": "from src.a import normalize_lines\n\n\ndef count_items(text):\n    return len(normalize_lines(text))\n",
+      "independent_verification": {
+        "unit": "C",
+        "sha": "217faca187c4333ae3674ceeb89c85df7a153ad7",
+        "changed": [
+          "src/c.py"
+        ],
+        "command": [
+          "python3",
+          "verify.py",
+          "C"
+        ],
+        "exit": 0,
+        "stdout": "C: PASS\n",
+        "verifier": "root-independent-verifier"
+      }
+    },
+    {
+      "unit": "D",
+      "native_handle": "/root/native_d",
+      "runtime": "codex-native",
+      "model_requested": "inherited",
+      "effort_requested": "inherited",
+      "branch": "native/D",
+      "commit": "5c3ea565cad38390e9d4314d8e758b19254ec850",
+      "owned_path": "src/d.py",
+      "code": "from src.b import clamp_limit\nfrom src.c import count_items\n\n\ndef remaining_slots(text, limit):\n    return max(0, clamp_limit(limit) - count_items(text))\n",
+      "independent_verification": {
+        "unit": "D",
+        "sha": "5c3ea565cad38390e9d4314d8e758b19254ec850",
+        "commands": [
+          "python3 verify.py A",
+          "python3 verify.py B",
+          "python3 verify.py C",
+          "python3 verify.py D"
+        ],
+        "exit": 0,
+        "stdout": [
+          "A: PASS",
+          "B: PASS",
+          "C: PASS",
+          "D: PASS"
+        ],
+        "verifier": "root-independent-verifier"
+      }
+    }
+  ],
+  "observations": {
+    "all_tests_at_D_head": [
+      "A: PASS",
+      "B: PASS",
+      "C: PASS",
+      "D: PASS"
+    ],
+    "reimport_preserves_units_and_ledger": true,
+    "drift_refused_without_mutation": true,
+    "tested_sources_unchanged": true
+  },
+  "commands": [
+    {
+      "time": "2026-10-17T06:23:08.031870+00:00",
+      "args": [
+        "init"
+      ],
+      "exit": 0,
+      "stdout": "{\n  \"store\": \"<fixture>/project/.cstack/orchestrate/demo\"\n}\n",
+      "stderr": "Internal error: directory mismatch for directory \"<staged-helper>/tsconfig.json\", fd 3. You don't need to do anything, but this indicates a bug.\n"
+    },
+    {
+      "time": "2026-10-17T06:23:08.146828+00:00",
+      "args": [
+        "handoff",
+        "import",
+        "<fixture>/project/.cstack/horizon/demo/spec.md"
+      ],
+      "exit": 0,
+      "stdout": "{\n  \"added\": [\n    \"A\",\n    \"B\",\n    \"C\",\n    \"D\"\n  ],\n  \"reused\": [],\n  \"digest\": \"534742e2801992774d3ec81bd593bf0b6ef7a5d49e52aba4027150aa94980b2e\"\n}\n",
+      "stderr": "Internal error: directory mismatch for directory \"<staged-helper>/tsconfig.json\", fd 3. You don't need to do anything, but this indicates a bug.\n"
+    },
+    {
+      "time": "2026-10-17T06:23:08.261595+00:00",
+      "args": [
+        "handoff",
+        "ready",
+        "--repo",
+        "<fixture>/project"
+      ],
+      "exit": 0,
+      "stdout": "{\n  \"ready\": [\n    \"A\",\n    \"B\"\n  ],\n  \"blocked\": [\n    {\n      \"id\": \"C\",\n      \"reason\": \"bloqueur A sans preuve de comportement au head local courant\"\n    },\n    {\n      \"id\": \"D\",\n      \"reason\": \"bloqueur B sans preuve de comportement au head local courant\"\n    }\n  ]\n}\n",
+      "stderr": "Internal error: directory mismatch for directory \"<staged-helper>/tsconfig.json\", fd 3. You don't need to do anything, but this indicates a bug.\n"
+    },
+    {
+      "time": "2026-10-17T06:23:08.377889+00:00",
+      "args": [
+        "handoff",
+        "claim",
+        "A",
+        "--owner",
+        "native-worker-A",
+        "--branch",
+        "native/A",
+        "--repo",
+        "<fixture>/project"
+      ],
+      "exit": 0,
+      "stdout": "{\n  \"id\": \"A\",\n  \"track\": \"horizon\",\n  \"state\": \"claimed\",\n  \"branch\": \"native/A\",\n  \"pr\": \"\",\n  \"sha\": \"fb24ba4dee725a546b61779fc82281b1d5b5d3c9\",\n  \"brief\": \"<fixture>/project/.cstack/orchestrate/demo/briefs/A.md\",\n  \"owner\": \"native-worker-A\"\n}\n",
+      "stderr": "Internal error: directory mismatch for directory \"<staged-helper>/tsconfig.json\", fd 3. You don't need to do anything, but this indicates a bug.\n"
+    },
+    {
+      "time": "2026-10-17T06:23:08.493747+00:00",
+      "args": [
+        "handoff",
+        "claim",
+        "B",
+        "--owner",
+        "native-worker-B",
+        "--branch",
+        "native/B",
+        "--repo",
+        "<fixture>/project"
+      ],
+      "exit": 0,
+      "stdout": "{\n  \"id\": \"B\",\n  \"track\": \"horizon\",\n  \"state\": \"claimed\",\n  \"branch\": \"native/B\",\n  \"pr\": \"\",\n  \"sha\": \"fb24ba4dee725a546b61779fc82281b1d5b5d3c9\",\n  \"brief\": \"<fixture>/project/.cstack/orchestrate/demo/briefs/B.md\",\n  \"owner\": \"native-worker-B\"\n}\n",
+      "stderr": "Internal error: directory mismatch for directory \"<staged-helper>/tsconfig.json\", fd 3. You don't need to do anything, but this indicates a bug.\n"
+    },
+    {
+      "time": "2026-10-17T06:23:08.604648+00:00",
+      "args": [
+        "handoff",
+        "claim",
+        "A",
+        "--owner",
+        "duplicate-worker",
+        "--branch",
+        "native/A",
+        "--repo",
+        "<fixture>/project"
+      ],
+      "exit": 1,
+      "stdout": "",
+      "stderr": "erreur: unité A non dispatchable; aucune nouvelle revendication\nInternal error: directory mismatch for directory \"<staged-helper>/tsconfig.json\", fd 3. You don't need to do anything, but this indicates a bug.\n"
+    },
+    {
+      "time": "2026-10-17T06:23:08.718907+00:00",
+      "args": [
+        "handoff",
+        "claim",
+        "C",
+        "--owner",
+        "premature-worker",
+        "--branch",
+        "native/C",
+        "--repo",
+        "<fixture>/project"
+      ],
+      "exit": 1,
+      "stdout": "",
+      "stderr": "erreur: unité C non dispatchable; aucune nouvelle revendication\nInternal error: directory mismatch for directory \"<staged-helper>/tsconfig.json\", fd 3. You don't need to do anything, but this indicates a bug.\n"
+    },
+    {
+      "time": "2026-10-17T06:24:19.671389+00:00",
+      "args": [
+        "unit",
+        "set",
+        "A",
+        "--state",
+        "done",
+        "--pr",
+        "101",
+        "--sha",
+        "b3afd335d2a03fa3bbba0108030e0378d18620f4"
+      ],
+      "exit": 0,
+      "stdout": "{\n  \"id\": \"A\",\n  \"track\": \"horizon\",\n  \"state\": \"done\",\n  \"branch\": \"native/A\",\n  \"pr\": \"101\",\n  \"sha\": \"b3afd335d2a03fa3bbba0108030e0378d18620f4\",\n  \"brief\": \"<fixture>/project/.cstack/orchestrate/demo/briefs/A.md\",\n  \"owner\": \"native-worker-A\"\n}\n",
+      "stderr": "Internal error: directory mismatch for directory \"<staged-helper>/tsconfig.json\", fd 3. You don't need to do anything, but this indicates a bug.\n"
+    },
+    {
+      "time": "2026-10-17T06:24:19.794418+00:00",
+      "args": [
+        "handoff",
+        "ready",
+        "--repo",
+        "<fixture>/project"
+      ],
+      "exit": 0,
+      "stdout": "{\n  \"ready\": [],\n  \"blocked\": [\n    {\n      \"id\": \"A\",\n      \"reason\": \"état done; owner native-worker-A\"\n    },\n    {\n      \"id\": \"B\",\n      \"reason\": \"état claimed; owner native-worker-B\"\n    },\n    {\n      \"id\": \"C\",\n      \"reason\": \"bloqueur A sans preuve de comportement au head local courant\"\n    },\n    {\n      \"id\": \"D\",\n      \"reason\": \"bloqueur B sans preuve de comportement au head local courant\"\n    }\n  ]\n}\n",
+      "stderr": "Internal error: directory mismatch for directory \"<staged-helper>/tsconfig.json\", fd 3. You don't need to do anything, but this indicates a bug.\n"
+    },
+    {
+      "time": "2026-10-17T06:24:19.905885+00:00",
+      "args": [
+        "ledger",
+        "record",
+        "101",
+        "b3afd335d2a03fa3bbba0108030e0378d18620f4",
+        "unit-test-verified",
+        "--evidence",
+        ".cstack/evidence-A.json",
+        "--verifier",
+        "root-independent-verifier"
+      ],
+      "exit": 0,
+      "stdout": "{\n  \"pr\": \"101\",\n  \"sha\": \"b3afd335d2a03fa3bbba0108030e0378d18620f4\",\n  \"verdict\": \"unit-test-verified\",\n  \"evidence\": \".cstack/evidence-A.json\",\n  \"verifier\": \"root-independent-verifier\",\n  \"ts\": \"2026-10-17T06:24:19.896Z\"\n}\n",
+      "stderr": "Internal error: directory mismatch for directory \"<staged-helper>/tsconfig.json\", fd 3. You don't need to do anything, but this indicates a bug.\n"
+    },
+    {
+      "time": "2026-10-17T06:24:20.023626+00:00",
+      "args": [
+        "handoff",
+        "ready",
+        "--repo",
+        "<fixture>/project"
+      ],
+      "exit": 0,
+      "stdout": "{\n  \"ready\": [\n    \"C\"\n  ],\n  \"blocked\": [\n    {\n      \"id\": \"A\",\n      \"reason\": \"état done; owner native-worker-A\"\n    },\n    {\n      \"id\": \"B\",\n      \"reason\": \"état claimed; owner native-worker-B\"\n    },\n    {\n      \"id\": \"D\",\n      \"reason\": \"bloqueur B sans preuve de comportement au head local courant\"\n    }\n  ]\n}\n",
+      "stderr": "Internal error: directory mismatch for directory \"<staged-helper>/tsconfig.json\", fd 3. You don't need to do anything, but this indicates a bug.\n"
+    },
+    {
+      "time": "2026-10-17T06:24:20.145321+00:00",
+      "args": [
+        "handoff",
+        "claim",
+        "C",
+        "--owner",
+        "native-worker-C",
+        "--branch",
+        "native/C",
+        "--repo",
+        "<fixture>/project"
+      ],
+      "exit": 0,
+      "stdout": "{\n  \"id\": \"C\",\n  \"track\": \"horizon\",\n  \"state\": \"claimed\",\n  \"branch\": \"native/C\",\n  \"pr\": \"\",\n  \"sha\": \"b3afd335d2a03fa3bbba0108030e0378d18620f4\",\n  \"brief\": \"<fixture>/project/.cstack/orchestrate/demo/briefs/C.md\",\n  \"owner\": \"native-worker-C\"\n}\n",
+      "stderr": "Internal error: directory mismatch for directory \"<staged-helper>/tsconfig.json\", fd 3. You don't need to do anything, but this indicates a bug.\n"
+    },
+    {
+      "time": "2026-10-17T06:25:32.982588+00:00",
+      "args": [
+        "unit",
+        "set",
+        "C",
+        "--state",
+        "done",
+        "--pr",
+        "103",
+        "--sha",
+        "217faca187c4333ae3674ceeb89c85df7a153ad7"
+      ],
+      "exit": 0,
+      "stdout": "{\n  \"id\": \"C\",\n  \"track\": \"horizon\",\n  \"state\": \"done\",\n  \"branch\": \"native/C\",\n  \"pr\": \"103\",\n  \"sha\": \"217faca187c4333ae3674ceeb89c85df7a153ad7\",\n  \"brief\": \"<fixture>/project/.cstack/orchestrate/demo/briefs/C.md\",\n  \"owner\": \"native-worker-C\"\n}\n",
+      "stderr": "Internal error: directory mismatch for directory \"<staged-helper>/tsconfig.json\", fd 3. You don't need to do anything, but this indicates a bug.\n"
+    },
+    {
+      "time": "2026-10-17T06:25:33.094908+00:00",
+      "args": [
+        "ledger",
+        "record",
+        "103",
+        "217faca187c4333ae3674ceeb89c85df7a153ad7",
+        "unit-test-verified",
+        "--evidence",
+        ".cstack/evidence-C.json",
+        "--verifier",
+        "root-independent-verifier"
+      ],
+      "exit": 0,
+      "stdout": "{\n  \"pr\": \"103\",\n  \"sha\": \"217faca187c4333ae3674ceeb89c85df7a153ad7\",\n  \"verdict\": \"unit-test-verified\",\n  \"evidence\": \".cstack/evidence-C.json\",\n  \"verifier\": \"root-independent-verifier\",\n  \"ts\": \"2026-10-17T06:25:33.084Z\"\n}\n",
+      "stderr": "Internal error: directory mismatch for directory \"<staged-helper>/tsconfig.json\", fd 3. You don't need to do anything, but this indicates a bug.\n"
+    },
+    {
+      "time": "2026-10-17T06:25:33.215676+00:00",
+      "args": [
+        "handoff",
+        "ready",
+        "--repo",
+        "<fixture>/project"
+      ],
+      "exit": 0,
+      "stdout": "{\n  \"ready\": [],\n  \"blocked\": [\n    {\n      \"id\": \"A\",\n      \"reason\": \"état done; owner native-worker-A\"\n    },\n    {\n      \"id\": \"B\",\n      \"reason\": \"état claimed; owner native-worker-B\"\n    },\n    {\n      \"id\": \"C\",\n      \"reason\": \"état done; owner native-worker-C\"\n    },\n    {\n      \"id\": \"D\",\n      \"reason\": \"bloqueur B sans preuve de comportement au head local courant\"\n    }\n  ]\n}\n",
+      "stderr": "Internal error: directory mismatch for directory \"<staged-helper>/tsconfig.json\", fd 3. You don't need to do anything, but this indicates a bug.\n"
+    },
+    {
+      "time": "2026-10-17T06:25:33.333101+00:00",
+      "args": [
+        "unit",
+        "set",
+        "B",
+        "--state",
+        "done",
+        "--pr",
+        "102",
+        "--sha",
+        "6a711636e4387eabe19afb1726f0bd4d43faffa9"
+      ],
+      "exit": 0,
+      "stdout": "{\n  \"id\": \"B\",\n  \"track\": \"horizon\",\n  \"state\": \"done\",\n  \"branch\": \"native/B\",\n  \"pr\": \"102\",\n  \"sha\": \"6a711636e4387eabe19afb1726f0bd4d43faffa9\",\n  \"brief\": \"<fixture>/project/.cstack/orchestrate/demo/briefs/B.md\",\n  \"owner\": \"native-worker-B\"\n}\n",
+      "stderr": "Internal error: directory mismatch for directory \"<staged-helper>/tsconfig.json\", fd 3. You don't need to do anything, but this indicates a bug.\n"
+    },
+    {
+      "time": "2026-10-17T06:25:33.445356+00:00",
+      "args": [
+        "ledger",
+        "record",
+        "102",
+        "6a711636e4387eabe19afb1726f0bd4d43faffa9",
+        "unit-test-verified",
+        "--evidence",
+        ".cstack/evidence-B.json",
+        "--verifier",
+        "root-independent-verifier"
+      ],
+      "exit": 0,
+      "stdout": "{\n  \"pr\": \"102\",\n  \"sha\": \"6a711636e4387eabe19afb1726f0bd4d43faffa9\",\n  \"verdict\": \"unit-test-verified\",\n  \"evidence\": \".cstack/evidence-B.json\",\n  \"verifier\": \"root-independent-verifier\",\n  \"ts\": \"2026-10-17T06:25:33.435Z\"\n}\n",
+      "stderr": "Internal error: directory mismatch for directory \"<staged-helper>/tsconfig.json\", fd 3. You don't need to do anything, but this indicates a bug.\n"
+    },
+    {
+      "time": "2026-10-17T06:25:33.561635+00:00",
+      "args": [
+        "handoff",
+        "ready",
+        "--repo",
+        "<fixture>/project"
+      ],
+      "exit": 0,
+      "stdout": "{\n  \"ready\": [\n    \"D\"\n  ],\n  \"blocked\": [\n    {\n      \"id\": \"A\",\n      \"reason\": \"état done; owner native-worker-A\"\n    },\n    {\n      \"id\": \"B\",\n      \"reason\": \"état done; owner native-worker-B\"\n    },\n    {\n      \"id\": \"C\",\n      \"reason\": \"état done; owner native-worker-C\"\n    }\n  ]\n}\n",
+      "stderr": "Internal error: directory mismatch for directory \"<staged-helper>/tsconfig.json\", fd 3. You don't need to do anything, but this indicates a bug.\n"
+    },
+    {
+      "time": "2026-10-17T06:25:33.687158+00:00",
+      "args": [
+        "handoff",
+        "claim",
+        "D",
+        "--owner",
+        "native-worker-D",
+        "--branch",
+        "native/D",
+        "--repo",
+        "<fixture>/project"
+      ],
+      "exit": 1,
+      "stdout": "",
+      "stderr": "erreur: intégrer le head vérifié de B dans native/D avant dispatch\nInternal error: directory mismatch for directory \"<staged-helper>/tsconfig.json\", fd 3. You don't need to do anything, but this indicates a bug.\n"
+    },
+    {
+      "time": "2026-10-17T06:25:33.816447+00:00",
+      "args": [
+        "handoff",
+        "claim",
+        "D",
+        "--owner",
+        "native-worker-D",
+        "--branch",
+        "native/D",
+        "--repo",
+        "<fixture>/project"
+      ],
+      "exit": 0,
+      "stdout": "{\n  \"id\": \"D\",\n  \"track\": \"horizon\",\n  \"state\": \"claimed\",\n  \"branch\": \"native/D\",\n  \"pr\": \"\",\n  \"sha\": \"721e25e64e8c051dc911180e82aea60391ad22dd\",\n  \"brief\": \"<fixture>/project/.cstack/orchestrate/demo/briefs/D.md\",\n  \"owner\": \"native-worker-D\"\n}\n",
+      "stderr": "Internal error: directory mismatch for directory \"<staged-helper>/tsconfig.json\", fd 3. You don't need to do anything, but this indicates a bug.\n"
+    },
+    {
+      "time": "2026-10-17T06:27:06.789022+00:00",
+      "args": [
+        "unit",
+        "set",
+        "D",
+        "--state",
+        "done",
+        "--pr",
+        "104",
+        "--sha",
+        "5c3ea565cad38390e9d4314d8e758b19254ec850"
+      ],
+      "exit": 0,
+      "stdout": "{\n  \"id\": \"D\",\n  \"track\": \"horizon\",\n  \"state\": \"done\",\n  \"branch\": \"native/D\",\n  \"pr\": \"104\",\n  \"sha\": \"5c3ea565cad38390e9d4314d8e758b19254ec850\",\n  \"brief\": \"<fixture>/project/.cstack/orchestrate/demo/briefs/D.md\",\n  \"owner\": \"native-worker-D\"\n}\n",
+      "stderr": "Internal error: directory mismatch for directory \"<staged-helper>/tsconfig.json\", fd 3. You don't need to do anything, but this indicates a bug.\n"
+    },
+    {
+      "time": "2026-10-17T06:27:06.914613+00:00",
+      "args": [
+        "ledger",
+        "record",
+        "104",
+        "5c3ea565cad38390e9d4314d8e758b19254ec850",
+        "unit-test-verified",
+        "--evidence",
+        ".cstack/evidence-D.json",
+        "--verifier",
+        "root-independent-verifier"
+      ],
+      "exit": 0,
+      "stdout": "{\n  \"pr\": \"104\",\n  \"sha\": \"5c3ea565cad38390e9d4314d8e758b19254ec850\",\n  \"verdict\": \"unit-test-verified\",\n  \"evidence\": \".cstack/evidence-D.json\",\n  \"verifier\": \"root-independent-verifier\",\n  \"ts\": \"2026-10-17T06:27:06.899Z\"\n}\n",
+      "stderr": "Internal error: directory mismatch for directory \"<staged-helper>/tsconfig.json\", fd 3. You don't need to do anything, but this indicates a bug.\n"
+    },
+    {
+      "time": "2026-10-17T06:27:07.056909+00:00",
+      "args": [
+        "handoff",
+        "ready",
+        "--repo",
+        "<fixture>/project"
+      ],
+      "exit": 0,
+      "stdout": "{\n  \"ready\": [],\n  \"blocked\": [\n    {\n      \"id\": \"A\",\n      \"reason\": \"état done; owner native-worker-A\"\n    },\n    {\n      \"id\": \"B\",\n      \"reason\": \"état done; owner native-worker-B\"\n    },\n    {\n      \"id\": \"C\",\n      \"reason\": \"état done; owner native-worker-C\"\n    },\n    {\n      \"id\": \"D\",\n      \"reason\": \"état done; owner native-worker-D\"\n    }\n  ]\n}\n",
+      "stderr": "Internal error: directory mismatch for directory \"<staged-helper>/tsconfig.json\", fd 3. You don't need to do anything, but this indicates a bug.\n"
+    },
+    {
+      "time": "2026-10-17T06:27:07.196262+00:00",
+      "args": [
+        "handoff",
+        "import",
+        "<fixture>/project/.cstack/horizon/demo/spec.md"
+      ],
+      "exit": 0,
+      "stdout": "{\n  \"added\": [],\n  \"reused\": [\n    \"A\",\n    \"B\",\n    \"C\",\n    \"D\"\n  ],\n  \"digest\": \"534742e2801992774d3ec81bd593bf0b6ef7a5d49e52aba4027150aa94980b2e\"\n}\n",
+      "stderr": "Internal error: directory mismatch for directory \"<staged-helper>/tsconfig.json\", fd 3. You don't need to do anything, but this indicates a bug.\n"
+    },
+    {
+      "time": "2026-10-17T06:27:07.321982+00:00",
+      "args": [
+        "handoff",
+        "import",
+        "<fixture>/project/.cstack/horizon/demo/spec.md"
+      ],
+      "exit": 1,
+      "stdout": "",
+      "stderr": "erreur: dérive Horizon; aucune définition, propriété ou preuve écrasée: <fixture>/project/.cstack/horizon/demo/spec.md\nInternal error: directory mismatch for directory \"<staged-helper>/tsconfig.json\", fd 3. You don't need to do anything, but this indicates a bug.\n"
+    }
+  ],
+  "limitations": [
+    "Synthetic PR identifiers101..104 exercise the existing local ledger only; no fixture GitHub Issue, PR, push, merge or deployment occurred.",
+    "The coordinator authored the four-unit Horizon fixture and selected workers; this is not a benchmark of open-ended planning or model-token use.",
+    "The separate generated two-turn routing/resume scenario is evaluated separately.",
+    "CLI harness failed before a model turn because its configured config.toml is missing; a separate actual codex exec probe returned401 invalid authentication. App-native workers succeeded.",
+    "Parser changed after native worker run to reject duplicate ticket status and equivalent writable scopes. Post-parser import/readiness checks at54f4f3e passed on both completed and partially claimed stores without changing units, ledger or receipt. Worker execution is not claimed to have been repeated at this later parser revision.",
+    "Bun1.4.0 emitted an internal directory mismatch diagnostic on the staged launcher; command exit codes and independently inspected artifacts passed."
+  ],
+  "generated_resume_scenario": {
+    "executor": "Codex App native sub-agent /root/native_handoff; two turns in one conversation, zero children",
+    "case": {
+      "id": "horizon_orchestrate_handoff_resume",
+      "case_sha256": "e25521cdbb4f825821834387e0eb4f496df959fbfb2ea080886a49c4b68a0c4d",
+      "project_sha256": "6e7332db13ea634ca40ee56d2263220ef9dd62f53a10b4240f0818c63fab4bd3",
+      "hash_algorithm": "cstack-tree-sha256-v2",
+      "source_sha256": {
+        "bundle": "e8bbb945807d492204d85389d88307887ada02bfad7a586aa709e1c52b966dbc",
+        "skill": "6e2fe2b13aaaf0f75bba6c86342e931617eeb2356c44ebd4eb8d5ad56a9679a0"
+      },
+      "skill_path": "skills/cstack/SKILL.md",
+      "role_metadata": {},
+      "expected_children": 0,
+      "expected_artifacts": [
+        ".cstack/orchestrate/delivery/units.tsv",
+        ".cstack/orchestrate/delivery/horizon.json"
+      ],
+      "outcome_checks": [
+        {
+          "id": "handoff-resume",
+          "argv": [
+            "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+            "-c",
+            "import csv,json,pathlib,hashlib,subprocess\np=pathlib.Path('.cstack/orchestrate/delivery')\nrows=list(csv.DictReader((p/'units.tsv').open(), delimiter='\\t'))\nif [r['id'] for r in rows] != list('ABCD'): raise SystemExit('unités dupliquées ou manquantes')\nif rows[0]['state'] != 'claimed' or rows[0].get('owner') != 'coordinateur-A': raise SystemExit('claim perdu')\nif any(r['state'] != 'pending' for r in rows[1:]): raise SystemExit('unité débloquée sans preuve')\nreceipt=json.loads((p/'horizon.json').read_text())\nif not receipt['committed']: raise SystemExit('import incomplet')\ndefinition=receipt['definition']\nif [u['blocked_by'] for u in definition['units']] != [[],[],['A'],['B','C']]: raise SystemExit('graphe perdu')\nfor name,digest in definition['sources'].items():\n    if hashlib.sha256(pathlib.Path(name).read_bytes()).hexdigest() != digest: raise SystemExit('source modifiée')\nfor row in rows:\n    brief=pathlib.Path(row['brief']).read_text()\n    if definition['spec'] not in brief or definition['digest'] not in brief: raise SystemExit('provenance manquante')\nif len((p/'ledger.tsv').read_text().splitlines()) != 1: raise SystemExit('preuve fabriquée')\nif subprocess.check_output(['git','remote'],text=True).strip(): raise SystemExit('remote inattendu')\n"
+          ]
+        }
+      ]
+    },
+    "checks": [
+      {
+        "id": "handoff-resume",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": "",
+        "pass": true
+      }
+    ],
+    "prompt_sha256": [
+      "934b5ceaae53a1e72bfac5833f590450714aba0775d7da781d11b325143335ec",
+      "04dd8271575c5c4efa2344c8d419ae31d06a6d448e251ff6fe2863b898b7324e"
+    ],
+    "observed_first_turn": {
+      "imported": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "initial_ready": [
+        "A",
+        "B"
+      ],
+      "claimed": "A",
+      "owner": "coordinateur-A",
+      "branch": "work/A",
+      "head": "db148afc63d354fbf3669322c319a31c16e94c4a",
+      "ready_after_claim": [
+        "B"
+      ]
+    },
+    "observed_second_turn": {
+      "added": [],
+      "reused": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "ready": [
+        "B"
+      ],
+      "claim_preserved": true,
+      "ledger_entries": 0,
+      "remote_actions": 0
+    },
+    "limitations": [
+      "No harness-generated workflow verdict or route trace: CLI runner could not start. The independent generated outcome command was executed by the coordinator and exited0.",
+      "The original bundle and fixture hashes identify generator inputs; the App run was manually delegated, not authenticated by the unavailable CLI harness."
+    ],
+    "hardened_outcome_recheck": {
+      "generator_sha256": "4b54d6024d9b32e9dbb9c9c1713aee0d169c50b0e47a53f1af6ee3fcbf41dde9",
+      "execution": "Coordinator executed new trusted assertion against the original actual two-turn native artifacts; no native turn repeated.",
+      "outcome_checks": [
+        {
+          "id": "handoff-resume",
+          "argv": [
+            "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+            "-c",
+            "import csv,json,pathlib,hashlib,subprocess\nexpected_sources={'README.md': '0eb4edc9e4152c7c4491c24b2d9ddb33df46a3c85325c9703d57799837274628', '.cstack/horizon/delivery/spec.md': '534099af87b98e623bd88ccc6ff816f621abe33f8ba734dae57909c6d4fa270e', '.cstack/horizon/delivery/units/A.md': '6d8532a164400c5a2073a9ccc8f7b58f4c4cf5f8a0964ea0bf41456861512ec8', '.cstack/horizon/delivery/units/B.md': '11ec5795958811dc6d71592ea14d3806e6741322235df7a067a844fe7ed2a554', '.cstack/horizon/delivery/units/C.md': '077e058c6b9d6910146fa62923c692f3cd150129246c945ff50ddc9e9934ab5d', '.cstack/horizon/delivery/units/D.md': 'd4f807449b87530d465dfa60b9ab02b9f84022e53cf69be0831a5635c9d103a2'}\np=pathlib.Path('.cstack/orchestrate/delivery')\nfor name,digest in expected_sources.items():\n    if hashlib.sha256(pathlib.Path(name).read_bytes()).hexdigest() != digest: raise SystemExit('source initiale modifiée')\nrows=list(csv.DictReader((p/'units.tsv').open(), delimiter='\\t'))\nif [r['id'] for r in rows] != list('ABCD'): raise SystemExit('unités dupliquées ou manquantes')\nif rows[0]['state'] != 'claimed' or rows[0].get('owner') != 'coordinateur-A': raise SystemExit('claim perdu')\nif any(r['state'] != 'pending' for r in rows[1:]): raise SystemExit('unité débloquée sans preuve')\nreceipt=json.loads((p/'horizon.json').read_text())\nif not receipt['committed']: raise SystemExit('import incomplet')\ndefinition=receipt['definition']\nif [u['blocked_by'] for u in definition['units']] != [[],[],['A'],['B','C']]: raise SystemExit('graphe perdu')\nfor name,digest in definition['sources'].items():\n    if hashlib.sha256(pathlib.Path(name).read_bytes()).hexdigest() != digest: raise SystemExit('source modifiée')\nfor row in rows:\n    brief=pathlib.Path(row['brief']).read_text()\n    if definition['spec'] not in brief or definition['digest'] not in brief: raise SystemExit('provenance manquante')\nif len((p/'ledger.tsv').read_text().splitlines()) != 1: raise SystemExit('preuve fabriquée')\nif subprocess.check_output(['git','remote'],text=True).strip(): raise SystemExit('remote inattendu')\n"
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "id": "handoff-resume",
+          "exit_code": 0,
+          "stdout": "",
+          "stderr": "",
+          "pass": true
+        }
+      ]
+    }
+  },
+  "verification_mode": "Independent native actors with inherited model; single-model verification, no model diversity claimed.",
+  "post_parser_revalidation": {
+    "commit": "54f4f3ebcecbee6fc0e229626c9fd3846f0f9411",
+    "source_sha256": {
+      "plugins/cstack/skills/cstack/scripts/orch/store.ts": "522e2963ef037c423bea809dde45666453bbc1aa2c87242e0908499f6a1c7363",
+      "plugins/cstack/skills/cstack/scripts/orch/orch.ts": "67eb237e66048fae876cfcb5c455a488737696c4b15826f7b4d3b79837654283",
+      "plugins/cstack/skills/cstack/scripts/orch/horizon.ts": "6891065c7ffc1e0fe6a17cc93052daddf0557b5f11e42c9f4a492e237c0723e4"
+    },
+    "checks": [
+      {
+        "project": "demo",
+        "args": [
+          "handoff",
+          "import",
+          "<fixture>/project/.cstack/horizon/demo/spec.md"
+        ],
+        "exit": 0,
+        "stdout": "{\n  \"added\": [],\n  \"reused\": [\n    \"A\",\n    \"B\",\n    \"C\",\n    \"D\"\n  ],\n  \"digest\": \"534742e2801992774d3ec81bd593bf0b6ef7a5d49e52aba4027150aa94980b2e\"\n}\n",
+        "stderr": "Internal error: directory mismatch for directory \"<staged-helper>/tsconfig.json\", fd 3. You don't need to do anything, but this indicates a bug.\n"
+      },
+      {
+        "project": "demo",
+        "args": [
+          "handoff",
+          "ready",
+          "--repo",
+          "<fixture>/project"
+        ],
+        "exit": 0,
+        "stdout": "{\n  \"ready\": [],\n  \"blocked\": [\n    {\n      \"id\": \"A\",\n      \"reason\": \"état done; owner native-worker-A\"\n    },\n    {\n      \"id\": \"B\",\n      \"reason\": \"état done; owner native-worker-B\"\n    },\n    {\n      \"id\": \"C\",\n      \"reason\": \"état done; owner native-worker-C\"\n    },\n    {\n      \"id\": \"D\",\n      \"reason\": \"état done; owner native-worker-D\"\n    }\n  ]\n}\n",
+        "stderr": "Internal error: directory mismatch for directory \"<staged-helper>/tsconfig.json\", fd 3. You don't need to do anything, but this indicates a bug.\n"
+      },
+      {
+        "project": "demo",
+        "units_ledger_receipt_unchanged": true
+      },
+      {
+        "project": "delivery",
+        "args": [
+          "handoff",
+          "import",
+          "<behavior>/projects/sequoia/.cstack/horizon/delivery/spec.md"
+        ],
+        "exit": 0,
+        "stdout": "{\n  \"added\": [],\n  \"reused\": [\n    \"A\",\n    \"B\",\n    \"C\",\n    \"D\"\n  ],\n  \"digest\": \"4a3157ded3ecace40b77b47ca7aa10def5270930fd1d898829cedb935c05118a\"\n}\n",
+        "stderr": "Internal error: directory mismatch for directory \"<staged-helper>/tsconfig.json\", fd 3. You don't need to do anything, but this indicates a bug.\n"
+      },
+      {
+        "project": "delivery",
+        "args": [
+          "handoff",
+          "ready",
+          "--repo",
+          "<behavior>/projects/sequoia"
+        ],
+        "exit": 0,
+        "stdout": "{\n  \"ready\": [\n    \"B\"\n  ],\n  \"blocked\": [\n    {\n      \"id\": \"A\",\n      \"reason\": \"état claimed; owner coordinateur-A\"\n    },\n    {\n      \"id\": \"C\",\n      \"reason\": \"bloqueur A sans preuve de comportement au head local courant\"\n    },\n    {\n      \"id\": \"D\",\n      \"reason\": \"bloqueur B sans preuve de comportement au head local courant\"\n    }\n  ]\n}\n",
+        "stderr": "Internal error: directory mismatch for directory \"<staged-helper>/tsconfig.json\", fd 3. You don't need to do anything, but this indicates a bug.\n"
+      },
+      {
+        "project": "delivery",
+        "units_ledger_receipt_unchanged": true
+      }
+    ],
+    "note": "Boundary revalidation using final parser; native worker runs used the earlier source hashes explicitly recorded."
+  },
+  "final_code_native_resume_run": {
+    "executor": "App-native agent /root/handoff_final, two distinct turns, no child agent; fresh subject did not author the verifier",
+    "model_requested": "inherited",
+    "verification_mode": "single-model verification",
+    "source_sha256": {
+      "plugins/cstack/skills/cstack/scripts/orch/store.ts": "122f078e9948c6dfa414756b56089b9813e70b151ddd567e7e329621b322c98f",
+      "plugins/cstack/skills/cstack/scripts/orch/orch.ts": "67eb237e66048fae876cfcb5c455a488737696c4b15826f7b4d3b79837654283",
+      "plugins/cstack/skills/cstack/scripts/orch/horizon.ts": "6891065c7ffc1e0fe6a17cc93052daddf0557b5f11e42c9f4a492e237c0723e4"
+    },
+    "scenario": {
+      "id": "horizon_orchestrate_handoff_resume",
+      "case_sha256": "18fb817f859ea3ad3598317a0460fdc7b91ae23ba6dec273fad7492e9f1fa37e",
+      "project_sha256": "6e7332db13ea634ca40ee56d2263220ef9dd62f53a10b4240f0818c63fab4bd3",
+      "hash_algorithm": "cstack-tree-sha256-v2",
+      "source_sha256": {
+        "bundle": "e61587ca216c439867d1b6f930bf06512a424536d07cb26013e573cb04d399af",
+        "skill": "e8f888f41b295d005fead8cfd3028aa5a758c81f847ffa1bb099c978a2e12adb"
+      },
+      "skill_path": "skills/cstack/SKILL.md",
+      "role_metadata": {},
+      "expected_children": 0,
+      "expected_artifacts": [
+        ".cstack/orchestrate/delivery/units.tsv",
+        ".cstack/orchestrate/delivery/horizon.json"
+      ],
+      "outcome_checks": [
+        {
+          "id": "handoff-resume",
+          "argv": [
+            "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+            "-c",
+            "import csv,json,pathlib,hashlib,subprocess\nexpected_sources={'README.md': '0eb4edc9e4152c7c4491c24b2d9ddb33df46a3c85325c9703d57799837274628', '.cstack/horizon/delivery/spec.md': '534099af87b98e623bd88ccc6ff816f621abe33f8ba734dae57909c6d4fa270e', '.cstack/horizon/delivery/units/A.md': '6d8532a164400c5a2073a9ccc8f7b58f4c4cf5f8a0964ea0bf41456861512ec8', '.cstack/horizon/delivery/units/B.md': '11ec5795958811dc6d71592ea14d3806e6741322235df7a067a844fe7ed2a554', '.cstack/horizon/delivery/units/C.md': '077e058c6b9d6910146fa62923c692f3cd150129246c945ff50ddc9e9934ab5d', '.cstack/horizon/delivery/units/D.md': 'd4f807449b87530d465dfa60b9ab02b9f84022e53cf69be0831a5635c9d103a2'}\np=pathlib.Path('.cstack/orchestrate/delivery')\nfor name,digest in expected_sources.items():\n    if hashlib.sha256(pathlib.Path(name).read_bytes()).hexdigest() != digest: raise SystemExit('source initiale modifiée')\nrows=list(csv.DictReader((p/'units.tsv').open(), delimiter='\\t'))\nif [r['id'] for r in rows] != list('ABCD'): raise SystemExit('unités dupliquées ou manquantes')\nif rows[0]['state'] != 'claimed' or rows[0].get('owner') != 'coordinateur-A': raise SystemExit('claim perdu')\nif any(r['state'] != 'pending' for r in rows[1:]): raise SystemExit('unité débloquée sans preuve')\nreceipt=json.loads((p/'horizon.json').read_text())\nif not receipt['committed']: raise SystemExit('import incomplet')\ndefinition=receipt['definition']\nif [u['blocked_by'] for u in definition['units']] != [[],[],['A'],['B','C']]: raise SystemExit('graphe perdu')\nfor name,digest in definition['sources'].items():\n    if hashlib.sha256(pathlib.Path(name).read_bytes()).hexdigest() != digest: raise SystemExit('source modifiée')\nfor row in rows:\n    brief=pathlib.Path(row['brief']).read_text()\n    if definition['spec'] not in brief or definition['digest'] not in brief: raise SystemExit('provenance manquante')\nif len((p/'ledger.tsv').read_text().splitlines()) != 1: raise SystemExit('preuve fabriquée')\nif subprocess.check_output(['git','remote'],text=True).strip(): raise SystemExit('remote inattendu')\n"
+          ]
+        }
+      ]
+    },
+    "prompts": [
+      "Utilise $cstack:cstack pour valider le passage du plan Horizon existant vers Orchestrate, sans replanifier les unités. La tâche autorise uniquement la préparation locale : aucune action distante, aucun changement de code produit, aucun sous-agent ni objectif natif. Initialise .cstack/orchestrate/delivery et importe .cstack/horizon/delivery/spec.md avec le helper orch. Vérifie les unités prêtes : seules A et B doivent être éligibles. Revendique uniquement A avec owner coordinateur-A et la branche existante work/A, puis arrête avant tout dispatch. Conserve les sources Horizon intactes. Cette interruption est intentionnelle : ne remets pas A à pending.\n\nLa version source n’est pas installée. Lis directement ce fichier de compétence avant d’agir : <final-native>/resources/opal/skills/cstack/SKILL.md",
+      "Utilise $cstack:cstack pour reprendre la même préparation locale. Relance le même import Horizon puis consulte les unités prêtes. Conserve la revendication de A et ne la relance pas. B reste prête, C et D restent bloquées sans preuve; aucune unité ne doit être ajoutée en double. N'implémente rien, ne crée aucun enfant, ne fabrique aucune preuve ni numéro de PR et n'effectue aucune action distante. Rapporte les chemins de briefs, leurs sources, les dépendances et la raison du blocage.\n\nLa version source n’est pas installée. Lis directement ce fichier de compétence avant d’agir : <final-native>/resources/opal/skills/cstack/SKILL.md"
+    ],
+    "checks": [
+      {
+        "id": "handoff-resume",
+        "exit": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    ],
+    "state_hashes_after_first_turn": {
+      ".cstack/horizon/delivery/spec.md": "534099af87b98e623bd88ccc6ff816f621abe33f8ba734dae57909c6d4fa270e",
+      ".cstack/horizon/delivery/units/A.md": "6d8532a164400c5a2073a9ccc8f7b58f4c4cf5f8a0964ea0bf41456861512ec8",
+      ".cstack/horizon/delivery/units/B.md": "11ec5795958811dc6d71592ea14d3806e6741322235df7a067a844fe7ed2a554",
+      ".cstack/horizon/delivery/units/C.md": "077e058c6b9d6910146fa62923c692f3cd150129246c945ff50ddc9e9934ab5d",
+      ".cstack/horizon/delivery/units/D.md": "d4f807449b87530d465dfa60b9ab02b9f84022e53cf69be0831a5635c9d103a2",
+      ".cstack/orchestrate/delivery/briefs/A.md": "f399a5d3373d4b86e22e145d59b5c186e9ddf9211225eff2b8f6b0e0ba38936c",
+      ".cstack/orchestrate/delivery/briefs/B.md": "57ca1df1a7ab53e775cdc2e32bd29e0694df48a3d45b34e5a6bdc266dbc5cafb",
+      ".cstack/orchestrate/delivery/briefs/C.md": "c152d8323fbc204d2f47802899743ff4dd8fff82ec0cabdb61fa2f2ddd9796e6",
+      ".cstack/orchestrate/delivery/briefs/D.md": "6f7f6945c6460af87834b8fab4effd2e08bf9e881ba1f855967374fef3f183ae",
+      ".cstack/orchestrate/delivery/horizon.json": "8b2b71127e07b05e9a83c9c41d469a2b26ada23b1b0ad80f3c58ed754e54da16",
+      ".cstack/orchestrate/delivery/ledger.tsv": "0757b441d2b3042ced7ddcf575aec4e49c8715e33836232ba2458f76cd39ba50",
+      ".cstack/orchestrate/delivery/units.tsv": "a1c91096c6129705952b9a6b175a380f47cf91a9ea5d17a6377767973aa6203b"
+    },
+    "state_hashes_after_second_turn": {
+      ".cstack/horizon/delivery/spec.md": "534099af87b98e623bd88ccc6ff816f621abe33f8ba734dae57909c6d4fa270e",
+      ".cstack/horizon/delivery/units/A.md": "6d8532a164400c5a2073a9ccc8f7b58f4c4cf5f8a0964ea0bf41456861512ec8",
+      ".cstack/horizon/delivery/units/B.md": "11ec5795958811dc6d71592ea14d3806e6741322235df7a067a844fe7ed2a554",
+      ".cstack/horizon/delivery/units/C.md": "077e058c6b9d6910146fa62923c692f3cd150129246c945ff50ddc9e9934ab5d",
+      ".cstack/horizon/delivery/units/D.md": "d4f807449b87530d465dfa60b9ab02b9f84022e53cf69be0831a5635c9d103a2",
+      ".cstack/orchestrate/delivery/briefs/A.md": "f399a5d3373d4b86e22e145d59b5c186e9ddf9211225eff2b8f6b0e0ba38936c",
+      ".cstack/orchestrate/delivery/briefs/B.md": "57ca1df1a7ab53e775cdc2e32bd29e0694df48a3d45b34e5a6bdc266dbc5cafb",
+      ".cstack/orchestrate/delivery/briefs/C.md": "c152d8323fbc204d2f47802899743ff4dd8fff82ec0cabdb61fa2f2ddd9796e6",
+      ".cstack/orchestrate/delivery/briefs/D.md": "6f7f6945c6460af87834b8fab4effd2e08bf9e881ba1f855967374fef3f183ae",
+      ".cstack/orchestrate/delivery/horizon.json": "8b2b71127e07b05e9a83c9c41d469a2b26ada23b1b0ad80f3c58ed754e54da16",
+      ".cstack/orchestrate/delivery/ledger.tsv": "0757b441d2b3042ced7ddcf575aec4e49c8715e33836232ba2458f76cd39ba50",
+      ".cstack/orchestrate/delivery/units.tsv": "a1c91096c6129705952b9a6b175a380f47cf91a9ea5d17a6377767973aa6203b"
+    },
+    "sources_briefs_units_receipt_ledger_unchanged": true,
+    "coordinator_ready_check": {
+      "exit": 0,
+      "stdout": "{\n  \"ready\": [\n    \"B\"\n  ],\n  \"blocked\": [\n    {\n      \"id\": \"A\",\n      \"reason\": \"état claimed; owner coordinateur-A\"\n    },\n    {\n      \"id\": \"C\",\n      \"reason\": \"bloqueur A sans preuve de comportement au head local courant\"\n    },\n    {\n      \"id\": \"D\",\n      \"reason\": \"bloqueur B sans preuve de comportement au head local courant\"\n    }\n  ]\n}\n",
+      "stderr": "Internal error: directory mismatch for directory \"<staged-helper>/tsconfig.json\", fd 3. You don't need to do anything, but this indicates a bug.\n"
+    },
+    "artifacts": {
+      "units.tsv": "id\ttrack\tstate\tbranch\tpr\tsha\tbrief\towner\nA\thorizon\tclaimed\twork/A\t\teb1030257eed475b7b0c3e304bd877514741182c\t<final-native>/projects/sequoia/.cstack/orchestrate/delivery/briefs/A.md\tcoordinateur-A\nB\thorizon\tpending\t\t\t\t<final-native>/projects/sequoia/.cstack/orchestrate/delivery/briefs/B.md\t\nC\thorizon\tpending\t\t\t\t<final-native>/projects/sequoia/.cstack/orchestrate/delivery/briefs/C.md\t\nD\thorizon\tpending\t\t\t\t<final-native>/projects/sequoia/.cstack/orchestrate/delivery/briefs/D.md\t\n",
+      "horizon.json": "{\n  \"definition\": {\n    \"schema\": 1,\n    \"spec\": \"<final-native>/projects/sequoia/.cstack/horizon/delivery/spec.md\",\n    \"digest\": \"3b4a8d2cf468cd9d846b0f9f6b2ab353da377d9af339e521d8b3dbbe19a690d9\",\n    \"sources\": {\n      \"<final-native>/projects/sequoia/.cstack/horizon/delivery/spec.md\": \"534099af87b98e623bd88ccc6ff816f621abe33f8ba734dae57909c6d4fa270e\",\n      \"<final-native>/projects/sequoia/.cstack/horizon/delivery/units/A.md\": \"6d8532a164400c5a2073a9ccc8f7b58f4c4cf5f8a0964ea0bf41456861512ec8\",\n      \"<final-native>/projects/sequoia/.cstack/horizon/delivery/units/B.md\": \"11ec5795958811dc6d71592ea14d3806e6741322235df7a067a844fe7ed2a554\",\n      \"<final-native>/projects/sequoia/.cstack/horizon/delivery/units/C.md\": \"077e058c6b9d6910146fa62923c692f3cd150129246c945ff50ddc9e9934ab5d\",\n      \"<final-native>/projects/sequoia/.cstack/horizon/delivery/units/D.md\": \"d4f807449b87530d465dfa60b9ab02b9f84022e53cf69be0831a5635c9d103a2\"\n    },\n    \"goal\": \"Livrer les quatre unités définies\",\n    \"out_of_scope\": [\n      \"Actions distantes et changements hors unité\"\n    ],\n    \"context\": [\n      \"README.md\"\n    ],\n    \"decisions\": [],\n    \"units\": [\n      {\n        \"id\": \"A\",\n        \"source\": \"<final-native>/projects/sequoia/.cstack/horizon/delivery/units/A.md\",\n        \"goal\": \"Livrer le résultat A\",\n        \"blocked_by\": [],\n        \"acceptance\": [\n          \"Le fichier results/A.txt contient exactement A\"\n        ],\n        \"writable\": [\n          \"results/A.txt\"\n        ],\n        \"forbidden\": [\n          \"Aucune action distante\"\n        ],\n        \"context\": [\n          \"README.md\"\n        ],\n        \"verify\": [\n          \"cat results/A.txt\"\n        ]\n      },\n      {\n        \"id\": \"B\",\n        \"source\": \"<final-native>/projects/sequoia/.cstack/horizon/delivery/units/B.md\",\n        \"goal\": \"Livrer le résultat B\",\n        \"blocked_by\": [],\n        \"acceptance\": [\n          \"Le fichier results/B.txt contient exactement B\"\n        ],\n        \"writable\": [\n          \"results/B.txt\"\n        ],\n        \"forbidden\": [\n          \"Aucune action distante\"\n        ],\n        \"context\": [\n          \"README.md\"\n        ],\n        \"verify\": [\n          \"cat results/B.txt\"\n        ]\n      },\n      {\n        \"id\": \"C\",\n        \"source\": \"<final-native>/projects/sequoia/.cstack/horizon/delivery/units/C.md\",\n        \"goal\": \"Livrer le résultat C\",\n        \"blocked_by\": [\n          \"A\"\n        ],\n        \"acceptance\": [\n          \"Le fichier results/C.txt contient exactement C\"\n        ],\n        \"writable\": [\n          \"results/C.txt\"\n        ],\n        \"forbidden\": [\n          \"Aucune action distante\"\n        ],\n        \"context\": [\n          \"README.md\"\n        ],\n        \"verify\": [\n          \"cat results/C.txt\"\n        ]\n      },\n      {\n        \"id\": \"D\",\n        \"source\": \"<final-native>/projects/sequoia/.cstack/horizon/delivery/units/D.md\",\n        \"goal\": \"Livrer le résultat D\",\n        \"blocked_by\": [\n          \"B\",\n          \"C\"\n        ],\n        \"acceptance\": [\n          \"Le fichier results/D.txt contient exactement D\"\n        ],\n        \"writable\": [\n          \"results/D.txt\"\n        ],\n        \"forbidden\": [\n          \"Aucune action distante\"\n        ],\n        \"context\": [\n          \"README.md\"\n        ],\n        \"verify\": [\n          \"cat results/D.txt\"\n        ]\n      }\n    ]\n  },\n  \"committed\": true\n}\n",
+      "ledger.tsv": "pr\tsha\tverdict\tevidence\tverifier\tts\n",
+      "overview.md": "# Préparation du handoff delivery\n\nLe premier prompt autorise l'import local de la définition Horizon existante et la réservation de A. Le résultat attendu est A à claimed avec coordinateur-A sur work/A, puis un arrêt avant dispatch.\n\nLe 17 octobre 2026, l'import a créé A, B, C et D. Le reçu horizon.json est committed. Le contrôle handoff ready a retourné A et B. C attend A. D attend B et C selon la définition importée.\n\nLe worktree de A a été créé par cette tâche à <final-native>/projects/sequoia/.cstack/worktrees/A, sur la branche existante work/A au commit eb1030257eed475b7b0c3e304bd877514741182c. Il appartient à l'unité A, avec coordinateur-A comme propriétaire prévu. Aucun agent ni processus de travail n'y a été lancé. Ce chemin est conservé pour la réservation et sa reprise contrôlée.\n\nLes commandes du lanceur affichent un avertissement interne Bun directory mismatch. Les commandes d'aide, init et import ont retourné le code 0. Les artefacts locaux ont été lus après import. Une lecture initiale de overview.md a échoué car le helper init ne crée pas ce fichier. Ce fichier est maintenant créé par le coordinateur.\n\n## Arrêt après le premier prompt\n\nLa réservation de A a réussi. units.tsv contient A à claimed, owner coordinateur-A, branche work/A et SHA eb1030257eed475b7b0c3e304bd877514741182c. B, C et D restent pending sans propriétaire. Le ledger ne contient aucune preuve ni PR. Le rendu status.md compte une unité claimed et trois pending, avec zéro barrière ouverte.\n\nLa vérification sha256sum -c horizon-sources.sha256 a retourné OK pour la spec et les quatre unités. Ces empreintes correspondent aussi au relevé effectué avant init et au reçu horizon.json. Les états git status --short du dépôt principal et du worktree A étaient vides après la réservation.\n\nAucun dispatch n'a été exécuté pendant ce premier prompt. Aucun sous-agent, objectif natif, changement de code produit ni action distante n'a été lancé. A reste claimed conformément à l'interruption demandée. Le worktree A reste réservé et conservé. Le second tour doit provenir du coordinateur, aucune reprise d'exécution n'est anticipée ici.\n\nPour inspecter localement la reprise depuis la racine du projet, sans dispatch :\n\n```bash\nexport PATH=\"/workspace/tools/bun-1.4.0/bun-linux-x64:$PATH\"\nexport ORCH_STORE=\"$PWD/.cstack/orchestrate/delivery\"\nbash <final-native>/resources/opal/scripts/run-tool.sh orch/orch.ts handoff ready --repo \"$PWD\"\ncat .cstack/orchestrate/delivery/units.tsv\n```\n\nLe pilote, la montée en charge, le drain, l'intégration et la clôture terminale des unités sont omis pour respecter l'arrêt avant dispatch. A n'a pas été remise à pending.\n\n## Reprise du second prompt\n\nLe même import Horizon a retourné ajoutées=aucune, réutilisées=A,B,C,D, avec la version 3b4a8d2cf468cd9d846b0f9f6b2ab353da377d9af339e521d8b3dbbe19a690d9. Le contrôle handoff ready a retourné seulement B. A reste claimed avec coordinateur-A sur work/A au SHA eb1030257eed475b7b0c3e304bd877514741182c. Aucune nouvelle réservation ni aucun dispatch n'a été effectué.\n\nLe manifeste reimport-before.sha256, enregistré avant ce second import, a été contrôlé après celui-ci. Le reçu horizon.json, units.tsv, ledger.tsv et les quatre briefs sont identiques. Le manifeste horizon-sources.sha256 a aussi retourné OK pour les cinq sources Horizon. units.tsv contient toujours exactement les quatre lignes A, B, C et D. Le ledger reste vide et aucune PR n'est enregistrée.\n\nLes briefs .cstack/orchestrate/delivery/briefs/A.md, B.md, C.md et D.md citent tous .cstack/horizon/delivery/spec.md, ainsi que leur source respective .cstack/horizon/delivery/units/A.md, B.md, C.md et D.md. A et B n'ont aucun bloqueur. C dépend de A. D dépend de B et C. Le helper bloque C faute de preuve de comportement de A au head local courant. Pour D, il signale d'abord B sans cette preuve. C reste également non terminée.\n\nLes commandes principales réellement exécutées au second tour étaient le même handoff import, handoff ready --repo depuis la racine du projet, les contrôles sha256sum -c des deux manifestes, les lectures des artefacts et les contrôles git status et git worktree list. Aucun code produit, enfant, objectif natif, verdict de comportement ni numéro de PR n'a été créé. Le diagnostic interne Bun directory mismatch est réapparu, sans échec des deux commandes du helper.\n\nLa reprise demandée est terminée. Le magasin et le worktree de A restent conservés. A demeure claimed, B demeure prête, et C et D restent bloquées par les preuves manquantes.\n",
+      "briefs/A.md": "# A\n\nGOAL\nLivrer le résultat A\n\nSCOPE\nresults/A.txt\nBranche et worktree exclusifs enregistrés par le coordinateur avant dispatch.\n\nCONTEXT\nSpec: <final-native>/projects/sequoia/.cstack/horizon/delivery/spec.md\nVersion SHA256: 3b4a8d2cf468cd9d846b0f9f6b2ab353da377d9af339e521d8b3dbbe19a690d9\nUnité: <final-native>/projects/sequoia/.cstack/horizon/delivery/units/A.md\nDécisions: aucune\nBloqueurs: aucun\nREADME.md\nREADME.md\n\nACCEPTANCE\nLe fichier results/A.txt contient exactement A\n\nVERIFY\ncat results/A.txt\n\nTIMEBOX\nRetourner les preuves partielles à la limite convenue avec le coordinateur.\n\nFORBIDDEN\nActions distantes et changements hors unité\nAucune action distante\nPas de changement de topologie, force-push ou action distante sans autorité utilisateur explicite.\n\nREPORT\nStatut, branche, SHA head, PR si autorisée, verdict, contrôles exécutés, preuves, écarts et suivis.\n\nSTANDING\nLire preferences.md dans ce magasin et les instructions projet courantes.\n\n",
+      "briefs/B.md": "# B\n\nGOAL\nLivrer le résultat B\n\nSCOPE\nresults/B.txt\nBranche et worktree exclusifs enregistrés par le coordinateur avant dispatch.\n\nCONTEXT\nSpec: <final-native>/projects/sequoia/.cstack/horizon/delivery/spec.md\nVersion SHA256: 3b4a8d2cf468cd9d846b0f9f6b2ab353da377d9af339e521d8b3dbbe19a690d9\nUnité: <final-native>/projects/sequoia/.cstack/horizon/delivery/units/B.md\nDécisions: aucune\nBloqueurs: aucun\nREADME.md\nREADME.md\n\nACCEPTANCE\nLe fichier results/B.txt contient exactement B\n\nVERIFY\ncat results/B.txt\n\nTIMEBOX\nRetourner les preuves partielles à la limite convenue avec le coordinateur.\n\nFORBIDDEN\nActions distantes et changements hors unité\nAucune action distante\nPas de changement de topologie, force-push ou action distante sans autorité utilisateur explicite.\n\nREPORT\nStatut, branche, SHA head, PR si autorisée, verdict, contrôles exécutés, preuves, écarts et suivis.\n\nSTANDING\nLire preferences.md dans ce magasin et les instructions projet courantes.\n\n",
+      "briefs/C.md": "# C\n\nGOAL\nLivrer le résultat C\n\nSCOPE\nresults/C.txt\nBranche et worktree exclusifs enregistrés par le coordinateur avant dispatch.\n\nCONTEXT\nSpec: <final-native>/projects/sequoia/.cstack/horizon/delivery/spec.md\nVersion SHA256: 3b4a8d2cf468cd9d846b0f9f6b2ab353da377d9af339e521d8b3dbbe19a690d9\nUnité: <final-native>/projects/sequoia/.cstack/horizon/delivery/units/C.md\nDécisions: aucune\nBloqueurs: A\nREADME.md\nREADME.md\n\nACCEPTANCE\nLe fichier results/C.txt contient exactement C\n\nVERIFY\ncat results/C.txt\n\nTIMEBOX\nRetourner les preuves partielles à la limite convenue avec le coordinateur.\n\nFORBIDDEN\nActions distantes et changements hors unité\nAucune action distante\nPas de changement de topologie, force-push ou action distante sans autorité utilisateur explicite.\n\nREPORT\nStatut, branche, SHA head, PR si autorisée, verdict, contrôles exécutés, preuves, écarts et suivis.\n\nSTANDING\nLire preferences.md dans ce magasin et les instructions projet courantes.\n\n",
+      "briefs/D.md": "# D\n\nGOAL\nLivrer le résultat D\n\nSCOPE\nresults/D.txt\nBranche et worktree exclusifs enregistrés par le coordinateur avant dispatch.\n\nCONTEXT\nSpec: <final-native>/projects/sequoia/.cstack/horizon/delivery/spec.md\nVersion SHA256: 3b4a8d2cf468cd9d846b0f9f6b2ab353da377d9af339e521d8b3dbbe19a690d9\nUnité: <final-native>/projects/sequoia/.cstack/horizon/delivery/units/D.md\nDécisions: aucune\nBloqueurs: B, C\nREADME.md\nREADME.md\n\nACCEPTANCE\nLe fichier results/D.txt contient exactement D\n\nVERIFY\ncat results/D.txt\n\nTIMEBOX\nRetourner les preuves partielles à la limite convenue avec le coordinateur.\n\nFORBIDDEN\nActions distantes et changements hors unité\nAucune action distante\nPas de changement de topologie, force-push ou action distante sans autorité utilisateur explicite.\n\nREPORT\nStatut, branche, SHA head, PR si autorisée, verdict, contrôles exécutés, preuves, écarts et suivis.\n\nSTANDING\nLire preferences.md dans ce magasin et les instructions projet courantes.\n\n"
+    },
+    "limitations": [
+      "App tools were used directly; no CLI harness workflow verdict or route trace exists.",
+      "No dispatch or remote actions were allowed by this resume scenario. Actual worker implementation is recorded separately on the earlier hashed sources."
+    ]
+  }
+}
