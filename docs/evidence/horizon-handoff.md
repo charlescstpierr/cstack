@@ -112,7 +112,8 @@ faute de son `config.toml`; une sonde `codex exec` distincte reçoit HTTP 401.
 Les empreintes séparent les sources du premier essai natif et les révisions
 ultérieures. Le parseur ajoute deux rejets après cet essai; Interrogate fait
 aussi renforcer la validation des branches et des chemins. Import et readiness ont été revérifiés
-avec le code final sur les deux stores, sans changement d'état. Les workers
+sur les deux anciens stores avec le parseur de `54f4f3e`, avant ce durcissement
+des branches et chemins, sans changement d'état. Les workers
 n'ont pas été relancés pour ces validations supplémentaires. Bun émet un diagnostic
 `directory mismatch` du lanceur temporaire malgré les sorties zéro et les
 vérifications d'artefacts passantes; aucun succès CLI natif n'est revendiqué.
