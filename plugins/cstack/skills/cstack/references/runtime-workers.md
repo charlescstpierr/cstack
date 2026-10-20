@@ -41,7 +41,7 @@ Les logins locaux ChatGPT et Claude Pro/Max sont documentés. Pour Claude, utili
 
 ## Préparer le brief
 
-Réutilise le [brief d’Orchestrate](../playbooks/orchestrate.md#format-de-brief) : GOAL, SCOPE, CONTEXT, ACCEPTANCE, VERIFY, TIMEBOX, FORBIDDEN, REPORT et STANDING. Pour une petite tâche, garde les faits avec une forme courte. Ajoute le profil de permissions et la forme attendue du rapport, sans créer un deuxième système de tâches.
+Pour préparer un dispatch, lis la section « Format de brief » de `../playbooks/orchestrate.md` et réutilise ses champs : GOAL, SCOPE, CONTEXT, ACCEPTANCE, VERIFY, TIMEBOX, FORBIDDEN, REPORT et STANDING. Pour une petite tâche, garde les faits avec une forme courte. Ajoute le profil de permissions et la forme attendue du rapport, sans créer un deuxième système de tâches.
 
 Le brief contient le contexte nécessaire, pas le chat complet ni les secrets du parent. Les workers externes ne voient pas automatiquement les résultats frères, les outils Codex ou les décisions du parent. Pour Arena, pars de la même base Git et du même brief, sans donner au seul candidat Codex un fork riche qui fausserait la comparaison. Interrogate conserve ses axes distincts et son instantané figé.
 
