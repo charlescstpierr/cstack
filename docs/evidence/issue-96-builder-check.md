@@ -58,7 +58,7 @@ python3 scripts/behavior-scenarios.py --baseline /chemin/plugin-base --proposed 
 python3 scripts/verify-behavior.py --cases /tmp/cstack-construction/cases.json --expectations /tmp/cstack-construction/expectations.json --case-id design_missing_proposed --verify-outcomes --output /tmp/cstack-construction-result
 ```
 
-Les essais rapportés ici ont utilisé les outils natifs de collaboration, pas le transport app-server du runner. Les fixtures sont aussi rejouables par ce runner. Ses vérificateurs automatiques contrôlent les limites d'écriture et la présence d'un enfant pour une conception ; ils ne décident pas si une question produit est pertinente ni si le lecteur a écrit la synthèse. Ces points exigent de lire les artefacts et les reçus d'acteurs. Aucun verdict global du runner n'est revendiqué pour ces essais manuels.
+Les essais rapportés ici ont utilisé les outils natifs de collaboration, pas le transport app-server du runner. Les fixtures sont aussi rejouables par ce runner. Ses vérificateurs automatiques contrôlent les limites d'écriture, les artefacts de préparation et la présence d'un enfant pour une conception ; ils ne décident pas si une question produit est pertinente ni si le lecteur a écrit la synthèse. Les cas non mécaniques déclarent donc `requires_independent_review: true` : même avec des artefacts plausibles, leur résultat automatique reste `unverified`. Ces points exigent de lire séparément les artefacts et les reçus d'acteurs. Aucun verdict global du runner n'est revendiqué pour les essais manuels.
 
 Le test de génération a échoué avant l'ajout des cas avec `KeyError: design_missing_baseline`. Un second rouge a révélé qu'une assertion exécutée sous `PYTHONOPTIMIZE=1` pouvait accepter une mutation. Les vérificateurs utilisent maintenant `expected_json`, comparé par le runner hors du processus observé. Le test modifie réellement la conception, crée une publication interdite ou réintroduit le mauvais titre, et vérifie leur rejet sous Python optimisé.
 
@@ -73,6 +73,28 @@ Les deux dossiers complets vivent sous `.cstack/maple/projects/cedar-4-45` et `.
 Le coordinateur a ensuite lancé séparément les services sur un port local attribué par le système. Il a vérifié GET 200 et JSON exact, POST/PUT/PATCH/DELETE 405, route inconnue 404, données inchangées et les six empreintes initiales de chaque projet. Les services ont été arrêtés. Le [reçu HTTP](issue-96-http.json) conserve ces résultats. Les deux premières unités satisfont leurs contrats ; aucune supériorité de qualité du code construit ni économie n'est démontrée. Un même builder a traité les deux demandes séparément : ce complément vérifie les résultats et ne constitue pas une comparaison aveugle de performance.
 
 La revue indépendante `review_first_changes` a également relevé que le rejeu du cas mécanique ne refusait pas un enfant inutile. Un test a reproduit cette lacune (`unverified` au lieu de `fail`), puis est passé avec `expected_children: 0`. Le comportement natif sans lecteur supplémentaire avait déjà été observé ; le harnais détecte désormais cette régression.
+
+## Correction du faux succès signalé en revue
+
+Au head `3d51c63`, un enfant sans rapport, un PREPARATION.md vide, DESIGN.md intact et aucune publication obtenaient deux verdicts `pass`. Le test de régression a reproduit ce résultat avant le correctif. Il a aussi constaté que le cas mécanique invoquait le coordinateur cstack au lieu d'exercer directement la phase C d'Architect.
+
+Le runner accepte maintenant le booléen de confiance `requires_independent_review`. Il produit un contrôle `unverified` qui ne peut être satisfait ni par un rapport écrit dans le projet ni par un champ d'auto-évaluation du candidat. Un contrôle déterministe échoué reste prioritaire. Aucune nouvelle convention de reçu ou notation automatique du contenu n'est ajoutée.
+
+| Artefact observé | Verdict automatique après correction |
+| --- | --- |
+| PREPARATION.md vide ou absent | fail |
+| NEXT.json absent dans un dossier déjà résolu | fail |
+| NEXT.json non JSON, liste ou objet vide | fail |
+| Plateforme encore ouverte, préparation non vide et NEXT.json absent | unverified |
+| Préparation et NEXT.json plausibles, même avec un faux rapport PASS | unverified |
+| Correction mécanique exacte et zéro enfant | pass |
+| Correction mécanique avec un enfant supplémentaire | fail |
+
+Ces gardes établissent la présence et la forme des artefacts. Elles ne prétendent pas comprendre les décisions produit. Le contrôle indépendant décrit plus haut reste une preuve séparée. Les tests du runner vérifient aussi le code de sortie 2 pour cette limite, le comportement inchangé quand le booléen vaut false, et le refus des types non booléens.
+
+Le rejeu natif final `/root/explore_design_short/birch_title` a reçu la variante mécanique directement avec Architect, sans interdiction de descendants ajoutée au prompt. Il a appliqué « contrôle de construction n/a, correction mécanique dont la forme est fixée » et changé uniquement `# Ticktes` en `# Tickets`. Le coordinateur a relu le diff réel et exécuté le vérificateur : résultat `pass`. L'arbre natif observé ne montrait aucun descendant et l'acteur n'a demandé aucun lecteur. Ce transport ne fournit toutefois pas la liste exhaustive des enfants au runner : son verdict de délégation reste `unverified`, sans liste vide inventée. Le [reçu mécanique](issue-96-mechanical.json) conserve cette distinction. La table précédente décrit les verdicts déterministes quand les métadonnées requises sont disponibles, pas une certification de métadonnées absentes.
+
+Après ces corrections et la passe deslop, `bash scripts/check.sh` a terminé avec le code 0 : 246 tests Python avec 1 saut déclaré, 29 tests Bun du dépôt, 231 tests des helpers, types et linters verts. Log local : `.cstack/cedar/review-fixes/check.log`. La revue indépendante du delta est assurée par `review_contracts` dans la tâche parent.
 
 ## Provenance locale
 

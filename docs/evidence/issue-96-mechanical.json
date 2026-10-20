@@ -1,0 +1,34 @@
+{
+  "actor": "/root/explore_design_short/birch_title",
+  "source_skill": "skills/architect/SKILL.md",
+  "source_sha256": "64dd5580bf8ee99697f8a6edf9058912e71980a0637b5d1055a8b2baf566996c",
+  "diff": "diff --git a/README.md b/README.md\nindex 2a90205..5940781 100644\n--- a/README.md\n+++ b/README.md\n@@ -1,2 +1,2 @@\n-# Ticktes\n+# Tickets\n Consulter ses tickets sur iPhone.\n",
+  "changed_paths": [
+    "README.md"
+  ],
+  "verdicts": {
+    "turn": "completed",
+    "workflow": {
+      "status": "unverified",
+      "checks": [
+        {
+          "id": "delegation",
+          "status": "unverified"
+        }
+      ]
+    },
+    "outcome": {
+      "status": "pass",
+      "checks": [
+        {
+          "id": "preparation-boundaries",
+          "status": "pass",
+          "returncode": 0,
+          "stdout": "\"# Tickets\\nConsulter ses tickets sur iPhone.\\n\"\n",
+          "stderr": ""
+        }
+      ]
+    }
+  },
+  "child_metadata": "Not exposed by collaboration response; live native tree showed only the actor, no descendants. No synthetic child list supplied to evaluate_case."
+}

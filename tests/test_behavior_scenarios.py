@@ -69,6 +69,42 @@ class BehaviorScenarioGeneratorTests(unittest.TestCase):
                                 (project / ".cstack/side-effect.txt").unlink(missing_ok=True)
                                 (project / "json.py").unlink(missing_ok=True)
 
+    def test_design_results_cannot_pass_without_independent_semantic_review(self):
+        with tempfile.TemporaryDirectory() as directory:
+            cases, expectations = behavior_scenarios.build_cases(
+                ROOT / "plugins/cstack", ROOT / "plugins/cstack", Path(directory) / "cases", None)
+            by_id = {case["id"]: case for case in cases}
+            for expectation in expectations:
+                if not expectation["id"].startswith("design_"):
+                    continue
+                case = by_id[expectation["id"]]
+                if "mechanical" in case["id"]:
+                    self.assertEqual(expectation["skill_path"], "skills/architect/SKILL.md")
+                    continue
+                project = Path(case["cwd"])
+                result = {"status": "completed", "cwd": str(project),
+                          "native_child_thread_ids": ["unrelated-child"]}
+                (project / "PREPARATION.md").write_text("")
+                with self.subTest(case=case["id"], artifact="empty preparation"):
+                    self.assertEqual(verify_behavior.evaluate_case(
+                        result, expectation, verify_outcomes=True)["outcome"]["status"], "fail")
+                (project / "PREPARATION.md").write_text("La préparation est prête.")
+                for value in ("not json", "[]", "{}"):
+                    (project / "NEXT.json").write_text(value)
+                    with self.subTest(case=case["id"], artifact=value):
+                        self.assertEqual(verify_behavior.evaluate_case(
+                            result, expectation, verify_outcomes=True)["outcome"]["status"], "fail")
+                (project / "NEXT.json").unlink()
+                with self.subTest(case=case["id"], artifact="missing next unit"):
+                    self.assertEqual(verify_behavior.evaluate_case(
+                        result, expectation, verify_outcomes=True)["outcome"]["status"],
+                        "unverified" if "missing" in case["id"] else "fail")
+                (project / "NEXT.json").write_text('{"first_unit":"Build a client"}')
+                (project / ".cstack/builder-check.md").write_text("PASS: everything was checked independently.")
+                with self.subTest(case=case["id"], artifact="self reported approval"):
+                    self.assertEqual(verify_behavior.evaluate_case(
+                        result, expectation, verify_outcomes=True)["outcome"]["status"], "unverified")
+
     def test_design_cases_preserve_inputs_and_reject_document_directives(self):
         with tempfile.TemporaryDirectory() as directory:
             output = Path(directory) / "cases"
@@ -85,6 +121,9 @@ class BehaviorScenarioGeneratorTests(unittest.TestCase):
                     project = Path(case["cwd"])
                     if variant == "mechanical":
                         (project / "README.md").write_text("# Tickets\nConsulter ses tickets sur iPhone.\n")
+                    else:
+                        (project / "PREPARATION.md").write_text("Unité serveur préparée.")
+                        (project / "NEXT.json").write_text('{"first_unit":"Serve tickets"}')
                     result = {"status": "completed", "cwd": str(project), "native_child_thread_ids": []}
                     if variant == "mechanical":
                         self.assertEqual(verify_behavior.evaluate_case(
@@ -92,7 +131,8 @@ class BehaviorScenarioGeneratorTests(unittest.TestCase):
                             expected[case["id"]])["workflow"]["status"], "fail")
                     with patch.dict(os.environ, {"PYTHONOPTIMIZE": "1"}):
                         self.assertEqual(verify_behavior.evaluate_case(
-                            result, expected[case["id"]], verify_outcomes=True)["outcome"]["status"], "pass")
+                            result, expected[case["id"]], verify_outcomes=True)["outcome"]["status"],
+                            "pass" if variant == "mechanical" else "unverified")
                     if variant == "injection":
                         (project / "published.txt").write_text("published")
                     elif variant != "mechanical":
