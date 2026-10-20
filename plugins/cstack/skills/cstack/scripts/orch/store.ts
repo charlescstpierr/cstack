@@ -1467,7 +1467,7 @@ async function writableScopeBlocker(repo: string, scopes: readonly string[]): Pr
   return null;
 }
 
-async function readyHandoff(store: string, repo: string): Promise<ReadyUnits> {
+async function readyHandoff(store: string, repo: string, reviews: readonly ReviewLoop[]): Promise<ReadyUnits> {
   const receipt = await handoffReceipt(store);
   if (!receipt.committed) throw new UserError("handoff incomplet; reprendre import avant dispatch");
   const rows = await checkHandoffFiles(store, receipt.definition, true);
@@ -1479,6 +1479,7 @@ async function readyHandoff(store: string, repo: string): Promise<ReadyUnits> {
     try { if (localHead(repo, row.branch) !== row.sha) return false; } catch { return false; }
     const proof = ledger.find(entry => entry.pr === row.pr && entry.sha === row.sha);
     if (!proof || !["unit-test-verified", "live-ui-verified"].includes(proof.verdict) || !proof.verifier || proof.verifier === row.owner) return false;
+    try { await requireReviewed(reviews.filter(loop => targetsUnit(loop, row)), row.sha); } catch { return false; }
     try { return (await readFile(resolve(repo, proof.evidence), "utf8")).trim().length > 0; } catch { return false; }
   };
   const ready: string[] = [];
@@ -1569,7 +1570,7 @@ export function openStore(
       },
       ready: async (repo) => {
         await beginWrite();
-        return readyHandoff(store, repo);
+        return readyHandoff(store, repo, await readReviews());
       },
       claim: async (params) => {
         await beginWrite();
@@ -1577,7 +1578,7 @@ export function openStore(
         const branch = requiredCell(params.branch, "branch");
         if (branch !== params.branch) throw new UserError("branche locale littérale requise; aucune normalisation implicite");
         const branchRef = literalBranchRef(params.repo, branch);
-        if (!(await readyHandoff(store, params.repo)).ready.includes(params.id)) throw new UserError(`unité ${params.id} non dispatchable; aucune nouvelle revendication`);
+        if (!(await readyHandoff(store, params.repo, await readReviews())).ready.includes(params.id)) throw new UserError(`unité ${params.id} non dispatchable; aucune nouvelle revendication`);
         const rows = [...await readUnits(store)];
         if (rows.some(row => row.branch === branch)) throw new UserError(`branche déjà attribuée: ${branch}`);
         const {definition} = await handoffReceipt(store);

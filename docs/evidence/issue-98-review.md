@@ -56,4 +56,18 @@ La barrière est prouvée sur les vrais appels `unit.set`, `ledger.record` et `r
 
 Les empreintes couvrent le patch Git et les preuves lues. Le helper ne prouve pas la pertinence sémantique d'un log, la qualité d'une stratégie ou l'identité déclarée d'un acteur. Ces jugements restent au reviewer indépendant. Un défaut bloquant hors du correctif est conservé pour le suivi global et empêche la déclaration finale prête, sans autoriser une nouvelle tentative ciblée.
 
-Le handoff Horizon de la PR 94 ne figure pas dans cette base. Lors de son intégration, son calcul `readyHandoff` doit appliquer la même barrière aux dépendances, car une lecture directe de `ledger.tsv` ne suffit pas à vérifier la fraîcheur d'une boucle de correction.
+## Corrections après revue et empilement sur le handoff
+
+La revue indépendante a reproduit deux défauts et une incohérence possible dans le JSON persisté. Trois nouveaux scénarios échouent avant correction dans `review-fixes-red.log`, puis les 21 tests de correction passent dans `review-fixes-green.log`.
+
+- Changer `brief` en `context`, renommer un fichier ou dupliquer le même contenu ne constitue plus un changement de stratégie. La comparaison utilise l'ensemble canonique des empreintes de contenu, indépendamment des étiquettes.
+- Un ancien défaut dans un fichier modifié ailleurs reste hors du correctif lorsque le reviewer déclare `introduced: false`. La classification ne déduit plus la causalité du chemin.
+- Le parseur refuse un défaut bloquant ou de sécurité marqué `deferred`, même si cette combinaison provient d'une modification externe du fichier d'état.
+
+Le commit de l'unité a été rebasé sur `4a4c17c6a8cbdee3712ae0027e85402c70b5a844`, qui contient les contrats #97 et le handoff #93. Les conflits de CLI, de magasin et de provenance ont conservé les deux fonctionnalités et une seule file de mutations.
+
+Deux scénarios supplémentaires de `horizon.test.ts` ont ensuite reproduit le contournement de la barrière par le handoff : un ledger positif rendait C disponible malgré une revue ouverte sur son prérequis A, ou malgré un patch devenu périmé. `handoff-red.log` conserve les deux échecs. Le calcul `readyHandoff` applique désormais `requireReviewed` aux seules boucles rattachées à chaque prérequis, par unité ou PR. Les 108 tests Orchestrate passent dans `handoff-green.log`, avec B toujours indépendante.
+
+La vérification native finale utilise la vraie CLI sur une fixture Horizon de la branche empilée. L'enfant indépendant a observé B et C disponibles, puis B seule après ouverture de la revue de A. La revendication de C échoue et celle de B réussit. Après réfutation de F1 par lecture de la valeur canonique et exécution du test, C devient disponible. L'ajout d'un fichier non suivi rend ensuite la preuve périmée et empêche de revendiquer C, sans changement de HEAD ni du ledger. Les 13 assertions, sorties, codes et durées sont conservés dans `native-stacked/.cstack/native-verdict.json`.
+
+`bash scripts/check.sh` passe également sur cette branche empilée, code 0, avec 245 tests Python dont un ignoré, 29 tests Bun racine et 306 tests helpers. Les types et lints passent. La preuve complète est `stacked-check.log`. Le parcours natif initial reste une preuve de la première version du helper ; le parcours empilé et les régressions ajoutées couvrent les corrections finales.
