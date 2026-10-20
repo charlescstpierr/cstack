@@ -1,6 +1,7 @@
 #!/usr/bin/env bun
 
 import { ensureDependenciesInstalled } from "../bootstrap.ts";
+import { readFile } from "node:fs/promises";
 import {
   NotFoundError,
   UsageError,
@@ -293,6 +294,20 @@ function createProgram(io: Io): Command {
     .action((id: string, options: { readonly repo: string; readonly owner: string; readonly branch: string }) =>
       runStore(program, io, store => store.handoff.claim({id, ...options}), unitLine));
 
+  const review = program.command("review").description("borner les corrections et vérifier leur patch").action(() => requireSubcommand(program));
+  for (const command of ["open", "attempt", "record"] as const) {
+    leaf(review, `${command} <request>`, "appliquer une requête JSON au suivi de correction")
+      .action((request: string) => runStore(program, io,
+        async store => store.review[command](JSON.parse(await readFile(request, "utf8"))),
+        result => JSON.stringify(result)));
+  }
+  leaf(review, "check <id>", "relire le patch et les preuves avant livraison")
+    .action((id: string) => runStore(program, io, async store => {
+      const result = await store.review.check(id);
+      if (!result.ready) throw new NotFoundError("REVIEW-NOT-READY", {compact:JSON.stringify(result),json:result});
+      return result;
+    }, result => JSON.stringify(result)));
+
   const unit = program
     .command("unit")
     .description("gérer les unités de travail")
@@ -565,7 +580,7 @@ function handleError(error: unknown, program: Command, io: Io): number {
     } else {
       emit(io, json, output.json, () => output.compact);
     }
-    return 2;
+    return error.message === "REVIEW-NOT-READY" ? 1 : 2;
   }
   io.stderr(`erreur: ${message(error)}\n`);
   if (error instanceof UsageError) {
