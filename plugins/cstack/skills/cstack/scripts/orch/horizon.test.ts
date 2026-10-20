@@ -23,9 +23,9 @@ async function fixture() {
   await mkdir(join(horizon, "tickets"));
   await writeFile(join(horizon, "tickets/01-policy.md"), "---\nid: 01\nstatus: resolved\n---\n## Réponse\nConserver pendant 90 jours.\n");
   const spec = join(horizon, "spec.md");
-  const definition = {schema: 1, status: "ready", goal: "Livrer quatre comportements", out_of_scope: ["Aucune publication distante"], context: ["README.md"], decisions: ["tickets/01-policy.md"], units: ["units/A.md", "units/B.md", "units/C.md", "units/D.md"]};
+  const definition = {schema: 1, status: "ready", goal: "Livrer quatre comportements", out_of_scope: ["Aucune publication distante"], context: ["README.md"], decisions: ["tickets/01-policy.md"], contracts: [], requirements: ["A", "B", "C", "D"].map(id => ({id, description: `Livrer ${id}`})), units: ["units/A.md", "units/B.md", "units/C.md", "units/D.md"]};
   await writeFile(spec, block(definition));
-  const definitions = ["A", "B", "C", "D"].map(id => ({id, goal: `Livrer ${id}`, blocked_by: id === "C" ? ["A"] : id === "D" ? ["B", "C"] : [], acceptance: [`L'appel ${id} retourne sa valeur attendue`], writable: [`src/${id}.ts`], forbidden: ["Ne pas publier"], context: ["README.md"], verify: [`bun run verify-${id}`]}));
+  const definitions = ["A", "B", "C", "D"].map(id => ({id, goal: `Livrer ${id}`, blocked_by: id === "C" ? ["A"] : id === "D" ? ["B", "C"] : [], acceptance: [`L'appel ${id} retourne sa valeur attendue`], writable: [`src/${id}.ts`], forbidden: ["Ne pas publier"], context: ["README.md"], verify: [`bun run verify-${id}`], produces: [], consumes: [], tests: [{name: `verify-${id}`, requirements: [id], input: `Appel ${id}`, assertions: [`Résultat ${id}`], command: `bun run verify-${id}`, success: "exit 0"}]}));
   for (const unit of definitions) {
     await writeFile(join(horizon, `units/${unit.id}.md`), block(unit)); git(root, "branch", `work/${unit.id}`);
   }

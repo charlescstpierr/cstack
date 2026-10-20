@@ -1,0 +1,158 @@
+{
+  "baseline_head": "c47b10a149ca9322f624c183bdf9f6d788d24d44",
+  "actors": {
+    "baseline": [
+      "/root/maple_amount",
+      "/root/maple_label",
+      "/root/maple_invoice"
+    ],
+    "candidate": [
+      "/root/pine_amount",
+      "/root/pine_label",
+      "/root/pine_invoice"
+    ]
+  },
+  "brief_bytes": {
+    "baseline": 3482,
+    "candidate": 6667
+  },
+  "prompt_bytes": {
+    "baseline": 5351,
+    "candidate": 8533
+  },
+  "verification": [
+    {
+      "variant": "baseline",
+      "checks": [
+        {
+          "command": [
+            "python3",
+            "-m",
+            "py_compile",
+            "src/amount.py",
+            "src/label.py",
+            "src/invoice.py"
+          ],
+          "exit_code": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        {
+          "command": [
+            "env",
+            "PYTHONPATH=src",
+            "python3",
+            "tests/A.py"
+          ],
+          "exit_code": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        {
+          "command": [
+            "env",
+            "PYTHONPATH=src",
+            "python3",
+            "tests/B.py"
+          ],
+          "exit_code": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        {
+          "command": [
+            "env",
+            "PYTHONPATH=src",
+            "python3",
+            "tests/C.py"
+          ],
+          "exit_code": 0,
+          "stdout": "",
+          "stderr": ""
+        }
+      ],
+      "sources": {
+        "src/amount.py": "2ea3ee60066da94cffe4a2ba0037f17d6517c3a14e7211a1c22513dfeced83ee",
+        "src/invoice.py": "21f4d1a0f480d64e941ea3aa8ad110c34ce37d8364614beebb9fd2a363391c1f",
+        "src/label.py": "3e988ed31c21fb0de02514da5a5b0be32077529efa6521add4b1b957b399cb1e"
+      },
+      "passed": true
+    },
+    {
+      "variant": "candidate",
+      "checks": [
+        {
+          "command": [
+            "python3",
+            "-m",
+            "py_compile",
+            "src/amount.py",
+            "src/label.py",
+            "src/invoice.py"
+          ],
+          "exit_code": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        {
+          "command": [
+            "env",
+            "PYTHONPATH=src",
+            "python3",
+            "tests/A.py"
+          ],
+          "exit_code": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        {
+          "command": [
+            "env",
+            "PYTHONPATH=src",
+            "python3",
+            "tests/B.py"
+          ],
+          "exit_code": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        {
+          "command": [
+            "env",
+            "PYTHONPATH=src",
+            "python3",
+            "tests/C.py"
+          ],
+          "exit_code": 0,
+          "stdout": "",
+          "stderr": ""
+        }
+      ],
+      "sources": {
+        "src/amount.py": "2ea3ee60066da94cffe4a2ba0037f17d6517c3a14e7211a1c22513dfeced83ee",
+        "src/invoice.py": "21f4d1a0f480d64e941ea3aa8ad110c34ce37d8364614beebb9fd2a363391c1f",
+        "src/label.py": "3e988ed31c21fb0de02514da5a5b0be32077529efa6521add4b1b957b399cb1e"
+      },
+      "passed": true
+    }
+  ],
+  "observations": {
+    "integration_errors": {
+      "baseline": 0,
+      "candidate": 0
+    },
+    "product_questions": {
+      "baseline": 0,
+      "candidate": 0
+    },
+    "reported_false_spec_digest_mismatches": {
+      "baseline": 3,
+      "candidate": 0
+    },
+    "notes": [
+      "File read counts exclude workers re-reading their own final output; reports list files, not a complete instrumented call trace.",
+      "Both variants re-read their spec and unit sources; no reduction in rereads established.",
+      "Duration, tokens, monetary cost unmeasured."
+    ]
+  }
+}

@@ -1329,6 +1329,10 @@
     {
       "path": "plugins/cstack/skills/cstack/scripts/orch/horizon.test.ts",
       "reason": "Régressions propres à cstack du handoff Horizon vers le store Orchestrate existant : graphe, reprise, dérive, revendication exclusive et preuves au head courant."
+    },
+    {
+      "path": "plugins/cstack/skills/cstack/scripts/orch/contracts.test.ts",
+      "reason": "Régressions propres à cstack des contrats canoniques entre unités Horizon : signatures, valeurs, dépendances, couverture déclarée et invalidation des preuves; issue #97, sans contenu amont copié."
     }
   ]
 }
