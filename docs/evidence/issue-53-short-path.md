@@ -60,11 +60,15 @@ Racine d'artefacts dans le worktree de tâche : `.cstack/tasks/issue-53/`. Copie
 - `native/{alder,cedar}/calendar/.cstack/calendar-fix/` : journaux, TDD rouge/vert, checkpoints et revues. Le reviewer de cedar a aussi vérifié 55 plages; les artefacts de chronologie restent des fichiers locaux modifiables, pas une transcription indépendante.
 - `pressure/{base,candidate}-preparation.md` : citations exactes des choix et justifications sous pression.
 - `worktrees.json` : chemins absolus, branches, heads, propriété et libération des dix worktrees de fixture.
-- `check.log` : suite complète du dépôt.
+- `check.log` : suite initiale, avant rebase.
+- `check-rebased.log` : suite après rebase sur `312ef0b`, avant la revue de PR109.
+- `review-followup/` : contrats avant correction, démonstration des trois contradictions de PR109, fixture ciblée, demande native et contrôles du suivi.
 
 ## Contrôles du dépôt
 
-`bash scripts/check.sh` passe : 243 tests Python, dont un ignoré, 29 tests Bun racine, 231 tests des helpers, types stricts et racine, syntaxe Bash, ShellCheck, Actionlint et espacement.
+La validation initiale avant rebase, conservée dans `check.log`, a passé 243 tests Python, dont un ignoré, 29 tests Bun racine et 231 tests des helpers, ainsi que types et linters. Ce résultat porte sur la première variante, pas sur le head rebasé.
+
+Après rebase sur `312ef0b`, `bash scripts/check.sh` a passé **244 tests Python, un ignoré, 29 tests Bun racine et 231 helpers**, types stricts et racine, syntaxe Bash, ShellCheck, Actionlint et espacement. La preuve correspondante est `check-rebased.log`.
 
 Passe deslop : diff relu, sans helper ni abstraction ajoutés; aucun retrait supplémentaire nécessaire. Vérificateur croisé des artefacts, validateur du paquet et espacement relancés avec succès après cette passe.
 
@@ -74,4 +78,28 @@ La première passe a révélé un budget de lecture initiale trop près de sa li
 
 Les deux corrections réelles conservent au moins la qualité de la référence : fichiers finaux identiques, preuves comportementales et revues indépendantes. Leurs descendants passent respectivement de quatre à un et de sept à un. Les sondes des trois autres cas préservent les frontières sensibles, la délégation utile et les refus de capacité; elles ne démontrent pas leurs implémentations finales.
 
-La candidate est retenue pour ce périmètre. Aucun gain global de vitesse ou de tokens, aucune généralisation statistique et aucun panel multi-modèle ne sont revendiqués. Les lectures et appels d'outils exhaustifs restent une lacune de mesure de l'hôte. La revue source indépendante et la vérification des artefacts par le coordinateur parent ont été annoncées PASS avant le gel de ce rapport. Aucun commit, push ni PR dans cette tranche.
+La candidate est retenue pour ce périmètre. Aucun gain global de vitesse ou de tokens, aucune généralisation statistique et aucun panel multi-modèle ne sont revendiqués. Les lectures et appels d'outils exhaustifs restent une lacune de mesure de l'hôte. La revue source indépendante et la vérification des artefacts par le coordinateur parent ont été annoncées PASS avant le gel de ce rapport. La comparaison native initiale s’est terminée localement, avant le commit et l’ouverture de PR109 par le coordinateur.
+
+
+## Suivi de revue de PR109
+
+Les trois commentaires sur `90e411d` ont été vérifiés contre les contrats avant correction. Ils révèlent des contradictions textuelles réelles, pas trois échecs natifs déjà reproduits :
+
+- Feature avait perdu l'obligation de déléguer une unité couplée hors parcours court. La condition « pour une édition déléguée » décrivait le transfert sans imposer l'auteur. Le parcours complet impose de nouveau un auteur délégué.
+- Bug fix demandait un transfert au builder même lorsque le parcours court l'omet légitimement. Le transfert devient conditionnel à une édition déléguée; TDD reste requis dans les deux parcours.
+- Orchestration imposait de choisir le parcours de modification aux skills `how` et `interrogate` en lecture seule. Ce choix est maintenant réservé aux modifications; analyses et revues suivent directement l'orchestration de leur compétence.
+
+Une sonde native bornée de préparation couvre les branches positives et négatives : Feature couplée, bug court, Feature locale à signature fixée, `how` et `interrogate` sans modification demandée, exécutant CLI imposé mais indisponible. Elle n'exécute ni les implémentations futures ni leurs délégations. Résultat natif observé :
+
+| Branche | Décision rendue |
+| --- | --- |
+| Feature à contrat partagé, unité couplée | Builder délégué unique; l'absence de ventilation utile n'autorise pas l'auteur coordinateur |
+| Bug court | Auteur coordinateur; transfert des preuves au reviewer distinct, aucun transfert à un builder absent |
+| Feature locale, stub existant | Auteur coordinateur, TDD et revue distincte conservés |
+| `how` en lecture seule | Explorateurs puis synthétiseur selon le contrat de `how`, sans sélection d'un auteur de modification |
+| `interrogate` en lecture seule | Panel indépendant et instantané selon son contrat propre |
+| Exécutant CLI explicite indisponible | Écriture bloquée; aucune substitution silencieuse |
+
+L'acteur `/root/design_contracts_b/routing_followup` a aussi importé les vraies fonctions avec `python3 -B`, recherché leurs consommateurs et constaté leurs comportements actuels. Les décisions et limites sont conservées dans `review-followup/native-result.md`; l'indisponibilité du CLI est hypothétique, non provoquée. Aucun descendant, correctif de fixture ou configuration de modèle n'a été modifié.
+
+Le contrôle complet du suivi a été relancé et terminé avec code 0 : **244 tests Python, un ignoré, 29 Bun racine, 231 helpers**, types et linters verts. Preuve : `review-followup/check.log`. Passe deslop du diff limitée aux trois contradictions et à la correction du périmètre des preuves. Copie de conservation : `.cstack/tasks/issues-95-96-53-97-98-20261020/issue-53-review-followup.tar.gz`.
