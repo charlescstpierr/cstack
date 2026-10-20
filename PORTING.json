@@ -1325,6 +1325,10 @@
     {
       "path": "plugins/cstack/skills/architect/references/builder-check-prompt.md",
       "reason": "Lecture de conception propre à cstack avant construction, inspirée du builder check de obra/superpowers v7.0.0 (voir NOTICE.md), sans texte copié."
+    },
+    {
+      "path": "plugins/cstack/skills/cstack/references/runtime/parcours-court.md",
+      "reason": "Règle propre à cstack du parcours proportionné, ancrée sur les observations natives de #53 ; rédaction originale, sans copie de contenu amont."
     }
   ]
 }
