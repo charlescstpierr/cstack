@@ -41,7 +41,7 @@ Avant chaque dispatch de correction, écris et applique une réservation :
 
 Exécute `orch review attempt attempt.json`, puis seulement après son succès lance le builder. Les fichiers de stratégie peuvent décrire le `brief`, le `context` et le `design`, chacun une fois. Le helper lit leur contenu et conserve leurs empreintes. Après une tentative sans progression attestée, renommer un fichier, changer l'auteur ou reformuler seulement `reason` ne permet pas de réexpédier la même stratégie. Le coordinateur doit expliquer le changement de fond et respecter les rôles configurés.
 
-Une réservation consomme une tentative même après un arrêt ou une compaction. Rejouer son identifiant retourne son reçu sans consommer une nouvelle tentative. Ne crée pas une autre boucle pour contourner une limite atteinte.
+Une réservation consomme une tentative même après un arrêt ou une compaction. Rejouer son identifiant retourne son reçu sans consommer une nouvelle tentative. Une autre boucle qui déclare le même mécanisme et les mêmes chemins pour cette cible est refusée, même si les identifiants de boucle ou de constat changent. Le rattachement par unité et celui par sa PR partagent cette identité. Les constats distincts restent indépendants. Le helper compare les déclarations ; il ne reconnaît pas automatiquement des descriptions différentes du même défaut.
 
 ## Relire le correctif et enregistrer le résultat
 
@@ -75,9 +75,26 @@ Chaque constat ciblé encore ouvert doit figurer dans `outcomes`. Utilise `progr
 
 Les décisions sont `continue`, `complete`, `blocked` ou `replan`, avec une raison explicite. À la limite, `continue` est refusé. Un échec restant exige réfutation prouvée, report non bloquant justifié, blocage ou replanification. Un historique Git devenu divergent exige une replanification ; il n'est pas traité comme une petite correction.
 
+## Replanifier sans remettre les compteurs à zéro
+
+Après `replan` ou `blocked`, utilise `orch review replan replan.json` pour reprendre la même boucle. Cette commande accepte aussi une boucle terminée dont les preuves sont devenues périmées. Elle conserve les tentatives et les constats. Elle enregistre la raison, l'ancienne limite, sa source et la nouvelle limite effective.
+
+```json
+{
+  "id": "order-fix",
+  "reason": "Reprendre avec une hypothèse différente sur le comparateur",
+  "limit": 3,
+  "source": "Instruction actuelle autorisant trois tentatives au total"
+}
+```
+
+`limit` est le plafond total, pas un nombre de tentatives supplémentaires. Sans `limit`, le plafond existant reste applicable ; il doit rester au moins une tentative disponible. Une modification du plafond exige une source explicite. Le helper enregistre cette source, mais n'accorde aucune autorisation : le coordinateur doit vérifier que la conversation actuelle ou la politique applicable autorise ce budget. Il ne doit pas inventer cet accord pour débloquer une tâche.
+
+Une replanification ne rend pas la branche prête. La prochaine réservation doit changer le contenu de la stratégie, puis une revue terminée doit satisfaire les contrôles ordinaires. Rejouer une requête identique est idempotent. Si aucune autorité ne permet d'augmenter un budget épuisé, conserve le blocage et rapporte la décision nécessaire.
+
 ## Vérifier avant livraison et reprendre
 
-Avant de déclarer prêt, exécute `orch review check <id>` pour chaque boucle concernée. Seul le code 0 autorise à réutiliser son verdict. Un nouveau commit, un changement de l'index, du worktree, des fichiers non suivis ou des preuves invalide le résultat. Une nouvelle vérification après modification réserve une nouvelle tentative dans le budget existant. La revue globale finale reste requise.
+Avant de déclarer prêt, exécute `orch review check <id>` pour chaque boucle concernée. Seul le code 0 autorise à réutiliser son verdict. Un nouveau commit, un changement de l'index, du worktree, des fichiers non suivis ou des preuves invalide le résultat. Les preuves qui soutiennent les constats déjà corrigés, réfutés ou reportés restent vérifiées même si leur résolution date d'une tentative antérieure. Une preuve disparue ou modifiée doit être remplacée par une revalidation explicite de son constat. Cette nouvelle vérification réserve une tentative dans le budget existant. La revue globale finale reste requise.
 
 `unit set --state ready|done` et les verdicts positifs de `ledger record` ou `ledger check` appliquent cette même barrière aux boucles rattachées. Le handoff Horizon la vérifie aussi avant de rendre disponible une unité dépendant d'un prérequis relu. Les autres unités et PR restent indépendantes. Une boucle de session n'impose pas de rattachement artificiel : son coordinateur doit utiliser `review check` avant livraison.
 

@@ -40,6 +40,14 @@ interface Reservation {
   readonly reservedAt:string;
 }
 type Attempt = Reservation & ({readonly kind:"reserved"} | {readonly kind:"reviewed"; readonly result:ReviewResult});
+interface Replan {
+  readonly afterAttempt:string;
+  readonly previous:{readonly limit:number;readonly source:string};
+  readonly limit:number;
+  readonly source:string;
+  readonly reason:string;
+  readonly at:string;
+}
 export interface ReviewLoop {
   readonly id:string;
   readonly repo:string;
@@ -50,6 +58,7 @@ export interface ReviewLoop {
   readonly initialFindings:readonly Finding[];
   readonly findings:readonly Finding[];
   readonly attempts:readonly Attempt[];
+  readonly replans:readonly Replan[];
 }
 export interface ReviewView {
   readonly id:string;
@@ -69,6 +78,7 @@ export interface ReviewApi {
   readonly open:(input:unknown)=>Promise<ReviewLoop>;
   readonly attempt:(input:unknown)=>Promise<Attempt>;
   readonly record:(input:unknown)=>Promise<ReviewView>;
+  readonly replan:(input:unknown)=>Promise<ReviewLoop>;
   readonly check:(id:string)=>Promise<ReviewView>;
 }
 
@@ -156,15 +166,21 @@ function attempt(value:unknown):Attempt {
   if (row.kind === "reviewed") return {...reservation,kind:"reviewed",result:result(row.result)};
   throw new Error("review: tentative invalide");
 }
+function replan(value:unknown):Replan {
+  const row = object(value), previous = object(row.previous);
+  return {afterAttempt:text(row.afterAttempt),previous:{limit:positive(previous.limit),source:text(previous.source)},limit:positive(row.limit),source:text(row.source),reason:text(row.reason),at:text(row.at)};
+}
 export function parseReviews(value:unknown):readonly ReviewLoop[] {
   const data = object(value);
   if (data.schema !== 1) throw new Error("review: schema 1 requis");
   const loops = list(data.reviews).map(value=>{
     const row = object(value);
     const loop:ReviewLoop = {id:text(row.id),repo:text(row.repo),target:target(row.target),limit:positive(row.limit),source:text(row.source),initial:patch(row.initial),
-      initialFindings:list(row.initialFindings).map(item=>finding(item)),findings:list(row.findings).map(item=>finding(item)),attempts:list(row.attempts).map(attempt)};
+      initialFindings:list(row.initialFindings).map(item=>finding(item)),findings:list(row.findings).map(item=>finding(item)),attempts:list(row.attempts).map(attempt),replans:row.replans===undefined ? [] : list(row.replans).map(replan)};
     unique(loop.attempts.map(item=>item.id)); unique(loop.findings.map(item=>item.id));
     if (loop.attempts.length > loop.limit || loop.attempts.slice(0,-1).some(item=>item.kind==="reserved")) throw new Error("review: historique de tentatives incohérent");
+    const latest = loop.replans.at(-1);
+    if (latest && (latest.limit!==loop.limit || latest.source!==loop.source || !loop.attempts.some(item=>item.id===latest.afterAttempt))) throw new Error("review: replanification incohérente");
     return loop;
   });
   unique(loops.map(loop=>loop.id)); return loops;
@@ -205,8 +221,13 @@ async function proof(path:unknown):Promise<Evidence> {
   if (!bytes.toString("utf8").trim()) throw new Error(`review: preuve vide ${absolute}`);
   return {path:absolute,digest:digest(bytes)};
 }
-async function currentEvidence(result:ReviewResult):Promise<boolean> {
+async function currentEvidence(loop:ReviewLoop,result:ReviewResult):Promise<boolean> {
   const files = [...result.tests.map(item=>item.evidence),...result.outcomes.map(item=>item.evidence),...(result.progress.kind==="verified" ? [result.progress.evidence] : [])];
+  for (const finding of loop.findings.filter(item=>!unresolved(item))) {
+    const outcome = loop.attempts.toReversed().flatMap(item=>item.kind==="reviewed" ? item.result.outcomes : []).find(item=>item.id===finding.id);
+    if (!outcome || outcome.kind!==finding.disposition) return false;
+    files.push(outcome.evidence);
+  }
   for (const file of files) {
     try { if ((await proof(file.path)).digest !== file.digest) return false; } catch { return false; }
   }
@@ -230,7 +251,7 @@ export async function reviewView(loop:ReviewLoop):Promise<ReviewView> {
   const last = loop.attempts.at(-1), reasons:string[] = [];
   if (!previous || last?.kind==="reserved") reasons.push("revue terminée requise");
   if (previous && !samePatch(previous.patch,current)) reasons.push("preuve de patch périmée");
-  if (previous && !(await currentEvidence(previous))) reasons.push("preuve de test ou de constat périmée");
+  if (previous && !(await currentEvidence(loop,previous))) reasons.push("preuve de test ou de constat périmée");
   if (loop.findings.some(item=>targeted(item) || (unresolved(item) && item.severity!=="non-blocking"))) reasons.push("constats non résolus");
   if (!previous || previous.tests.some(item=>item.result!=="pass" && item.result!=="not-required") || !["affected","integration"].every(kind=>previous.tests.some(item=>item.kind===kind))) reasons.push("tests affectés et intégration requis non vérifiés");
   if (previous?.decision.kind!=="complete") reasons.push("décision de fin requise");
@@ -241,7 +262,7 @@ export async function openReview(input:unknown):Promise<ReviewLoop> {
   const row = object(input), repo = await realpath(git(text(row.repo),"rev-parse","--show-toplevel").trim());
   const findings = list(row.findings).map(item=>finding(item,"initial")); unique(findings.map(item=>item.id));
   if (!findings.length) throw new Error("review: constat initial requis");
-  return {id:text(row.id),repo,target:target(row.target),limit:positive(row.limit),source:text(row.source),initial:await snapshot(repo),initialFindings:findings,findings,attempts:[]};
+  return {id:text(row.id),repo,target:target(row.target),limit:positive(row.limit),source:text(row.source),initial:await snapshot(repo),initialFindings:findings,findings,attempts:[],replans:[]};
 }
 export function reviewId(input:unknown):string { return text(object(input).id); }
 export function findReview(loops:readonly ReviewLoop[],id:string):ReviewLoop {
@@ -251,6 +272,31 @@ export function findReview(loops:readonly ReviewLoop[],id:string):ReviewLoop {
 }
 export function sameOpening(left:ReviewLoop,right:ReviewLoop):boolean {
   return left.repo===right.repo && left.limit===right.limit && left.source===right.source && JSON.stringify(left.target)===JSON.stringify(right.target) && JSON.stringify(left.initialFindings)===JSON.stringify(right.initialFindings);
+}
+export function overlappingReview(left:ReviewLoop,right:ReviewLoop,units:readonly {readonly id:string;readonly pr:string}[]):boolean {
+  if (left.repo!==right.repo) return false;
+  const target = right.target;
+  const sameTarget = target.kind==="session" ? left.target.kind==="session" : target.kind==="unit"
+    ? targetsUnit(left,{id:target.id,pr:units.find(unit=>unit.id===target.id)?.pr ?? ""})
+    : targetsPr(left,String(target.pr),units);
+  const identity = (item:Finding):string => JSON.stringify([item.mechanism.trim().replace(/\s+/g," ").toLowerCase(),[...new Set(item.paths)].sort()]);
+  return sameTarget && left.findings.some(previous=>right.initialFindings.some(next=>identity(previous)===identity(next)));
+}
+export async function replanReview(loop:ReviewLoop,input:unknown):Promise<ReviewLoop> {
+  const row = object(input), previous = loop.attempts.at(-1);
+  if (!previous || previous.kind!=="reviewed") throw new Error("review: terminer la revue avant replanification");
+  if (previous.result.decision.kind!=="replan" && previous.result.decision.kind!=="blocked" && !(previous.result.decision.kind==="complete" && !(await reviewView(loop)).ready)) throw new Error("review: décision de replanification, blocage ou preuve périmée requise");
+  const limit = row.limit===undefined ? loop.limit : positive(row.limit);
+  if (limit!==loop.limit && row.source===undefined) throw new Error("review: source actuelle requise pour changer la limite totale");
+  const source = row.source===undefined ? loop.source : text(row.source), reason = text(row.reason);
+  if (limit<=loop.attempts.length) throw new Error("review: budget épuisé; nouvelle limite totale et source explicites requises");
+  const existing = loop.replans.at(-1);
+  if (existing?.afterAttempt===previous.id) {
+    if (existing.limit!==limit || existing.source!==source || existing.reason!==reason) throw new Error("review: replanification déjà enregistrée pour cette tentative");
+    return loop;
+  }
+  const plan:Replan = {afterAttempt:previous.id,previous:{limit:loop.limit,source:loop.source},limit,source,reason,at:new Date().toISOString()};
+  return {...loop,limit,source,replans:[...loop.replans,plan]};
 }
 function strategyContent(files:readonly Evidence[]):string {
   return digest(JSON.stringify([...new Set(files.map(file=>file.digest))].sort()));
@@ -273,9 +319,10 @@ export async function reserveAttempt(loop:ReviewLoop,input:unknown):Promise<{rea
   const previous = loop.attempts.at(-1);
   if (previous?.kind==="reserved") throw new Error("review: terminer la tentative réservée avant dispatch");
   const before = await snapshot(loop.repo);
-  const staleCompletion = previous?.kind==="reviewed" && previous.result.decision.kind==="complete" && (!samePatch(previous.result.patch,before) || !(await currentEvidence(previous.result)));
-  if (!staleCompletion && (!loop.findings.some(targeted) || (previous?.kind==="reviewed" && previous.result.decision.kind!=="continue"))) throw new Error("review: boucle terminée ou bloquée; replanifier explicitement");
-  if (previous?.kind==="reviewed" && previous.result.progress.kind==="none" && strategyContent(previous.strategy.files)===strategy.digest) throw new Error("review: changer le contenu de la stratégie après absence de progression");
+  const replanned = previous?.kind==="reviewed" && loop.replans.at(-1)?.afterAttempt===previous.id;
+  const staleCompletion = previous?.kind==="reviewed" && previous.result.decision.kind==="complete" && (!samePatch(previous.result.patch,before) || !(await currentEvidence(loop,previous.result)));
+  if (!replanned && !staleCompletion && (!loop.findings.some(targeted) || (previous?.kind==="reviewed" && previous.result.decision.kind!=="continue"))) throw new Error("review: boucle terminée ou bloquée; replanifier explicitement");
+  if (previous?.kind==="reviewed" && (replanned || previous.result.progress.kind==="none") && strategyContent(previous.strategy.files)===strategy.digest) throw new Error("review: changer le contenu de la stratégie après absence de progression ou replanification");
   assertAncestry(loop.repo,lastReview(loop)?.patch.head ?? loop.initial.head,before.head);
   const reserved:Attempt = {id,author,before,strategy,reservedAt:new Date().toISOString(),kind:"reserved"};
   return {loop:{...loop,attempts:[...loop.attempts,reserved]},attempt:reserved};

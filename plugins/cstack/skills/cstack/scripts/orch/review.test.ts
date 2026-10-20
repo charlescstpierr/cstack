@@ -212,3 +212,53 @@ it("records why integration checks do not apply without inventing a passing test
   await f.store.review.record({...report,tests:[report.tests[0],{kind:"integration",command:"none",result:"not-required",reason:"Documentation-only correction has no runtime integration",evidence:f.evidence}]});
   expect((await f.store.review.check("loop")).ready).toBe(true);
 });
+
+it("revalidates the evidence of a finding resolved before the final attempt", async () => {
+  const f = await fixture(3);
+  await f.store.review.open({id:"loop",repo:f.repo,limit:3,source:"fixture workflow",target:{kind:"session"},findings:[f.finding,{...f.finding,id:"F2",mechanism:"missing value"}]});
+  const early = join(f.repo,".cstack/early-proof.log"); await writeFile(early,"First finding independently fixed\n");
+  await f.attempt("a1");
+  await f.store.review.record({...await f.report("a1"),outcomes:[{id:"F1",kind:"fixed",reason:"First fixed",evidence:early},{id:"F2",kind:"open",reason:"Second remains",evidence:f.evidence}]});
+  await f.attempt("a2","second finding");
+  await f.store.review.record({...await f.report("a2",true),outcomes:[{id:"F2",kind:"fixed",reason:"Second fixed",evidence:f.evidence}]});
+  expect((await f.store.review.check("loop")).ready).toBe(true);
+  await rm(early);
+  expect((await f.store.review.check("loop")).ready).toBe(false);
+  await f.attempt("a3","revalidate earlier finding"); await f.store.review.record(await f.report("a3",true));
+  const revalidated = await f.store.review.check("loop"); expect(revalidated.ready).toBe(true); expect(revalidated.used).toBe(3);
+});
+
+it("does not reset a correction budget by renaming its loop or finding", async () => {
+  const f = await fixture(); await f.open(); await f.attempt("a1"); await f.store.review.record(await f.report("a1"));
+  await expect(f.store.review.open({id:"renamed",repo:f.repo,limit:10,source:"another label",target:{kind:"session"},findings:[{...f.finding,id:"renamed-finding"}]})).rejects.toThrow("loop");
+  expect((await f.store.review.check("loop")).used).toBe(1);
+  await f.store.review.open({id:"independent",repo:f.repo,limit:1,source:"independent issue",target:{kind:"session"},findings:[{...f.finding,mechanism:"unrelated missing value"}]});
+  expect((await f.store.review.check("independent")).used).toBe(0);
+});
+
+for (const kind of ["unit", "pr"] as const) {
+  it(`shares the correction identity when ${kind} is replaced by its unit or PR alias`, async () => {
+    const f = await fixture(); await f.store.units.add({id:"A",track:"fix"}); await f.store.units.set({id:"A",state:"working",pr:11});
+    await f.open(kind === "unit" ? {kind:"unit",id:"A"} : {kind:"pr",pr:11}); await f.attempt("a1");
+    await expect(f.store.review.open({id:"alias",repo:f.repo,limit:10,source:"alias source",target:kind === "unit" ? {kind:"pr",pr:11} : {kind:"unit",id:"A"},findings:[f.finding]})).rejects.toThrow("loop");
+    expect((await f.store.review.check("loop")).used).toBe(1);
+  });
+}
+
+it("explicitly replans the same exhausted target without erasing attempts or allowing an unchanged strategy", async () => {
+  const f = await fixture(1); await f.store.units.add({id:"A",track:"fix"}); await f.open({kind:"unit",id:"A"}); await f.attempt("a1");
+  await f.store.review.record({...await f.report("a1"),decision:{kind:"replan",reason:"Comparator hypothesis failed"}});
+  await expect(f.store.units.set({id:"A",state:"ready"})).rejects.toThrow();
+  await expect(f.store.review.replan({id:"loop",reason:"No new budget"})).rejects.toThrow("budget épuisé");
+  await expect(f.store.review.replan({id:"loop",limit:2,reason:"Missing authorization source"})).rejects.toThrow("source actuelle");
+  const request = {id:"loop",limit:2,source:"Explicit fixture authorization for one additional attempt",reason:"Review a different comparator hypothesis"};
+  await f.store.review.replan(request); await f.store.review.replan(request);
+  await expect(f.attempt("a2")).rejects.toThrow("stratégie");
+  await f.attempt("a2","new comparator"); await f.store.review.record(await f.report("a2",true));
+  await f.store.units.set({id:"A",state:"ready"});
+  const view = await f.store.review.check("loop"); expect(view.ready).toBe(true); expect(view.used).toBe(2); expect(view.limit).toBe(2);
+  const saved = JSON.parse(await readFile(join(f.directory,"reviews.json"),"utf8"));
+  expect(saved.reviews[0].attempts.map((item:{id:string})=>item.id)).toEqual(["a1","a2"]);
+  expect(saved.reviews[0].replans).toHaveLength(1);
+  expect(saved.reviews[0].replans[0].previous.limit).toBe(1);
+});
