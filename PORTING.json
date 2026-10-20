@@ -1321,6 +1321,10 @@
     {
       "path": "plugins/cstack/skills/cstack/scripts/watch-pr/head-signals.test.ts",
       "reason": "Tests propres à cstack des signaux Actions et de la revue Codex liés au head, y compris démarrage CI indisponible et revue encore en cours."
+    },
+    {
+      "path": "plugins/cstack/skills/architect/references/builder-check-prompt.md",
+      "reason": "Lecture de conception propre à cstack avant construction, inspirée du builder check de obra/superpowers v7.0.0 (voir NOTICE.md), sans texte copié."
     }
   ]
 }

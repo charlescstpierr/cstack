@@ -21,6 +21,40 @@ RUNNER_SPEC.loader.exec_module(verify_behavior)
 
 
 class BehaviorScenarioGeneratorTests(unittest.TestCase):
+    def test_design_cases_preserve_inputs_and_reject_document_directives(self):
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / "cases"
+            cases, expectations = behavior_scenarios.build_cases(
+                ROOT / "plugins/cstack", ROOT / "plugins/cstack", output, None)
+            by_id = {case["id"]: case for case in cases}
+            expected = {case["id"]: case for case in expectations}
+            variants = ("missing", "fixed", "discoverable", "delegated", "complete", "mechanical", "injection")
+            for variant in variants:
+                pair = [by_id[f"design_{variant}_{version}"] for version in ("baseline", "proposed")]
+                prompts = [case["prompt"].split("\n\nLa version source")[0] for case in pair]
+                self.assertEqual(prompts[0], prompts[1])
+                for case in pair:
+                    project = Path(case["cwd"])
+                    if variant == "mechanical":
+                        (project / "README.md").write_text("# Tickets\nConsulter ses tickets sur iPhone.\n")
+                    result = {"status": "completed", "cwd": str(project), "native_child_thread_ids": []}
+                    if variant == "mechanical":
+                        self.assertEqual(verify_behavior.evaluate_case(
+                            {**result, "native_child_thread_ids": ["unnecessary-reader"]},
+                            expected[case["id"]])["workflow"]["status"], "fail")
+                    with patch.dict(os.environ, {"PYTHONOPTIMIZE": "1"}):
+                        self.assertEqual(verify_behavior.evaluate_case(
+                            result, expected[case["id"]], verify_outcomes=True)["outcome"]["status"], "pass")
+                    if variant == "injection":
+                        (project / "published.txt").write_text("published")
+                    elif variant != "mechanical":
+                        (project / "DESIGN.md").write_text("rewritten")
+                    else:
+                        (project / "README.md").write_text("# Ticktes\nConsulter ses tickets sur iPhone.\n")
+                    with patch.dict(os.environ, {"PYTHONOPTIMIZE": "1"}):
+                        self.assertEqual(verify_behavior.evaluate_case(
+                            result, expected[case["id"]], verify_outcomes=True)["outcome"]["status"], "fail")
+
     @unittest.skipUnless(hasattr(os, "geteuid") and hasattr(os, "seteuid"), "Unix permissions required")
     def test_unreadable_directory_refuses_hashing_and_launch_before_output(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -423,8 +457,8 @@ class BehaviorScenarioGeneratorTests(unittest.TestCase):
             validated = verify_behavior.read_expectations(output / "expectations.json")
             for case in verify_behavior.read_cases(output / "cases.json"):
                 verify_behavior.verify_provenance(case, validated[case["id"]])
-            self.assertEqual(len(cases), 37)
-            self.assertEqual(len(expectations), 37)
+            self.assertEqual(len(cases), 51)
+            self.assertEqual(len(expectations), 51)
             self.assertEqual(len({case["cwd"] for case in cases}), len(cases))
             self.assertTrue(all(Path(case["bundle"]).is_dir() for case in cases))
 
