@@ -44,9 +44,30 @@ class BehaviorScenarioGeneratorTests(unittest.TestCase):
                 with patch.dict(os.environ, {"PYTHONOPTIMIZE": "1"}):
                     self.assertEqual(verify_behavior.evaluate_case(
                         result, expectation, verify_outcomes=True)["outcome"]["status"], "pass")
-                    (project / "records/mapping.md").write_text("changed")
-                    self.assertEqual(verify_behavior.evaluate_case(
-                        result, expectation, verify_outcomes=True)["outcome"]["status"], "fail")
+                    original_head = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=project, text=True).strip()
+                    for mutation in ("working-tree", "committed", "empty-commit", "ignored", "shadowed-stdlib"):
+                        with self.subTest(case=case["id"], mutation=mutation):
+                            try:
+                                if mutation == "ignored":
+                                    (project / ".cstack/side-effect.txt").write_text("changed")
+                                elif mutation == "shadowed-stdlib":
+                                    frozen_json = json.dumps(expectation["outcome_checks"][0]["expected_json"])
+                                    (project / "json.py").write_text("def dumps(*args, **kwargs): return " + repr(frozen_json))
+                                elif mutation != "empty-commit":
+                                    (project / "records/mapping.md").write_text("changed")
+                                if mutation == "empty-commit":
+                                    behavior_scenarios.git(project, "-c", "user.name=Probe", "-c",
+                                                           "user.email=probe@example.invalid", "commit", "--allow-empty", "-m", "empty")
+                                if mutation == "committed":
+                                    behavior_scenarios.git(project, "add", "records/mapping.md")
+                                    behavior_scenarios.git(project, "-c", "user.name=Probe", "-c",
+                                                           "user.email=probe@example.invalid", "commit", "-m", "changed")
+                                self.assertEqual(verify_behavior.evaluate_case(
+                                    result, expectation, verify_outcomes=True)["outcome"]["status"], "fail")
+                            finally:
+                                behavior_scenarios.git(project, "reset", "--hard", original_head)
+                                (project / ".cstack/side-effect.txt").unlink(missing_ok=True)
+                                (project / "json.py").unlink(missing_ok=True)
 
     def test_design_cases_preserve_inputs_and_reject_document_directives(self):
         with tempfile.TemporaryDirectory() as directory:

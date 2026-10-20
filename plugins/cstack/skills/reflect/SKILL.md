@@ -15,7 +15,7 @@ Invoque pour `$cstack:reflect` ou quand l'utilisateur demande une réflexion. Sa
 
 ## Diagnostic ciblé du parcours
 
-Pour expliquer un skill omis, une exploration répétée ou une délégation inattendue, lis [le diagnostic de session](references/session-diagnostic.md). Ce mode produit un rapport en lecture seule et se termine avant le processus de réflexion ci-dessous. Il réutilise directement les preuves de la session ; il ne lance pas How, Why ni le panel Reflect pour une question bornée. Une absence de revue indépendante de ce rapport ne constitue pas un écart du parcours diagnostiqué.
+Pour une explication seule sur un skill omis, une exploration répétée ou une délégation inattendue, lis [le diagnostic de session](references/session-diagnostic.md). Ce mode remplace Investigation, produit un rapport en lecture seule et se termine avant le processus de réflexion ci-dessous. Une demande de correction relève du playbook d’implémentation, même si elle décrit un écart de parcours. Il réutilise directement les preuves de la session ; il ne lance pas How, Why ni le panel Reflect pour une question bornée. Une absence de revue indépendante de ce rapport ne constitue pas un écart du parcours diagnostiqué.
 
 ## Processus de réflexion
 
