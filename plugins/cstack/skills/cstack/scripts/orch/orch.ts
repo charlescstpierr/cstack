@@ -295,7 +295,7 @@ function createProgram(io: Io): Command {
       runStore(program, io, store => store.handoff.claim({id, ...options}), unitLine));
 
   const review = program.command("review").description("borner les corrections et vérifier leur patch").action(() => requireSubcommand(program));
-  for (const command of ["open", "attempt", "record"] as const) {
+  for (const command of ["open", "attempt", "record", "replan"] as const) {
     leaf(review, `${command} <request>`, "appliquer une requête JSON au suivi de correction")
       .action((request: string) => runStore(program, io,
         async store => store.review[command](JSON.parse(await readFile(request, "utf8"))),

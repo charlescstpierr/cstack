@@ -16,7 +16,7 @@ import {
 } from "node:fs/promises";
 import { basename, dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 
-import { findReview, openReview, parseReviews, recordReview, requireReviewed, reserveAttempt, reviewId, reviewView, sameOpening, targetsPr, targetsUnit, type ReviewApi, type ReviewLoop } from "./review.ts";
+import { findReview, openReview, overlappingReview, parseReviews, recordReview, replanReview, requireReviewed, reserveAttempt, reviewId, reviewView, sameOpening, targetsPr, targetsUnit, type ReviewApi, type ReviewLoop } from "./review.ts";
 
 import { loadHorizon, horizonBrief, overlappingScopes, type HorizonDefinition } from "./horizon.ts";
 
@@ -1609,6 +1609,8 @@ export function openStore(
           if (!sameOpening(existing, next)) throw new UserError("review: réouverture différente interdite; conserver compteurs et décisions");
           return existing;
         }
+        const units = await readUnits(store), overlap = loops.find(loop => overlappingReview(loop, next, units));
+        if (overlap) throw new UserError(`review: correction déjà suivie par ${overlap.id}; reprendre cette boucle sans nouveau compteur`);
         await saveReview(loops, next);
         return next;
       },
@@ -1623,6 +1625,12 @@ export function openStore(
         const loops = await readReviews(), next = await recordReview(findReview(loops, reviewId(input)), input);
         await saveReview(loops, next);
         return reviewView(next);
+      },
+      replan: async input => {
+        await beginWrite();
+        const loops = await readReviews(), next = await replanReview(findReview(loops, reviewId(input)), input);
+        await saveReview(loops, next);
+        return next;
       },
       check: async id => {
         await beginWrite();
@@ -2030,6 +2038,7 @@ export function openStore(
       open: input => serial(() => api.review.open(input)),
       attempt: input => serial(() => api.review.attempt(input)),
       record: input => serial(() => api.review.record(input)),
+      replan: input => serial(() => api.review.replan(input)),
       check: id => serial(() => api.review.check(id)),
     },
     units: {...api.units, add: params => serial(() => api.units.add(params)), set: params => serial(() => api.units.set(params))},
