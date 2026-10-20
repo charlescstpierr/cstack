@@ -553,8 +553,10 @@ def read_expectations(path):
             raise HarnessError("identifiant d’attente absent ou dupliqué")
         case_id = row["id"]
         if set(row) - {"id", "expected_children", "min_children", "routing", "expected_artifacts",
-                       "outcome_checks", "project_sha256", "source_sha256", "skill_path", "role_metadata", "hash_algorithm", "case_sha256"}:
+                       "outcome_checks", "requires_independent_review", "project_sha256", "source_sha256", "skill_path", "role_metadata", "hash_algorithm", "case_sha256"}:
             raise HarnessError(f"{case_id}: champs d’attente inconnus")
+        if "requires_independent_review" in row and type(row["requires_independent_review"]) is not bool:
+            raise HarnessError(f"{case_id}: requires_independent_review doit être un booléen")
         hashes = row.get("source_sha256", {})
         if not isinstance(hashes, dict) or set(hashes) - {"bundle", "skill"}:
             raise HarnessError(f"{case_id}: source_sha256 invalide")
@@ -695,6 +697,9 @@ def evaluate_case(result, expectation, verify_outcomes=False):
     for pattern in expectation.get("expected_artifacts", []):
         exists = any(p.is_file() for p in Path(result["cwd"]).glob(pattern))
         workflow.append({"id": "artifact:" + pattern, "status": "pass" if exists else "fail"})
+    if expectation.get("requires_independent_review"):
+        outcome.append({"id": "independent-review", "status": "unverified",
+                        "reason": "Décisions à vérifier par un acteur indépendant hors du runner."})
     if verify_outcomes:
         for check in expectation.get("outcome_checks", []):
             record = {"id": check["id"]}
