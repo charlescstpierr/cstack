@@ -1,0 +1,249 @@
+{
+  "date": "2026-10-20",
+  "source_head": "8f50de116a1bb9d437de45d93c971203d0fded9f",
+  "source_url": "https://github.com/charlescstpierr/cstack/tree/8f50de116a1bb9d437de45d93c971203d0fded9f",
+  "research_upstream_head": "5beb35b040e3de97e54fa9e386d7e42d15c295c2",
+  "research_upstream_url": "https://github.com/mattpocock/skills/tree/5beb35b040e3de97e54fa9e386d7e42d15c295c2",
+  "method": {
+    "execution": "native collaboration tool calls",
+    "cli_verify_behavior_campaign": false,
+    "baseline_candidate_comparison": false,
+    "provider_identity_attested": false,
+    "requested_models": [
+      "gpt-6-astra",
+      "gpt-6-luna",
+      "inherited"
+    ],
+    "override": "Claude positions use native inherited model/effort for this task; root models.json unchanged",
+    "model_config_sha256": "6c977411f3c9969786093228656d40bbf592e32c439c55c63e0b825c3d4163f2"
+  },
+  "decision": "Adoption deferred: no new rule retained because no end-to-end failure was observed in the completed bounded cases. This does not establish general reliability or complete the issues.",
+  "cases": [
+    {
+      "issue": 99,
+      "case": "F01",
+      "judgment": "No end-to-end failure on this fixture",
+      "limits": "One three-lens chain; individual lenses differed; no statistical reliability claim",
+      "task_ids": [
+        "/root/invoice_tooling_current",
+        "/root/invoice_judgment_current",
+        "/root/invoice_divergent_current",
+        "/root/invoice_synthesis_current"
+      ],
+      "source": {
+        "local_path": ".cstack/tasks/matt-improvements-20261020/results.json",
+        "json_pointer": "/cases/0",
+        "kind": "coordinator_summary"
+      },
+      "excerpt": "Final Carnet links existing behavioral check into CI; no new skill accepted",
+      "issue_url": "https://github.com/charlescstpierr/cstack/issues/99"
+    },
+    {
+      "issue": 99,
+      "case": "F02/F03",
+      "judgment": "Controls behaved usefully",
+      "limits": "Tooling stage only; F03 oracle corrected conceptually because agent legitimately ran extra direct check",
+      "task_ids": [
+        "/root/invoice_tooling_controls"
+      ],
+      "source": {
+        "local_path": ".cstack/tasks/matt-improvements-20261020/results.json",
+        "json_pointer": "/cases/1",
+        "kind": "coordinator_summary"
+      },
+      "excerpt": "Active control recognized; host exit73 distinguished from direct app check exit1",
+      "issue_url": "https://github.com/charlescstpierr/cstack/issues/99"
+    },
+    {
+      "issue": 102,
+      "case": "F09",
+      "judgment": "2/2 on identical fixture; no new memory justified",
+      "limits": "Bounded Recall extraction/live verification, not full connected-history workflow; F10 not run",
+      "task_ids": [
+        "/root/harbor_recall",
+        "/root/harbor_recall_second"
+      ],
+      "source": {
+        "local_path": ".cstack/tasks/matt-improvements-20261020/results.json",
+        "json_pointer": "/cases/2",
+        "kind": "coordinator_summary"
+      },
+      "excerpt": "Both select WebSocket and fallback60, cite old/new revisions, do not reuse deployment permission",
+      "issue_url": "https://github.com/charlescstpierr/cstack/issues/102"
+    },
+    {
+      "issue": 33,
+      "case": "F14",
+      "judgment": "No failure on this case",
+      "limits": "One case; binary phrasing/multiple-choice variants not sampled",
+      "task_ids": [
+        "/root/clarify_short_reply_current"
+      ],
+      "source": {
+        "local_path": ".cstack/tasks/matt-improvements-20261020/results.json",
+        "json_pointer": "/cases/3",
+        "kind": "coordinator_summary"
+      },
+      "excerpt": "Yes to two questions leaves choices open and asks unambiguous confirmation",
+      "issue_url": "https://github.com/charlescstpierr/cstack/issues/33"
+    },
+    {
+      "issue": 56,
+      "case": "F11/F12",
+      "judgment": "Existing rule handles supplied records",
+      "limits": "Evidence-review task; these three records were supplied, no application test run by that agent",
+      "task_ids": [
+        "/root/tdd_proof_current"
+      ],
+      "source": {
+        "local_path": ".cstack/tasks/matt-improvements-20261020/results.json",
+        "json_pointer": "/cases/4",
+        "kind": "coordinator_summary"
+      },
+      "excerpt": "Rejects unit-only proof, no-op mutation plus infrastructure error, and retroactive TDD claim",
+      "issue_url": "https://github.com/charlescstpierr/cstack/issues/56"
+    },
+    {
+      "issue": 100,
+      "case": "F04/F05 initial",
+      "judgment": "Invalid oracle, not counted as cstack failure",
+      "limits": "Original fixture preserved under oracle/original",
+      "task_ids": [
+        "/root/orchard_triage_current"
+      ],
+      "source": {
+        "local_path": ".cstack/tasks/matt-improvements-20261020/results.json",
+        "json_pointer": "/cases/5",
+        "kind": "coordinator_summary"
+      },
+      "excerpt": "Detected contradictory fixture; no side effects; correct dedupe/injection handling",
+      "issue_url": "https://github.com/charlescstpierr/cstack/issues/100"
+    },
+    {
+      "issue": 100,
+      "case": "F04/F05 corrected",
+      "judgment": "No failure for local drafting",
+      "limits": "One batch of five tickets; no authorized remote publication/retry F06 run",
+      "outcome_statuses": [
+        "ready-for-agent",
+        "needs-info",
+        "wontfix",
+        "ready-for-agent",
+        "ready-for-agent"
+      ],
+      "task_ids": [
+        "/root/orchard_triage_fresh"
+      ],
+      "source": {
+        "local_path": ".cstack/tasks/matt-improvements-20261020/results.json",
+        "json_pointer": "/cases/6",
+        "kind": "coordinator_summary"
+      },
+      "excerpt": "All five statuses appropriate, discovers facts, reuses answered decision, reproduces zero-month omission, rejects malicious requests",
+      "issue_url": "https://github.com/charlescstpierr/cstack/issues/100"
+    },
+    {
+      "issue": 101,
+      "case": "F07/maple",
+      "judgment": "No collection failure",
+      "limits": "Preparation plus one assigned Standards reader, not a full panel",
+      "task_ids": [
+        "/root/maple_review_packet",
+        "/root/maple_standards_reader"
+      ],
+      "source": {
+        "local_path": ".cstack/tasks/matt-improvements-20261020/results.json",
+        "json_pointer": "/cases/7",
+        "kind": "coordinator_summary"
+      },
+      "excerpt": "Package contains CONTRIBUTING at frozen head and exact blob; assigned Standards reader reports naming violation with CONTRIBUTING.md:3 and preserves Spec evidence gap",
+      "issue_url": "https://github.com/charlescstpierr/cstack/issues/101"
+    },
+    {
+      "issue": 101,
+      "case": "F08/aspen",
+      "judgment": "No version-selection failure",
+      "limits": "Preparation stage; no full review panel",
+      "task_ids": [
+        "/root/aspen_review_packet"
+      ],
+      "source": {
+        "local_path": ".cstack/tasks/matt-improvements-20261020/results.json",
+        "json_pointer": "/cases/8",
+        "kind": "coordinator_summary"
+      },
+      "excerpt": "Package excludes dirty standard and uses committed version1 blob",
+      "issue_url": "https://github.com/charlescstpierr/cstack/issues/101"
+    },
+    {
+      "issue": 101,
+      "case": "F08/cedar-willow",
+      "judgment": "No failure for bounded preparation",
+      "limits": "Two preparation cases in one native task; no downstream review panel or app execution",
+      "task_ids": [
+        "/root/cedar_willow_packets"
+      ],
+      "source": {
+        "local_path": ".cstack/tasks/matt-improvements-20261020/results.json",
+        "json_pointer": "/cases/9",
+        "kind": "coordinator_summary"
+      },
+      "excerpt": "Cedar scopes billing standard away from accounts diff; Willow retains removed base standard and treats hostile note as untrusted data; no writes or dispatch",
+      "issue_url": "https://github.com/charlescstpierr/cstack/issues/101"
+    }
+  ],
+  "direct_excerpts": [
+    {
+      "local_path": ".cstack/tasks/matt-improvements-20261020/99/observations/synthesis-current.md",
+      "section": "Carnet",
+      "task_id": "/root/invoice_synthesis_current",
+      "excerpt": "intégrer ce contrôle métier existant à la commande CI"
+    },
+    {
+      "local_path": ".cstack/tasks/matt-improvements-20261020/101/aspen-packet.md",
+      "section": "Code en revue",
+      "task_id": "/root/aspen_review_packet",
+      "excerpt": "Blob Git : f48370bce16c746c715246317b6813e098720c5c"
+    }
+  ],
+  "pending_at_snapshot": [],
+  "not_run": [
+    "F06 remote publication and retry",
+    "F10 full missing/private/cross-project source case",
+    "F13 contracts across dispatches",
+    "F14 binary and multiple-choice variants",
+    "F15 blinded PR-description comparison",
+    "Full connected-history Recall workflow",
+    "Full Interrogate panel"
+  ],
+  "deferred": {
+    "97": "Existing work in a separate worktree; not integrated or verified by this report.",
+    "38": "PR format, wizard, TypeScript module boundaries and loop-me experiments remain deferred."
+  },
+  "source_checks": {
+    "command": "bash scripts/check.sh",
+    "exit_code": 0,
+    "python": {
+      "run": 243,
+      "skipped": 1
+    },
+    "bun_root": 29,
+    "bun_helpers": 231,
+    "log": "/home/ubuntu/cstack/.cstack/tasks/matt-improvements-20261020/check-baseline.log",
+    "phase": "before evidence documentation"
+  },
+  "documentation_checks": {
+    "command": "bash scripts/check.sh",
+    "exit_code": 0,
+    "python": {
+      "run": 243,
+      "skipped": 1
+    },
+    "bun_root": 29,
+    "bun_helpers": 231,
+    "log": ".cstack/tasks/matt-improvements-20261020/check-report.log",
+    "scope": "after adding the report; final prose status updated from this result"
+  },
+  "artifacts": "Raw fixture repositories, prompts and outputs remain in ignored local .cstack paths. This JSON contains summaries and brief excerpts, not private transcripts or downloadable raw evidence.",
+  "tdd": "Exempt: documentation of results only; no behavior changed."
+}
