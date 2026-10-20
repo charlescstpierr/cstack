@@ -169,6 +169,9 @@ class BehaviorRunnerTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "expectations.json"
             for rows in ([{"id": "one", "expected_children": True}],
+                         [{"id": "one", "requires_independent_review": "true"}],
+                         [{"id": "one", "requires_independent_review": 1}],
+                         [{"id": "one", "requires_independent_review": None}],
                          [{"id": "one", "expected_artifact": "missing.txt"}],
                          [{"id": "one", "project_sha256": "not-a-hash"}],
                          [{"id": "one", "source_sha256": {"unexpected": "a" * 64}}],
@@ -202,6 +205,29 @@ class BehaviorRunnerTests(unittest.TestCase):
             receipt = json.loads((root / "results/summary.json").read_text())["cases"][0]
             self.assertEqual(receipt["verdicts"]["workflow"]["status"], "unverified")
             self.assertEqual(receipt["verdicts"]["outcome"]["status"], "pass")
+
+    def test_independent_review_requirement_preserves_unverified_cli_result(self):
+        for required, expected_code in ((False, 0), (True, 2)):
+            with self.subTest(required=required), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                project = root / "project"
+                project.mkdir()
+                cases = root / "cases.json"
+                cases.write_text(json.dumps([{"id": "one", "cwd": str(project), "prompt": "Prepare."}]))
+                expectations = root / "expectations.json"
+                expectations.write_text(json.dumps({"schema_version": 1, "cases": [{
+                    "id": "one", "requires_independent_review": required,
+                    "outcome_checks": [{"id": "value", "argv": [sys.executable, "-c", "print(1)"],
+                                        "expected_json": 1}]}]}))
+                completed = {"id": "one", "status": "completed", "cwd": str(project),
+                             "independent_review": {"status": "pass"}}
+                with patch.object(verify_behavior, "build_command", return_value=["fake"]), \
+                     patch.object(verify_behavior, "run_case", return_value=completed):
+                    code = verify_behavior.main(["--cases", str(cases), "--expectations", str(expectations),
+                                                 "--output", str(root / "results"), "--verify-outcomes"])
+                self.assertEqual(code, expected_code)
+                receipt = json.loads((root / "results/summary.json").read_text())["cases"][0]
+                self.assertEqual(receipt["verdicts"]["outcome"]["status"], "unverified" if required else "pass")
 
     def test_unknown_case_and_envelope_fields_are_rejected(self):
         with tempfile.TemporaryDirectory() as directory:

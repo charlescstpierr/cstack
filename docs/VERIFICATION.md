@@ -20,6 +20,8 @@ Les options du lanceur (`--model`, `--effort`, `--turn-timeout`, traçage et com
 
 Place les vérificateurs hors du projet modifiable. Un test écrit ou affaibli par le candidat ne constitue pas une preuve indépendante. Sans `expected_json`, le code de sortie reste le contrat de la commande de vérification fournie.
 
+Une attente peut déclarer `requires_independent_review: true` quand la pertinence des décisions exige une revue indépendante que le runner ne sait pas authentifier. Ce booléen ajoute un contrôle de résultat `unverified`, même si les vérifications déterministes passent. Une vérification échouée reste prioritaire et donne `fail`. Aucun fichier de rapport ni champ fourni par le candidat ne satisfait ce contrôle : la revue indépendante se consigne séparément, hors du runner. Avec `--verify-outcomes`, un résultat encore `unverified` produit le code de sortie 2. Les scénarios de conception non mécaniques utilisent cette limite explicite.
+
 Un code de vérificateur non nul donne `fail`. Une commande inaccessible ou expirée reste `unverified`, sans empêcher les vérifications suivantes. Sans cette option, aucun vérificateur n’est exécuté et le résultat reste `unverified`. Les sorties conservées sont bornées à 4096 caractères par flux et nettoyées par le filtre de secrets du reçu.
 
 ```sh
