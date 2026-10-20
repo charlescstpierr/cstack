@@ -19,6 +19,8 @@ Identifie ce qui doit être relu depuis le contexte :
 - Pour le travail courant, une branche, une plage ou une PR, fige une seule fois les SHA base et head selon [l'instantané figé](references/scope-snapshot.md), sans jamais changer le worktree.
 - Si le message utilisateur référence un travail récent, rassemble les fichiers pertinents et préserve la portée demandée.
 
+Pour la relecture d'une correction, consomme l'instantané de la [boucle de correction bornée](../cstack/references/runtime/review-loop.md). Relis les constats ouverts et toute la plage depuis le dernier head relu, y compris plusieurs commits et les changements locaux capturés. Conserve les anomalies hors correctif pour revue globale ou suivi ; un défaut bloquant introduit par le correctif reste à traiter dans la boucle. Cette passe ciblée ne remplace pas la revue globale avant livraison.
+
 ## Étape 2, Énoncer l'intention
 
 Avant de lancer les reviewers, énonce explicitement l'intention et les preuves d'exigences. Les exigences viennent seulement d'une spec approuvée par l'utilisateur, d'une issue ou d'un énoncé de conversation. N'infère pas d'exigences depuis l'implémentation, les messages de commit ou le comportement apparent du code. Si aucune source d'exigences approuvée n'existe, enregistre un écart de preuve Spec et poursuis la revue Standards et adversariale sans inventer ni bloquer sur les exigences.
