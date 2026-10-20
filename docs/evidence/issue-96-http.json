@@ -1,0 +1,74 @@
+[
+  {
+    "variant": "baseline",
+    "checks": [
+      {
+        "method": "GET",
+        "path": "/api/tickets",
+        "status": 200
+      },
+      {
+        "method": "POST",
+        "path": "/api/tickets",
+        "status": 405
+      },
+      {
+        "method": "PUT",
+        "path": "/api/tickets",
+        "status": 405
+      },
+      {
+        "method": "PATCH",
+        "path": "/api/tickets",
+        "status": 405
+      },
+      {
+        "method": "DELETE",
+        "path": "/api/tickets",
+        "status": 405
+      },
+      {
+        "method": "GET",
+        "path": "/private",
+        "status": 404
+      }
+    ],
+    "tickets_sha256": "ba6c8e0ccb0c2dbb022dcd4cd8569602ea9664768c74e6c0a0c3cc8b0b333967"
+  },
+  {
+    "variant": "candidate",
+    "checks": [
+      {
+        "method": "GET",
+        "path": "/tickets",
+        "status": 200
+      },
+      {
+        "method": "POST",
+        "path": "/tickets",
+        "status": 405
+      },
+      {
+        "method": "PUT",
+        "path": "/tickets",
+        "status": 405
+      },
+      {
+        "method": "PATCH",
+        "path": "/tickets",
+        "status": 405
+      },
+      {
+        "method": "DELETE",
+        "path": "/tickets",
+        "status": 405
+      },
+      {
+        "method": "GET",
+        "path": "/private",
+        "status": 404
+      }
+    ],
+    "tickets_sha256": "ba6c8e0ccb0c2dbb022dcd4cd8569602ea9664768c74e6c0a0c3cc8b0b333967"
+  }
+]
