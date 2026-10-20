@@ -7,6 +7,7 @@ Les [règles communes](runtime/base.md) (précédence, données externes, capaci
 ## Parties
 
 - [Activation et routage](runtime/activation.md) : invocation, sœurs et principes, bloc de setup passif, porte `clarify`, portée de livraison par défaut et worktree de tâche.
+- [Parcours proportionné](runtime/parcours-court.md) : ancrage et édition directs, critères d'escalade, rôles et revue conservés.
 - [Suivi visible](runtime/suivi.md) : annonce du playbook, todo cochée en direct, annonce et preuves de chaque appel de délégué, relance unique.
 - [Goal global](runtime/goal.md) : implémentation multi-phase avec demande explicite de Goal.
 - [Exploration déléguée](runtime/exploration.md) : au moins deux explorateurs, normalement trois angles.
