@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { lstat, readFile, readdir, realpath } from "node:fs/promises";
-import { dirname, isAbsolute, relative, resolve, sep } from "node:path";
+import { basename, dirname, isAbsolute, relative, resolve, sep } from "node:path";
 
 export interface HorizonContract {
   readonly id: string;
@@ -141,7 +141,7 @@ export async function loadHorizon(specPath: string): Promise<HorizonDefinition> 
     const contract = {id: text(value.id, "contract.id"), producer: text(value.producer, "contract.producer"),
       decision: text(value.decision, "contract.decision"), declaration: exact(value.declaration, "contract.declaration"),
       values: strings(value.values, "contract.values", true, exact)};
-    if (contract.decision !== "spec.md" && !decisions.includes(contract.decision)) throw new Error(`Horizon: décision inconnue pour ${contract.id}: ${contract.decision}`);
+    if (contract.decision !== basename(spec) && !decisions.includes(contract.decision)) throw new Error(`Horizon: décision inconnue pour ${contract.id}: ${contract.decision}`);
     return {...contract, digest: hash(JSON.stringify(contract))};
   });
   const requirements = objects(data.requirements, "requirements").map(value => ({
@@ -234,7 +234,7 @@ export function horizonBrief(definition: HorizonDefinition, unit: HorizonUnit): 
     `# ${unit.id}`, `GOAL\n${unit.goal}`,
     `SCOPE\n${unit.writable.join("\n")}\nBranche et worktree exclusifs enregistrés par le coordinateur avant dispatch.`,
     `CONTEXT\nSpec: ${definition.spec}\nVersion SHA256: ${definition.digest} (empreinte agrégée des sources, pas du seul fichier spec)\nUnité: ${unit.source}\nDécisions (chemins relatifs au dossier de la spec): ${definition.decisions.join(", ") || "aucune"}\nBloqueurs: ${unit.blocked_by.join(", ") || "aucun"}\n${[...definition.context, ...unit.context].join("\n")}`,
-    `CONTRACTS\n${definition.contracts.filter(contract => contractIds.has(contract.id)).map(contract => `${contract.id} | producteur ${contract.producer} | décision ${contract.decision} | SHA256 ${contract.digest}\n${contract.declaration}\n${contract.values.join("\n")}`).join("\n\n") || "aucun"}`,
+    `CONTRACTS\n${definition.contracts.filter(contract => contractIds.has(contract.id)).map(contract => `${contract.id} | producteur ${contract.producer} | décision ${contract.decision} | SHA256 ${contract.digest}\n${contract.declaration}\nValeurs JSON: ${JSON.stringify(contract.values)}`).join("\n\n") || "aucun"}`,
     `REQUIREMENTS\n${definition.requirements.filter(requirement => requirementIds.has(requirement.id)).map(requirement => `${requirement.id}: ${requirement.description}`).join("\n")}`,
     `TESTS\n${unit.tests.map(test => `${test.name} | exigences ${test.requirements.join(", ")}\nEntrée: ${test.input}\nAssertions: ${test.assertions.join("; ")}\nCommande: ${test.command}\nSuccès: ${test.success}`).join("\n\n")}`,
     `ACCEPTANCE\n${unit.acceptance.join("\n")}`, `VERIFY\n${unit.verify.join("\n")}`,

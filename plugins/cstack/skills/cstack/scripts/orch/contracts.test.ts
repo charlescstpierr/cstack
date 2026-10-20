@@ -1,6 +1,6 @@
 import { afterEach, expect, it } from "bun:test";
 import { createHash } from "node:crypto";
-import { mkdtemp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, mkdir, readFile, rename, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { loadHorizon, horizonBrief } from "./horizon.ts";
@@ -96,5 +96,44 @@ it("preserves exact whitespace in canonical values and their consumer pin", asyn
   f.units[1]!.consumes[0]!.expectedDigest = digest(f.contracts[0]);
   await f.save();
   const definition = await loadHorizon(f.path);
-  expect(horizonBrief(definition, definition.units[1]!)).toContain("\n  exact literal value  \n");
+  const encoded = /^Valeurs JSON: (.+)$/m.exec(horizonBrief(definition, definition.units[1]!))?.[1];
+  expect(JSON.parse(encoded ?? "null")).toEqual(["  exact literal value  "]);
+});
+
+it("rejects a phantom spec.md decision when the loaded spec has another name", async () => {
+  const f = await fixture();
+  f.contracts[0]!.decision = "spec.md";
+  f.units[1]!.consumes[0]!.expectedDigest = digest(f.contracts[0]);
+  await f.save();
+  const renamed = join(f.root, "approved-plan.md");
+  await rename(f.path, renamed);
+  await expect(loadHorizon(renamed)).rejects.toThrow("décision inconnue");
+});
+
+it("accepts the actual loaded spec as the contract decision source", async () => {
+  const f = await fixture();
+  f.contracts[0]!.decision = "approved-plan.md";
+  f.units[1]!.consumes[0]!.expectedDigest = digest(f.contracts[0]);
+  await f.save();
+  const renamed = join(f.root, "approved-plan.md");
+  await rename(f.path, renamed);
+  const definition = await loadHorizon(renamed);
+  expect(horizonBrief(definition, definition.units[1]!)).toContain("décision approved-plan.md");
+  expect(Object.keys(definition.sources)).toContain(renamed);
+});
+
+it("round-trips multiline values without merging distinct array boundaries", async () => {
+  const f = await fixture();
+  const encodedValues: string[] = [];
+  for (const values of [["a\nb", "c"], ["a", "b\nc"]]) {
+    f.contracts[0]!.values = values;
+    f.units[1]!.consumes[0]!.expectedDigest = digest(f.contracts[0]);
+    await f.save();
+    const definition = await loadHorizon(f.path);
+    const brief = horizonBrief(definition, definition.units[0]!);
+    const encoded = /^Valeurs JSON: (.+)$/m.exec(brief)?.[1];
+    expect(JSON.parse(encoded ?? "null")).toEqual(values);
+    encodedValues.push(encoded ?? "");
+  }
+  expect(encodedValues[0]).not.toBe(encodedValues[1]);
 });

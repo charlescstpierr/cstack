@@ -1,0 +1,37 @@
+{
+  "base_head": "4a4c17c6a8cbdee3712ae0027e85402c70b5a844",
+  "actor": "/root/explore_contract_review/cedar_values",
+  "runtime": "codex-native",
+  "requested_model": "inherited",
+  "requested_reasoning_effort": "inherited",
+  "fork_turns": "none",
+  "input": "generated brief.md; task forbids reading other files",
+  "output": {
+    "first": [
+      "a\nb",
+      "c"
+    ],
+    "second": [
+      "a",
+      "b\nc"
+    ]
+  },
+  "expected": {
+    "first": [
+      "a\nb",
+      "c"
+    ],
+    "second": [
+      "a",
+      "b\nc"
+    ]
+  },
+  "exact_match": true,
+  "json_verification_exit": 0,
+  "brief_bytes": 1945,
+  "brief_sha256": "41a8db9bd90758d75ceff61656ac92d073a73b74e4cb33de4876fafb4f127696",
+  "output_sha256": "38219023259981fd0135e0c14b6419c8590cd7bfc35e5f6c9933c80cbda76f48",
+  "limitations": [
+    "Source reads and token costs are not instrumented; this is one bounded exact-value consumption scenario."
+  ]
+}

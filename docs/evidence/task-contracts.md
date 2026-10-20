@@ -40,8 +40,24 @@ Les trois acteurs baseline ont signalé à tort une divergence entre le SHA du f
 | Erreurs d'intégration finales | 0 | 0 |
 | Questions produit | 0 | 0 |
 
+Ces tailles décrivent la campagne initiale enregistrée au commit `4a4c17c`, avant la correction du rendu multiligne ci-dessous. Elles ne mesurent pas la taille des briefs corrigés.
+
 Les deux variantes ont relu la spec et les unités selon leurs rapports. Aucune baisse des relectures n'est démontrée ; les lectures internes ne sont pas instrumentées. Les contrats augmentent ici le texte transmis. Ce résultat préserve la qualité de la baseline et ajoute les refus avant dispatch, sans établir d'économie de contexte. Durées, tokens et coûts monétaires restent inconnus. Le [reçu d'intégration](task-contracts-native.json) conserve acteurs, tailles et résultats réellement exécutés.
 
 Le contrôle complet `bash scripts/check.sh` passe après la correction du bundle. `review_contracts`, acteur indépendant en lecture seule, a relu le diff et exécuté les 85 tests Orchestrate sans échec. Les tests mécaniques couvrent l'import, les dépendances et la dérive ; l'essai natif couvre la consommation des briefs et les fichiers construits. Il ne prétend pas mesurer un ordonnancement autonome complet d'Orchestrate.
 
 La PR dépend de #94, encore en brouillon avec ses propres limites de livraison. Ce travail n'en efface ni le gate TDD déclaré ni l'indisponibilité de la CI distante. La modification du format porte sur cette branche non publiée ; aucune migration silencieuse d'anciens magasins n'est ajoutée.
+
+
+## Corrections de revue de PR105
+
+Deux défauts ont été reproduits avant correction. Un contrat pouvait citer `spec.md` alors que seul `approved-plan.md` avait été chargé. Deux listes distinctes, `["a\nb", "c"]` et `["a", "b\nc"]`, devenaient le même texte lorsque leurs valeurs étaient concaténées par des retours à la ligne.
+
+La source directe d'une décision correspond maintenant au nom réel du fichier chargé. Le brief conserve chaque liste dans un tableau JSON, avec échappement des retours à la ligne. Les tests vérifient le refus de la source fictive, l'acceptation de la source réelle et l'aller-retour exact des deux listes. Le passage rouge compte 17 tests réussis et 4 échecs attendus, dont l'ancien test d'espaces adapté au format de restitution. Après correction, les 88 tests Orchestrate passent.
+
+La demande de compatibilité avec les handoffs de #94 concerne un format encore non publié. Lors de cette revue, `main` distant vaut `312ef0b81c0755f57d3462e3e4806a854cc5cef0` et ne contient pas `orch/horizon.ts`. La PR94 est ouverte en brouillon et le plugin installé 0.8.0 ne contient pas non plus cet adaptateur. Les fichiers incomplets de la branche expérimentale restent refusés explicitement ; aucune migration, réécriture d'état ou réutilisation silencieuse de preuves n'est ajoutée.
+
+
+Le worker natif neuf `/root/explore_contract_review/cedar_values`, lancé sans historique parent, reçoit le brief contenant les deux tableaux. Son fichier `received.json` restitue exactement `{"first":["a\nb","c"],"second":["a","b\nc"]}`. Le parent compare les chaînes décodées et leurs frontières, puis exécute `python3 -m json.tool` avec sortie 0. Le [reçu ciblé](task-contracts-review-native.json) conserve la sortie, l'empreinte et la taille du brief. Les lectures internes et les coûts ne sont pas instrumentés. Cette sonde complète la campagne initiale ; elle ne répète pas les six constructions.
+
+Le contrôle complet `bash scripts/check.sh` est relancé sur ce correctif et termine avec le code 0 : 245 tests Python dont un ignoré, 29 tests Bun racine et 286 tests helpers. Les vérifications de types et de lint passent également.
