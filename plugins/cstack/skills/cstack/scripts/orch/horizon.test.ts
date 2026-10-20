@@ -23,9 +23,9 @@ async function fixture() {
   await mkdir(join(horizon, "tickets"));
   await writeFile(join(horizon, "tickets/01-policy.md"), "---\nid: 01\nstatus: resolved\n---\n## Réponse\nConserver pendant 90 jours.\n");
   const spec = join(horizon, "spec.md");
-  const definition = {schema: 1, status: "ready", goal: "Livrer quatre comportements", out_of_scope: ["Aucune publication distante"], context: ["README.md"], decisions: ["tickets/01-policy.md"], units: ["units/A.md", "units/B.md", "units/C.md", "units/D.md"]};
+  const definition = {schema: 1, status: "ready", goal: "Livrer quatre comportements", out_of_scope: ["Aucune publication distante"], context: ["README.md"], decisions: ["tickets/01-policy.md"], contracts: [], requirements: ["A", "B", "C", "D"].map(id => ({id, description: `Livrer ${id}`})), units: ["units/A.md", "units/B.md", "units/C.md", "units/D.md"]};
   await writeFile(spec, block(definition));
-  const definitions = ["A", "B", "C", "D"].map(id => ({id, goal: `Livrer ${id}`, blocked_by: id === "C" ? ["A"] : id === "D" ? ["B", "C"] : [], acceptance: [`L'appel ${id} retourne sa valeur attendue`], writable: [`src/${id}.ts`], forbidden: ["Ne pas publier"], context: ["README.md"], verify: [`bun run verify-${id}`]}));
+  const definitions = ["A", "B", "C", "D"].map(id => ({id, goal: `Livrer ${id}`, blocked_by: id === "C" ? ["A"] : id === "D" ? ["B", "C"] : [], acceptance: [`L'appel ${id} retourne sa valeur attendue`], writable: [`src/${id}.ts`], forbidden: ["Ne pas publier"], context: ["README.md"], verify: [`bun run verify-${id}`], produces: [], consumes: [], tests: [{name: `verify-${id}`, requirements: [id], input: `Appel ${id}`, assertions: [`Résultat ${id}`], command: `bun run verify-${id}`, success: "exit 0"}]}));
   for (const unit of definitions) {
     await writeFile(join(horizon, `units/${unit.id}.md`), block(unit)); git(root, "branch", `work/${unit.id}`);
   }
@@ -41,6 +41,29 @@ async function fixture() {
   return {root, horizon, spec, definition, definitions, directory, store, head, complete, claim};
 }
 afterEach(async () => { for (const store of stores.splice(0)) await store.close(); for (const root of roots.splice(0)) await rm(root, {recursive: true, force: true}); });
+
+for (const stage of ["open", "stale"] as const) {
+  it(`does not reuse ledger evidence for an ${stage} correction review while independent B stays ready`, async () => {
+    const f = await fixture(); await f.store.handoff.import(f.spec); await f.claim("A"); await f.complete("A");
+    expect((await f.store.handoff.ready(f.root)).ready).toEqual(["B", "C"]);
+    await f.store.review.open({id:"fix-A", repo:f.root, limit:2, source:"handoff review fixture", target:stage === "open" ? {kind:"unit",id:"A"} : {kind:"pr",pr:165},
+      findings:[{id:"F1", mechanism:"incorrect A behavior", paths:["src/A.ts"], severity:"blocking"}]});
+    if (stage === "stale") {
+      const brief = join(f.root,".cstack/review-brief.md"), evidence = join(f.root,".cstack/review-evidence.md");
+      await writeFile(brief,"Verify the A correction against its behavior contract\n"); await writeFile(evidence,"Independent fixture verification completed\n");
+      await f.store.review.attempt({id:"fix-A",attempt:"a1",author:"builder-A",strategy:{reason:"Inspect the A contract",files:[{kind:"brief",path:brief}]}});
+      const snapshot = await f.store.review.check("fix-A");
+      await f.store.review.record({id:"fix-A",attempt:"a1",reviewer:"reviewer-A",base:snapshot.base,patch:snapshot.patch,
+        tests:[{kind:"affected",command:"fixture A",result:"pass",evidence},{kind:"integration",command:"fixture integration",result:"pass",evidence}],
+        outcomes:[{id:"F1",kind:"fixed",reason:"A behavior verified",evidence}],findings:[],progress:{kind:"verified",summary:"A behavior passes",evidence},decision:{kind:"complete",reason:"Correction verified"}});
+      expect((await f.store.handoff.ready(f.root)).ready).toEqual(["B", "C"]);
+      await writeFile(join(f.root,"later-untracked.ts"),"export const later = true;\n");
+    }
+    expect((await f.store.handoff.ready(f.root)).ready).toEqual(["B"]);
+    await expect(f.claim("C")).rejects.toThrow("non dispatchable");
+    expect((await f.claim("B")).owner).toBe("owner-B");
+  });
+}
 
 it("imports the four-unit graph once and unlocks C then D only with exact-head behavior evidence", async () => {
   const f = await fixture();

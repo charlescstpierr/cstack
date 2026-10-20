@@ -1,6 +1,27 @@
 import { createHash } from "node:crypto";
 import { lstat, readFile, readdir, realpath } from "node:fs/promises";
-import { dirname, isAbsolute, relative, resolve, sep } from "node:path";
+import { basename, dirname, isAbsolute, relative, resolve, sep } from "node:path";
+
+export interface HorizonContract {
+  readonly id: string;
+  readonly producer: string;
+  readonly decision: string;
+  readonly declaration: string;
+  readonly values: readonly string[];
+  readonly digest: string;
+}
+export interface HorizonRequirement {
+  readonly id: string;
+  readonly description: string;
+}
+export interface HorizonTest {
+  readonly name: string;
+  readonly requirements: readonly string[];
+  readonly input: string;
+  readonly assertions: readonly string[];
+  readonly command: string;
+  readonly success: string;
+}
 
 /** Immutable definition receipt only; execution stays in units.tsv and ledger.tsv. */
 export interface HorizonUnit {
@@ -13,6 +34,9 @@ export interface HorizonUnit {
   readonly forbidden: readonly string[];
   readonly context: readonly string[];
   readonly verify: readonly string[];
+  readonly produces: readonly string[];
+  readonly consumes: readonly { readonly id: string; readonly expectedDigest: string }[];
+  readonly tests: readonly HorizonTest[];
 }
 export interface HorizonDefinition {
   readonly schema: 1;
@@ -24,6 +48,8 @@ export interface HorizonDefinition {
   readonly context: readonly string[];
   readonly decisions: readonly string[];
   readonly units: readonly HorizonUnit[];
+  readonly contracts: readonly HorizonContract[];
+  readonly requirements: readonly HorizonRequirement[];
 }
 
 function record(value: unknown): value is Record<string, unknown> {
@@ -35,10 +61,26 @@ function text(value: unknown, label: string): string {
   }
   return value.trim();
 }
-function strings(value: unknown, label: string, allowEmpty = false): readonly string[] {
+function strings(value: unknown, label: string, allowEmpty = false, parse = text): readonly string[] {
   if (!Array.isArray(value) || (!allowEmpty && value.length === 0)) throw new Error(`Horizon: ${label} doit être une liste explicite`);
-  const result = value.map((item: unknown) => text(item, label));
+  const result = value.map((item: unknown) => parse(item, label));
   if (new Set(result).size !== result.length) throw new Error(`Horizon: ${label} contient des doublons`);
+  return result;
+}
+function objects(value: unknown, label: string, allowEmpty = false): readonly Record<string, unknown>[] {
+  if (!Array.isArray(value) || (!allowEmpty && value.length === 0)) throw new Error(`Horizon: ${label} doit être une liste explicite`);
+  return value.map((item: unknown) => {
+    if (!record(item)) throw new Error(`Horizon: ${label} contient un objet invalide`);
+    return item;
+  });
+}
+function exact(value: unknown, label: string): string {
+  if (typeof value !== "string" || !value.trim() || /^(?:todo|tbd|<.*>)$/i.test(value.trim())) throw new Error(`Horizon: ${label} incomplet`);
+  return value;
+}
+function uniqueIds<T extends { readonly id: string }>(items: readonly T[], label: string): Map<string, T> {
+  const result = new Map(items.map(item => [item.id, item]));
+  if (result.size !== items.length) throw new Error(`Horizon: ${label} dupliqués`);
   return result;
 }
 function metadata(raw: string, path: string): Record<string, unknown> {
@@ -95,6 +137,18 @@ export async function loadHorizon(specPath: string): Promise<HorizonDefinition> 
     const statuses = front === undefined ? [] : [...front.matchAll(/^status:\s*([^\r\n]+)$/gm)];
     if (statuses.length !== 1 || statuses[0]?.[1]?.trim() !== "out-of-scope") throw new Error(`Horizon: décision non référencée: ${path}`);
   }
+  const contracts = objects(data.contracts, "contracts", true).map(value => {
+    const contract = {id: text(value.id, "contract.id"), producer: text(value.producer, "contract.producer"),
+      decision: text(value.decision, "contract.decision"), declaration: exact(value.declaration, "contract.declaration"),
+      values: strings(value.values, "contract.values", true, exact)};
+    if (contract.decision !== basename(spec) && !decisions.includes(contract.decision)) throw new Error(`Horizon: décision inconnue pour ${contract.id}: ${contract.decision}`);
+    return {...contract, digest: hash(JSON.stringify(contract))};
+  });
+  const requirements = objects(data.requirements, "requirements").map(value => ({
+    id: text(value.id, "requirement.id"), description: text(value.description, "requirement.description"),
+  }));
+  const byContract = uniqueIds(contracts, "contrats");
+  const byRequirement = uniqueIds(requirements, "exigences");
   const units: HorizonUnit[] = [];
   for (const path of strings(data.units, "units")) {
     const value = metadata(await read(path), path);
@@ -108,7 +162,16 @@ export async function loadHorizon(specPath: string): Promise<HorizonDefinition> 
       writable,
       forbidden: strings(value.forbidden, `${id}.forbidden`),
       context: strings(value.context, `${id}.context`),
-      verify: strings(value.verify, `${id}.verify`)});
+      verify: strings(value.verify, `${id}.verify`),
+      produces: strings(value.produces, `${id}.produces`, true),
+      consumes: objects(value.consumes, `${id}.consumes`, true).map(item => ({
+        id: text(item.id, `${id}.consumes.id`), expectedDigest: text(item.expectedDigest, `${id}.consumes.expectedDigest`),
+      })),
+      tests: objects(value.tests, `${id}.tests`).map(item => ({
+        name: text(item.name, `${id}.tests.name`), requirements: strings(item.requirements, `${id}.tests.requirements`),
+        input: exact(item.input, `${id}.tests.input`), assertions: strings(item.assertions, `${id}.tests.assertions`),
+        command: text(item.command, `${id}.tests.command`), success: text(item.success, `${id}.tests.success`),
+      }))});
   }
   const byId = new Map(units.map(unit => [unit.id, unit]));
   if (byId.size !== units.length) throw new Error("Horizon: ids d'unités dupliqués");
@@ -125,15 +188,55 @@ export async function loadHorizon(specPath: string): Promise<HorizonDefinition> 
     visited.add(id);
   };
   units.forEach(unit => visit(unit.id));
+  for (const contract of contracts) {
+    const producer = byId.get(contract.producer);
+    if (!producer || !producer.produces.includes(contract.id)) throw new Error(`Horizon: producteur absent ou incompatible pour ${contract.id}`);
+  }
+  const covered = new Set<string>();
+  for (const unit of units) {
+    const ancestors = new Set<string>();
+    const collect = (id: string): void => {
+      if (ancestors.has(id)) return;
+      ancestors.add(id);
+      byId.get(id)?.blocked_by.forEach(collect);
+    };
+    unit.blocked_by.forEach(collect);
+    uniqueIds(unit.consumes, `${unit.id}.consumes`);
+    for (const id of unit.produces) {
+      if (byContract.get(id)?.producer !== unit.id) throw new Error(`Horizon: ${unit.id} ne produit pas le contrat ${id}`);
+    }
+    for (const consumed of unit.consumes) {
+      const contract = byContract.get(consumed.id);
+      if (!contract) throw new Error(`Horizon: contrat inconnu: ${consumed.id}`);
+      if (!ancestors.has(contract.producer)) throw new Error(`Horizon: ${unit.id} consomme ${contract.id} sans dépendre de ${contract.producer}`);
+      if (consumed.expectedDigest !== contract.digest) throw new Error(`Horizon: signature ou valeurs divergentes pour ${unit.id}/${contract.id}; attendu ${consumed.expectedDigest}, canonique ${contract.digest}`);
+    }
+    const names = unit.tests.map(test => test.name);
+    if (new Set(names).size !== names.length) throw new Error(`Horizon: tests dupliqués dans ${unit.id}`);
+    for (const test of unit.tests) {
+      if (!unit.verify.includes(test.command)) throw new Error(`Horizon: commande du test ${unit.id}/${test.name} absente de verify`);
+      for (const id of test.requirements) {
+        if (!byRequirement.has(id)) throw new Error(`Horizon: exigence inconnue: ${id}`);
+        covered.add(id);
+      }
+    }
+  }
+  const uncovered = requirements.filter(requirement => !covered.has(requirement.id));
+  if (uncovered.length) throw new Error(`Horizon: exigences sans tâche et test: ${uncovered.map(item => item.id).join(", ")}`);
   const digest = hash(JSON.stringify(Object.entries(sources).sort(([a], [b]) => a.localeCompare(b))));
-  return {schema: 1, spec, digest, sources, goal, out_of_scope, context, decisions, units};
+  return {schema: 1, spec, digest, sources, goal, out_of_scope, context, decisions, units, contracts, requirements};
 }
 
 export function horizonBrief(definition: HorizonDefinition, unit: HorizonUnit): string {
+  const contractIds = new Set([...unit.produces, ...unit.consumes.map(item => item.id)]);
+  const requirementIds = new Set(unit.tests.flatMap(test => test.requirements));
   return [
     `# ${unit.id}`, `GOAL\n${unit.goal}`,
     `SCOPE\n${unit.writable.join("\n")}\nBranche et worktree exclusifs enregistrés par le coordinateur avant dispatch.`,
-    `CONTEXT\nSpec: ${definition.spec}\nVersion SHA256: ${definition.digest}\nUnité: ${unit.source}\nDécisions: ${definition.decisions.join(", ") || "aucune"}\nBloqueurs: ${unit.blocked_by.join(", ") || "aucun"}\n${[...definition.context, ...unit.context].join("\n")}`,
+    `CONTEXT\nSpec: ${definition.spec}\nVersion SHA256: ${definition.digest} (empreinte agrégée des sources, pas du seul fichier spec)\nUnité: ${unit.source}\nDécisions (chemins relatifs au dossier de la spec): ${definition.decisions.join(", ") || "aucune"}\nBloqueurs: ${unit.blocked_by.join(", ") || "aucun"}\n${[...definition.context, ...unit.context].join("\n")}`,
+    `CONTRACTS\n${definition.contracts.filter(contract => contractIds.has(contract.id)).map(contract => `${contract.id} | producteur ${contract.producer} | décision ${contract.decision} | SHA256 ${contract.digest}\n${contract.declaration}\nValeurs JSON: ${JSON.stringify(contract.values)}`).join("\n\n") || "aucun"}`,
+    `REQUIREMENTS\n${definition.requirements.filter(requirement => requirementIds.has(requirement.id)).map(requirement => `${requirement.id}: ${requirement.description}`).join("\n")}`,
+    `TESTS\n${unit.tests.map(test => `${test.name} | exigences ${test.requirements.join(", ")}\nEntrée: ${test.input}\nAssertions: ${test.assertions.join("; ")}\nCommande: ${test.command}\nSuccès: ${test.success}`).join("\n\n")}`,
     `ACCEPTANCE\n${unit.acceptance.join("\n")}`, `VERIFY\n${unit.verify.join("\n")}`,
     "TIMEBOX\nRetourner les preuves partielles à la limite convenue avec le coordinateur.",
     `FORBIDDEN\n${[...definition.out_of_scope, ...unit.forbidden].join("\n")}\nPas de changement de topologie, force-push ou action distante sans autorité utilisateur explicite.`,

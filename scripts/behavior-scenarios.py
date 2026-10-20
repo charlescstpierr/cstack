@@ -496,7 +496,8 @@ if __name__ == "__main__":
         ".cstack/horizon/delivery/spec.md": handoff_block({
             "schema": 1, "status": "ready", "goal": "Livrer les quatre unités définies",
             "out_of_scope": ["Actions distantes et changements hors unité"],
-            "context": ["README.md"], "decisions": [],
+            "context": ["README.md"], "decisions": [], "contracts": [],
+            "requirements": [{"id": unit, "description": f"Livrer le résultat {unit}"} for unit in "ABCD"],
             "units": [f"units/{unit}.md" for unit in "ABCD"],
         }),
     }
@@ -507,6 +508,10 @@ if __name__ == "__main__":
             "acceptance": [f"Le fichier results/{unit}.txt contient exactement {unit}"],
             "writable": [f"results/{unit}.txt"], "forbidden": ["Aucune action distante"],
             "context": ["README.md"], "verify": [f"cat results/{unit}.txt"],
+            "produces": [], "consumes": [],
+            "tests": [{"name": f"result-{unit}", "requirements": [unit], "input": f"results/{unit}.txt",
+                       "assertions": [f"Le contenu vaut exactement {unit}"], "command": f"cat results/{unit}.txt",
+                       "success": f"exit 0 et sortie {unit}"}],
         })
     handoff_project = create_project(output, "sequoia", handoff_files, [], catalog)
     seed_git(handoff_project)

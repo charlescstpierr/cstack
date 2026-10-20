@@ -47,6 +47,8 @@ Un handle dont le marqueur a été remplacé refuse toute nouvelle opération n�
 
 `--force` remplace un détenteur vivant sans arrêter son processus. La vérification du marqueur et la publication d’une écriture ne sont pas atomiques : une opération déjà engagée peut encore publier après le remplacement. Pour garantir l’exclusion, attends l’arrêt de l’ancien détenteur avant de forcer la reprise.
 
+Les contrats Horizon définis dans `../../horizon/references/templates.md`, section « Contrats entre unités », restent la source unique des interfaces, valeurs et exigences. Avant de dispatcher, vérifie les références de contrats et les assertions des tests de chaque unité. Une exigence sans mode d'échec pertinent exercé revient au propriétaire de l'unité ; une divergence de signature revient au producteur et au consommateur avant implémentation. Un contrat modifié exige un nouveau brief et des preuves à jour.
+
 #### Format de brief
 
 Chaque brief de propriétaire contient ces champs. Raccourcis la forme pour une toute petite unité, mais garde les faits.

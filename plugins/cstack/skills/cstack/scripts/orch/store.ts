@@ -16,6 +16,8 @@ import {
 } from "node:fs/promises";
 import { basename, dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 
+import { findReview, openReview, parseReviews, recordReview, requireReviewed, reserveAttempt, reviewId, reviewView, sameOpening, targetsPr, targetsUnit, type ReviewApi, type ReviewLoop } from "./review.ts";
+
 import { loadHorizon, horizonBrief, overlappingScopes, type HorizonDefinition } from "./horizon.ts";
 
 const LEGACY_UNIT_HEADER = "id\ttrack\tstate\tbranch\tpr\tsha\tbrief";
@@ -200,6 +202,7 @@ export interface Store {
     readonly ready: (repo: string) => Promise<ReadyUnits>;
     readonly claim: (params: { readonly id: string; readonly owner: string; readonly branch: string; readonly repo: string }) => Promise<Unit>;
   };
+  readonly review: ReviewApi;
   readonly units: {
     readonly add: (params: AddUnitParams) => Promise<Unit>;
     readonly set: (params: SetUnitParams) => Promise<Unit>;
@@ -1464,7 +1467,7 @@ async function writableScopeBlocker(repo: string, scopes: readonly string[]): Pr
   return null;
 }
 
-async function readyHandoff(store: string, repo: string): Promise<ReadyUnits> {
+async function readyHandoff(store: string, repo: string, reviews: readonly ReviewLoop[]): Promise<ReadyUnits> {
   const receipt = await handoffReceipt(store);
   if (!receipt.committed) throw new UserError("handoff incomplet; reprendre import avant dispatch");
   const rows = await checkHandoffFiles(store, receipt.definition, true);
@@ -1476,6 +1479,7 @@ async function readyHandoff(store: string, repo: string): Promise<ReadyUnits> {
     try { if (localHead(repo, row.branch) !== row.sha) return false; } catch { return false; }
     const proof = ledger.find(entry => entry.pr === row.pr && entry.sha === row.sha);
     if (!proof || !["unit-test-verified", "live-ui-verified"].includes(proof.verdict) || !proof.verifier || proof.verifier === row.owner) return false;
+    try { await requireReviewed(reviews.filter(loop => targetsUnit(loop, row)), row.sha); } catch { return false; }
     try { return (await readFile(resolve(repo, proof.evidence), "utf8")).trim().length > 0; } catch { return false; }
   };
   const ready: string[] = [];
@@ -1536,6 +1540,13 @@ export function openStore(
     await ensureLock();
   };
 
+  const readReviews = async (): Promise<readonly ReviewLoop[]> => {
+    const path = join(store, "reviews.json");
+    return await exists(path) ? parseReviews(JSON.parse(await readFile(path, "utf8"))) : [];
+  };
+  const saveReview = async (loops: readonly ReviewLoop[], next: ReviewLoop): Promise<void> => {
+    await atomicWrite(join(store, "reviews.json"), `${JSON.stringify({schema: 1, reviews: [...loops.filter(loop => loop.id !== next.id), next]}, null, 2)}\n`);
+  };
   const api: Store = {
     handoff: {
       import: async (spec) => {
@@ -1559,7 +1570,7 @@ export function openStore(
       },
       ready: async (repo) => {
         await beginWrite();
-        return readyHandoff(store, repo);
+        return readyHandoff(store, repo, await readReviews());
       },
       claim: async (params) => {
         await beginWrite();
@@ -1567,7 +1578,7 @@ export function openStore(
         const branch = requiredCell(params.branch, "branch");
         if (branch !== params.branch) throw new UserError("branche locale littérale requise; aucune normalisation implicite");
         const branchRef = literalBranchRef(params.repo, branch);
-        if (!(await readyHandoff(store, params.repo)).ready.includes(params.id)) throw new UserError(`unité ${params.id} non dispatchable; aucune nouvelle revendication`);
+        if (!(await readyHandoff(store, params.repo, await readReviews())).ready.includes(params.id)) throw new UserError(`unité ${params.id} non dispatchable; aucune nouvelle revendication`);
         const rows = [...await readUnits(store)];
         if (rows.some(row => row.branch === branch)) throw new UserError(`branche déjà attribuée: ${branch}`);
         const {definition} = await handoffReceipt(store);
@@ -1585,6 +1596,37 @@ export function openStore(
         rows[index] = row;
         await saveUnits(store, rows);
         return row;
+      },
+    },
+    review: {
+      open: async input => {
+        await beginWrite();
+        const next = await openReview(input), loops = await readReviews();
+        const target = next.target;
+        if (target.kind === "unit" && !(await readUnits(store)).some(unit => unit.id === target.id)) throw new UserError("review: unité introuvable");
+        const existing = loops.find(loop => loop.id === next.id);
+        if (existing) {
+          if (!sameOpening(existing, next)) throw new UserError("review: réouverture différente interdite; conserver compteurs et décisions");
+          return existing;
+        }
+        await saveReview(loops, next);
+        return next;
+      },
+      attempt: async input => {
+        await beginWrite();
+        const loops = await readReviews(), reserved = await reserveAttempt(findReview(loops, reviewId(input)), input);
+        await saveReview(loops, reserved.loop);
+        return reserved.attempt;
+      },
+      record: async input => {
+        await beginWrite();
+        const loops = await readReviews(), next = await recordReview(findReview(loops, reviewId(input)), input);
+        await saveReview(loops, next);
+        return reviewView(next);
+      },
+      check: async id => {
+        await beginWrite();
+        return reviewView(findReview(await readReviews(), id));
       },
     },
     units: {
@@ -1645,6 +1687,9 @@ export function openStore(
               ? old.sha
               : requiredCell(params.sha, "SHA"),
         };
+        if (state === "ready" || state === "done") {
+          await requireReviewed((await readReviews()).filter(loop => targetsUnit(loop, row)), row.sha || undefined);
+        }
         rows[index] = row;
         await saveUnits(store, rows);
         return row;
@@ -1698,6 +1743,10 @@ export function openStore(
               : requiredCell(params.verifier, "verifier"),
           ts: new Date().toISOString(),
         };
+        if (verdict === "unit-test-verified" || verdict === "live-ui-verified") {
+          const units = await readUnits(store);
+          await requireReviewed((await readReviews()).filter(loop => targetsPr(loop, row.pr, units)), row.sha);
+        }
         const rows = [...(await readLedger(store))];
         const index = rows.findIndex(
           (old) => old.pr === row.pr && old.sha === row.sha
@@ -1722,6 +1771,10 @@ export function openStore(
             compact: "NOT-VERIFIED",
             json: { pr, sha, verdict: "NOT-VERIFIED" },
           });
+        }
+        if (row.verdict === "unit-test-verified" || row.verdict === "live-ui-verified") {
+          const units = await readUnits(store);
+          await requireReviewed((await readReviews()).filter(loop => targetsPr(loop, pr, units)), sha);
         }
         return row;
       },
@@ -1973,8 +2026,14 @@ export function openStore(
       ready: repo => serial(() => api.handoff.ready(repo)),
       claim: params => serial(() => api.handoff.claim(params)),
     },
+    review: {
+      open: input => serial(() => api.review.open(input)),
+      attempt: input => serial(() => api.review.attempt(input)),
+      record: input => serial(() => api.review.record(input)),
+      check: id => serial(() => api.review.check(id)),
+    },
     units: {...api.units, add: params => serial(() => api.units.add(params)), set: params => serial(() => api.units.set(params))},
-    ledger: {...api.ledger, record: params => serial(() => api.ledger.record(params))},
+    ledger: {...api.ledger, record: params => serial(() => api.ledger.record(params)), check: params => serial(() => api.ledger.check(params))},
     inbox: {...api.inbox, drain: () => serial(api.inbox.drain)},
     gates: {...api.gates, park: params => serial(() => api.gates.park(params)), resolve: params => serial(() => api.gates.resolve(params))},
     frontier: {...api.frontier, set: params => serial(() => api.frontier.set(params))},

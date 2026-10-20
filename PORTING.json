@@ -1329,6 +1329,22 @@
     {
       "path": "plugins/cstack/skills/cstack/scripts/orch/horizon.test.ts",
       "reason": "Régressions propres à cstack du handoff Horizon vers le store Orchestrate existant : graphe, reprise, dérive, revendication exclusive et preuves au head courant."
+    },
+    {
+      "path": "plugins/cstack/skills/cstack/scripts/orch/contracts.test.ts",
+      "reason": "Régressions propres à cstack des contrats canoniques entre unités Horizon : signatures, valeurs, dépendances, couverture déclarée et invalidation des preuves; issue #97, sans contenu amont copié."
+    },
+    {
+      "path": "plugins/cstack/skills/cstack/scripts/orch/review.ts",
+      "reason": "Suivi propre à cstack des corrections bornées, des stratégies et des preuves de patch ; réutilise le magasin Orchestrate, sans moteur autonome ni contenu amont copié."
+    },
+    {
+      "path": "plugins/cstack/skills/cstack/scripts/orch/review.test.ts",
+      "reason": "Tests propres à cstack des limites, reprises, relectures multi-commit et barrières de fraîcheur des corrections."
+    },
+    {
+      "path": "plugins/cstack/skills/cstack/references/runtime/review-loop.md",
+      "reason": "Procédure propre à cstack pour réserver, relire et vérifier une correction dans le magasin existant, sans copie de texte amont."
     }
   ]
 }

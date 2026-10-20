@@ -180,6 +180,13 @@ Exemple de bloc dans `spec.md` :
   "out_of_scope": ["Ne pas modifier les durées de conservation."],
   "context": ["README.md décrit le format actuel des archives."],
   "decisions": ["tickets/01-format.md"],
+  "contracts": [],
+  "requirements": [
+    {"id": "lookup", "description": "Retrouver une archive par identifiant."},
+    {"id": "export", "description": "Exporter une archive."},
+    {"id": "search", "description": "Rechercher dans les archives."},
+    {"id": "interface", "description": "Utiliser recherche et export depuis l'interface."}
+  ],
   "units": ["units/A-index.md", "units/B-export.md", "units/C-search.md", "units/D-interface.md"]
 }
 ```
@@ -202,7 +209,17 @@ Exemple de fichier A-index dans le dossier `units/` :
   "writable": ["src/archive-index", "tests/archive-index"],
   "forbidden": ["Ne pas modifier le stockage des archives."],
   "context": ["README.md décrit les identifiants d'archives."],
-  "verify": ["bun test tests/archive-index"]
+  "verify": ["bun test tests/archive-index"],
+  "produces": [],
+  "consumes": [],
+  "tests": [{
+    "name": "lookup known and missing archive",
+    "requirements": ["lookup"],
+    "input": "Un identifiant existant et un identifiant absent",
+    "assertions": ["L'identifiant existant retourne son archive", "L'identifiant absent retourne un résultat vide"],
+    "command": "bun test tests/archive-index",
+    "success": "Code de sortie 0 et les deux assertions passent"
+  }]
 }
 ```
 ````
@@ -239,3 +256,27 @@ Le brief inclut aussi `TIMEBOX` et `STANDING`. Le coordinateur fixe la limite de
 Horizon possède la définition dans la spec, les tickets et les unités. L'import conserve les empreintes SHA256 de ces sources et la définition dans `.cstack/orchestrate/<slug>/horizon.json`. Ce reçu note seulement la fin de la transaction d'import avec `committed`; il ne suit aucun achèvement d'unité. Les propriétaires et la progression restent dans `units.tsv`, les verdicts dans `ledger.tsv`, et les événements dans `inbox/`.
 
 Un import répété de sources inchangées réutilise les unités et les briefs. Une modification des sources, un brief différent ou une collision d'ID bloque la reprise sans écraser les propriétaires ni les preuves. La [procédure Orchestrate](../../cstack/playbooks/orchestrate.md#reprendre-un-handoff-horizon) décrit l'import, la réservation avant dispatch et la réconciliation des interruptions.
+
+## Contrats entre unités
+
+La spec possède les définitions canoniques dans `contracts` et les exigences dans `requirements`. Ces listes sont explicites, même lorsque `contracts` est vide. `requirements` contient au moins un objet avec `id` unique et `description`. Chaque unité possède `produces`, `consumes` et au moins un élément `tests`. Les tests rattachent chaque exigence à une tâche propriétaire. Une exigence sans test déclaré empêche l'import.
+
+Un contrat contient `id`, `producer`, `decision`, `declaration` et `values`. `declaration` conserve le texte exact des signatures, dans le langage du projet, y compris les paramètres et types nécessaires. `values` contient les valeurs ou comportements imposés sous forme de chaînes explicites. Une liste vide signifie qu'aucune valeur supplémentaire n'est imposée. `decision` cite un chemin présent dans `decisions`, ou `spec.md` lorsque la demande approuvée est consignée directement dans la spec. Ne recopie pas le corps d'une fonction, sauf si cet algorithme est une décision requise.
+
+```json
+{
+  "id": "archive-lookup",
+  "producer": "A",
+  "decision": "tickets/01-format.md",
+  "declaration": "export function lookup(id: string): Archive | null",
+  "values": ["missing archive returns null"]
+}
+```
+
+Le producteur déclare `produces: ["archive-lookup"]`. Le consommateur déclare `consumes: [{"id": "archive-lookup", "expectedDigest": "<empreinte SHA256>"}]` et dépend du producteur dans `blocked_by`, directement ou transitivement. L'empreinte porte sur le JSON compact des cinq champs ci-dessus dans cet ordre, encodé en UTF-8. Les tableaux conservent leur ordre. La déclaration et les valeurs conservent leurs espaces et retours à la ligne. Calcule cette empreinte depuis le contrat vérifié ; ne remplace jamais une divergence sans vérifier le changement avec son producteur.
+
+Les briefs générés incluent uniquement les contrats produits ou consommés par l'unité et les exigences citées par ses tests. Ils conservent les sources canoniques, les contraintes globales et l'empreinte de toute la définition. Un worker reçoit son brief, les instructions applicables et les sources nécessaires, sans copie de l'historique du parent.
+
+Chaque test déclare un nom, les IDs d'exigences, l'entrée, les assertions, la commande et la condition de réussite. Sa commande figure également dans `verify`. Le helper vérifie les références et la présence de ces champs. Le coordinateur vérifie que les assertions exercent réellement les exigences et leurs modes d'échec importants. Une assertion vide ou une recherche de mots ne prouve pas la couverture sémantique.
+
+Avant dispatch, l'import refuse les producteurs inconnus, les dépendances absentes, les signatures ou valeurs dont l'empreinte diverge et les exigences non rattachées. Une modification de contrat invalide les briefs et bloque le handoff existant par son contrôle de dérive. Réconcilie les unités affectées et relance leurs preuves avant de préparer un nouveau handoff ; ne contourne pas le refus en supprimant le reçu ou en réutilisant les anciens verdicts.
