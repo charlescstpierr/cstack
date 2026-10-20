@@ -21,6 +21,33 @@ RUNNER_SPEC.loader.exec_module(verify_behavior)
 
 
 class BehaviorScenarioGeneratorTests(unittest.TestCase):
+    def test_diagnostic_cases_bind_history_to_their_workspace_without_model_override(self):
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory)
+            cases, expectations = behavior_scenarios.build_cases(
+                ROOT / "plugins/cstack", ROOT / "plugins/cstack", output, None)
+            selected = [case for case in cases if case["id"].startswith("session_diagnostic_")]
+            self.assertEqual(len(selected), 2)
+            for case in selected:
+                project = Path(case["cwd"])
+                records = [json.loads(line) for line in (project / "records/session.jsonl").read_text().splitlines()]
+                self.assertEqual(Path(records[0]["workspace"]), project)
+                self.assertEqual(records[0]["session"], "cedar-session")
+                self.assertTrue((project / "records" / records[0]["rules"]).is_file())
+                self.assertEqual(json.loads((project / ".cstack/models.json").read_text()), {})
+                self.assertEqual(subprocess.check_output(["git", "status", "--porcelain"], cwd=project), b"")
+                expectation = next(item for item in expectations if item["id"] == case["id"])
+                verify_behavior.verify_provenance({
+                    **case, "cwd": project, "bundle": Path(case["bundle"]), "prompts": [case["prompt"]]
+                }, expectation)
+                result = {"status": "completed", "cwd": str(project), "native_child_thread_ids": []}
+                with patch.dict(os.environ, {"PYTHONOPTIMIZE": "1"}):
+                    self.assertEqual(verify_behavior.evaluate_case(
+                        result, expectation, verify_outcomes=True)["outcome"]["status"], "pass")
+                    (project / "records/mapping.md").write_text("changed")
+                    self.assertEqual(verify_behavior.evaluate_case(
+                        result, expectation, verify_outcomes=True)["outcome"]["status"], "fail")
+
     def test_design_cases_preserve_inputs_and_reject_document_directives(self):
         with tempfile.TemporaryDirectory() as directory:
             output = Path(directory) / "cases"
@@ -457,8 +484,8 @@ class BehaviorScenarioGeneratorTests(unittest.TestCase):
             validated = verify_behavior.read_expectations(output / "expectations.json")
             for case in verify_behavior.read_cases(output / "cases.json"):
                 verify_behavior.verify_provenance(case, validated[case["id"]])
-            self.assertEqual(len(cases), 51)
-            self.assertEqual(len(expectations), 51)
+            self.assertEqual(len(cases), 53)
+            self.assertEqual(len(expectations), 53)
             self.assertEqual(len({case["cwd"] for case in cases}), len(cases))
             self.assertTrue(all(Path(case["bundle"]).is_dir() for case in cases))
 

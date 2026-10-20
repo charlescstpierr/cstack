@@ -1,6 +1,6 @@
 interface:
   display_name: "reflect"
   short_description: "Relire les preuves et proposer des améliorations"
-  default_prompt: "Utilise $cstack:reflect pour cette tâche. Lance les trois reviewers comme sous-agents natifs en parallèle."
+  default_prompt: "Utilise $cstack:reflect pour cette tâche. Pour une réflexion, lance les trois reviewers natifs ; pour expliquer un écart de parcours, applique le diagnostic ciblé en lecture seule."
 policy:
   allow_implicit_invocation: false
