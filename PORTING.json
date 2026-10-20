@@ -1327,6 +1327,10 @@
       "reason": "Lecture de conception propre à cstack avant construction, inspirée du builder check de obra/superpowers v7.0.0 (voir NOTICE.md), sans texte copié."
     },
     {
+      "path": "plugins/cstack/skills/reflect/references/session-diagnostic.md",
+      "reason": "Diagnostic ciblé propre à cstack dans Reflect, depuis les preuves de session existantes ; inspiré du besoin décrit par obra/superpowers diagnosing-superpowers v7.0.0, rédigé sans copie de texte ni code."
+    },
+    {
       "path": "plugins/cstack/skills/cstack/references/runtime/parcours-court.md",
       "reason": "Règle propre à cstack du parcours proportionné, ancrée sur les observations natives de #53 ; rédaction originale, sans copie de contenu amont."
     }
