@@ -1,5 +1,8 @@
 # Outils et delegation
 
+Dans une tâche cstack explicitement invoquée dans T3, le [contrat T3](t3.md) prime sur les règles autonomes de ce document.
+
+
 Utilise les vrais outils exposés dans la session courante. Les noms d’outils natifs diffèrent entre App et CLI ; inspecte le schéma disponible au lieu de construire un appel Cursor Task ou d’inventer un outil.
 
 - Lis/cherche avec les outils natifs de système de fichiers ou `rg` ; lance les commandes avec l’outil shell natif.

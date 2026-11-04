@@ -352,6 +352,10 @@ def _agent_changes(mode: bool | None, snapshots: dict[str, bytes | None], config
     changes: dict[str, bytes | None] = {}
     for name, relative in AGENT_PATHS.items():
         old = snapshots[relative]
+        role = NATIVE_AGENTS[name]["role"]
+        selected = models.selection((config or {}).get(role, (config or {}).get(models.LEGACY_FALLBACKS.get(role), "inherit-parent")))
+        if selected.get("runtime") == "t3":
+            continue
         managed = _managed_agent(old)
         if old is not None and not managed:
             if mode:
@@ -361,9 +365,7 @@ def _agent_changes(mode: bool | None, snapshots: dict[str, bytes | None], config
             if managed:
                 changes[relative] = None
             continue
-        role = NATIVE_AGENTS[name]["role"]
-        # Même lecture que models.resolve ; un rôle confié à un CLI n’a pas d’agent natif.
-        selected = models.selection((config or {}).get(role, (config or {}).get(models.LEGACY_FALLBACKS.get(role), "inherit-parent")))
+        # Un rôle confié à un CLI n’a pas d’agent natif.
         if "runtime" in selected:
             if managed:
                 changes[relative] = None
@@ -394,14 +396,14 @@ def _agent_result(entries: list[dict[str, Any]], changed: list[str]) -> dict[str
             for key, deleting in (("updated", False), ("removed", True))}
 
 
-def apply_model_choices(workspace: Path, choices: dict[str, Any], expected_digest: str, catalog: dict[str, Any] | None) -> dict[str, Any]:
+def apply_model_choices(workspace: Path, choices: dict[str, Any], expected_digest: str, catalog: dict[str, Any] | None, host: str = "codex", context: dict[str, Any] | None = None) -> dict[str, Any]:
     """Préparer modèles et agents avant toute écriture, puis restaurer ensemble en cas d’échec."""
     workspace = _workspace(workspace)
     models = _models()
     old = _read(workspace, ".cstack/models.json")
     if _sha(old or b"") != expected_digest:
         raise ProjectError("models.json a changé depuis la prévisualisation; le relire avant d’enregistrer")
-    models.validate(choices, catalog, check_available=True)
+    models.validate(choices, catalog, check_available=True, host=host, context=context)
     config = _models_config(old, choices, models)
     snapshots = {relative: _read(workspace, relative) for relative in AGENT_PATHS.values()}
     entries = [_entry(".cstack/models.json", old, (json.dumps(config, indent=2, ensure_ascii=False) + "\n").encode())]

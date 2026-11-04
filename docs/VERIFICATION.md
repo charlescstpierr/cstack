@@ -1,5 +1,8 @@
 # Vérification de cstack
 
+Adaptation T3 : [preuves et procédure de smoke](T3-VERIFICATION.md), [notes pour council](T3-COUNCIL-NOTES.md). Les tests déterministes ne prouvent pas le chargement du plugin dans T3.
+
+
 Ce fichier distingue le catalogue courant des campagnes datées. Les nombres historiques restent ceux de leur campagne.
 
 ## Verdicts indépendants des scénarios

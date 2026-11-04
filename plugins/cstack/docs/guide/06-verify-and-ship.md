@@ -1,5 +1,8 @@
 # Vérifier le résultat et livrer
 
+Dans T3 avec coordinateur Codex, après invocation explicite de cstack, suivre le [contrat T3](../../skills/cstack/references/runtime/t3.md). Une position T3 est non portable, les CLI y sont bloqués en V1, et les checkouts appartiennent à l’hôte. Le support du plugin installé reste à vérifier dans la session réelle.
+
+
 « Ça compile » ne prouve pas le comportement. Écrivez la condition de fin, exécutez la vérification la plus proche de l'utilisateur et inspectez le résultat réel avant de déclarer la tâche terminée.
 
 ## Déclarer la condition de fin

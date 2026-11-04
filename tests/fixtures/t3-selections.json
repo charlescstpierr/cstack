@@ -1,0 +1,11 @@
+[
+  {"valid": true, "selection": {"runtime":"t3","providerInstanceId":"fixture-provider","model":"fixture-model","options":{"effort":"fixture-high"}}},
+  {"valid": true, "selection": {"runtime":"t3","providerInstanceId":"fixture-provider","model":"fixture-model","options":{}}},
+  {"valid": false, "selection": {"runtime":"t3","model":"fixture-model","options":{}}},
+  {"valid": false, "selection": {"runtime":"t3","providerInstanceId":"inherit-parent","model":"fixture-model","options":{}}},
+  {"valid": false, "selection": {"runtime":"t3","providerInstanceId":"fixture-provider","model":"inherit-parent","options":{}}},
+  {"valid": false, "selection": {"runtime":"t3","providerInstanceId":"fixture-provider","model":"fixture-model","options":{},"reasoning_effort":"high"}},
+  {"valid": false, "selection": {"runtime":"t3","providerInstanceId":"fixture-provider","model":"fixture-model","options":{"effort":null}}},
+  {"valid": false, "selection": {"runtime":"t3","providerInstanceId":"fixture-provider","model":"fixture-model","options":{" effort":"high"}}},
+  {"valid": false, "selection": {"runtime":"t3","providerInstanceId":"fixture-provider","model":"fixture-model","options":{"effort":["high"]}}}
+]

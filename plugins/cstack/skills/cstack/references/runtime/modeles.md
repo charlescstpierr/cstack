@@ -1,5 +1,8 @@
 # Modèles
 
+Dans une tâche cstack explicitement invoquée dans T3, le [contrat T3](t3.md) prime sur les règles autonomes de ce document.
+
+
 La session parent garde son propre modèle. Les délégués natifs héritent du modèle et de l’effort sauf si l’utilisateur sélectionne une surcharge de projet. Un worker CLI sans modèle explicite utilise le défaut de son propre CLI, jamais le modèle du parent. Le setup offre des recommandations optionnelles, jamais des noms de modèles, fournisseurs, plans, clés API ou rôles custom globaux obligatoires.
 
 `.cstack/models.json` mappe les libellés de rôle de la compétence setup vers des chaînes de modèle legacy, `inherit-parent` ou des objets avec exactement `model` et `reasoning_effort`. Une sélection CLI est `{ "runtime": "codex-cli|claude-code|cursor-agent|grok", "model": "...", "reasoning_effort": "..." }`, où les deux derniers champs sont facultatifs ; un effort exige un modèle explicite. `inherit-parent` reste réservé au chemin natif. Les panels sont des listes non vides de ces sélections. `simple edits` manquant retombe sur `feature, refactoring` ; `documentation` manquant retombe sur `judgment and prose`. Les autres rôles manquants héritent. Les panels manquants valent par défaut trois tentatives, sauf `arena cross-judge pool` qui vaut par défaut un juge. `architect runners` exige au moins deux entrées. Mets en file les tentatives au-delà de la concurrence native ; ne revendique pas de diversité de modèles depuis des passes indépendantes sur un seul modèle.

@@ -2,8 +2,10 @@
 """Prévisualiser, enregistrer et résoudre les choix de modèles du projet; ne jamais lancer de modèle."""
 
 import argparse
+from datetime import datetime, timezone
 import hashlib
 import json
+import math
 import os
 from pathlib import Path
 import re
@@ -112,6 +114,16 @@ def selection(value):
         return {}
     if isinstance(value, str) and value.strip() == value and value:
         return {"model": value}
+    if isinstance(value, dict) and value.get("runtime") == "t3":
+        if (set(value) != {"runtime", "providerInstanceId", "model", "options"}
+                or not all(isinstance(value.get(k), str) and value[k] and value[k].strip() == value[k]
+                           and value[k] != "inherit-parent" for k in ("providerInstanceId", "model"))
+                or not isinstance(value.get("options"), dict)
+                or not all(isinstance(k, str) and k and k.strip() == k and type(v) in (str, int, float, bool)
+                           and (type(v) is not float or math.isfinite(v))
+                           for k, v in value["options"].items())):
+            raise ValueError("t3 exige exactement runtime, providerInstanceId, model, options non secrets; clés CLI interdites")
+        return dict(value)
     if isinstance(value, dict) and set(value) == {"model", "reasoning_effort"}:
         model, effort = value["model"], value["reasoning_effort"]
         if (isinstance(model, str) and model and model.strip() == model
@@ -141,6 +153,73 @@ def selection(value):
     raise ValueError("chaîne de modèle, inherit-parent, {model, reasoning_effort} ou {runtime, model?, reasoning_effort?} attendu")
 
 
+def t3_target(chosen, catalog, host="codex", context=None):
+    """Validate coordinator-supplied evidence; this is consistency, not host attestation."""
+    if host != "t3":
+        raise ValueError("BLOCKED: sélection t3 hors hôte T3; aucun agent ou CLI de repli")
+    if not isinstance(catalog, dict) or catalog.get("host") != "t3" or not isinstance(context, dict):
+        raise ValueError("BLOCKED: preuve d’hôte non établie; catalogue et trace session requis")
+    for key in ("environmentId", "sessionId", "capabilitiesSha256", "traceSha256"):
+        if (not isinstance(context.get(key), str) or not context[key] or catalog.get(key) != context[key]
+                or (key.endswith("Sha256") and re.fullmatch(r"[a-f0-9]{64}", context[key]) is None)):
+            raise ValueError("BLOCKED: contexte catalogue/trace absent ou étranger: " + key)
+    if context.get("revalidated") is not True:
+        raise ValueError("BLOCKED: revalidation selon les règles T3 actives requise")
+    try:
+        if not all(isinstance(catalog.get(key), str) for key in ("observedAt", "expiresAt")):
+            raise ValueError("dates ISO requises")
+        observed = datetime.fromisoformat(catalog["observedAt"].replace("Z", "+00:00"))
+        expires = datetime.fromisoformat(catalog["expiresAt"].replace("Z", "+00:00"))
+        now = datetime.now(timezone.utc)
+        if not observed <= now < expires:
+            raise ValueError("catalogue périmé")
+    except (KeyError, TypeError, ValueError) as error:
+        raise ValueError("BLOCKED: dates catalogue absentes ou périmées") from error
+    body = {k: v for k, v in catalog.items() if k != "sha256"}
+    if catalog.get("sha256") != hashlib.sha256(json.dumps(body, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode()).hexdigest():
+        raise ValueError("BLOCKED: empreinte catalogue différente")
+    providers = catalog.get("providers")
+    provider = providers.get(chosen["providerInstanceId"]) if isinstance(providers, dict) else None
+    if not isinstance(provider, dict) or provider.get("available") is not True:
+        raise ValueError("BLOCKED: providerInstanceId indisponible ou non vérifié")
+    if type(provider.get("modelsComplete")) is not bool:
+        raise ValueError("BLOCKED: complétude catalogue inconnue")
+    models = provider.get("models")
+    model = models.get(chosen["model"]) if isinstance(models, dict) else None
+    if not isinstance(model, dict):
+        raise ValueError("BLOCKED: modèle inconnu/non vérifié; absence d’une liste courte ne prouve pas son inexistence")
+    declared = model.get("options")
+    if not isinstance(declared, dict):
+        raise ValueError("BLOCKED: options du modèle non vérifiées")
+    for key, value in chosen["options"].items():
+        option = declared.get(key)
+        types = {"string": str, "boolean": bool, "integer": int, "number": (int, float)}
+        if (not isinstance(option, dict) or option.get("secret") is not False
+                or option.get("type") not in types or type(value) not in (
+                    types[option["type"]] if isinstance(types[option["type"]], tuple) else (types[option["type"]],))
+                or not isinstance(option.get("values"), list)
+                or not any(type(value) is type(v) and value == v for v in option["values"])):
+            raise ValueError("BLOCKED: option non secrète, type ou valeur non vérifié: " + key)
+    if any(opt.get("required") is True and key not in chosen["options"] for key, opt in declared.items() if isinstance(opt, dict)):
+        raise ValueError("BLOCKED: option requise absente")
+    return {k: chosen[k] for k in ("providerInstanceId", "model", "options")}
+
+
+def t3_position(chosen, catalog, context):
+    if chosen.get("runtime") in RUNTIMES:
+        raise ValueError("BLOCKED: position CLI hors périmètre T3 V1; conserver Codex/CLI autonome ou convertir explicitement dans setup")
+    if chosen.get("runtime") == "t3":
+        return {"dispatch": "delegate_task", "target": t3_target(chosen, catalog, "t3", context)}
+    if chosen:
+        raise ValueError("BLOCKED: sélection native explicite non exprimable; aperçu de migration T3 requis")
+    inherited = catalog.get("inheritance") if isinstance(catalog, dict) else None
+    if not isinstance(inherited, dict) or set(inherited) != {"inheritedProviderInstanceId", "inheritedModel", "inheritedOptions"}:
+        raise ValueError("BLOCKED: métadonnées inherited* absentes ou ambiguës")
+    target = selection({"runtime": "t3", "providerInstanceId": inherited["inheritedProviderInstanceId"],
+                        "model": inherited["inheritedModel"], "options": inherited["inheritedOptions"]})
+    return {"dispatch": "delegate_task", "target": t3_target(target, catalog, "t3", context)}
+
+
 def runtime_catalog(catalog, runtime):
     if catalog is None:
         return None
@@ -154,7 +233,7 @@ def runtime_catalog(catalog, runtime):
     return None
 
 
-def validate(config, catalog=None, check_available=False):
+def validate(config, catalog=None, check_available=False, host="codex", context=None):
     if not isinstance(config, dict):
         raise ValueError("models.json doit être un objet")
     for role, value in config.items():
@@ -163,6 +242,12 @@ def validate(config, catalog=None, check_available=False):
         for entry in selections(role, value):
             try:
                 chosen = selection(entry)
+                if check_available and chosen.get("runtime") == "t3":
+                    t3_target(chosen, catalog, host, context)
+                    continue
+                if check_available and host == "t3":
+                    t3_position(chosen, catalog, context)
+                    continue
                 if check_available and chosen and "model" in chosen:
                     runtime = chosen.get("runtime", CODEX_NATIVE)
                     scoped = runtime_catalog(catalog, runtime)
@@ -179,7 +264,11 @@ def validate(config, catalog=None, check_available=False):
 def read_catalog(path):
     if path is None:
         return None
+    if path.stat().st_size > 1024 * 1024:
+        raise ValueError("catalogue trop grand: maximum 1 MiB")
     data = json.loads(path.read_text())
+    if isinstance(data, dict) and data.get("host") == "t3":
+        return data
     # Accepter la sortie codex debug models ou un mapping transcrit depuis le schéma actuel.
     if isinstance(data, dict) and "models" in data:
         data = {row["slug"]: [level["effort"] for level in row["supported_reasoning_levels"]]
@@ -210,7 +299,37 @@ def read_config(path):
     return config, hashlib.sha256(raw).hexdigest()
 
 
-def preview(config, digest, catalog, claude_ready=False):
+def preview(config, digest, catalog, claude_ready=False, host="codex", context=None):
+    if host == "t3":
+        supported, unavailable = {}, {}
+        providers = catalog.get("providers", {}) if isinstance(catalog, dict) else {}
+        if isinstance(providers, dict):
+            for provider_id, provider in providers.items():
+                models = provider.get("models", {}) if isinstance(provider, dict) else {}
+                if not isinstance(models, dict):
+                    continue
+                for model_id, model in models.items():
+                    label = f"{provider_id}/{model_id}"
+                    try:
+                        options = model.get("options") if isinstance(model, dict) else None
+                        if not isinstance(options, dict) or any(not isinstance(o, dict) or not isinstance(o.get("values"), list) or not o["values"] for o in options.values()):
+                            raise ValueError("BLOCKED: options déclarées incomplètes")
+                        probe = {"runtime": "t3", "providerInstanceId": provider_id, "model": model_id,
+                                 "options": {k: o["values"][0] for k, o in options.items()}}
+                        t3_target(selection(probe), catalog, host, context)
+                        for key, option in options.items():
+                            for value in option["values"]:
+                                t3_target(selection({**probe, "options": {**probe["options"], key: value}}), catalog, host, context)
+                        supported.setdefault(provider_id, {})[model_id] = {
+                            key: {k: v for k, v in option.items() if k in ("type", "values", "secret", "required")}
+                            for key, option in options.items()}
+                    except ValueError as error:
+                        unavailable[label] = str(error)
+        return {"saved": config, "sha256": digest, "recommendations": {},
+                "supported": supported, "unavailable": unavailable,
+                "inheritance": catalog.get("inheritance") if isinstance(catalog, dict) else None,
+                "warning": "Entrée t3: TOUT le fichier illisible aux anciennes versions; rôle bloqué hors T3; providerInstanceId non portable. Aperçu seulement, sélection explicite requise.",
+                "preflight": preflight(config, list(config) or ["how explorer"], catalog, host, context)}
     recommendations = {}
     for group, (model, effort, roles) in GROUPS.items():
         chosen = {"model": model, "reasoning_effort": effort}
@@ -227,18 +346,54 @@ def preview(config, digest, catalog, claude_ready=False):
     return {"recommendations": recommendations, "saved": config, "sha256": digest}
 
 
-def resolve(config, role, catalog):
-    if role not in ROLES:
-        raise ValueError(f"rôle inconnu: {role}")
+def role_value(config, role):
     default = ["inherit-parent"] * PANELS[role] if role in PANELS else "inherit-parent"
     value = config.get(role, config.get(LEGACY_FALLBACKS.get(role), default))
-    validate({role: value}, catalog, check_available=True)
+    return value
+
+
+def resolve(config, role, catalog, host="codex", context=None):
+    if role not in ROLES:
+        raise ValueError(f"rôle inconnu: {role}")
+    value = role_value(config, role)
+    validate({role: value}, catalog, check_available=True, host=host, context=context)
+    if host == "t3":
+        return [t3_position(selection(entry), catalog, context) for entry in selections(role, value)]
     return [selection(entry) for entry in selections(role, value)]
 
 
-def preflight(config, roles, catalog):
+def preflight(config, roles, catalog, host="codex", context=None):
+    validate(config)
     if not roles or any(role not in ROLES for role in roles):
         raise ValueError("le contrôle préalable exige des rôles connus")
+    entries = {}
+    for role in dict.fromkeys(roles):
+        entries[role] = [selection(entry) for entry in selections(role, role_value(config, role))]
+    if host == "t3" or any(chosen.get("runtime") == "t3" for panel in entries.values() for chosen in panel):
+        positions, resolved, errors = {}, {}, {}
+        for role, panel in entries.items():
+            rows = []
+            for index, chosen in enumerate(panel):
+                try:
+                    if host == "t3":
+                        result = t3_position(chosen, catalog, context)
+                    else:
+                        if chosen.get("runtime") == "t3":
+                            t3_target(chosen, catalog, host, context)
+                        elif chosen and "model" in chosen:
+                            scoped = runtime_catalog(catalog, chosen.get("runtime", CODEX_NATIVE))
+                            if scoped is None or chosen["model"] not in scoped or ("reasoning_effort" in chosen and chosen["reasoning_effort"] not in scoped[chosen["model"]]):
+                                raise ValueError("BLOCKED: modèle ou effort indisponible/non vérifié")
+                        result = {"selection": chosen}
+                    rows.append({"position": index, "status": "ready", **result})
+                except ValueError as error:
+                    rows.append({"position": index, "status": "blocked", "error": str(error)})
+            positions[role] = rows
+            if all(row["status"] == "ready" for row in rows):
+                resolved[role] = rows
+            else:
+                errors[role] = "; ".join(row["error"] for row in rows if row["status"] == "blocked")
+        return {"status": "blocked" if errors else "ready", "resolved": resolved, "errors": errors, "positions": positions}
     resolved, errors = {}, {}
     for role in dict.fromkeys(roles):
         try:
@@ -248,11 +403,11 @@ def preflight(config, roles, catalog):
     return {"status": "blocked" if errors else "ready", "resolved": resolved, "errors": errors}
 
 
-def apply_choices(path, choices, expected_digest, catalog):
+def apply_choices(path, choices, expected_digest, catalog, host="codex", context=None):
     config, digest = read_config(path)
     if digest != expected_digest:
         raise ValueError("models.json a changé depuis la prévisualisation; le relire avant d’enregistrer")
-    validate(choices, catalog, check_available=True)
+    validate(choices, catalog, check_available=True, host=host, context=context)
     config.update(choices)
     validate(config)
     if path.is_symlink() or path.parent.is_symlink():
@@ -283,6 +438,8 @@ def main():
     parser.add_argument("-h", "--help", action="help", help="afficher ce message d’aide et quitter")
     parser.add_argument("--workspace", type=Path, default=Path.cwd())
     parser.add_argument("--catalog", type=Path)
+    parser.add_argument("--host", choices=("codex", "t3"), default="codex")
+    parser.add_argument("--host-context", type=Path)
     commands = parser.add_subparsers(dest="command", required=True, title="commandes", parser_class=FrenchArgumentParser)
     show = commands.add_parser("show", add_help=False)
     show.add_argument("-h", "--help", action="help", help="afficher ce message d’aide et quitter")
@@ -304,18 +461,19 @@ def main():
     has_agents = (args.workspace / ".codex" / "agents").is_dir()
     try:
         catalog = read_catalog(args.catalog)
+        context = json.loads(args.host_context.read_text()) if args.host_context else None
         config, digest = read_config(path)
         if args.command == "show":
-            result = preview(config, digest, catalog, args.claude_ready)
+            result = preview(config, digest, catalog, args.claude_ready, args.host, context)
             # Les agents natifs gérés suivent models.json : l’aperçu dit lesquels seront alignés.
             result["managed_agents"] = project_helper().managed_agents(args.workspace) if has_agents else []
         elif args.command == "resolve":
-            result = resolve(config, args.role, catalog)
+            result = resolve(config, args.role, catalog, args.host, context)
         elif args.command == "preflight":
-            result = preflight(config, args.roles, catalog)
+            result = preflight(config, args.roles, catalog, args.host, context)
         else:
             result = project_helper().apply_model_choices(args.workspace, json.loads(args.choices.read_text()),
-                                                          args.expected_sha256, catalog)
+                                                          args.expected_sha256, catalog, args.host, context)
     except (OSError, ValueError, KeyError, TypeError) as error:
         parser.exit(2, f"modèles cstack: {error}\n")
     print(json.dumps(result, indent=2, ensure_ascii=False))

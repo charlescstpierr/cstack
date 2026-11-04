@@ -14,6 +14,7 @@ import {
   writeFile,
 } from "node:fs/promises";
 import { basename, delimiter, dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
+import { prepareT3 } from "./prepare.ts";
 import { loadWorkerContext } from "../worker-context.ts";
 import { loadWorkerSkills } from "../worker-skills.ts";
 
@@ -457,6 +458,7 @@ function parseRequestJson(raw: string): RunRequest {
   if (!isRecord(parsed.selection)) {
     throw new UsageError("selection: objet attendu");
   }
+  if (parsed.selection.runtime === "t3") throw new UsageError("BLOCKED: t3 exige préparation seule et dispatch MCP par le coordinateur; aucun processus CLI");
   rejectExtraKeys(parsed.selection, ["runtime", "model", "reasoning_effort"], "selection");
   const contextFiles = parsed.context_files;
   if (contextFiles !== undefined && (!Array.isArray(contextFiles) || !contextFiles.every((item) => typeof item === "string" && item.trim() === item && item.length > 0))) {
@@ -1394,12 +1396,18 @@ export async function main(argv: readonly string[], io: Io = { stdout: (value) =
   try {
     const [command, ...rest] = argv;
     if ((command === "--help" || command === "-h") && rest.length === 0) {
-      io.stdout("runtime.ts probe <codex-cli|claude-code|cursor-agent|grok>\nruntime.ts run --request <chemin JSON absolu>\nChamps : selection, brief_file, context_files?, skills?, skill_references?, acceptance?, cwd, output_dir, permissions, timeout_ms?, resume_from?\n");
+      io.stdout("runtime.ts probe <codex-cli|claude-code|cursor-agent|grok>\nruntime.ts prepare --request <JSON absolu> (T3, sans lancement)\nruntime.ts run --request <chemin JSON absolu>\nChamps : selection, brief_file, context_files?, skills?, skill_references?, acceptance?, cwd, output_dir, permissions, timeout_ms?, resume_from?\n");
       return 0;
     }
     if (command === "probe") {
       if (rest.length !== 1) throw new UsageError("probe exige exactement un runtime");
       io.stdout(jsonLine(await probeRuntime(parseProbeRuntime(rest[0]))));
+      return 0;
+    }
+    if (command === "prepare") {
+      const path = await assertBoundedJsonFile(requestArg(rest), "prepare", RECEIPT_LIMIT);
+      const result = await prepareT3(JSON.parse(await readFile(path, "utf8")), resolve(import.meta.dir, "../../../.."));
+      io.stdout(jsonLine(result));
       return 0;
     }
     if (command === "run") {

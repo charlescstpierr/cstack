@@ -3,6 +3,9 @@ name: setup-cstack
 description: "À utiliser pour $cstack:setup-cstack ou les changements de configuration cstack. Guide la configuration de projet cstack : préserve les consignes de projet, configure ou met à jour les runtimes, un budget de raisonnement et les choix facultatifs de modèle/effort, et explique les workflows de préparation."
 ---
 
+Après invocation explicite dans T3, lire d’abord le [contrat T3](../cstack/references/runtime/t3.md). Il prime sur les consignes Codex autonome ci-dessous pour modèles, délégation, isolation, checkpoints, PR et nettoyage, sous les instructions du harnais. Hors T3, conserver le contrat Codex.
+
+
 # Configurer cstack
 
 L'usage de base de cstack n'exige aucune configuration. La configuration prépare seulement le projet courant; elle n'active jamais un flux de travail et ne change jamais la configuration globale.
