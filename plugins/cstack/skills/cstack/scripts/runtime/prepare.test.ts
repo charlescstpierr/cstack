@@ -2,7 +2,7 @@ import { expect, test } from "bun:test";
 import { createHash } from "node:crypto";
 import { mkdtemp, writeFile, rm, readdir, readFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { resolve, join } from "node:path";
+import { resolve, join, relative } from "node:path";
 import { prepareT3, parseT3Selection, type T3Selection } from "./prepare.ts";
 import { main } from "./runtime.ts";
 
@@ -21,6 +21,7 @@ test("preparation preserves target and exact snapshot without process launch or 
       snapshot: [{ path: brief, sha256: createHash("sha256").update(content).digest("hex") }], transport_limit_bytes: 1024 * 1024 };
     process.env.PATH = "";
     const result = await prepareT3(request, pluginRoot);
+    await expect(prepareT3({ ...request, brief_file: relative(process.cwd(), brief) }, pluginRoot)).rejects.toThrow("absolu");
     expect(result.status).toBe("prepared");
     expect(result.selection).toEqual(selection);
     expect(result.context.files).toEqual(request.snapshot);

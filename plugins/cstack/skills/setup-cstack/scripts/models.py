@@ -5,7 +5,6 @@ import argparse
 from datetime import datetime, timezone
 import hashlib
 import json
-import math
 import os
 from pathlib import Path
 import re
@@ -119,8 +118,7 @@ def selection(value):
                 or not all(isinstance(value.get(k), str) and value[k] and value[k].strip() == value[k]
                            and value[k] != "inherit-parent" for k in ("providerInstanceId", "model"))
                 or not isinstance(value.get("options"), dict)
-                or not all(isinstance(k, str) and k and k.strip() == k and type(v) in (str, int, float, bool)
-                           and (type(v) is not float or math.isfinite(v))
+                or not all(isinstance(k, str) and k and k.strip() == k and type(v) in (str, bool)
                            for k, v in value["options"].items())):
             raise ValueError("t3 exige exactement runtime, providerInstanceId, model, options non secrets; clés CLI interdites")
         return dict(value)
@@ -193,10 +191,10 @@ def t3_target(chosen, catalog, host="codex", context=None):
         raise ValueError("BLOCKED: options du modèle non vérifiées")
     for key, value in chosen["options"].items():
         option = declared.get(key)
-        types = {"string": str, "boolean": bool, "integer": int, "number": (int, float)}
+        types = {"string": str, "boolean": bool}
         if (not isinstance(option, dict) or option.get("secret") is not False
-                or option.get("type") not in types or type(value) not in (
-                    types[option["type"]] if isinstance(types[option["type"]], tuple) else (types[option["type"]],))
+                or not isinstance(option.get("type"), str) or option["type"] not in types
+                or type(value) is not types[option["type"]]
                 or not isinstance(option.get("values"), list)
                 or not any(type(value) is type(v) and value == v for v in option["values"])):
             raise ValueError("BLOCKED: option non secrète, type ou valeur non vérifié: " + key)
@@ -355,6 +353,7 @@ def role_value(config, role):
 def resolve(config, role, catalog, host="codex", context=None):
     if role not in ROLES:
         raise ValueError(f"rôle inconnu: {role}")
+    validate(config)
     value = role_value(config, role)
     validate({role: value}, catalog, check_available=True, host=host, context=context)
     if host == "t3":

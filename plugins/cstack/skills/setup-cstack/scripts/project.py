@@ -455,9 +455,8 @@ def _payload(options: dict[str, Any], snapshots: dict[str, bytes | None], models
         files.append(_entry("docs/agents/issue-tracker.md", tracker_old, tracker_old))
     old_models = snapshots[".cstack/models.json"]
     choices, mode = options["model_choices"], options["native_agents"]
-    # Sans choix ni agent à écrire, un models.json existant est repris tel quel, sans relecture.
-    writes_agents = mode or (mode is None and any(_managed_agent(snapshots[relative]) for relative in AGENT_PATHS.values()))
-    config = _models_config(old_models, choices, models) if choices or writes_agents else None
+    changes_agents = mode or any(_managed_agent(snapshots[relative]) for relative in AGENT_PATHS.values())
+    config = _models_config(old_models, choices, models) if choices or changes_agents else None
     if old_models is not None or choices:
         files.append(_entry(".cstack/models.json", old_models, _models_content(old_models, config, choices)))
     for relative, new in _agent_changes(mode, snapshots, config, models).items():

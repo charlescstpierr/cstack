@@ -1,8 +1,9 @@
 import { createHash } from "node:crypto";
+import { isAbsolute } from "node:path";
 import { loadWorkerContext } from "../worker-context.ts";
 import { loadWorkerSkills } from "../worker-skills.ts";
 
-type Scalar = string | number | boolean;
+type Scalar = string | boolean;
 export interface T3Selection {
   readonly runtime: "t3";
   readonly providerInstanceId: string;
@@ -28,9 +29,9 @@ export function parseT3Selection(value: unknown): T3Selection {
       || !text(value.providerInstanceId) || value.providerInstanceId === "inherit-parent" || !text(value.model) || value.model === "inherit-parent" || !record(value.options)) {
     throw new Error("BLOCKED: sélection t3 exacte requise; aucune interprétation CLI");
   }
-  const options: Record<string, Scalar> = {};
+  const options: Record<string, Scalar> = Object.create(null);
   for (const [key, option] of Object.entries(value.options)) {
-    if (!text(key) || !(typeof option === "string" || typeof option === "boolean" || (typeof option === "number" && Number.isFinite(option)))) {
+    if (!text(key) || !(typeof option === "string" || typeof option === "boolean")) {
       throw new Error("BLOCKED: option scalaire non secrète requise");
     }
     options[key] = option;
@@ -44,7 +45,10 @@ export async function prepareT3(raw: unknown, pluginRoot: string) {
     "selection", "brief_file", "context_files", "skills", "skill_references", "scope", "acceptance", "evidence", "snapshot", "transport_limit_bytes",
   ].includes(key))) throw new Error("BLOCKED: request préparation invalide");
   const selection = parseT3Selection(raw.selection);
-  if (!text(raw.brief_file) || !strings(raw.context_files) || !strings(raw.skills)
+  if (!text(raw.brief_file) || !isAbsolute(raw.brief_file)) {
+    throw new Error("BLOCKED: brief_file exige un chemin absolu");
+  }
+  if (!strings(raw.context_files) || !strings(raw.skills)
       || !strings(raw.skill_references) || !text(raw.scope) || !text(raw.acceptance) || !text(raw.evidence)
       || typeof raw.transport_limit_bytes !== "number" || !Number.isSafeInteger(raw.transport_limit_bytes)
       || raw.transport_limit_bytes <= 0 || raw.transport_limit_bytes > 1024 * 1024) {

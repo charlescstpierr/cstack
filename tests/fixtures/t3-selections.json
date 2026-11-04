@@ -1,4 +1,6 @@
 [
+  {"valid": false, "selection": {"runtime":"t3","providerInstanceId":"fixture-provider","model":"fixture-model","options":{"effort":2}}},
+  {"valid": true, "selection": {"runtime":"t3","providerInstanceId":"fixture-provider","model":"fixture-model","options":{"__proto__":"exact"}}},
   {"valid": true, "selection": {"runtime":"t3","providerInstanceId":"fixture-provider","model":"fixture-model","options":{"effort":"fixture-high"}}},
   {"valid": true, "selection": {"runtime":"t3","providerInstanceId":"fixture-provider","model":"fixture-model","options":{}}},
   {"valid": false, "selection": {"runtime":"t3","model":"fixture-model","options":{}}},

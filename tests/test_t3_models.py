@@ -79,10 +79,40 @@ class T3ModelsTests(unittest.TestCase):
                 self.assertNotIn(project.AGENT_PATHS['cstack-explorer'], changes)
 
     def test_global_shape_error_is_not_role_availability(self):
+        malformed = {'documentation': 'inherit-parent', 'how explorer': {'model': 3}}
+        with self.assertRaises(ValueError):
+            models.resolve(malformed, 'documentation', CATALOG)
         with self.assertRaises(ValueError):
             models.preflight({'documentation': 'inherit-parent', 'how explorer': {**self.selected, 'reasoning_effort': 'high'}}, ['documentation'], CATALOG)
         models.validate({'how explorer': self.selected})
         self.assertNotIn('t3', models.RUNTIMES)
+
+    def test_public_setup_disable_preserves_saved_t3_agent(self):
+        project = models.project_helper()
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / '.cstack').mkdir()
+            (root / '.cstack/models.json').write_text(json.dumps({'how explorer': self.selected}))
+            agent = root / '.codex/agents/cstack-explorer.toml'
+            agent.parent.mkdir(parents=True)
+            agent.write_text('# cstack:managed\nmodel="old"\n')
+            plan = project.preview_plan(root, {'native_agents': False}, None)
+            self.assertFalse(any(row['path'] == '.codex/agents/cstack-explorer.toml'
+                                 for row in plan['files']))
+            self.assertEqual(agent.read_text(), '# cstack:managed\nmodel="old"\n')
+
+    def test_malformed_option_blocks_only_its_position(self):
+        for malformed in ([], {}, None):
+            with self.subTest(type=malformed):
+                catalog = copy.deepcopy(self.catalog)
+                models_in_catalog = catalog['providers']['fixture-provider']['models']
+                models_in_catalog['valid-model'] = copy.deepcopy(models_in_catalog['fixture-model'])
+                models_in_catalog['fixture-model']['options']['effort']['type'] = malformed
+                seal(catalog)
+                config = {'interrogate reviewers': [self.selected, {**self.selected, 'model': 'valid-model'}]}
+                report = models.preflight(config, list(config), catalog, 't3', self.context)
+                self.assertEqual([row['status'] for row in report['positions']['interrogate reviewers']],
+                                 ['blocked', 'ready'])
 
     def test_catalog_context_options_and_inheritance_fail_closed(self):
         mutations = [lambda c: c.update(environmentId='foreign'), lambda c: c.update(sessionId='foreign'),

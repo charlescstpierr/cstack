@@ -35,7 +35,7 @@ Résultat final observé le 4 novembre 2026, sur Python 3.14.4 et Bun 1.4.0 :
 | Contrôle | Résultat |
 |---|---|
 | Faits générés et validateur paquet | PASS, 29 skills et 158 références amont |
-| Python | 255 tests, succès, 1 ignoré |
+| Python | Succès, 1 ignoré sous Python 3.14 ; le rapport CI indique le nombre pour son commit |
 | Bun dépôt | 29 succès, 0 échec |
 | Bun assistants | 235 succès, 0 échec |
 | Types stricts assistants et types racine | PASS |
@@ -43,7 +43,9 @@ Résultat final observé le 4 novembre 2026, sur Python 3.14.4 et Bun 1.4.0 :
 | ShellCheck et Actionlint via Docker épinglé | NON EXÉCUTÉS, Docker absent |
 | Grammaire Python 3.9 des deux helpers modifiés | PASS via `ast.parse(feature_version=(3,9))`, pas une exécution sous Python 3.9 |
 
-`bash scripts/check.sh` atteint Docker puis sort avec `docker: command not found`. La suite complète n'est donc pas déclarée verte. Le parent doit compléter les deux contrôles Docker. Les nouvelles fixtures partagées `tests/fixtures/t3-selections.json` sont interprétées par les parsers Python et TypeScript. La préparation vérifie aussi que le contrat T3 relu porte l'empreinte du bundle.
+Localement, `bash scripts/check.sh` atteint Docker puis sort avec `docker: command not found`. La [CI du commit 6fa0f11](https://github.com/charlescstpierr/cstack/actions/runs/41935526471) a exécuté le script complet avec succès, dont les deux contrôles Docker. Les correctifs ultérieurs exigent leur propre CI. Les nouvelles fixtures partagées `tests/fixtures/t3-selections.json` sont interprétées par les parsers Python et TypeScript. Le contrat T3 est inclus une seule fois dans le bundle avec son empreinte.
+
+La CLI de préparation a été exercée sur ce commit avec un vrai brief local. Une borne d'essai de 32768 octets refuse le bundle sans troncature. Une borne de 131072 octets produit 127307 octets, dont le SHA-256 du prompt recalculé correspond au résultat. Ce test mesure la préparation locale et le refus de dépassement, pas le plafond de transport T3. Les reviewers ont comparé les fichiers du bundle aux blobs Git du commit ciblé.
 
 ## Smoke réel à exécuter par le coordinateur
 
