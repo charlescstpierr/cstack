@@ -1,4 +1,3 @@
-"""Synthetic catalog tests prove consistency checks, never live host identity."""
 import copy
 import hashlib
 import json
@@ -65,6 +64,7 @@ class T3ModelsTests(unittest.TestCase):
             report = models.preflight(config, list(config), CATALOG)
             self.assertEqual(report['status'], 'blocked')
             self.assertEqual(report['positions']['documentation'][0]['status'], 'ready')
+            self.assertEqual(report['resolved']['documentation'], models.resolve(config, 'documentation', CATALOG))
             self.assertIn('hors hôte', report['errors']['how explorer'])
             models.project_helper().sync_agents(root, config)
             self.assertEqual(agent.read_text(), '# cstack:managed\nmodel = "stale"\n')
@@ -125,3 +125,9 @@ class T3ModelsTests(unittest.TestCase):
             result = project.apply_model_choices(root, {'how explorer': self.selected}, digest, self.catalog, 't3', self.context)
             self.assertEqual(result['saved']['how explorer'], self.selected)
             self.assertFalse((root / '.codex/agents/cstack-explorer.toml').exists())
+
+    def test_ready_preflight_matches_resolve(self):
+        config = {'how explorer': self.selected}
+        report = models.preflight(config, list(config), self.catalog, 't3', self.context)
+        self.assertEqual(report['resolved']['how explorer'],
+                         models.resolve(config, 'how explorer', self.catalog, 't3', self.context))

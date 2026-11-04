@@ -390,7 +390,9 @@ def preflight(config, roles, catalog, host="codex", context=None):
                     rows.append({"position": index, "status": "blocked", "error": str(error)})
             positions[role] = rows
             if all(row["status"] == "ready" for row in rows):
-                resolved[role] = rows
+                resolved[role] = ([{key: value for key, value in row.items()
+                                   if key not in ("position", "status")} for row in rows]
+                                  if host == "t3" else [row["selection"] for row in rows])
             else:
                 errors[role] = "; ".join(row["error"] for row in rows if row["status"] == "blocked")
         return {"status": "blocked" if errors else "ready", "resolved": resolved, "errors": errors, "positions": positions}

@@ -1,6 +1,4 @@
 import { createHash } from "node:crypto";
-import { readFile } from "node:fs/promises";
-import { resolve } from "node:path";
 import { loadWorkerContext } from "../worker-context.ts";
 import { loadWorkerSkills } from "../worker-skills.ts";
 
@@ -64,12 +62,7 @@ export async function prepareT3(raw: unknown, pluginRoot: string) {
   }
   const skills = await loadWorkerSkills({ names: raw.skills, pluginRoot,
     skillReferences: [...new Set([...raw.skill_references, "cstack/references/runtime/t3.md"])] });
-  const contract = await readFile(resolve(pluginRoot, "skills/cstack/references/runtime/t3.md"), "utf8");
-  const contractSource = skills.files.find((file) => file.path === "skills/cstack/references/runtime/t3.md");
-  if (contractSource?.sha256 !== hash(contract)) throw new Error("BLOCKED: contrat T3 changé pendant la préparation");
-  const prompt = [skills.text, "\nCONTRAT T3 PRIORITAIRE POUR CETTE MISSION\n",
-    // The contract is repeated last so standalone Codex instructions in shared skills cannot win.
-    contract,
+  const prompt = [skills.text,
     `\nSCOPE\n${raw.scope}\nACCEPTANCE\n${raw.acceptance}\nEXPECTED EVIDENCE\n${raw.evidence}\n`, context.prompt].join("\n");
   const bytes = Buffer.byteLength(prompt);
   if (bytes > raw.transport_limit_bytes) throw new Error(`BLOCKED: brief ${bytes} octets dépasse transport ${raw.transport_limit_bytes}; aucune troncature`);

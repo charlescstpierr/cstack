@@ -365,7 +365,6 @@ def _agent_changes(mode: bool | None, snapshots: dict[str, bytes | None], config
             if managed:
                 changes[relative] = None
             continue
-        # Un rôle confié à un CLI n’a pas d’agent natif.
         if "runtime" in selected:
             if managed:
                 changes[relative] = None
