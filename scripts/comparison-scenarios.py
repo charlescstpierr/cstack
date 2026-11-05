@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 """Small stdlib-only comparison pilot; never replaces the OSS Docker grader."""
-from __future__ import annotations
-
 import argparse
+from dataclasses import dataclass
 import fcntl
 import hashlib
 import importlib.util
@@ -35,6 +34,30 @@ B = module('comparison_outcome', ROOT / 'scripts/outcome-bench.py')
 S = module('comparison_behavior', ROOT / 'scripts/behavior-scenarios.py')
 ARMS = ('vanilla', 'cstack', 'pstack', 'superpowers', 'tstack')
 TASKS = ('duration', 'review')
+REVIEW_FINDINGS = frozenset({'field_order', 'malformed_exit'})
+
+
+@dataclass(frozen=True)
+class CaseSpec:
+    id: str
+    kind: str
+    expected_findings: frozenset[str]
+
+
+def case_specs(suite, seed):
+    if suite == 'pilot':
+        return (CaseSpec('duration', 'duration', frozenset()),
+                CaseSpec('review', 'review', REVIEW_FINDINGS))
+    if suite != 'review-controls':
+        raise ValueError('unknown suite: ' + suite)
+    rng = random.Random(seed)
+    omissions = [REVIEW_FINDINGS, frozenset({'field_order'}),
+                 frozenset({'malformed_exit'}), frozenset()]
+    rng.shuffle(omissions)
+    cases = [('duration', frozenset())] + [('review', expected) for expected in omissions]
+    return tuple(CaseSpec(f'case-{rng.getrandbits(128):032x}', kind, expected)
+                 for kind, expected in cases)
+
 ENTRY = {'cstack': 'cstack', 'pstack': 'poteto-mode',
          'superpowers': 'using-superpowers', 'tstack': 'sol-loop'}
 IGNORE = {'.git', 'node_modules', '__pycache__', '.cstack'}
@@ -58,15 +81,19 @@ def inventory(root):
             if p.is_file() and not set(p.relative_to(root).parts) & IGNORE}
 
 
-def order(repetitions, seed):
+def order(repetitions, seed, tasks=TASKS):
     """Rotating blocks preserve task/rep pairing; reversal alternates drift direction."""
     if repetitions < 1:
         raise ValueError('repetitions must be positive')
+    tasks = tuple(task.id if isinstance(task, CaseSpec) else task for task in tasks)
+    if not tasks or len(set(tasks)) != len(tasks):
+        raise ValueError('tasks must be nonempty and unique')
+    stride = len(tasks) if len(tasks) % len(ARMS) else 1
     offset = random.Random(seed).randrange(len(ARMS))
     rows = []
     for rep in range(1, repetitions + 1):
-        for index, task in enumerate(TASKS):
-            shift = (offset + (rep - 1) * len(TASKS) + index) % len(ARMS)
+        for index, task in enumerate(tasks):
+            shift = (offset + (rep - 1) * stride + index) % len(ARMS)
             arms = list(ARMS[shift:] + ARMS[:shift])
             if (rep + index) % 2 == 0:
                 arms.reverse()
@@ -86,7 +113,9 @@ def snapshot(source, destination, arm):
         raise Blocked(f'{arm}: source changed during snapshot')
     if not any(p.name.lower().startswith('license') for p in destination.iterdir()):
         raise Blocked(f'{arm}: license missing from source')
-    head = B.git(source, 'rev-parse', 'HEAD', check=False).strip() or None
+    entry = 'skills/' + ENTRY[arm] + '/SKILL.md'
+    tracked = B.git(source, 'ls-files', '--error-unmatch', '--', entry, check=False).strip()
+    head = (B.git(source, 'rev-parse', 'HEAD', check=False).strip() or None) if tracked else None
     return {'origin': str(source), 'commit': head, 'files': inventory(destination),
             'entry': f'skills/{ENTRY[arm]}/SKILL.md',
             'activation': 'explicit source read', 'host': 'codex-cli',
@@ -100,11 +129,15 @@ def prepare(args):
         raise ValueError('--source required exactly once for cstack,pstack,superpowers,tstack')
     if not math.isfinite(args.deadline) or args.deadline <= 0:
         raise ValueError('deadline must be finite and positive')
+    suite = getattr(args, 'suite', 'pilot')
+    cases = case_specs(suite, args.seed)
     campaign.mkdir(parents=True, exist_ok=False)
     metadata = {arm: snapshot(Path(path), campaign / 'sources' / arm, arm)
                 for arm, path in sources.items()}
     manifest = {'schema': 1, 'backend': 'local-stdlib-only', 'arms': list(ARMS),
-                'sources': metadata, 'runs': order(args.repetitions, args.seed),
+                'sources': metadata, 'runs': order(args.repetitions, args.seed, cases),
+                'suite': suite, 'cases': [{'id': case.id, 'kind': case.kind,
+                    'expected_findings': sorted(case.expected_findings)} for case in cases],
                 'seed': args.seed, 'repetitions': args.repetitions,
                 'requested': {'model': args.model, 'effort': args.effort},
                 'policy': {'deadline_seconds': args.deadline, 'concurrency': 1,
@@ -117,12 +150,12 @@ def prepare(args):
                 'machine': {'platform': platform.platform(), 'cpus': os.cpu_count(), 'load_average': list(os.getloadavg())},
                 'future_metrics': ['recovery', 'installation'],
                 'claim': 'Pilot only; no universal superiority or independent quality score.'}
-    for filename in manifest['harness']:
-        target = campaign / 'frozen-harness' / filename
-        target.parent.mkdir(exist_ok=True)
-        shutil.copyfile(ROOT / 'scripts' / filename, target)
     private = campaign / 'private'
     private.mkdir(mode=0o700)
+    for filename in manifest['harness']:
+        target = private / 'frozen-harness' / filename
+        target.parent.mkdir(exist_ok=True)
+        shutil.copyfile(ROOT / 'scripts' / filename, target)
     write(private / 'manifest.json', manifest)
     (private / 'manifest.sha256').write_text(digest(private / 'manifest.json') + '\n', encoding='utf-8')
     print(campaign)
@@ -191,12 +224,24 @@ def preflight(cwd, receipt, model, effort):
     return command
 
 
-def fixture(task, root):
+def fixture(task, root, expected=None):
     if task == 'duration':
         project = S.arena_project(root, 'task', None)
         S.seed_git(project)
     else:
         project = S.interrogate_project(root, 'task', None)
+        expected = REVIEW_FINDINGS if expected is None else frozenset(expected)
+        if not expected <= REVIEW_FINDINGS:
+            raise ValueError('unknown review omission')
+        present = {
+            'field_order': "--json préserve l'ordre des champs.\n",
+            'malformed_exit': 'Une entrée mal formée entraîne un code de sortie non nul.\n',
+        }
+        readme = project / 'README.md'
+        readme.write_text(readme.read_text(encoding='utf-8') + ''.join(
+            sentence for label, sentence in present.items() if label not in expected),
+            encoding='utf-8')
+        S.git(project, 'add', 'README.md')
     # The existing generator's example model selection is not part of this campaign.
     shutil.rmtree(project / '.cstack')
     return project
@@ -234,7 +279,7 @@ sys.exit(0 if all(checks) else 1)
 '''
 
 
-def grade(task, workspace, baseline, patch, private, initial_index=None):
+def grade(task, workspace, baseline, patch, private, initial_index=None, expected=None):
     """Reconstruct from initial files plus captured patch after the candidate stops."""
     target = private / 'grading'
     shutil.rmtree(target, ignore_errors=True)
@@ -260,20 +305,37 @@ def grade(task, workspace, baseline, patch, private, initial_index=None):
         return {'correct': result.returncode == 0, 'scope_preserved': scope,
                 'check_sha256': digest(check), 'exit_code': result.returncode,
                 'checks': result.stdout[-4000:], 'patch_applied': True}
+    expected = REVIEW_FINDINGS if expected is None else frozenset(expected)
+    hits, duplicates, false_positives = set(), 0, 0
+    report_valid = False
+    precision, recall = 0.0, 0.0
     try:
         findings = json.loads((target / 'review.json').read_text(encoding='utf-8'))
         if not isinstance(findings, list):
             raise ValueError('review must be an array')
-        hits = {f.get('missing') for f in findings if isinstance(f, dict)
-                and f.get('path') == 'README.md' and f.get('evidence')
-                and f.get('missing') in {'field_order', 'malformed_exit'}}
-        precision = len(hits) / len(findings) if findings else 0
+        report_valid = True
+        for finding in findings:
+            if (not isinstance(finding, dict)
+                    or finding.get('path') != 'README.md'
+                    or not isinstance(finding.get('missing'), str)
+                    or not isinstance(finding.get('evidence'), str)
+                    or not finding['evidence'].strip()
+                    or finding['missing'] not in expected):
+                false_positives += 1
+            elif finding['missing'] in hits:
+                duplicates += 1
+            else:
+                hits.add(finding['missing'])
+        precision = len(hits) / len(findings) if findings else float(not expected)
+        recall = len(hits) / len(expected) if expected else 1.0
     except (OSError, ValueError, TypeError):
-        hits, precision = set(), 0
+        pass
     # Preserve index separately, as a full working-tree patch cannot encode stagedness.
     index_preserved = B.git(workspace, 'diff', '--cached', '--binary') == initial_index
-    return {'correct': len(hits) == 2 and precision == 1, 'precision': precision,
-            'recall': len(hits) / 2, 'scope_preserved': scope and index_preserved,
+    return {'correct': report_valid and hits == expected and precision == 1,
+            'precision': precision, 'recall': recall, 'hits': sorted(hits),
+            'duplicates': duplicates, 'false_positives': false_positives,
+            'report_valid': report_valid, 'scope_preserved': scope and index_preserved,
             'patch_applied': True}
 
 
@@ -374,7 +436,8 @@ def execute_campaign(args):
         raise Blocked('manifest changed; prepare a new campaign')
     manifest = json.loads((private / 'manifest.json').read_text(encoding='utf-8'))
     for filename, sha in manifest['harness'].items():
-        if digest(ROOT / 'scripts' / filename) != sha:
+        if (digest(ROOT / 'scripts' / filename) != sha
+                or digest(private / 'frozen-harness' / filename) != sha):
             raise Blocked('harness changed; prepare a new campaign')
     for arm, source in manifest['sources'].items():
         if inventory(campaign / 'sources' / arm) != source['files']:
@@ -388,13 +451,18 @@ def execute_campaign(args):
         B.RUNNER.require_route_trace()
     if os.geteuid() == 0:
         raise Blocked('local private-test protection requires a non-root uid')
+    cases = {case['id']: CaseSpec(case['id'], case['kind'],
+             frozenset(case['expected_findings'])) for case in manifest.get('cases', [])}
+    if not cases:
+        cases = {case.id: case for case in case_specs('pilot', manifest['seed'])}
     done = {r['id'] for r in rows}
     for spec in manifest['runs']:
         if spec['id'] in done:
             continue
         with tempfile.TemporaryDirectory(prefix='cstack-comparison-') as temp:
             scratch = Path(temp)
-            workspace = fixture(spec['task'], scratch)
+            case_spec = cases[spec['task']]
+            workspace = fixture(case_spec.kind, scratch, case_spec.expected_findings)
             baseline = private / 'baseline'
             shutil.rmtree(baseline, ignore_errors=True)
             shutil.copytree(workspace, baseline)
@@ -407,7 +475,7 @@ def execute_campaign(args):
                 shutil.copytree(output, private / ('blocked-' + spec['id']), dirs_exist_ok=True)
                 raise
             case = {'id': spec['id'], 'cwd': workspace, 'sandbox': 'workspace-write',
-                    'ephemeral': False, 'prompts': [prompt(spec['task'], spec['arm'], campaign)],
+                    'ephemeral': False, 'prompts': [prompt(case_spec.kind, spec['arm'], campaign)],
                     'trace_routes': manifest['policy'].get('route_trace', False),
                     'bundle': campaign / 'sources' / spec['arm']}
             with B.hidden_from_agent([private]):
@@ -437,7 +505,8 @@ def execute_campaign(args):
                 else:
                     shutil.copy2(child, grading_input / child.name)
             patch.write_text(B.capture_diff(grading_input, base), encoding='utf-8')
-            graded = grade(spec['task'], workspace, baseline, patch, private, original_index)
+            graded = grade(case_spec.kind, workspace, baseline, patch, private, original_index,
+                           expected=case_spec.expected_findings)
             settings = B.observed_settings(agent, requested['model'], requested['effort'])
             observed = settings['observed_settings']
             settings_ok = bool(observed) and all(x.get('model') == requested['model'] and
@@ -472,6 +541,7 @@ def main():
     prep.add_argument('--source', action='append', default=[], metavar='ARM=PATH')
     prep.add_argument('--model', required=True)
     prep.add_argument('--effort', required=True)
+    prep.add_argument('--suite', choices=('pilot', 'review-controls'), default='pilot')
     prep.add_argument('--seed', type=int, default=19)
     prep.add_argument('--repetitions', type=int, default=1)
     prep.add_argument('--deadline', type=float, default=900)
