@@ -1,12 +1,13 @@
 {
-  "preparedBytes": 116589,
-  "preparedCharacters": 115921,
-  "preparedSha256": "2423b0c2ac193b8c6e89ebaeaf528484850479ad23e2ffde78f43e6b6f2b09be",
+  "kind": "observed-t3-leaf-transport-final-sources",
+  "preparedBytes": 116971,
+  "preparedCharacters": 116296,
+  "preparedSha256": "0f2c4d86cb3895d45e819ebe751dba13ed6866895e7870dd2630274d98248279",
   "storedMessageExactBytes": false,
   "storedMessageMatchesAfterRemovingTerminalLF": true,
-  "displayNormalization": "thread reader removes the final LF; this is not a byte-for-byte transport attestation",
-  "childThreadId": "thread:delegated-task:command%3Amcp%3Ad94abbab-0409-4fa3-8f15-9db2f1951e34%3Adelegate-task%3Adcce9fda-a8e2-456d-88ad-8c194b33186d",
-  "childWorktree": "/home/charlescstpierr/.t3/worktrees/cstack/t3-e37a334c",
+  "displayNormalization": "thread reader removes final LF; not byte-for-byte backend attestation",
+  "childThreadId": "thread:delegated-task:command%3Amcp%3Ad94abbab-0409-4fa3-8f15-9db2f1951e34%3Adelegate-task%3A372e27b3-3c7c-4a9b-bc06-0b03faa4ed8d",
+  "childWorktree": "/home/charlescstpierr/.t3/worktrees/cstack/t3-94b2e94b",
   "target": {
     "providerInstanceId": "codex",
     "model": "gpt-6.1-sol",
@@ -15,15 +16,23 @@
       "serviceTier": "priority"
     }
   },
-  "challengesMatched": 3,
   "head": "bd4870c7cd49674ee081905dfe250a4c14688f17",
   "checkoutCleanBeforeAfter": true,
-  "kind": "observed-t3-leaf-transport",
+  "challengesMatched": 3,
   "sourceFilesSha256": {
     "plugins/cstack/skills/cstack/scripts/runtime/runtime.ts": "33feb6fa211cd68df9f2a779819d18bfff829592ec0b690ec89fbc79a891b0e1",
     "plugins/cstack/skills/cstack/scripts/runtime/prepare.ts": "7c0db7c7fdc10a370f1cb49287057331f63fdbaa225c1c9988edfea0d25dc47d",
     "plugins/cstack/skills/cstack/scripts/worker-skills.ts": "19754612f50cb55d067a8ddb13b7c80f27de13b6ae7c3c0738b9005f863792a4",
+    "plugins/cstack/skills/cstack/scripts/worker-context.ts": "16f5dff1485fdf3fa38a94be238dbc8ac4d04e7b1862d02b8934b02c3e834ecd",
+    "plugins/cstack/skills/setup-cstack/scripts/models.py": "9cdba2b797e93e9d5c54ff2b2c590006696e2888bea4d99c15f9b0e64b87251d",
     "plugins/cstack/skills/setup-cstack/scripts/t3_catalog.py": "5c14874663052803521bb77b5ef804a18d0fa6aab8b1da267f24396f8b7c94b1"
+  },
+  "skillSourcesSha256": {
+    "skills/cstack/references/agents/cstack-agent.md": "243a660902c698f7ff9472d96d275cac664dc9e20a980e072675d42ee2a8cfa0",
+    "skills/how/SKILL.md": "79db4b2881e454205993a03ba6ecc28e7b2ea10bfd5745a74dfe93028093402e",
+    "skills/how/references/explainer-prompt.md": "74a64ee8b4ce544f3895e16a61cf6d5925afaa70606facd7698d89188bef3ae5",
+    "skills/how/references/explorer-prompt.md": "497ada9b500a3803c00aab4f1fbbc3355538e230924585bcbde073c1981a3319",
+    "skills/cstack/references/runtime/t3.md": "e899f9a1a5028c659341b7f0ebf0cedee740c1c0b3302776f58262e344f31343"
   },
   "catalogSha256": "c7725f66d4dbe99b2dc867b1da42a4df2e17933ed8491247064c9887efce3c8e",
   "transportLimitBytes": 120000,
@@ -32,9 +41,9 @@
     "rejectedCharacters": 225023
   },
   "limits": [
-    "Source-mode bundle, installed plugin discovery unverified",
-    "Three random challenge matches and clean Git worktree; not general process confinement",
-    "Thread display strips terminal LF; no byte-for-byte backend attestation",
-    "Single leaf task; no comparative superiority or score inferred"
+    "Source-mode bundle; installed plugin discovery unverified",
+    "Same-UID scope compliance is not general confinement",
+    "Cumulative application metadata is not backend identity or cryptographic transport attestation",
+    "One leaf task; no independent score or comparative superiority inferred"
   ]
 }

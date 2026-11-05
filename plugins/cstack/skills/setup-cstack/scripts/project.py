@@ -353,7 +353,7 @@ def _agent_changes(mode: bool | None, snapshots: dict[str, bytes | None], config
     for name, relative in AGENT_PATHS.items():
         old = snapshots[relative]
         role = NATIVE_AGENTS[name]["role"]
-        selected = models.selection((config or {}).get(role, (config or {}).get(models.LEGACY_FALLBACKS.get(role), "inherit-parent")))
+        selected = models.selection(models.role_value(config or {}, role))
         if selected.get("runtime") == "t3":
             continue
         managed = _managed_agent(old)
@@ -461,7 +461,13 @@ def _payload(options: dict[str, Any], snapshots: dict[str, bytes | None], models
         files.append(_entry(".cstack/models.json", old_models, _models_content(old_models, config, choices)))
     for relative, new in _agent_changes(mode, snapshots, config, models).items():
         files.append(_entry(relative, snapshots[relative], new))
-    return {"files": files, "observed": {path: _record(snapshots[path]) for path in OBSERVED_PATHS}}
+    payload = {"files": files, "observed": {path: _record(snapshots[path]) for path in OBSERVED_PATHS}}
+    preserved = {relative: "t3-role" for name, relative in AGENT_PATHS.items()
+                 if snapshots[relative] is not None and models.selection(
+                     models.role_value(config or {}, NATIVE_AGENTS[name]["role"])).get("runtime") == "t3"}
+    if preserved:
+        payload["preserved_agents"] = preserved
+    return payload
 
 
 def preview_plan(workspace: Path, raw_options: Any, catalog: dict[str, Any] | None) -> dict[str, Any]:
@@ -478,8 +484,13 @@ def preview_plan(workspace: Path, raw_options: Any, catalog: dict[str, Any] | No
 
 def _shape(plan: Any) -> dict[str, Any]:
     required = {"catalog_sha256", "files", "model_choices", "observed", "options", "plan_sha256", "status", "version", "workflows"}
-    if not isinstance(plan, dict) or set(plan) != required or plan["version"] != PLAN_VERSION or plan["status"] != "preview":
+    if not isinstance(plan, dict) or set(plan) - {"preserved_agents"} != required or plan["version"] != PLAN_VERSION or plan["status"] != "preview":
         raise ProjectError("le plan contient des champs inconnus ou manquants")
+    preserved = plan.get("preserved_agents", {})
+    if (not isinstance(preserved, dict) or ("preserved_agents" in plan and not preserved)
+            or any(path not in AGENT_PATHS.values() or reason != "t3-role"
+                   for path, reason in preserved.items())):
+        raise ProjectError("agents préservés du plan invalides")
     body = dict(plan)
     fingerprint = body.pop("plan_sha256")
     if not isinstance(fingerprint, str) or _sha(_canonical(body)) != fingerprint:
@@ -616,6 +627,8 @@ def apply_plan(workspace: Path, supplied_plan: Any, raw_options: Any, catalog: d
         changes.append(entry)
     result = _apply_changes(workspace, changes, resume_on_interrupt=True)
     result["plan_sha256"] = plan["plan_sha256"]
+    if "preserved_agents" in plan:
+        result["preserved_agents"] = plan["preserved_agents"]
     return result
 
 

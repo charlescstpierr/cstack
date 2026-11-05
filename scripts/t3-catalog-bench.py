@@ -28,21 +28,46 @@ def digest(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def workload(count):
+def dependencies(path):
+    return {name: digest(path.with_name(name)) for name in ("t3_catalog.py", "project.py")
+            if path.with_name(name).is_file()}
+
+
+def workload(count, schema="v2"):
     now = datetime.now(timezone.utc)
     values = ["level-" + str(index) for index in range(count)]
-    context = {"environmentId": "synthetic-benchmark", "sessionId": "synthetic-benchmark",
-               "capabilitiesSha256": "a" * 64, "traceSha256": "b" * 64, "revalidated": True}
-    catalog = {key: value for key, value in context.items() if key != "revalidated"}
-    catalog.update(host="t3", observedAt=(now - timedelta(minutes=1)).isoformat(),
-                   expiresAt=(now + timedelta(hours=1)).isoformat(),
-                   providers={"fixture-provider": {"available": True, "modelsComplete": True,
-                       "models": {"fixture-model": {"options": {"effort": {
-                           "type": "string", "values": values, "secret": False}}}}}},
-                   inheritance={"inheritedProviderInstanceId": "fixture-provider",
-                                "inheritedModel": "fixture-model", "inheritedOptions": {"effort": values[0]}})
-    catalog["sha256"] = hashlib.sha256(json.dumps(catalog, sort_keys=True, separators=(",", ":"),
-                                                ensure_ascii=False).encode()).hexdigest()
+    if schema == "v1":
+        context = {"environmentId": "synthetic-benchmark", "sessionId": "synthetic-benchmark",
+                   "capabilitiesSha256": "a" * 64, "traceSha256": "b" * 64, "revalidated": True}
+        catalog = {key: value for key, value in context.items() if key != "revalidated"}
+        catalog.update(host="t3", observedAt=(now - timedelta(minutes=1)).isoformat(),
+                       expiresAt=(now + timedelta(hours=1)).isoformat(),
+                       providers={"fixture-provider": {"available": True, "modelsComplete": True,
+                           "models": {"fixture-model": {"options": {"effort": {
+                               "type": "string", "values": values, "secret": False}}}}}},
+                       inheritance={"inheritedProviderInstanceId": "fixture-provider",
+                                    "inheritedModel": "fixture-model", "inheritedOptions": {"effort": values[0]}})
+        catalog["sha256"] = hashlib.sha256(json.dumps(catalog, sort_keys=True, separators=(",", ":"),
+                                                    ensure_ascii=False).encode()).hexdigest()
+    elif schema == "v2":
+        scope = dict(threadId="synthetic-thread", projectId="synthetic-project", link="synthetic-link",
+                     providerInstanceId="fixture-provider", model="fixture-model", runtimeMode="full-access",
+                     interactionMode="default", options={"effort": values[0]})
+        sources = {name: dict(sha256=letter * 64, itemId=name, toolName=tool,
+                             observedAt=(now - timedelta(minutes=1)).isoformat())
+                   for name, letter, tool in (("capabilities", "a", "t3-code.orchestrator_capabilities"),
+                                              ("thread", "b", "t3-code.t3_thread_read"))}
+        catalog = dict(schema="cstack.t3-snapshot/2", host="t3", coordinator=scope, sources=sources,
+                       providers={"fixture-provider": dict(enabled=True, canRunChildTask=True,
+                           canRunCrossProviderChildTask=True, constraints=[], modelsComplete=True,
+                           models={"fixture-model": {"options": {"effort": {"type": "string", "values": values}}}})})
+        catalog["sha256"] = hashlib.sha256(json.dumps(catalog, sort_keys=True, separators=(",", ":"),
+                                                    ensure_ascii=False).encode()).hexdigest()
+        context = dict(schema="cstack.t3-context/2", expectedCoordinator=scope,
+                       snapshotSha256=catalog["sha256"], capabilitiesSha256="a" * 64, threadSha256="b" * 64,
+                       revalidated=True, revalidatedAt=now.isoformat(), expiresAt=(now + timedelta(hours=1)).isoformat())
+    else:
+        raise ValueError("unknown benchmark format")
     return catalog, context, values
 
 
@@ -59,6 +84,7 @@ def check(result, values):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--format", choices=("v1", "v2"), default="v2", help="V1 is only for frozen historical helpers")
     parser.add_argument("--before", type=Path, required=True)
     parser.add_argument("--after", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
@@ -69,8 +95,9 @@ def main():
         parser.error("values must be 1..8000 and repetitions 5..20")
     paths = {"before": args.before.resolve(), "after": args.after.resolve()}
     sources = {name: digest(path) for name, path in paths.items()}
+    dependency_sources = {name: dependencies(path) for name, path in paths.items()}
     modules = {name: load(path, "catalog_bench_" + name) for name, path in paths.items()}
-    catalog, context, values = workload(args.values)
+    catalog, context, values = workload(args.values, args.format)
     expected = check(preview(modules["before"], catalog, context), values)
     check(preview(modules["after"], catalog, context), values)
     profiler = cProfile.Profile()
@@ -123,7 +150,8 @@ def main():
                     cli_rows.append({"variant": name, "repetition": repetition + 1,
                                      "seconds": time.perf_counter() - started, "error": str(error), "values_returned": 0})
     errors += sum(row["error"] is not None for row in cli_rows)
-    unchanged = sources == {name: digest(path) for name, path in paths.items()}
+    unchanged = (sources == {name: digest(path) for name, path in paths.items()}
+                 and dependency_sources == {name: dependencies(path) for name, path in paths.items()})
     summaries = {}
     for phase, results in (("preview", rows), ("cli_show", cli_rows)):
         summary = {}
@@ -132,9 +160,9 @@ def main():
             summary[name] = {"samples": len(samples), "median_seconds": statistics.median(samples) if samples else None,
                              "range_seconds": [min(samples), max(samples)] if samples else None}
         summaries[phase] = summary
-    payload = {"kind": "synthetic-local-preview", "python": sys.version, "cpus": os.cpu_count(),
+    payload = {"kind": "synthetic-local-preview", "format": args.format, "python": sys.version, "cpus": os.cpu_count(),
                "load_average": os.getloadavg(), "catalog_bytes": len(json.dumps(catalog).encode()),
-               "source_sha256": sources, "sources_unchanged": unchanged, "errors": errors,
+               "source_sha256": sources, "dependency_sha256": dependency_sources, "sources_unchanged": unchanged, "errors": errors,
                "complete_previews": sum(row["values_returned"] == len(values) for row in rows + cli_rows),
                "values_per_preview": len(values), "unreported_profile_hotspots": hotspots,
                "summary": summaries, "runs": rows, "cli_runs": cli_rows,

@@ -107,7 +107,31 @@ class T3ModelsTests(unittest.TestCase):
             plan = project.preview_plan(root, {'native_agents': False}, None)
             self.assertFalse(any(row['path'] == '.codex/agents/cstack-explorer.toml'
                                  for row in plan['files']))
+            self.assertEqual(plan['preserved_agents'], {'.codex/agents/cstack-explorer.toml': 't3-role'})
+            tampered = copy.deepcopy(plan)
+            tampered['preserved_agents']['.codex/agents/cstack-worker.toml'] = 't3-role'
+            tampered['plan_sha256'] = project._sha(project._canonical({k: v for k, v in tampered.items() if k != 'plan_sha256'}))
+            with self.assertRaisesRegex(project.ProjectError, 'recalculés'):
+                project.apply_plan(root, tampered, {'native_agents': False}, None)
+            result = project.apply_plan(root, plan, {'native_agents': False}, None)
+            self.assertIn(result['status'], ('applied', 'noop'))
+            self.assertEqual(result['preserved_agents'], plan['preserved_agents'])
             self.assertEqual(agent.read_text(), '# cstack:managed\nmodel="old"\n')
+
+    def test_disable_with_invalid_models_preserves_files_and_requires_repair(self):
+        project = models.project_helper()
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            config = root / '.cstack/models.json'
+            config.parent.mkdir()
+            config.write_text('{"how explorer":{"model":3}}')
+            agent = root / '.codex/agents/cstack-explorer.toml'
+            agent.parent.mkdir(parents=True)
+            agent.write_text('# cstack:managed\nmodel="old"\n')
+            before = {path.relative_to(root): path.read_bytes() for path in root.rglob('*') if path.is_file()}
+            with self.assertRaisesRegex(project.ProjectError, 'models.json existant invalide'):
+                project.preview_plan(root, {'native_agents': False}, None)
+            self.assertEqual(before, {path.relative_to(root): path.read_bytes() for path in root.rglob('*') if path.is_file()})
 
     def test_malformed_option_blocks_only_its_position(self):
         for malformed in ([], {}, None):
