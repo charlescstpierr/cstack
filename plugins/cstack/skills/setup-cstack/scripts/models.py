@@ -2,7 +2,6 @@
 """Prévisualiser, enregistrer et résoudre les choix de modèles du projet; ne jamais lancer de modèle."""
 
 import argparse
-from datetime import datetime, timezone
 import hashlib
 import json
 import os
@@ -155,35 +154,23 @@ def selection(value):
     raise ValueError("chaîne de modèle, inherit-parent, {model, reasoning_effort} ou {runtime, model?, reasoning_effort?} attendu")
 
 
+def t3_catalog_helper():
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("cstack_t3_catalog", Path(__file__).with_name("t3_catalog.py"))
+    module = importlib.util.module_from_spec(spec)
+    previous = sys.dont_write_bytecode
+    try:
+        sys.dont_write_bytecode = True
+        spec.loader.exec_module(module)
+    finally:
+        sys.dont_write_bytecode = previous
+    return module
+
+
 def _t3_providers(catalog, host, context):
-    """Validate coordinator-supplied evidence; this is consistency, not host attestation."""
     if host != "t3":
         raise ValueError("BLOCKED: sélection t3 hors hôte T3; aucun agent ou CLI de repli")
-    if not isinstance(catalog, dict) or catalog.get("host") != "t3" or not isinstance(context, dict):
-        raise ValueError("BLOCKED: preuve d’hôte non établie; catalogue et trace session requis")
-    for key in ("environmentId", "sessionId", "capabilitiesSha256", "traceSha256"):
-        if (not isinstance(context.get(key), str) or not context[key] or catalog.get(key) != context[key]
-                or (key.endswith("Sha256") and re.fullmatch(r"[a-f0-9]{64}", context[key]) is None)):
-            raise ValueError("BLOCKED: contexte catalogue/trace absent ou étranger: " + key)
-    if context.get("revalidated") is not True:
-        raise ValueError("BLOCKED: revalidation selon les règles T3 actives requise")
-    try:
-        if not all(isinstance(catalog.get(key), str) for key in ("observedAt", "expiresAt")):
-            raise ValueError("dates ISO requises")
-        observed = datetime.fromisoformat(catalog["observedAt"].replace("Z", "+00:00"))
-        expires = datetime.fromisoformat(catalog["expiresAt"].replace("Z", "+00:00"))
-        now = datetime.now(timezone.utc)
-        if not observed <= now < expires:
-            raise ValueError("catalogue périmé")
-    except (KeyError, TypeError, ValueError) as error:
-        raise ValueError("BLOCKED: dates catalogue absentes ou périmées") from error
-    body = {k: v for k, v in catalog.items() if k != "sha256"}
-    if catalog.get("sha256") != hashlib.sha256(json.dumps(body, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode()).hexdigest():
-        raise ValueError("BLOCKED: empreinte catalogue différente")
-    providers = catalog.get("providers")
-    if not isinstance(providers, dict):
-        raise ValueError("BLOCKED: fournisseurs du catalogue non vérifiés")
-    return providers
+    return t3_catalog_helper().validate_context(catalog, context)
 
 
 def _t3_options(model):
@@ -193,19 +180,26 @@ def _t3_options(model):
     types = {"string": str, "boolean": bool}
     for key, option in declared.items():
         if (not t3_identifier(key) or not isinstance(option, dict)
-                or option.get("secret") is not False
                 or not isinstance(option.get("type"), str) or option["type"] not in types
                 or not isinstance(option.get("values"), list) or not option["values"]
                 or any(type(value) is not types[option["type"]] for value in option["values"])
-                or ("required" in option and type(option["required"]) is not bool)):
+                or ("default" in option and not any(type(option["default"]) is type(v) and option["default"] == v for v in option["values"]))):
             raise ValueError("BLOCKED: déclaration d’option non vérifiée: " + str(key))
     return declared
 
 
-def _t3_target(chosen, providers):
+def _t3_target(chosen, providers, coordinator):
+    source = coordinator["providerInstanceId"]
+    if chosen["providerInstanceId"] != source and any(
+            not isinstance(providers.get(name), dict)
+            or providers[name].get("canRunCrossProviderChildTask") is not True
+            for name in (source, chosen["providerInstanceId"])):
+        raise ValueError("BLOCKED: capacité cross-provider requise chez cible et coordinator")
     provider = providers.get(chosen["providerInstanceId"])
-    if not isinstance(provider, dict) or provider.get("available") is not True:
+    if not isinstance(provider, dict) or (provider.get("enabled") is False or provider.get("canRunChildTask") is not True or provider.get("constraints") != []):
         raise ValueError("BLOCKED: providerInstanceId indisponible ou non vérifié")
+    if "runtimeModes" in provider and coordinator["runtimeMode"] not in provider["runtimeModes"]:
+        raise ValueError("BLOCKED: runtimeMode non pris en charge")
     if type(provider.get("modelsComplete")) is not bool:
         raise ValueError("BLOCKED: complétude catalogue inconnue")
     models = provider.get("models")
@@ -218,28 +212,26 @@ def _t3_target(chosen, providers):
         if (option is None
                 or not any(type(value) is type(v) and value == v for v in option["values"])):
             raise ValueError("BLOCKED: option non secrète, type ou valeur non vérifié: " + key)
-    if any(opt.get("required") is True and key not in chosen["options"] for key, opt in declared.items() if isinstance(opt, dict)):
-        raise ValueError("BLOCKED: option requise absente")
     return {k: chosen[k] for k in ("providerInstanceId", "model", "options")}
 
 
 def t3_target(chosen, catalog, host="codex", context=None):
-    return _t3_target(chosen, _t3_providers(catalog, host, context))
+    providers = _t3_providers(catalog, host, context)
+    return _t3_target(chosen, providers, catalog["coordinator"])
 
 
 def t3_position(chosen, catalog, context):
     if chosen.get("runtime") in RUNTIMES:
-        raise ValueError("BLOCKED: position CLI hors périmètre T3 V1; conserver Codex/CLI autonome ou convertir explicitement dans setup")
-    if chosen.get("runtime") == "t3":
-        return {"dispatch": "delegate_task", "target": t3_target(chosen, catalog, "t3", context)}
-    if chosen:
+        raise ValueError("BLOCKED: position CLI hors périmètre T3 v2; convertir explicitement dans setup")
+    if chosen and chosen.get("runtime") != "t3":
         raise ValueError("BLOCKED: sélection native explicite non exprimable; aperçu de migration T3 requis")
-    inherited = catalog.get("inheritance") if isinstance(catalog, dict) else None
-    if not isinstance(inherited, dict) or set(inherited) != {"inheritedProviderInstanceId", "inheritedModel", "inheritedOptions"}:
-        raise ValueError("BLOCKED: métadonnées inherited* absentes ou ambiguës")
-    target = selection({"runtime": "t3", "providerInstanceId": inherited["inheritedProviderInstanceId"],
-                        "model": inherited["inheritedModel"], "options": inherited["inheritedOptions"]})
-    return {"dispatch": "delegate_task", "target": t3_target(target, catalog, "t3", context)}
+    providers = _t3_providers(catalog, "t3", context)
+    if not chosen:
+        scope = catalog["coordinator"]
+        chosen = selection({"runtime": "t3", **{k: scope[k] for k in ("providerInstanceId", "model", "options")}})
+    target = _t3_target(chosen, providers, catalog["coordinator"])
+    return {"dispatch": "delegate_task", "target": target,
+            "binding": {"coordinatorScope": catalog["coordinator"], "catalogSha256": catalog["sha256"], "target": target}}
 
 
 def runtime_catalog(catalog, runtime):
@@ -352,15 +344,15 @@ def preview(config, digest, catalog, claude_ready=False, host="codex", context=N
                         options = _t3_options(model)
                         probe = {"runtime": "t3", "providerInstanceId": provider_id, "model": model_id,
                                  "options": {k: o["values"][0] for k, o in options.items()}}
-                        _t3_target(selection(probe), providers)
+                        _t3_target(selection(probe), providers, catalog["coordinator"])
                         supported.setdefault(provider_id, {})[model_id] = {
-                            key: {k: v for k, v in option.items() if k in ("type", "values", "secret", "required")}
+                            key: {k: v for k, v in option.items() if k in ("type", "values", "default")}
                             for key, option in options.items()}
                     except ValueError as error:
                         unavailable[label] = str(error)
         return {"saved": config, "sha256": digest, "recommendations": {},
                 "supported": supported, "unavailable": unavailable,
-                "inheritance": catalog.get("inheritance") if isinstance(catalog, dict) else None,
+                "inheritance": catalog.get("coordinator") if isinstance(catalog, dict) else None,
                 "warning": "Entrée t3: TOUT le fichier illisible aux anciennes versions; rôle bloqué hors T3; providerInstanceId non portable. Aperçu seulement, sélection explicite requise.",
                 "preflight": preflight(config, list(config) or ["how explorer"], catalog, host, context)}
     recommendations = {}
@@ -492,7 +484,21 @@ def main():
     writer.add_argument("-h", "--help", action="help", help="afficher ce message d’aide et quitter")
     writer.add_argument("--choices", type=Path, required=True)
     writer.add_argument("--expected-sha256", required=True)
+    normalizer = commands.add_parser("normalize")
+    normalizer.add_argument("--capabilities-trace", type=Path, required=True)
+    normalizer.add_argument("--thread-trace", type=Path, required=True)
     args = parser.parse_args()
+    if args.command == "normalize":
+        try:
+            captures = []
+            for capture_path in (args.capabilities_trace, args.thread_trace):
+                with capture_path.open("rb") as stream:
+                    captures.append(stream.read(1024 * 1024 + 1))
+            result = t3_catalog_helper().normalize(*captures)
+        except (OSError, ValueError, KeyError, TypeError) as error:
+            parser.exit(2, f"modèles cstack: {error}\n")
+        print(json.dumps(result, indent=2, ensure_ascii=False))
+        return 0
     path = args.workspace / ".cstack" / "models.json"
     has_agents = (args.workspace / ".codex" / "agents").is_dir()
     try:

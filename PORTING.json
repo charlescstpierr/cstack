@@ -1345,6 +1345,10 @@
     {
       "path": "plugins/cstack/skills/cstack/scripts/runtime/prepare.test.ts",
       "reason": "Tests comportementaux de préparation et rejet CLI T3, sans hôte simulé comme preuve réelle."
+    },
+    {
+      "path": "plugins/cstack/skills/setup-cstack/scripts/t3_catalog.py",
+      "reason": "Normaliseur pur original T3 v2 depuis deux enveloppes réelles; identité thread, options et preuves sans attestation inventée."
     }
   ]
 }

@@ -16,15 +16,21 @@ def seal(catalog):
 
 
 def fixture():
-    context = dict(environmentId='synthetic-env', sessionId='synthetic-session',
-                   capabilitiesSha256='a' * 64, traceSha256='b' * 64, revalidated=True)
-    catalog = {k: v for k, v in context.items() if k != 'revalidated'}
-    catalog.update(host='t3', observedAt='2026-01-01T00:00:00Z', expiresAt='2099-01-01T00:00:00Z',
-                   providers={'fixture-provider': {'available': True, 'modelsComplete': False,
+    scope = dict(threadId='synthetic-thread', projectId='synthetic-project', link='opaque-link',
+                 providerInstanceId='fixture-provider', model='fixture-model', runtimeMode='full-access',
+                 interactionMode='default', options={'effort': 'fixture-high'})
+    catalog = dict(schema='cstack.t3-snapshot/2', host='t3', coordinator=scope,
+                   sources={name: dict(sha256=digest * 64, itemId=name, observedAt='2026-01-01T00:00:00Z', toolName=tool)
+                            for name, digest, tool in [('capabilities', 'a', 't3-code.orchestrator_capabilities'),
+                                                     ('thread', 'b', 't3-code.t3_thread_read')]},
+                   providers={'fixture-provider': {'canRunChildTask': True, 'canRunCrossProviderChildTask': True,
+                       'constraints': [], 'modelsComplete': False,
                        'models': {'fixture-model': {'options': {'effort': {'type': 'string',
-                            'values': ['fixture-high'], 'secret': False}}}}}},
-                   inheritance=dict(inheritedProviderInstanceId='fixture-provider', inheritedModel='fixture-model',
-                                    inheritedOptions={'effort': 'fixture-high'}))
+                            'values': ['fixture-high']}}}}}})
+    seal(catalog)
+    context = dict(schema='cstack.t3-context/2', expectedCoordinator=copy.deepcopy(scope),
+                   capabilitiesSha256='a' * 64, threadSha256='b' * 64, snapshotSha256=catalog['sha256'],
+                   revalidated=True, revalidatedAt='2026-01-01T00:00:00Z', expiresAt='2099-01-01T00:00:00Z')
     selected = dict(runtime='t3', providerInstanceId='fixture-provider', model='fixture-model', options={'effort': 'fixture-high'})
     return seal(catalog), context, selected
 
@@ -111,31 +117,31 @@ class T3ModelsTests(unittest.TestCase):
                 models_in_catalog['valid-model'] = copy.deepcopy(models_in_catalog['fixture-model'])
                 models_in_catalog['fixture-model']['options']['effort']['type'] = malformed
                 seal(catalog)
+                self.context["snapshotSha256"] = catalog["sha256"]
                 config = {'interrogate reviewers': [self.selected, {**self.selected, 'model': 'valid-model'}]}
                 report = models.preflight(config, list(config), catalog, 't3', self.context)
                 self.assertEqual([row['status'] for row in report['positions']['interrogate reviewers']],
                                  ['blocked', 'ready'])
 
     def test_catalog_context_options_and_inheritance_fail_closed(self):
-        mutations = [lambda c: c.update(environmentId='foreign'), lambda c: c.update(sessionId='foreign'),
-                     lambda c: c.update(expiresAt='2020-01-01T00:00:00Z'),
-                     lambda c: c['providers']['fixture-provider'].update(available=False),
-                     lambda c: c['providers']['fixture-provider']['models'].clear(),
-                     lambda c: c['providers']['fixture-provider']['models']['fixture-model']['options']['effort'].update(secret=True)]
+        mutations = [lambda c: c['coordinator'].update(threadId='foreign'),
+                     lambda c: c['coordinator'].update(link='foreign'),
+                     lambda c: c['providers']['fixture-provider'].update(enabled=False),
+                     lambda c: c['providers']['fixture-provider'].update(canRunChildTask=False),
+                     lambda c: c['providers']['fixture-provider']['models'].clear()]
         for mutate in mutations:
             self.catalog, self.context, self.selected = fixture()
             mutate(self.catalog)
             seal(self.catalog)
-            with self.subTest(catalog=self.catalog):
-                self.assertEqual(self.report([self.selected])['status'], 'blocked')
-        self.catalog, self.context, self.selected = fixture()
+            self.context['snapshotSha256'] = self.catalog['sha256']
+            self.assertEqual(self.report([self.selected])['status'], 'blocked')
+        for change in [dict(revalidated=False), dict(expiresAt='2020-01-01T00:00:00Z'),
+                       dict(revalidatedAt='2099-01-01T00:00:00Z'), dict(revalidatedAt=None),
+                       dict(revalidatedAt='2025-01-01T00:00:00Z'), dict(threadSha256='f' * 64)]:
+            self.catalog, self.context, self.selected = fixture()
+            self.context.update(change)
+            self.assertEqual(self.report([self.selected])['status'], 'blocked')
         self.assertEqual(self.report([self.selected], context=False)['status'], 'blocked')
-        self.context['revalidated'] = False
-        self.assertEqual(self.report([self.selected])['status'], 'blocked')
-        self.context['revalidated'] = True
-        self.catalog['inheritance'].pop('inheritedOptions')
-        seal(self.catalog)
-        self.assertEqual(self.report(['inherit-parent'])['status'], 'blocked')
 
     def test_unknown_options_values_types_and_native_pairs_block(self):
         for options in ({'effort': 'wrong'}, {'reasoningEffort': 'fixture-high'}, {'effort': True}, {'token': 'secret'}):
@@ -184,9 +190,133 @@ class T3ModelsTests(unittest.TestCase):
         option = self.catalog['providers']['fixture-provider']['models']['fixture-model']['options']['effort']
         option['values'] = values
         seal(self.catalog)
+        self.context["snapshotSha256"] = self.catalog["sha256"]
         report = models.preview({}, 'digest', self.catalog, host='t3', context=self.context)
         self.assertEqual(report['supported']['fixture-provider']['fixture-model']['effort']['values'], values)
         option['values'] = [values[0], True]
         seal(self.catalog)
+        self.context["snapshotSha256"] = self.catalog["sha256"]
         report = models.preview({}, 'digest', self.catalog, host='t3', context=self.context)
         self.assertNotIn('fixture-provider', report['supported'])
+
+
+class T3NormalizerTests(unittest.TestCase):
+    def setUp(self):
+        self.helper = models.t3_catalog_helper()
+        self.base = Path(__file__).parent / 'fixtures/t3-normalizer'
+        self.cap = (self.base / 'capabilities.json').read_bytes()
+        self.thread = (self.base / 'thread.json').read_bytes()
+
+    def normalize(self, cap=None, thread=None):
+        return self.helper.normalize(self.cap if cap is None else json.dumps(cap).encode(),
+                                     self.thread if thread is None else json.dumps(thread).encode())
+
+    def test_golden_determinism_bytes_and_old_observations(self):
+        expected = json.loads((self.base / 'snapshot.json').read_text())
+        self.assertEqual(self.normalize(), expected)
+        self.assertEqual(self.normalize(), self.normalize())
+        self.assertEqual(expected['sources']['capabilities']['sha256'], hashlib.sha256(self.cap).hexdigest())
+        self.assertEqual(expected['sources']['thread']['observedAt'], json.loads(self.thread)['observedAt'])
+        self.assertFalse(expected['providers']['codex']['modelsComplete'])
+        self.assertNotIn('enabled', expected['providers']['codex'])
+        self.assertNotIn('secret', expected['providers']['codex']['models']['gpt-6.1-sol']['options']['reasoningEffort'])
+
+    def test_capture_envelopes_identity_and_timestamps(self):
+        for key in ('threadId', 'providerInstanceId', 'model', 'runtimeMode', 'interactionMode'):
+            thread = json.loads(self.thread)
+            thread['output']['thread'][key] = 'foreign'
+            with self.subTest(key=key), self.assertRaises(ValueError):
+                self.normalize(thread=thread)
+        for name in ('cap', 'thread'):
+            data = json.loads(self.cap if name == 'cap' else self.thread)
+            for field in ('observedAt', 'itemId', 'toolName'):
+                modified = copy.deepcopy(data)
+                modified.pop(field)
+                with self.assertRaises(ValueError):
+                    self.normalize(**{name: modified})
+        with self.assertRaises(ValueError):
+            self.normalize(thread=json.loads(self.thread)['output'])
+        with self.assertRaises(ValueError):
+            self.helper.normalize(b' ' * (1024 * 1024 + 1), self.thread)
+
+    def test_duplicates_and_metadata(self):
+        for kind in ('provider', 'model', 'option', 'inherited'):
+            cap = json.loads(self.cap)
+            provider = cap['output']['providers'][0]
+            rows = {'provider': cap['output']['providers'], 'model': provider['models'],
+                    'option': provider['models'][0]['options'], 'inherited': cap['output']['inheritedOptions']}[kind]
+            rows.append(copy.deepcopy(rows[0]))
+            with self.subTest(kind=kind), self.assertRaisesRegex(ValueError, 'doublon'):
+                self.normalize(cap=cap)
+        cap = json.loads(self.cap)
+        cap['output']['providers'][0]['canRunChildTask'] = 'true'
+        with self.assertRaises(ValueError):
+            self.normalize(cap=cap)
+        with self.assertRaisesRegex(ValueError, 'doublon JSON'):
+            self.helper.normalize(b'{"a":1,"a":2}', self.thread)
+
+    def context(self, catalog):
+        return dict(schema='cstack.t3-context/2', expectedCoordinator=copy.deepcopy(catalog['coordinator']),
+                    snapshotSha256=catalog['sha256'], revalidated=True, revalidatedAt='2026-11-05T00:36:23.734Z',
+                    expiresAt='2099-01-01T00:00:00Z',
+                    **{name + 'Sha256': value['sha256'] for name, value in catalog['sources'].items()})
+
+    def test_malformed_model_only_blocks_its_position(self):
+        for values in (['high', True], [], [None], {'high': True}):
+            cap = json.loads(self.cap)
+            provider = cap['output']['providers'][0]
+            provider['models'][1]['options'][0]['values'] = values
+            catalog = self.normalize(cap=cap)
+            chosen = dict(runtime='t3', providerInstanceId='codex', model=provider['models'][1]['id'], options={})
+            report = models.preflight({'interrogate reviewers': [chosen, 'inherit-parent']},
+                                     ['interrogate reviewers'], catalog, 't3', self.context(catalog))
+            self.assertEqual([r['status'] for r in report['positions']['interrogate reviewers']], ['blocked', 'ready'])
+
+    def test_malformed_option_container_blocks_only_affected_model(self):
+        cap = json.loads(self.cap)
+        cap['output']['providers'][0]['models'][1]['options'] = None
+        catalog = self.normalize(cap=cap)
+        self.assertIn('invalid', catalog['providers']['codex']['models']['gpt-6-astra'])
+        self.assertEqual(models.t3_position({}, catalog, self.context(catalog))['dispatch'], 'delegate_task')
+
+    def test_partial_inactive_cross_provider_and_binding(self):
+        for omitted, complete in [(None, False), (0, True), (2, False)]:
+            cap = json.loads(self.cap)
+            provider = cap['output']['providers'][0]
+            provider.pop('omittedModels', None)
+            if omitted is not None:
+                provider['omittedModels'] = omitted
+            self.assertEqual(self.normalize(cap=cap)['providers']['codex']['modelsComplete'], complete)
+        catalog = self.normalize()
+        context = self.context(catalog)
+        selected = dict(runtime='t3', providerInstanceId='claudeAgent', model='claude-opus-5-5', options={'effort': 'high'})
+        result = models.t3_position(selected, catalog, context)
+        self.assertEqual(result['binding']['target'], result['target'])
+        self.assertEqual(result['binding']['coordinatorScope'], context['expectedCoordinator'])
+        for name in ('codex', 'claudeAgent'):
+            changed = copy.deepcopy(catalog)
+            changed['providers'][name]['canRunCrossProviderChildTask'] = False
+            seal(changed)
+            with self.assertRaisesRegex(ValueError, 'cross-provider'):
+                models.t3_position(selected, changed, self.context(changed))
+        context['expectedCoordinator']['threadId'] = 'other'
+        with self.assertRaisesRegex(ValueError, 'étranger'):
+            models.t3_position(selected, catalog, context)
+        with self.assertRaisesRegex(ValueError, 'migration explicite T3 v2'):
+            models.t3_position(selected, {'host': 't3', 'environmentId': 'old'}, {})
+
+    def test_pure_normalizer_and_cli_ignores_invalid_models_file(self):
+        from unittest.mock import patch
+        with patch('builtins.open', side_effect=AssertionError('disk')), patch('subprocess.run', side_effect=AssertionError('process')):
+            self.normalize()
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / '.cstack').mkdir()
+            (root / '.cstack/models.json').write_text('INVALID')
+            before = sorted(str(p.relative_to(root)) for p in root.rglob('*'))
+            result = subprocess.run([sys.executable, str(Path(models.__file__)), '--workspace', str(root), 'normalize',
+                                     '--capabilities-trace', str(self.base / 'capabilities.json'),
+                                     '--thread-trace', str(self.base / 'thread.json')], capture_output=True, text=True)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(json.loads(result.stdout), self.normalize())
+            self.assertEqual(before, sorted(str(p.relative_to(root)) for p in root.rglob('*')))

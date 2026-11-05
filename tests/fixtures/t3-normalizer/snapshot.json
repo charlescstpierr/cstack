@@ -1,0 +1,413 @@
+{
+  "schema": "cstack.t3-snapshot/2",
+  "host": "t3",
+  "coordinator": {
+    "threadId": "public-thread",
+    "projectId": "public-project",
+    "link": "<t3-thread://public-opaque-link>",
+    "providerInstanceId": "codex",
+    "model": "gpt-6.1-sol",
+    "runtimeMode": "full-access",
+    "interactionMode": "default",
+    "options": {
+      "reasoningEffort": "high",
+      "serviceTier": "priority"
+    }
+  },
+  "sources": {
+    "capabilities": {
+      "sha256": "dcaabe4faa0eec1a9772dae71ecc4d520741ba6fc7c3c7ef7df94d8c4c26d062",
+      "itemId": "public-capabilities-item",
+      "observedAt": "2026-11-04T23:02:50.878Z",
+      "toolName": "t3-code.orchestrator_capabilities"
+    },
+    "thread": {
+      "sha256": "bff14e988b1b26e437cb9f7150708e5688ad192744dbef1ed66b90efae127000",
+      "itemId": "public-thread-item",
+      "observedAt": "2026-11-05T00:36:23.734Z",
+      "toolName": "t3-code.t3_thread_read"
+    }
+  },
+  "providers": {
+    "codex": {
+      "models": {
+        "gpt-6.1-sol": {
+          "options": {
+            "reasoningEffort": {
+              "type": "string",
+              "values": [
+                "low",
+                "medium",
+                "high",
+                "xhigh",
+                "max",
+                "ultra"
+              ],
+              "default": "low"
+            },
+            "serviceTier": {
+              "type": "string",
+              "values": [
+                "default",
+                "priority"
+              ],
+              "default": "priority"
+            }
+          }
+        },
+        "gpt-6-astra": {
+          "options": {
+            "reasoningEffort": {
+              "type": "string",
+              "values": [
+                "low",
+                "medium",
+                "high",
+                "xhigh",
+                "max",
+                "ultra"
+              ],
+              "default": "medium"
+            },
+            "serviceTier": {
+              "type": "string",
+              "values": [
+                "default",
+                "priority"
+              ],
+              "default": "priority"
+            }
+          }
+        },
+        "gpt-6.1-terra": {
+          "options": {
+            "reasoningEffort": {
+              "type": "string",
+              "values": [
+                "low",
+                "medium",
+                "high",
+                "xhigh",
+                "max",
+                "ultra"
+              ],
+              "default": "low"
+            },
+            "serviceTier": {
+              "type": "string",
+              "values": [
+                "default",
+                "priority"
+              ],
+              "default": "priority"
+            }
+          }
+        },
+        "gpt-6-luna": {
+          "options": {
+            "reasoningEffort": {
+              "type": "string",
+              "values": [
+                "low",
+                "medium",
+                "high",
+                "xhigh",
+                "max"
+              ],
+              "default": "medium"
+            },
+            "serviceTier": {
+              "type": "string",
+              "values": [
+                "default",
+                "priority"
+              ],
+              "default": "priority"
+            }
+          }
+        }
+      },
+      "modelsComplete": false,
+      "canRunChildTask": true,
+      "canRunCrossProviderChildTask": true,
+      "constraints": [],
+      "omittedModels": 4
+    },
+    "claudeAgent": {
+      "models": {
+        "claude-opus-5-5": {
+          "options": {
+            "effort": {
+              "type": "string",
+              "values": [
+                "low",
+                "medium",
+                "high",
+                "xhigh",
+                "max",
+                "ultracode",
+                "ultrathink"
+              ],
+              "default": "medium"
+            },
+            "fastMode": {
+              "type": "boolean",
+              "values": [
+                false,
+                true
+              ]
+            }
+          }
+        },
+        "claude-sonnet-5-5": {
+          "options": {
+            "effort": {
+              "type": "string",
+              "values": [
+                "low",
+                "medium",
+                "high",
+                "xhigh",
+                "max",
+                "ultrathink"
+              ],
+              "default": "high"
+            }
+          }
+        },
+        "claude-fable-5-1": {
+          "options": {
+            "effort": {
+              "type": "string",
+              "values": [
+                "low",
+                "medium",
+                "high",
+                "xhigh",
+                "max",
+                "ultracode",
+                "ultrathink"
+              ],
+              "default": "medium"
+            }
+          }
+        },
+        "claude-haiku-5-5": {
+          "options": {
+            "effort": {
+              "type": "string",
+              "values": [
+                "low",
+                "medium",
+                "high",
+                "xhigh",
+                "max",
+                "ultrathink"
+              ],
+              "default": "medium"
+            }
+          }
+        }
+      },
+      "modelsComplete": false,
+      "canRunChildTask": true,
+      "canRunCrossProviderChildTask": true,
+      "constraints": [],
+      "omittedModels": 9
+    },
+    "cursor": {
+      "models": {},
+      "modelsComplete": false,
+      "canRunChildTask": false,
+      "canRunCrossProviderChildTask": false,
+      "constraints": [
+        "Provider instance is disabled."
+      ]
+    },
+    "grok": {
+      "models": {
+        "grok-build": {
+          "options": {}
+        }
+      },
+      "modelsComplete": false,
+      "canRunChildTask": false,
+      "canRunCrossProviderChildTask": false,
+      "constraints": [
+        "Provider instance is disabled."
+      ],
+      "runtimeModes": [
+        "approval-required",
+        "auto",
+        "full-access"
+      ]
+    },
+    "opencode": {
+      "models": {
+        "nanogpt/abliteration-ai/abliterated-model-large-v2": {
+          "options": {}
+        },
+        "opencode/beam-free": {
+          "options": {
+            "variant": {
+              "type": "string",
+              "values": [
+                "low",
+                "medium",
+                "high",
+                "xhigh",
+                "max"
+              ],
+              "default": "medium"
+            }
+          }
+        },
+        "opencode/big-pickle": {
+          "options": {}
+        },
+        "opencode/crouton-alpha-free": {
+          "options": {
+            "variant": {
+              "type": "string",
+              "values": [
+                "minimal",
+                "low",
+                "medium",
+                "high",
+                "xhigh",
+                "max"
+              ],
+              "default": "medium"
+            }
+          }
+        },
+        "opencode/deepseek-v4.1-flash-free": {
+          "options": {
+            "variant": {
+              "type": "string",
+              "values": [
+                "low",
+                "high",
+                "max"
+              ],
+              "default": "high"
+            }
+          }
+        },
+        "nanogpt/deepseek/deepseek-v4.1-flash-1017-uncensored:thinking": {
+          "options": {}
+        },
+        "opencode/flint-40b-free": {
+          "options": {
+            "variant": {
+              "type": "string",
+              "values": [
+                "low",
+                "medium",
+                "high",
+                "xhigh",
+                "max"
+              ],
+              "default": "medium"
+            }
+          }
+        },
+        "opencode/glm-5.3-flash-free": {
+          "options": {
+            "variant": {
+              "type": "string",
+              "values": [
+                "low",
+                "high",
+                "max"
+              ],
+              "default": "high"
+            }
+          }
+        }
+      },
+      "modelsComplete": false,
+      "canRunChildTask": true,
+      "canRunCrossProviderChildTask": true,
+      "constraints": [],
+      "omittedModels": 4,
+      "runtimeModes": [
+        "approval-required",
+        "auto-accept-edits",
+        "auto",
+        "full-access"
+      ]
+    },
+    "antigravity": {
+      "models": {},
+      "modelsComplete": false,
+      "canRunChildTask": false,
+      "canRunCrossProviderChildTask": false,
+      "constraints": [
+        "Provider instance is disabled."
+      ]
+    },
+    "fx": {
+      "models": {
+        "default": {
+          "options": {
+            "effort": {
+              "type": "string",
+              "values": [
+                "auto",
+                "low",
+                "medium",
+                "high",
+                "xhigh",
+                "max"
+              ],
+              "default": "medium"
+            }
+          }
+        }
+      },
+      "modelsComplete": false,
+      "canRunChildTask": false,
+      "canRunCrossProviderChildTask": false,
+      "constraints": [
+        "Provider instance is disabled."
+      ],
+      "runtimeModes": [
+        "approval-required",
+        "auto"
+      ]
+    },
+    "muse": {
+      "models": {},
+      "modelsComplete": false,
+      "canRunChildTask": false,
+      "canRunCrossProviderChildTask": false,
+      "constraints": [
+        "Provider instance is disabled."
+      ],
+      "runtimeModes": [
+        "approval-required",
+        "full-access"
+      ]
+    },
+    "pi": {
+      "models": {
+        "default": {
+          "options": {}
+        }
+      },
+      "modelsComplete": false,
+      "canRunChildTask": false,
+      "canRunCrossProviderChildTask": false,
+      "constraints": [
+        "Provider instance is disabled."
+      ],
+      "runtimeModes": [
+        "approval-required",
+        "auto-accept-edits",
+        "full-access"
+      ]
+    }
+  },
+  "sha256": "0b340d3643faafa52b20c6de65a6b4ab6228bbe74a542303a2000f34b3371d39"
+}

@@ -43,12 +43,60 @@ export function parseT3Selection(value: unknown): T3Selection {
   return { runtime: "t3", providerInstanceId: value.providerInstanceId, model: value.model, options };
 }
 
+type T3Target = Omit<T3Selection, "runtime">;
+interface CoordinatorScope extends T3Target {
+  readonly threadId: string;
+  readonly projectId: string;
+  readonly link: string;
+  readonly runtimeMode: string;
+  readonly interactionMode: string;
+}
+interface T3Binding {
+  readonly coordinatorScope: CoordinatorScope;
+  readonly catalogSha256: string;
+  readonly target: T3Target;
+}
+function exactKeys(value: Record<string, unknown>, keys: string[]): boolean {
+  return Object.keys(value).sort().join(",") === keys.sort().join(",");
+}
+function parseTarget(value: unknown): T3Target {
+  if (!record(value) || !exactKeys(value, ["providerInstanceId", "model", "options"])) {
+    throw new Error("BLOCKED: binding target exact requis");
+  }
+  const { runtime: _, ...target } = parseT3Selection({ ...value, runtime: "t3" });
+  return target;
+}
+function sameTarget(left: T3Target, right: T3Target): boolean {
+  return left.providerInstanceId === right.providerInstanceId && left.model === right.model
+    && Object.keys(left.options).length === Object.keys(right.options).length
+    && Object.entries(left.options).every(([key, value]) => Object.hasOwn(right.options, key) && right.options[key] === value);
+}
+function parseBinding(value: unknown, selection: T3Selection): T3Binding {
+  if (!record(value) || !exactKeys(value, ["coordinatorScope", "catalogSha256", "target"])
+      || typeof value.catalogSha256 !== "string" || !/^[a-f0-9]{64}$/.test(value.catalogSha256)) {
+    throw new Error("BLOCKED: binding du preflight requis");
+  }
+  const scope = value.coordinatorScope;
+  if (!record(scope) || !exactKeys(scope, ["threadId", "projectId", "link", "providerInstanceId", "model", "options", "runtimeMode", "interactionMode"])
+      || !identifier(scope.threadId) || !identifier(scope.projectId) || !identifier(scope.link)
+      || !identifier(scope.runtimeMode) || !identifier(scope.interactionMode)) {
+    throw new Error("BLOCKED: binding coordinatorScope complet requis");
+  }
+  const coordinator = parseTarget({ providerInstanceId: scope.providerInstanceId, model: scope.model, options: scope.options });
+  const target = parseTarget(value.target);
+  if (!sameTarget(target, selection)) throw new Error("BLOCKED: binding target différent de selection");
+  return { coordinatorScope: { ...coordinator, threadId: scope.threadId, projectId: scope.projectId,
+    link: scope.link, runtimeMode: scope.runtimeMode, interactionMode: scope.interactionMode },
+    catalogSha256: value.catalogSha256, target };
+}
+
 // Availability belongs to models.py preflight. This function prepares data and never dispatches.
 export async function prepareT3(raw: unknown, pluginRoot: string) {
   if (!record(raw) || Object.keys(raw).some((key) => ![
-    "selection", "brief_file", "context_files", "skills", "skill_references", "scope", "acceptance", "evidence", "snapshot", "transport_limit_bytes",
+    "selection", "binding", "brief_file", "context_files", "skills", "skill_references", "scope", "acceptance", "evidence", "snapshot", "transport_limit_bytes",
   ].includes(key))) throw new Error("BLOCKED: request préparation invalide");
   const selection = parseT3Selection(raw.selection);
+  const binding = parseBinding(raw.binding, selection);
   if (!text(raw.brief_file) || !isAbsolute(raw.brief_file)) {
     throw new Error("BLOCKED: brief_file exige un chemin absolu");
   }
@@ -75,6 +123,6 @@ export async function prepareT3(raw: unknown, pluginRoot: string) {
     `\nSCOPE\n${raw.scope}\nACCEPTANCE\n${raw.acceptance}\nEXPECTED EVIDENCE\n${raw.evidence}\n`, context.prompt].join("\n");
   const bytes = Buffer.byteLength(prompt);
   if (bytes > raw.transport_limit_bytes) throw new Error(`BLOCKED: brief ${bytes} octets dépasse transport ${raw.transport_limit_bytes}; aucune troncature`);
-  return { status: "prepared", selection, prompt, bytes, sha256: hash(prompt), context, skills,
+  return { status: "prepared", selection, binding, prompt, bytes, sha256: hash(prompt), context, skills,
     snapshot: context.files, dispatch: "coordinator-only", host_evidence: "not-attested-by-helper" };
 }

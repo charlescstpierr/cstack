@@ -1,86 +1,71 @@
-# Vérification de l'adaptation T3
+# Vérification du runtime T3 v2
 
-Cette adaptation implémente le contrat consolidé V5 dans le résolveur, la synchronisation d'agents et une préparation sans lancement. Elle ne revendique pas un plugin installé chargé dans T3. Le contrat normatif est [runtime/t3.md](../plugins/cstack/skills/cstack/references/runtime/t3.md).
+Cette tranche rend le catalogue observé utilisable par setup, preflight et prepare. Le contrat normatif unique est [runtime/t3.md](../plugins/cstack/skills/cstack/references/runtime/t3.md). Codex natif et les CLI conservent leurs branches existantes. Aucune conclusion qualitative sur cinq approches ni score cstack >= 9.5 ne découle de ces tests.
 
-## Origine et frontière des preuves
+## Reproduire
 
-La demande d'implémentation rapporte trois exécutions faites par le parent T3 Codex, avec métadonnées retournées pour Codex, Claude Agent et OpenCode. Ces observations ne sont pas reproduites par cet enfant, et l'identité effective des backends reste non vérifiée. Le parent rapporte aussi que `codex plugin list` n'a pas trouvé cstack. Le chargement installé est donc NON VÉRIFIÉ, sans installation globale autorisée.
-
-Ce checkout fourni par T3 est `/home/charlescstpierr/.t3/worktrees/cstack/t3-2e23c27d`, branche `t3/t3-runtime-adaptation`. Les modifications et le commit de cette branche sont les artefacts d'écriture isolée à examiner depuis le parent. Aucun checkout créé en shell, aucun push, PR, délégué ou changement du checkout parent par cet enfant. Le chemin communiqué par le harnais ne prouve pas un confinement général du processus.
-
-Les tests de catalogue emploient des identifiants `synthetic-*` et `fixture-*`. Ils prouvent les décisions des helpers sur des données contrôlées. Ils ne sont pas des traces d'hôte. Aucun nom de modèle de production n'est figé dans le chemin T3.
-
-## Lecteurs examinés
-
-Recherche de fermeture effectuée avec `rg -n 'models.json|selection|runtime|preflight' plugins/cstack scripts tests`. Les lecteurs d'exécution sont `setup-cstack/scripts/models.py`, `project.py`, `cstack/scripts/runtime/runtime.ts` et la nouvelle préparation `runtime/prepare.ts`. Le premier valide la forme globale, puis la disponibilité par position. Le second préserve les agents des rôles T3. Le lanceur refuse T3 avant probe ou processus CLI. La préparation accepte seulement la branche T3 et réutilise worker-context et worker-skills.
-
-Les lecteurs d'analyse dans `scripts/outcome-bench.py` transportent la configuration sans dispatch T3. Les fixtures et tests des anciennes formes restent inchangés. Le run-tool copie le répertoire scripts complet dans son stage et n'ajoute aucun chemin d'orchestration. Les entrées runtime, setup, modèles, workers, activation, état, intégrations et playbooks de livraison/nettoyage renvoient au contrat prioritaire. Les autres skills restent passifs jusqu'à invocation et les instructions supérieures priment.
-
-## Contrôles déterministes
-
-Commandes reproductibles depuis la racine :
+Depuis la racine du worktree de tâche, normaliser les captures réelles disponibles localement.
 
 ```sh
-python3 -m unittest discover -s tests -p 'test_*.py'
-bun test plugins/cstack/skills/cstack/scripts/runtime/prepare.test.ts
-bash scripts/check.sh
+python3 plugins/cstack/skills/setup-cstack/scripts/models.py normalize \
+  --capabilities-trace .cstack/t3-adaptation/runtime-capture/capabilities-trace.json \
+  --thread-trace .cstack/t3-adaptation/runtime-capture/thread-trace.json \
+  > .cstack/t3-adaptation/normalized-v2.json
 ```
 
-Le journal local de ce travail est `.cstack/t3-adaptation/decisions.tsv`. La sortie complète du check se trouve dans `.cstack/t3-adaptation/check.log`, artefact ignoré. Bun 1.4.0 a été trouvé sous `/tmp/cstack-tools/bun-native/package/bin/bun`, sans installation globale. Les permissions 0775 des exécutables du checkout ont été réalignées aux 0755 exigés par le validateur, sans changement du bit exécutable Git.
+Le normaliseur ne lit pas models.json. La redirection stdout ci-dessus est effectuée par le shell, pas par le normaliseur. Les captures réelles restent ignorées et ne sont pas publiées avec leurs activités privées.
 
-Les tests vérifient les positions ordonnées, blocages CLI et hors hôte, options exactes, contextes étrangers/périmés, héritage incomplet, fichier malformé global, agents gérés et manuels conservés, application explicite et preview sans recommandations Codex. La préparation est exercée avec PATH vide, contenu et empreinte exacts, mutation de snapshot, skill manquante et dépassement de transport. Le runner CLI reçoit une sélection T3 et des chemins dépendants inexistants, puis refuse avant de les utiliser.
-
-Résultat final observé le 4 novembre 2026, sur Python 3.14.4 et Bun 1.4.0 :
-
-| Contrôle | Résultat |
-|---|---|
-| Faits générés et validateur paquet | PASS, 29 skills et 158 références amont |
-| Python | Succès, 1 ignoré sous Python 3.14 ; le rapport CI indique le nombre pour son commit |
-| Bun dépôt | 29 succès, 0 échec |
-| Bun assistants | 235 succès, 0 échec |
-| Types stricts assistants et types racine | PASS |
-| Syntaxe Bash et `git diff --check` | PASS |
-| ShellCheck et Actionlint via Docker épinglé | NON EXÉCUTÉS, Docker absent |
-| Grammaire Python 3.9 des deux helpers modifiés | PASS via `ast.parse(feature_version=(3,9))`, pas une exécution sous Python 3.9 |
-
-Localement, `bash scripts/check.sh` atteint Docker puis sort avec `docker: command not found`. La [CI du commit 6fa0f11](https://github.com/charlescstpierr/cstack/actions/runs/41935526471) a exécuté le script complet avec succès, dont les deux contrôles Docker. Les correctifs ultérieurs exigent leur propre CI. Les nouvelles fixtures partagées `tests/fixtures/t3-selections.json` sont interprétées par les parsers Python et TypeScript. Le contrat T3 est inclus une seule fois dans le bundle avec son empreinte.
-
-La CLI de préparation a été exercée sur ce commit avec un vrai brief local. Une borne d'essai de 32768 octets refuse le bundle sans troncature. Une borne de 131072 octets produit 127307 octets, dont le SHA-256 du prompt recalculé correspond au résultat. Ce test mesure la préparation locale et le refus de dépassement, pas le plafond de transport T3. Les reviewers ont comparé les fichiers du bundle aux blobs Git du commit ciblé.
-
-## Smoke réel à exécuter par le coordinateur
-
-Ne remplir aucun identifiant de session, environnement, empreinte ou limite transport à partir d'une supposition. Une étape non observable produit NON VÉRIFIÉ ou BLOCKED pour la capacité dépendante, jamais une valeur inventée.
-
-1. Dans un fil Codex T3 déjà autorisé, invoquer explicitement cstack et constater son chargement réel. S'il n'est pas chargé, marquer cette capacité NON VÉRIFIÉE. Les contrôles de fichiers indépendants peuvent continuer. Ne pas installer le plugin globalement.
-2. Relever outils disponibles, règles actives de découverte, contexte session/environnement accessible et sortie réelle de capabilities. Séparer la trace originale des données normalisées sans secrets. Si les métadonnées de recoupement manquent, marquer preuve d'hôte non établie et dispatch explicite BLOCKED. Ne pas fabriquer `sessionId` avec le titre d'un fil.
-3. Transcrire uniquement les providers, modèles et options effectivement vérifiés dans le catalogue décrit par le contrat. Calculer les empreintes sur les octets réels. Une liste courte reste `modelsComplete: false`. Choisir les dates de validité selon les règles actives, et revalider avant dispatch. Conserver cible demandée et métadonnées retournées séparément.
-4. Exécuter `models.py --workspace <workspace> --host t3 --catalog <catalogue> --host-context <contexte> show`. Examiner l'avertissement de compatibilité et sélectionner explicitement les positions. Utiliser `apply` seulement avec autorisation d'écriture projet, puis `preflight` pour les rôles requis. Aucun agent périmé n'est chargé à la place d'une position bloquée.
-5. Préparer un dossier de tâche borné contenant le brief et les fichiers du snapshot. Calculer les SHA-256 sur les octets. Fournir la requête décrite dans le contrat à `runtime/runtime.ts prepare --request <requête absolue>`. Mesurer la taille réellement transportée avec des briefs bornés croissants et noter la dernière taille observée, sans revendiquer un maximum universel. Exiger la correspondance du target préflight et de la sélection préparée avant appel MCP.
-6. Pour l'implémentation initiale autorisée, appeler directement `delegate_task` avec `isolation: "worktree"` et le target exact. Ne pas créer de checkout dans le prompt. Suivre `next`, relever chemin et branche retournés, lire l'artefact depuis le parent et comparer SHA/diff/statut. Cela mesure l'accès parent et la propriété host, pas un confinement absolu.
-7. Pour chaque review, demander un nouveau worktree T3 et une nouvelle tâche. Fournir un commit de branche de tâche déjà autorisé ou reconstituer les fichiers du snapshot exact. Comparer leurs SHA et HEAD/status avant et après review. Rejeter un verdict sur une mauvaise source ou une mutation du checkout. N'intégrer aucune écriture du reviewer.
-8. Dans un parent à la racine sans isolation liée adéquate, présenter un petit finding que le harnais réserve au parent. Observer zéro nouveau délégué et zéro écriture, commit, merge ou changement de checkout root. Le résultat doit être correction BLOCKED visible. Relever cette limitation et sa fréquence sur les essais. Dans un parent déjà isolé et autorisé, présenter le même finding et observer qu'il le corrige lui-même, avec diff et contrôles. Aucun nouveau fil top-level pour préparer cet essai sans demande utilisateur.
-9. Sur une tâche bornée autorisée, mesurer `task_cancel`, la fin effective du travail et l'absence de modifications tardives observables. Aucun polling. Un acquittement d'annulation seul ne prouve pas la fin effective.
-10. Le cycle PR exige une autorisation distincte dans cette tâche. Lorsqu'elle existe, mesurer création/reprise/push, liaison immédiate comme appel suivant, puis watch seulement en attente nécessaire ou demandée et handback/unwatch selon les règles actives. Cet enfant n'exécute aucune de ces actions.
-
-## Capacités encore non vérifiées
-
-Le chargement installé, la limite maximale de transport, l'annulation réelle, la reconstitution du snapshot dans un reviewer T3, les permissions effectivement imposées aux enfants, les deux cas parent/finding, et le cycle PR complet demandent encore les observations ci-dessus. La revue par trois fournisseurs appartient au parent. Une absence de preuve de backend effectif n'est pas une preuve d'incompatibilité.
-
-
-## Correctifs après la deuxième revue
-
-Les identifiants T3 suivent maintenant une même règle ASCII en Python et TypeScript. Les valeurs restent des chaînes ou booléens exacts, sans traduction. Le contexte de l’hôte est lu sous la même borne de 1 MiB que le catalogue. Un catalogue T3 ne peut plus être interprété comme un mapping de modèles Codex. Les aliases symboliques du snapshot sont résolus avant comparaison des chemins et empreintes.
-
-L’aperçu valide le snapshot du catalogue avant de parcourir les modèles, puis chaque schéma d’option en une passe. Il ne resérialise plus le catalogue pour chaque valeur et ne recherche plus chaque valeur dans sa propre liste. Les fixtures et tests vérifient les refus et les sorties complètes.
-
-## Mesure locale de l’aperçu
-
-[Les mesures brutes](evidence/t3-catalog-preview.json) comparent le helper de `81458aa` au helper corrigé sur un catalogue synthétique de 2000 valeurs. `scripts/t3-catalog-bench.py` vérifie les empreintes des sources, les sorties complètes, leur égalité et les erreurs. Il alterne cinq exécutions par variante pour l’appel Python, puis cinq pour la commande CLI `show` entière.
-
-La médiane de la commande CLI complète passe de 548 ms à 49 ms. Les plages sont respectivement 544 à 574 ms et 47 à 52 ms. Les vingt aperçus ont rendu toutes les valeurs, sans erreur. Un profilage distinct identifie les recherches de valeurs, la sérialisation JSON et le SHA-256 répétés comme coûts de la version précédente. Cette mesure porte sur l’aperçu local, pas sur les résultats d’un agent ni sur une supériorité face aux autres frameworks.
-
-Commande reproductible, avec une copie figée du helper antérieur dans `.cstack/` :
+Établir séparément le coordinateur courant par les outils de l'hôte. Fournir `.cstack/t3-adaptation/context-v2.json` avec les champs du contrat `cstack.t3-context/2`. L'identité `expectedCoordinator` vient de cette vérification indépendante. Les empreintes doivent correspondre aux captures et au snapshot. `revalidatedAt` et `expiresAt` viennent de la politique active de l'hôte. Aucune commande helper ne peut affirmer cette revalidation à la place du coordinateur.
 
 ```sh
-python3 scripts/t3-catalog-bench.py --before .cstack/t3-adaptation/catalog-bench/before.py --after plugins/cstack/skills/setup-cstack/scripts/models.py --values 2000 --repetitions 5 --output .cstack/t3-adaptation/catalog-bench/end-to-end.json
+python3 plugins/cstack/skills/setup-cstack/scripts/models.py \
+  --host t3 --catalog .cstack/t3-adaptation/normalized-v2.json \
+  --host-context .cstack/t3-adaptation/context-v2.json \
+  preflight 'how explorer'
 ```
+
+Construire une requête prepare avec la sélection exacte, le `binding` retourné et le snapshot réel du brief suivant le contrat consolidé. Puis lancer le préparateur.
+
+```sh
+/tmp/cstack-tools/bin/bun plugins/cstack/skills/cstack/scripts/runtime/runtime.ts \
+  prepare --request "$PWD/.cstack/t3-adaptation/prepare-request.json"
+```
+
+Avant toute délégation, comparer à nouveau le scope courant, le SHA du catalogue et la cible. Le binding prépare des données cohérentes. Il ne signe aucune autorisation.
+
+## Preuves déterministes
+
+Les fixtures `tests/fixtures/t3-normalizer/` sont des projections publiques des deux enveloppes observées. Les identifiants de thread, projet, lien et item sont remplacés par des identifiants publics explicites. Le thread ne conserve que les sept champs d'identité utiles. Aucune activité, aucun message ni titre privé n'est inclus. Le catalogue fournisseur et les dates d'observation sont conservés. `snapshot.json` est le golden des octets de ces fixtures redigées, distinct des empreintes des captures originales.
+
+```sh
+python3 -m unittest discover -s tests -p test_t3_models.py
+/tmp/cstack-tools/bin/bun test plugins/cstack/skills/cstack/scripts/runtime/prepare.test.ts
+PATH=/tmp/cstack-tools/bin:$PATH bash scripts/check.sh
+```
+
+Les tests couvrent la normalisation déterministe, les bornes, l'absence d'enveloppe horodatée, les doublons, les identités mélangées, les options malformées isolées par position, les listes partielles, les fournisseurs inactifs, les capacités cross-provider des deux côtés, les contextes expirés/futurs/non revalidés, le rejet V1, le binding Python vers Bun et les cibles différentes. Le test de préparation vérifie aussi les valeurs typées, l'ordre des clés et `__proto__`. Les tests existants natifs et CLI restent dans la validation complète.
+
+## Observation réelle et limites
+
+La normalisation des deux captures locales a réussi. SHA-256 des octets sources originaux.
+
+| Source | Observation conservée | SHA-256 |
+| --- | --- | --- |
+| capabilities-trace.json | 2026-11-04T23:02:50.878Z | `7cfccf73c618f127ecad4d82356a96d4f7d6ac8b498a40f176f0452cd4083f22` |
+| thread-trace.json | 2026-11-05T00:36:23.734Z | `ae13174b0318ebc939df4ece5e8f2372ef48bbadc4c2d2fd795191459042502d` |
+
+Le SHA du corps normalisé est `c7725f66d4dbe99b2dc867b1da42a4df2e17933ed8491247064c9887efce3c8e`. L'ancien thread brut est refusé. Normaliser ces données anciennes ne prouve ni leur fraîcheur courante ni la disponibilité présente des fournisseurs. La stabilité du nom de modèle ne prouve pas l'identité effective du backend.
+
+Le choix conservateur exige une capacité cross-provider explicite chez les deux fournisseurs et bloque les contraintes non vides. La normalisation conserve un modèle à déclaration invalide comme indisponible afin de garder les autres positions utilisables. Elle n'invente aucun flag secret ou required.
+
+Aucun smoke API hôte n'a été exécuté par cet enfant. Aucun delegate n'est autorisé dans cette tranche. Le parent doit effectuer la revalidation courante et le smoke après intégration du commit. Un résultat prepared, une réponse de capacités ou un test synthétique réussi ne remplace pas une réussite de tâche observée.
+
+## Résultat des contrôles dans ce worktree
+
+`bash scripts/check.sh` a passé les faits générés, le validateur du paquet, la suite Python, les 29 tests Bun racine, l'installation verrouillée, les 236 tests Bun assistants, les types stricts et racine et la syntaxe Bash. Il s'est arrêté avec le code 127 sur `docker: command not found`. ShellCheck et Actionlint via les images épinglées restent donc non exécutés ici. `git diff --check` a été exécuté séparément et passe. La relance finale de la suite Python complète passe 277 tests avec deux ignorés. La suite T3 ciblée passe 21 tests. Les cinq tests Bun de préparation réussissent.
+
+## Frontière avec les preuves antérieures
+
+Le document précédent rapportait des délégations Codex, Claude Agent et OpenCode faites par le parent. Ce travail ne les reproduit pas. Le chargement du plugin installé dans T3 reste non vérifié. Le plafond de transport, l'annulation effective, les permissions imposées aux enfants, la reconstitution chez un reviewer, les deux cas parent/finding et le cycle PR complet exigent encore une observation hôte. Le chemin de worktree fourni ne prouve pas un confinement général du processus.
+
+La [CI historique du commit 6fa0f11](https://github.com/charlescstpierr/cstack/actions/runs/41935526471) et les [mesures historiques de l'aperçu V1](evidence/t3-catalog-preview.json) restent des preuves de leurs seuls commits et formats. Ces mesures ne valident pas V2. Le benchmark V1 doit être migré avant réutilisation avec ce contrat. Le présent changement conserve la validation du catalogue une seule fois par aperçu, puis valide les modèles sans recalculer le SHA à chaque position de découverte.
