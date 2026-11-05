@@ -185,9 +185,10 @@ export async function loadWorkerSkills(request: WorkerSkillRequest): Promise<Wor
   const visited = new Set<string>();
   const selectedSkillFiles = new Set(names.map((name) => resolve(roots.skillsRoot, name, "SKILL.md")));
   const pending: string[] = [];
-  const replacedByT3 = (path: string): boolean => {
+  const incompatibleRuntime = (path: string): boolean => {
     const source = relative(roots.skillsRoot, path).split(sep).join("/");
-    return request.host === "t3" && (
+    if (request.host !== "t3") return source === "cstack/references/runtime/t3.md";
+    return (
       (source.startsWith("cstack/references/runtime/") && source !== "cstack/references/runtime/t3.md")
       || source === "cstack/references/runtime-workers.md" || source === "cstack/references/codex-runtime.md");
   };
@@ -210,7 +211,7 @@ export async function loadWorkerSkills(request: WorkerSkillRequest): Promise<Wor
       if (!inside(actual, roots.skillsRoot)) {
         throw new SkillBundleError(`référence hors skills: ${link}`);
       }
-      if (replacedByT3(actual) || isNeighborSkillFile(actual, roots, selectedSkillFiles)) {
+      if (incompatibleRuntime(actual) || isNeighborSkillFile(actual, roots, selectedSkillFiles)) {
         continue;
       }
       pending.push(actual);
@@ -232,7 +233,7 @@ export async function loadWorkerSkills(request: WorkerSkillRequest): Promise<Wor
 
   for (const reference of explicitReferences) {
     const path = resolve(roots.skillsRoot, reference);
-    if (replacedByT3(await realpath(path))) throw new SkillBundleError(`référence remplacée par le contrat T3: ${reference}`);
+    if (incompatibleRuntime(await realpath(path))) throw new SkillBundleError(`référence runtime remplacée ou incompatible avec l'hôte: ${reference}`);
     pending.push(path);
   }
 
@@ -245,7 +246,7 @@ export async function loadWorkerSkills(request: WorkerSkillRequest): Promise<Wor
     if (!inside(actual, roots.skillsRoot)) {
       throw new SkillBundleError(`référence hors skills: ${relative(roots.skillsRoot, path)}`);
     }
-    if (replacedByT3(actual) || isNeighborSkillFile(actual, roots, selectedSkillFiles)) {
+    if (incompatibleRuntime(actual) || isNeighborSkillFile(actual, roots, selectedSkillFiles)) {
       continue;
     }
     await addFile("skill reference", actual, true);

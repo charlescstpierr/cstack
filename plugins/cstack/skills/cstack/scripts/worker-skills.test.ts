@@ -167,8 +167,11 @@ describe("worker skill bundles", () => {
     const paths = bundle.files.map((file) => file.path);
     expect(paths).toContain("skills/cstack/references/runtime-workers.md");
     expect(paths).toContain("skills/cstack/references/codex-runtime.md");
+    expect(paths).not.toContain("skills/cstack/references/runtime/t3.md");
     expect(paths).toContain("skills/cstack/references/principles/exhaust-the-design-space.md");
     expect(paths).toContain("skills/architect/references/runner-prompt.md");
+    await expect(loadWorkerSkills({ pluginRoot, names: [],
+      skillReferences: ["cstack/references/runtime/t3.md"] })).rejects.toThrow("incompatible");
   });
 });
 

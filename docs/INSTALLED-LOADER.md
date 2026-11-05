@@ -8,7 +8,9 @@ Aucun login, tour de modèle ou changement de modèle n'est demandé. Le test ut
 
 Une installation qui exige une interaction ou un compte connecté reste `blocked`. Aucun secret ne doit être ajouté pour masquer ce résultat. Les tests unitaires et le refus local du script ne prouvent pas une installation réussie. La [documentation officielle](https://developers.openai.com/plugins/build/plugins) précise que les comportements du chargeur varient selon le client.
 
-Une réussite du job établirait le chargement installé par ce CLI, pas l'installation dans T3 App, l'activation d'une tâche ordinaire, le transport vers un modèle ou une supériorité comparative. Le job publie `installed-loader-evidence/receipt.json` pour examiner le résultat réel. Le premier résultat CI reste à obtenir.
+Le [premier job réel](https://github.com/charlescstpierr/cstack/actions/runs/41955740275) a réussi. Son [reçu conservé](evidence/installed-loader.json) vérifie 248 fichiers du paquet, 29 skills, la réapplication, la conservation des fichiers témoins et la désinstallation, avec zéro tour de modèle demandé. Le checkout CI est le commit de fusion de test `3369f0d` ; son arbre `d474eb08dd5a03ce929af505ac4a42af407e01a3` est identique à celui du HEAD de PR `de0c579`. Cette preuve porte sur ces octets précis.
+
+Cette réussite établit le chargement installé par ce CLI. L'installation dans T3 App, l'activation d'une tâche ordinaire, le transport vers un modèle et la supériorité comparative restent hors de ce contrôle. Le job publie aussi `installed-loader-evidence/receipt.json` pour examiner chaque exécution ultérieure.
 
 ```sh
 python3 -B -m unittest discover -s tests -p test_installed_loader.py

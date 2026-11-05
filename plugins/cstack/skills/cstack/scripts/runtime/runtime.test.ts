@@ -347,8 +347,8 @@ printf '%s\\0' "$@" > "$CSTACK_RUNTIME_ARG_CAPTURE"
 printf '{"status":"PASS","summary":"cursor ok","checks":[],"findings":[]}'
 `);
       const code = await run(["run", "--request", await request(h, "cursor-agent")], h);
+      expect({ code, result: parsedStdout(h), stderr: h.stderr }).toMatchObject({ code: 0 });
       const args = (await readFile(capture, "utf8")).split("\0").slice(0, -1);
-      expect(code).toBe(0);
       expect(parsedStdout(h)).toMatchObject({
         provider_requested: "cursor",
         execution: { status: "COMPLETED" },
