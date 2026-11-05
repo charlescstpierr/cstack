@@ -21,6 +21,7 @@ export interface WorkerSkillBundle {
 
 export interface WorkerSkillRequest {
   readonly names: readonly string[];
+  readonly host?: "t3";
   readonly pluginRoot: string;
   readonly skillReferences?: readonly string[];
 }
@@ -184,6 +185,12 @@ export async function loadWorkerSkills(request: WorkerSkillRequest): Promise<Wor
   const visited = new Set<string>();
   const selectedSkillFiles = new Set(names.map((name) => resolve(roots.skillsRoot, name, "SKILL.md")));
   const pending: string[] = [];
+  const replacedByT3 = (path: string): boolean => {
+    const source = relative(roots.skillsRoot, path).split(sep).join("/");
+    return request.host === "t3" && (
+      (source.startsWith("cstack/references/runtime/") && source !== "cstack/references/runtime/t3.md")
+      || source === "cstack/references/runtime-workers.md" || source === "cstack/references/codex-runtime.md");
+  };
   let total = 0;
 
   const addFile = async (label: string, path: string, followLinks: boolean): Promise<void> => {
@@ -203,7 +210,7 @@ export async function loadWorkerSkills(request: WorkerSkillRequest): Promise<Wor
       if (!inside(actual, roots.skillsRoot)) {
         throw new SkillBundleError(`référence hors skills: ${link}`);
       }
-      if (isNeighborSkillFile(actual, roots, selectedSkillFiles)) {
+      if (replacedByT3(actual) || isNeighborSkillFile(actual, roots, selectedSkillFiles)) {
         continue;
       }
       pending.push(actual);
@@ -224,7 +231,9 @@ export async function loadWorkerSkills(request: WorkerSkillRequest): Promise<Wor
   }
 
   for (const reference of explicitReferences) {
-    pending.push(resolve(roots.skillsRoot, reference));
+    const path = resolve(roots.skillsRoot, reference);
+    if (replacedByT3(await realpath(path))) throw new SkillBundleError(`référence remplacée par le contrat T3: ${reference}`);
+    pending.push(path);
   }
 
   for (let index = 0; index < pending.length; index += 1) {
@@ -236,7 +245,7 @@ export async function loadWorkerSkills(request: WorkerSkillRequest): Promise<Wor
     if (!inside(actual, roots.skillsRoot)) {
       throw new SkillBundleError(`référence hors skills: ${relative(roots.skillsRoot, path)}`);
     }
-    if (isNeighborSkillFile(actual, roots, selectedSkillFiles)) {
+    if (replacedByT3(actual) || isNeighborSkillFile(actual, roots, selectedSkillFiles)) {
       continue;
     }
     await addFile("skill reference", actual, true);

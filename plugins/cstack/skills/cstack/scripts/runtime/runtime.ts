@@ -1424,5 +1424,5 @@ export async function main(argv: readonly string[], io: Io = { stdout: (value) =
 
 if (import.meta.main) {
   const status = await main(process.argv.slice(2));
-  process.exit(status);
+  process.exitCode = status;
 }

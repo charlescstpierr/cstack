@@ -117,7 +117,7 @@ export async function prepareT3(raw: unknown, pluginRoot: string) {
       throw new Error("BLOCKED: snapshot différent de la source figée");
     }
   }
-  const skills = await loadWorkerSkills({ names: raw.skills, pluginRoot,
+  const skills = await loadWorkerSkills({ names: raw.skills, pluginRoot, host: "t3",
     skillReferences: [...new Set([...raw.skill_references, "cstack/references/runtime/t3.md"])] });
   const prompt = [skills.text,
     `\nSCOPE\n${raw.scope}\nACCEPTANCE\n${raw.acceptance}\nEXPECTED EVIDENCE\n${raw.evidence}\n`, context.prompt].join("\n");

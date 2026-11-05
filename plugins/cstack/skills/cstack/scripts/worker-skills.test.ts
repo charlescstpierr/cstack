@@ -1,7 +1,7 @@
 import { describe, expect, it } from "bun:test";
 import { readdir, chmod, mkdir, mkdtemp, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 import { loadWorkerSkills } from "./worker-skills.ts";
 
 async function pluginFixture(): Promise<string> {
@@ -199,4 +199,23 @@ it("construit un bundle exploitable pour chaque skill livré, dont les templates
     const bundle = await loadWorkerSkills({ pluginRoot, names: [name] });
     expect(bundle.files.some((file) => file.path === `skills/${name}/SKILL.md`)).toBe(true);
   }
+});
+
+
+it("T3 bundles retain selected task sources and replace Codex runtime traversal", async () => {
+  const pluginRoot = resolve(import.meta.dir, "../../..");
+  const bundle = await loadWorkerSkills({ pluginRoot, names: ["how"], host: "t3",
+    skillReferences: ["cstack/references/runtime/t3.md", "cstack/references/principles/prove-it-works.md"] });
+  const paths = bundle.files.map((file) => file.path);
+  expect(paths).toContain("skills/how/SKILL.md");
+  expect(paths).toContain("skills/how/references/explorer-prompt.md");
+  expect(paths).toContain("skills/how/references/explainer-prompt.md");
+  expect(paths).toContain("skills/cstack/references/agents/cstack-agent.md");
+  expect(paths).toContain("skills/cstack/references/runtime/t3.md");
+  expect(paths).toContain("skills/cstack/references/principles/prove-it-works.md");
+  expect(paths.filter((path) => path.startsWith("skills/cstack/references/runtime/"))).toEqual(["skills/cstack/references/runtime/t3.md"]);
+  expect(paths).not.toContain("skills/cstack/references/runtime-workers.md");
+  expect(paths).not.toContain("skills/cstack/references/codex-runtime.md");
+  await expect(loadWorkerSkills({ pluginRoot, names: [], host: "t3",
+    skillReferences: ["cstack/references/runtime/base.md"] })).rejects.toThrow("remplacée");
 });

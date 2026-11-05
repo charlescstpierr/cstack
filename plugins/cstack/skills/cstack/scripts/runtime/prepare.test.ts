@@ -116,3 +116,29 @@ test("Python preflight binding passes through preparation and rejects a changed 
     await expect(prepareT3({ ...request, selection: { ...request.selection, model: "changed" } }, pluginRoot)).rejects.toThrow("différent");
   } finally { await rm(root, { recursive: true, force: true }); }
 });
+
+
+test("prepare CLI drains a large JSON response through a pipe before exiting", async () => {
+  const root = await mkdtemp(join(tmpdir(), "cstack-t3-pipe-"));
+  try {
+    const brief = join(root, "brief.md");
+    const content = "transport data\n".repeat(10000) + "FINAL_TRANSPORT_MARKER\n";
+    await writeFile(brief, content);
+    const { runtime: _, ...target } = selection;
+    const binding = { coordinatorScope: { ...target, threadId: "fixture-thread", projectId: "fixture-project",
+      link: "opaque-link", runtimeMode: "full-access", interactionMode: "default" }, catalogSha256: "a".repeat(64), target };
+    const request = join(root, "request.json");
+    await writeFile(request, JSON.stringify({ selection, binding, brief_file: brief, context_files: [],
+      skills: [], skill_references: [], scope: "fixture", acceptance: "complete output", evidence: "pipe JSON",
+      snapshot: [{ path: brief, sha256: createHash("sha256").update(content).digest("hex") }], transport_limit_bytes: 1024 * 1024 }));
+    const child = Bun.spawn([process.execPath, resolve(import.meta.dir, "runtime.ts"), "prepare", "--request", request],
+      { stdout: "pipe", stderr: "pipe" });
+    const [output, errors, status] = await Promise.all([(async () => { await Bun.sleep(100); return await new Response(child.stdout).text(); })(), new Response(child.stderr).text(), child.exited]);
+    expect(status).toBe(0);
+    expect(errors).toBe("");
+    const result = JSON.parse(output);
+    expect(result.bytes).toBeGreaterThan(65536);
+    expect(result.prompt).toContain(content);
+    expect(result.sha256).toBe(createHash("sha256").update(result.prompt).digest("hex"));
+  } finally { await rm(root, { recursive: true, force: true }); }
+});
