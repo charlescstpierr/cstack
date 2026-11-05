@@ -1,0 +1,48 @@
+name: Vérifier le chargeur installé
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/installed-loader.yml'
+      - 'ci/installed-loader/**'
+      - 'scripts/check-installed-loader.py'
+      - 'tests/test_installed_loader.py'
+      - 'plugins/cstack/**'
+      - 'install.sh'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  installed-loader:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+      - name: Verify the empty runner profile
+        run: >-
+          python3 -B scripts/check-installed-loader.py
+          --repo "$GITHUB_WORKSPACE"
+          --codex "$RUNNER_TEMP/cstack-loader-cli/node_modules/.bin/codex"
+          --output "$RUNNER_TEMP/cstack-loader-evidence"
+          --guard-only
+      - name: Install the pinned temporary CLI
+        shell: bash
+        run: |
+          mkdir "$RUNNER_TEMP/cstack-loader-cli"
+          cp ci/installed-loader/package.json ci/installed-loader/package-lock.json "$RUNNER_TEMP/cstack-loader-cli/"
+          touch "$RUNNER_TEMP/cstack-loader-user.npmrc" "$RUNNER_TEMP/cstack-loader-global.npmrc"
+          npm ci --prefix "$RUNNER_TEMP/cstack-loader-cli" --cache "$RUNNER_TEMP/cstack-loader-npm-cache" --userconfig "$RUNNER_TEMP/cstack-loader-user.npmrc" --globalconfig "$RUNNER_TEMP/cstack-loader-global.npmrc" --registry https://registry.npmjs.org --ignore-scripts --no-audit --no-fund
+      - name: Exercise installation and installed discovery
+        run: >-
+          python3 -B scripts/check-installed-loader.py
+          --repo "$GITHUB_WORKSPACE"
+          --codex "$RUNNER_TEMP/cstack-loader-cli/node_modules/.bin/codex"
+          --output "$RUNNER_TEMP/cstack-loader-evidence"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: installed-loader-evidence
+          path: ${{ runner.temp }}/cstack-loader-evidence/receipt.json
+          if-no-files-found: warn
