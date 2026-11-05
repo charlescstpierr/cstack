@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 import { createHash } from "node:crypto";
-import { mkdtemp, writeFile, rm, readdir, readFile } from "node:fs/promises";
+import { mkdtemp, writeFile, rm, readdir, readFile, symlink } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { resolve, join, relative } from "node:path";
 import { prepareT3, parseT3Selection, type T3Selection } from "./prepare.ts";
@@ -27,6 +27,12 @@ test("preparation preserves target and exact snapshot without process launch or 
     expect(result.context.files).toEqual(request.snapshot);
     expect(result.prompt).toContain("Contrat T3 pour cstack");
     expect(result.prompt).toContain(content);
+    const alias = join(root, "brief-alias.md");
+    await symlink(brief, alias);
+    const aliased = await prepareT3({ ...request, brief_file: alias,
+      snapshot: [{ path: alias, sha256: request.snapshot[0].sha256 }] }, pluginRoot);
+    expect(aliased.context.files).toEqual(request.snapshot);
+    await rm(alias);
     expect(result.sha256).toBe(createHash("sha256").update(result.prompt).digest("hex"));
     await expect(prepareT3({ ...request, transport_limit_bytes: 1 }, pluginRoot)).rejects.toThrow("aucune troncature");
     await writeFile(brief, "mutated");

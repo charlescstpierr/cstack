@@ -4,6 +4,8 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
+import subprocess
+import sys
 from test_models import models, CATALOG
 
 
@@ -161,3 +163,30 @@ class T3ModelsTests(unittest.TestCase):
         report = models.preflight(config, list(config), self.catalog, 't3', self.context)
         self.assertEqual(report['resolved']['how explorer'],
                          models.resolve(config, 'how explorer', self.catalog, 't3', self.context))
+
+    def test_t3_catalog_is_not_a_native_model_mapping(self):
+        report = models.preflight({'documentation': 'providers'}, ['documentation'], self.catalog)
+        self.assertEqual(report['status'], 'blocked')
+
+    def test_host_context_file_is_bounded_before_preview(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            context = root / 'context.json'
+            context.write_text(json.dumps({'padding': 'x' * (1024 * 1024)}))
+            result = subprocess.run([sys.executable, str(Path(models.__file__)), '--workspace', str(root),
+                                     '--host', 't3', '--host-context', str(context), 'show'],
+                                    capture_output=True, text=True, timeout=10)
+            self.assertEqual(result.returncode, 2)
+            self.assertIn('maximum', result.stderr)
+
+    def test_preview_lists_large_options_and_rejects_mixed_types(self):
+        values = ['level-' + str(index) for index in range(256)]
+        option = self.catalog['providers']['fixture-provider']['models']['fixture-model']['options']['effort']
+        option['values'] = values
+        seal(self.catalog)
+        report = models.preview({}, 'digest', self.catalog, host='t3', context=self.context)
+        self.assertEqual(report['supported']['fixture-provider']['fixture-model']['effort']['values'], values)
+        option['values'] = [values[0], True]
+        seal(self.catalog)
+        report = models.preview({}, 'digest', self.catalog, host='t3', context=self.context)
+        self.assertNotIn('fixture-provider', report['supported'])

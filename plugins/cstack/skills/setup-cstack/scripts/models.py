@@ -108,6 +108,10 @@ def selections(role, value):
     return [value]
 
 
+def t3_identifier(value):
+    return isinstance(value, str) and re.fullmatch(r"[\x21-\x7e]+", value) is not None
+
+
 def selection(value):
     if value == "inherit-parent":
         return {}
@@ -115,10 +119,10 @@ def selection(value):
         return {"model": value}
     if isinstance(value, dict) and value.get("runtime") == "t3":
         if (set(value) != {"runtime", "providerInstanceId", "model", "options"}
-                or not all(isinstance(value.get(k), str) and value[k] and value[k].strip() == value[k]
+                or not all(t3_identifier(value.get(k))
                            and value[k] != "inherit-parent" for k in ("providerInstanceId", "model"))
                 or not isinstance(value.get("options"), dict)
-                or not all(isinstance(k, str) and k and k.strip() == k and type(v) in (str, bool)
+                or not all(t3_identifier(k) and type(v) in (str, bool)
                            for k, v in value["options"].items())):
             raise ValueError("t3 exige exactement runtime, providerInstanceId, model, options non secrets; clés CLI interdites")
         return dict(value)
@@ -151,7 +155,7 @@ def selection(value):
     raise ValueError("chaîne de modèle, inherit-parent, {model, reasoning_effort} ou {runtime, model?, reasoning_effort?} attendu")
 
 
-def t3_target(chosen, catalog, host="codex", context=None):
+def _t3_providers(catalog, host, context):
     """Validate coordinator-supplied evidence; this is consistency, not host attestation."""
     if host != "t3":
         raise ValueError("BLOCKED: sélection t3 hors hôte T3; aucun agent ou CLI de repli")
@@ -177,7 +181,29 @@ def t3_target(chosen, catalog, host="codex", context=None):
     if catalog.get("sha256") != hashlib.sha256(json.dumps(body, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode()).hexdigest():
         raise ValueError("BLOCKED: empreinte catalogue différente")
     providers = catalog.get("providers")
-    provider = providers.get(chosen["providerInstanceId"]) if isinstance(providers, dict) else None
+    if not isinstance(providers, dict):
+        raise ValueError("BLOCKED: fournisseurs du catalogue non vérifiés")
+    return providers
+
+
+def _t3_options(model):
+    declared = model.get("options")
+    if not isinstance(declared, dict):
+        raise ValueError("BLOCKED: options du modèle non vérifiées")
+    types = {"string": str, "boolean": bool}
+    for key, option in declared.items():
+        if (not t3_identifier(key) or not isinstance(option, dict)
+                or option.get("secret") is not False
+                or not isinstance(option.get("type"), str) or option["type"] not in types
+                or not isinstance(option.get("values"), list) or not option["values"]
+                or any(type(value) is not types[option["type"]] for value in option["values"])
+                or ("required" in option and type(option["required"]) is not bool)):
+            raise ValueError("BLOCKED: déclaration d’option non vérifiée: " + str(key))
+    return declared
+
+
+def _t3_target(chosen, providers):
+    provider = providers.get(chosen["providerInstanceId"])
     if not isinstance(provider, dict) or provider.get("available") is not True:
         raise ValueError("BLOCKED: providerInstanceId indisponible ou non vérifié")
     if type(provider.get("modelsComplete")) is not bool:
@@ -186,21 +212,19 @@ def t3_target(chosen, catalog, host="codex", context=None):
     model = models.get(chosen["model"]) if isinstance(models, dict) else None
     if not isinstance(model, dict):
         raise ValueError("BLOCKED: modèle inconnu/non vérifié; absence d’une liste courte ne prouve pas son inexistence")
-    declared = model.get("options")
-    if not isinstance(declared, dict):
-        raise ValueError("BLOCKED: options du modèle non vérifiées")
+    declared = _t3_options(model)
     for key, value in chosen["options"].items():
         option = declared.get(key)
-        types = {"string": str, "boolean": bool}
-        if (not isinstance(option, dict) or option.get("secret") is not False
-                or not isinstance(option.get("type"), str) or option["type"] not in types
-                or type(value) is not types[option["type"]]
-                or not isinstance(option.get("values"), list)
+        if (option is None
                 or not any(type(value) is type(v) and value == v for v in option["values"])):
             raise ValueError("BLOCKED: option non secrète, type ou valeur non vérifié: " + key)
     if any(opt.get("required") is True and key not in chosen["options"] for key, opt in declared.items() if isinstance(opt, dict)):
         raise ValueError("BLOCKED: option requise absente")
     return {k: chosen[k] for k in ("providerInstanceId", "model", "options")}
+
+
+def t3_target(chosen, catalog, host="codex", context=None):
+    return _t3_target(chosen, _t3_providers(catalog, host, context))
 
 
 def t3_position(chosen, catalog, context):
@@ -220,6 +244,8 @@ def t3_position(chosen, catalog, context):
 
 def runtime_catalog(catalog, runtime):
     if catalog is None:
+        return None
+    if isinstance(catalog, dict) and catalog.get("host") == "t3":
         return None
     if isinstance(catalog, dict) and "runtimes" in catalog:
         runtimes = catalog["runtimes"]
@@ -259,12 +285,20 @@ def validate(config, catalog=None, check_available=False, host="codex", context=
                 raise ValueError(f"{role}: {error}") from error
 
 
-def read_catalog(path):
+def read_bounded_json(path, label):
     if path is None:
         return None
-    if path.stat().st_size > 1024 * 1024:
-        raise ValueError("catalogue trop grand: maximum 1 MiB")
-    data = json.loads(path.read_text())
+    with path.open("rb") as stream:
+        raw = stream.read(1024 * 1024 + 1)
+    if len(raw) > 1024 * 1024:
+        raise ValueError(label + " trop grand: maximum 1 MiB")
+    return json.loads(raw)
+
+
+def read_catalog(path):
+    data = read_bounded_json(path, "catalogue")
+    if path is None:
+        return None
     if isinstance(data, dict) and data.get("host") == "t3":
         return data
     # Accepter la sortie codex debug models ou un mapping transcrit depuis le schéma actuel.
@@ -300,7 +334,11 @@ def read_config(path):
 def preview(config, digest, catalog, claude_ready=False, host="codex", context=None):
     if host == "t3":
         supported, unavailable = {}, {}
-        providers = catalog.get("providers", {}) if isinstance(catalog, dict) else {}
+        try:
+            providers = _t3_providers(catalog, host, context)
+        except ValueError as error:
+            providers = {}
+            unavailable["catalog"] = str(error)
         if isinstance(providers, dict):
             for provider_id, provider in providers.items():
                 models = provider.get("models", {}) if isinstance(provider, dict) else {}
@@ -309,15 +347,12 @@ def preview(config, digest, catalog, claude_ready=False, host="codex", context=N
                 for model_id, model in models.items():
                     label = f"{provider_id}/{model_id}"
                     try:
-                        options = model.get("options") if isinstance(model, dict) else None
-                        if not isinstance(options, dict) or any(not isinstance(o, dict) or not isinstance(o.get("values"), list) or not o["values"] for o in options.values()):
-                            raise ValueError("BLOCKED: options déclarées incomplètes")
+                        if not isinstance(model, dict):
+                            raise ValueError("BLOCKED: modèle non vérifié")
+                        options = _t3_options(model)
                         probe = {"runtime": "t3", "providerInstanceId": provider_id, "model": model_id,
                                  "options": {k: o["values"][0] for k, o in options.items()}}
-                        t3_target(selection(probe), catalog, host, context)
-                        for key, option in options.items():
-                            for value in option["values"]:
-                                t3_target(selection({**probe, "options": {**probe["options"], key: value}}), catalog, host, context)
+                        _t3_target(selection(probe), providers)
                         supported.setdefault(provider_id, {})[model_id] = {
                             key: {k: v for k, v in option.items() if k in ("type", "values", "secret", "required")}
                             for key, option in options.items()}
@@ -462,7 +497,7 @@ def main():
     has_agents = (args.workspace / ".codex" / "agents").is_dir()
     try:
         catalog = read_catalog(args.catalog)
-        context = json.loads(args.host_context.read_text()) if args.host_context else None
+        context = read_bounded_json(args.host_context, "contexte")
         config, digest = read_config(path)
         if args.command == "show":
             result = preview(config, digest, catalog, args.claude_ready, args.host, context)

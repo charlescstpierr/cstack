@@ -65,3 +65,22 @@ Ne remplir aucun identifiant de session, environnement, empreinte ou limite tran
 ## Capacités encore non vérifiées
 
 Le chargement installé, la limite maximale de transport, l'annulation réelle, la reconstitution du snapshot dans un reviewer T3, les permissions effectivement imposées aux enfants, les deux cas parent/finding, et le cycle PR complet demandent encore les observations ci-dessus. La revue par trois fournisseurs appartient au parent. Une absence de preuve de backend effectif n'est pas une preuve d'incompatibilité.
+
+
+## Correctifs après la deuxième revue
+
+Les identifiants T3 suivent maintenant une même règle ASCII en Python et TypeScript. Les valeurs restent des chaînes ou booléens exacts, sans traduction. Le contexte de l’hôte est lu sous la même borne de 1 MiB que le catalogue. Un catalogue T3 ne peut plus être interprété comme un mapping de modèles Codex. Les aliases symboliques du snapshot sont résolus avant comparaison des chemins et empreintes.
+
+L’aperçu valide le snapshot du catalogue avant de parcourir les modèles, puis chaque schéma d’option en une passe. Il ne resérialise plus le catalogue pour chaque valeur et ne recherche plus chaque valeur dans sa propre liste. Les fixtures et tests vérifient les refus et les sorties complètes.
+
+## Mesure locale de l’aperçu
+
+[Les mesures brutes](evidence/t3-catalog-preview.json) comparent le helper de `81458aa` au helper corrigé sur un catalogue synthétique de 2000 valeurs. `scripts/t3-catalog-bench.py` vérifie les empreintes des sources, les sorties complètes, leur égalité et les erreurs. Il alterne cinq exécutions par variante pour l’appel Python, puis cinq pour la commande CLI `show` entière.
+
+La médiane de la commande CLI complète passe de 548 ms à 49 ms. Les plages sont respectivement 544 à 574 ms et 47 à 52 ms. Les vingt aperçus ont rendu toutes les valeurs, sans erreur. Un profilage distinct identifie les recherches de valeurs, la sérialisation JSON et le SHA-256 répétés comme coûts de la version précédente. Cette mesure porte sur l’aperçu local, pas sur les résultats d’un agent ni sur une supériorité face aux autres frameworks.
+
+Commande reproductible, avec une copie figée du helper antérieur dans `.cstack/` :
+
+```sh
+python3 scripts/t3-catalog-bench.py --before .cstack/t3-adaptation/catalog-bench/before.py --after plugins/cstack/skills/setup-cstack/scripts/models.py --values 2000 --repetitions 5 --output .cstack/t3-adaptation/catalog-bench/end-to-end.json
+```

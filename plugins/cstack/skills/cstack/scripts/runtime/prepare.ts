@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { realpath } from "node:fs/promises";
 import { isAbsolute } from "node:path";
 import { loadWorkerContext } from "../worker-context.ts";
 import { loadWorkerSkills } from "../worker-skills.ts";
@@ -17,6 +18,9 @@ function record(value: unknown): value is Record<string, unknown> {
 function text(value: unknown): value is string {
   return typeof value === "string" && value.trim() === value && value.length > 0;
 }
+function identifier(value: unknown): value is string {
+  return typeof value === "string" && /^[\x21-\x7e]+$/.test(value);
+}
 function strings(value: unknown): value is string[] {
   return Array.isArray(value) && value.every(text);
 }
@@ -26,12 +30,12 @@ function hash(value: string): string {
 export function parseT3Selection(value: unknown): T3Selection {
   if (!record(value) || value.runtime !== "t3"
       || Object.keys(value).sort().join(",") !== "model,options,providerInstanceId,runtime"
-      || !text(value.providerInstanceId) || value.providerInstanceId === "inherit-parent" || !text(value.model) || value.model === "inherit-parent" || !record(value.options)) {
+      || !identifier(value.providerInstanceId) || value.providerInstanceId === "inherit-parent" || !identifier(value.model) || value.model === "inherit-parent" || !record(value.options)) {
     throw new Error("BLOCKED: sélection t3 exacte requise; aucune interprétation CLI");
   }
   const options: Record<string, Scalar> = Object.create(null);
   for (const [key, option] of Object.entries(value.options)) {
-    if (!text(key) || !(typeof option === "string" || typeof option === "boolean")) {
+    if (!identifier(key) || !(typeof option === "string" || typeof option === "boolean")) {
       throw new Error("BLOCKED: option scalaire non secrète requise");
     }
     options[key] = option;
@@ -60,7 +64,8 @@ export async function prepareT3(raw: unknown, pluginRoot: string) {
   const context = await loadWorkerContext({ briefFile: raw.brief_file, contextFiles: raw.context_files });
   for (const [index, file] of context.files.entries()) {
     const expected: unknown = raw.snapshot[index];
-    if (!record(expected) || expected.path !== file.path || expected.sha256 !== file.sha256) {
+    if (!record(expected) || typeof expected.path !== "string" || !isAbsolute(expected.path)
+        || await realpath(expected.path) !== file.path || expected.sha256 !== file.sha256) {
       throw new Error("BLOCKED: snapshot différent de la source figée");
     }
   }
