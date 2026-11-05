@@ -17,3 +17,5 @@ python3 -B -m unittest discover -s tests -p test_installed_loader.py
 ```
 
 L'exécution réelle du script est réservée au job CI ; elle refuse le profil humain local avant toute commande Codex. L'installateur existant peut utiliser un profil jetable lors d'un changement de source. Le wrapper du test refuse cette redirection et conserve alors un résultat bloqué au lieu de lancer le CLI sous un autre HOME.
+
+Le [second job réel](https://github.com/charlescstpierr/cstack/actions/runs/41956718792) a également réussi pour `4dd58cf`. Son [reçu R5](evidence/installed-loader-r5.json) porte le commit de fusion de test `44d4eac`, arbre `3d39fa1705308aaa8cc72b3ff8be6e627bbaa602`, identique à la cible. Les 248 fichiers et 29 skills ont été recalculés par le parent et les trois reviewers. Les corrections après R5 changent les sources ; ce reçu historique ne leur est pas attribué. Ce contrôle Codex CLI complète les preuves de transport T3 ; il ne remplace pas le parcours principal dans T3.

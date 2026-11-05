@@ -99,3 +99,19 @@ Le pilote natif cinq approches est maintenant terminé et audité par le parent 
 Le [test de chargeur installé](INSTALLED-LOADER.md) a réussi sur un runner CI vierge pour l'arbre de `de0c579`. Le reçu vérifie les 248 fichiers et les 29 skills installés, puis la désinstallation. Aucun tour de modèle ni changement du profil humain n'a été demandé. Cette observation concerne Codex CLI 0.166.0 et laisse l'installation T3 App non vérifiée.
 
 La CI de ce même arbre a révélé un dépassement de la limite d'argument système dans le test Cursor. Le bundle CLI suivait aussi les liens du contrat T3. Le chargeur exclut désormais ce contrat des bundles CLI, comme il exclut déjà les contrats Codex remplacés des bundles T3. Le test reproduit `E2BIG` avant correction et passe après ; une référence runtime explicitement incompatible est refusée.
+
+
+## Transport réel du council R5 dans T3
+
+Le parcours principal reste T3 Code. Sur le commit figé `4dd58cf`, le parent a normalisé les captures hôte, exécuté le préflight puis `prepare`, et transmis littéralement les trois briefs préparés à `delegate_task`. Les cibles effectives étaient Codex GPT-6.1 Sol high, Claude Opus 5.5 high et Grok 4.7 high non-Fast. Aucun CLI fournisseur ni API directe n’a remplacé le dispatch natif T3.
+
+Les trois tâches sont terminées. Le parent a relu les messages stockés et les rapports, comparé chaque cible et ses options au binding, retrouvé les trois marqueurs et vérifié les empreintes du code et des sources injectées. Les messages stockés correspondent aux briefs après ajout du préfixe de rôle par l’hôte et retrait du LF terminal. Le [reçu R5](evidence/t3-council-transport-r5.json) conserve ces observations pour `4dd58cf`, y compris le vrai catalogue filtré Grok. Il ne transforme pas une cohérence applicative en attestation cryptographique du backend.
+
+Le retour de findings au parent a été observé sur ces vraies revues. Le parent a reproduit le refus manquant des restrictions du fournisseur coordinateur, la perte des cinq principes communs, la fragilité argv Cursor et le diagnostic V1 du banc. Les correctifs après R5 appliquent les restrictions des deux côtés sans exiger le modèle source dans une liste filtrée, valident la forme de `runtimeModes`, lient les principes directement aux consignes communes, bornent le prompt Cursor en octets et conservent la raison de migration avant d’inspecter le résultat du banc. Les preuves rouge puis vert sont conservées dans `.cstack/t3-adaptation/r5-fix-staging/` ; le code de ces correctifs n’est pas couvert rétroactivement par le reçu R5.
+
+Un test du reçu `run`, en plus de `prepare`, utilise un lecteur Python retardé pour imposer une contrepression réelle du pipe. Il échoue avec l’ancien `process.exit` et passe avec `process.exitCode`, sur un reçu de plus de 300 000 octets. Le PATH du sous-processus est limité aux exécutables factices nécessaires et le résultat vérifie explicitement la version factice. Le premier prototype reposait sur la consommation différée d’un stream Bun, qui pouvait déjà vider le pipe avant la lecture ; il ne reproduisait pas le défaut et n’a pas été retenu comme preuve rouge.
+
+Le chargement installé Codex CLI reste une preuve secondaire distincte. L’installation dans T3 App, l’activation d’une tâche ordinaire, l’identité effective du backend et son confinement général restent non observés. Les campagnes comparatives restent sans gagnant et ne justifient aucune note cible.
+
+
+Après les corrections R5, la validation locale collecte 312 tests Python avec un ignoré, puis passe 29 tests Bun racine et 241 assistants, les types stricts et racine, le validateur, les faits générés et la syntaxe Bash. Le journal `.cstack/t3-adaptation/r6-check.log` finit avec le code 127 sur Docker absent ; les lints Docker de cette nouvelle source exigent encore la CI. Le README décrit maintenant explicitement le parcours principal dans T3 depuis les sources et distingue l'installateur Codex.

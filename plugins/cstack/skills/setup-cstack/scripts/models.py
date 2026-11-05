@@ -195,11 +195,16 @@ def _t3_target(chosen, providers, coordinator):
             or providers[name].get("canRunCrossProviderChildTask") is not True
             for name in (source, chosen["providerInstanceId"])):
         raise ValueError("BLOCKED: capacité cross-provider requise chez cible et coordinator")
-    provider = providers.get(chosen["providerInstanceId"])
-    if not isinstance(provider, dict) or (provider.get("enabled") is False or provider.get("canRunChildTask") is not True or provider.get("constraints") != []):
-        raise ValueError("BLOCKED: providerInstanceId indisponible ou non vérifié")
-    if "runtimeModes" in provider and coordinator["runtimeMode"] not in provider["runtimeModes"]:
-        raise ValueError("BLOCKED: runtimeMode non pris en charge")
+    for name in dict.fromkeys((source, chosen["providerInstanceId"])):
+        provider = providers.get(name)
+        if not isinstance(provider, dict) or (provider.get("enabled") is False or provider.get("canRunChildTask") is not True or provider.get("constraints") != []):
+            raise ValueError("BLOCKED: providerInstanceId indisponible ou non vérifié: " + name)
+        if "runtimeModes" in provider:
+            modes = provider["runtimeModes"]
+            if (not isinstance(modes, list) or not all(t3_identifier(mode) for mode in modes)
+                    or coordinator["runtimeMode"] not in modes):
+                raise ValueError("BLOCKED: runtimeModes non vérifiés ou mode non pris en charge: " + name)
+    provider = providers[chosen["providerInstanceId"]]
     if type(provider.get("modelsComplete")) is not bool:
         raise ValueError("BLOCKED: complétude catalogue inconnue")
     models = provider.get("models")

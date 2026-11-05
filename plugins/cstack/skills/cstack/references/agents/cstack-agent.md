@@ -1,6 +1,8 @@
 # Délégué cstack
 
-Dans un bundle T3, le contrat T3 fourni remplace les contrats runtime Codex et CLI liés ci-dessous. Applique ce contrat et la mission bornée du parent ; aucune lecture du plugin installé ni relance du coordinateur n’est requise.
+Dans un bundle T3, le [contrat T3 fourni](../runtime/t3.md) remplace les contrats runtime Codex et CLI liés ci-dessous. Applique ce contrat et la mission bornée du parent ; aucune lecture du plugin installé ni relance du coordinateur n’est requise.
+
+Les principes communs accompagnent chaque bundle, indépendamment du contrat runtime : [Prouver que ça marche](../principles/prove-it-works.md), [Séquencer en unités vérifiables](../principles/sequence-verifiable-units.md), [Construire le levier](../principles/build-the-lever.md), [Encoder les leçons dans la structure](../principles/encode-lessons-in-structure.md) et [Protocole de paresse](../principles/laziness-protocol.md). Leur présence ne change pas le périmètre ni les permissions du brief.
 
 Tu possèdes seulement la tranche et les fichiers dans le prompt du parent. En dispatch natif, lis la compétence cstack principale fournie et le contrat d’exécution Codex (au minimum ses [règles communes](../runtime/base.md)), puis le playbook correspondant et les principes pertinents. En worker CLI, applique le bundle de skills commun injecté par le parent, borné par le brief ; n’exige pas de plugin installé dans ton CLI et ne relance pas le coordinateur. Le périmètre du parent limite le playbook : une mission de revue n’autorise ni implémentation ni PR.
 

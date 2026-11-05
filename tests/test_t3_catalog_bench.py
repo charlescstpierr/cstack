@@ -58,6 +58,18 @@ class CatalogBenchTests(unittest.TestCase):
             self.assertEqual(len({row['output_sha256'] for row in data['runs']}), 1)
             self.assertEqual(len({row['output_sha256'] for row in data['cli_runs']}), 1)
 
+    def test_cli_preserves_the_helpers_migration_reason(self):
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory)/'result.json'
+            result = subprocess.run([sys.executable, '-B', str(SCRIPT), '--format', 'v1',
+                '--before', str(MODELS), '--after', str(MODELS), '--values', '4',
+                '--repetitions', '5', '--output', str(output)], capture_output=True, text=True, timeout=20)
+            self.assertEqual(result.returncode, 2)
+            self.assertIn('BLOCKED: --before incompatible avec --format v1', result.stderr)
+            self.assertIn('migration explicite T3 v2 requise', result.stderr)
+            self.assertNotIn('Traceback', result.stderr)
+            self.assertFalse(output.exists())
+
 
 if __name__ == '__main__':
     unittest.main()

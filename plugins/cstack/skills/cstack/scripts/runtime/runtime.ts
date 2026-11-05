@@ -188,6 +188,7 @@ const MAX_TIMEOUT_MS = 2 * 60 * 60 * 1000;
 const RECEIPT_LIMIT = 1024 * 1024;
 const MAX_RESUMES = 8;
 const MAX_ACCEPTANCE_BYTES = 4096;
+const MAX_CURSOR_PROMPT_BYTES = 128 * 1024 - 1;
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 const WORKER_SCHEMA = {
@@ -302,6 +303,11 @@ const RUNTIMES: Readonly<Record<RuntimeName, RuntimeDefinition>> = {
       if (request.selection.reasoning_effort !== undefined) {
         throw new UnsupportedError("cursor-agent: reasoning_effort doit être encodé dans le modèle Cursor si requis");
       }
+      const prompt = `${brief}\n\nReturn only a JSON object with status, summary, checks, and findings.`;
+      const bytes = Buffer.byteLength(prompt, "utf8");
+      if (bytes > MAX_CURSOR_PROMPT_BYTES) {
+        throw new UnsupportedError(`cursor-agent: prompt de ${bytes} octets dépasse le budget argv de ${MAX_CURSOR_PROMPT_BYTES}; aucun lancement ni troncature`);
+      }
       return {
         argv: [
           "--print",
@@ -314,7 +320,7 @@ const RUNTIMES: Readonly<Record<RuntimeName, RuntimeDefinition>> = {
           "--workspace",
           cwd,
           ...(request.selection.model ? ["--model", request.selection.model] : []),
-          `${brief}\n\nReturn only a JSON object with status, summary, checks, and findings.`,
+          prompt,
         ],
         stdin: null,
       };

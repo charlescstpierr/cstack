@@ -222,3 +222,23 @@ it("T3 bundles retain selected task sources and replace Codex runtime traversal"
   await expect(loadWorkerSkills({ pluginRoot, names: [], host: "t3",
     skillReferences: ["cstack/references/runtime/base.md"] })).rejects.toThrow("remplacée");
 });
+
+
+it("conserve les mêmes principes communs dans les bundles CLI et T3", async () => {
+  const pluginRoot = resolve(import.meta.dir, "../../..");
+  for (const names of [[], ["how"], ["tdd"]]) {
+    const cli = await loadWorkerSkills({ pluginRoot, names });
+    const t3 = await loadWorkerSkills({ pluginRoot, names, host: "t3" });
+    const principles = (bundle: Awaited<ReturnType<typeof loadWorkerSkills>>) => bundle.files
+      .filter((file) => file.path.includes("/principles/"))
+      .sort((left, right) => left.path.localeCompare(right.path));
+    expect(principles(t3)).toEqual(principles(cli));
+    const paths = t3.files.map((file) => file.path);
+    for (const name of ["prove-it-works", "sequence-verifiable-units", "build-the-lever",
+      "encode-lessons-in-structure", "laziness-protocol"]) {
+      expect(paths).toContain(`skills/cstack/references/principles/${name}.md`);
+    }
+    expect(paths).toContain("skills/cstack/references/runtime/t3.md");
+    expect(paths).not.toContain("skills/cstack/references/codex-runtime.md");
+  }
+});

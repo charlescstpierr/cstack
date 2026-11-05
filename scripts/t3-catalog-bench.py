@@ -76,8 +76,12 @@ def preview(module, catalog, context):
 
 
 def check(result, values):
+    if result.get("unavailable"):
+        raise ValueError("preview unavailable: " + json.dumps(result["unavailable"], ensure_ascii=False))
+    if result["preflight"]["status"] != "ready":
+        raise ValueError("preflight blocked: " + json.dumps(result["preflight"]["errors"], ensure_ascii=False))
     actual = result["supported"]["fixture-provider"]["fixture-model"]["effort"]["values"]
-    if actual != values or result["unavailable"] or result["preflight"]["status"] != "ready":
+    if actual != values:
         raise ValueError("preview did not validate and return the complete workload")
     return hashlib.sha256(json.dumps(result, sort_keys=True, ensure_ascii=False).encode()).hexdigest()
 

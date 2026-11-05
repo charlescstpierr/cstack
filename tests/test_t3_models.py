@@ -43,6 +43,20 @@ class T3ModelsTests(unittest.TestCase):
         return models.preflight({'interrogate reviewers': value}, ['interrogate reviewers'], self.catalog,
                                 host, self.context if context else None)
 
+    def test_malformed_snapshot_runtime_modes_block_without_binding(self):
+        for modes in ('full-access', {'full-access': True}, None, ['full-access', True]):
+            with self.subTest(modes=modes):
+                catalog, context, chosen = fixture()
+                catalog['providers']['fixture-provider']['runtimeModes'] = modes
+                seal(catalog)
+                context['snapshotSha256'] = catalog['sha256']
+                report = models.preflight({'judgment and prose': chosen}, ['judgment and prose'],
+                                          catalog, 't3', context)
+                row = report['positions']['judgment and prose'][0]
+                self.assertEqual(row['status'], 'blocked')
+                self.assertNotIn('binding', row)
+                self.assertNotIn('judgment and prose', report['resolved'])
+
     def test_shared_selection_contract(self):
         path = Path(__file__).parent / 'fixtures/t3-selections.json'
         for row in json.loads(path.read_text()):
@@ -325,6 +339,30 @@ class T3NormalizerTests(unittest.TestCase):
         single = models.preflight({'interrogate reviewers': [chosen]}, ['interrogate reviewers'],
             catalog, 't3', context)
         self.assertEqual(single['status'], 'ready')
+
+    def test_coordinator_restrictions_block_cross_provider_without_model_list(self):
+        for restriction in ({'enabled': False}, {'canRunChildTask': False},
+                            {'constraints': ['blocked by host']},
+                            {'runtimeModes': ['approval-required']}):
+            with self.subTest(restriction=restriction):
+                cap = json.loads((self.base / 'capabilities-grok-filtered.json').read_text())
+                source = next(p for p in cap['output']['providers'] if p['providerInstanceId'] == 'codex')
+                source.update(restriction)
+                catalog = self.normalize(cap=cap)
+                self.assertEqual(catalog['providers']['codex']['models'], {})
+                context = self.context(catalog)
+                context['revalidatedAt'] = cap['observedAt']
+                chosen = dict(runtime='t3', providerInstanceId='grok', model='grok-4.7',
+                              options={'reasoningEffort': 'high'})
+                config = {'judgment and prose': chosen}
+                report = models.preflight(config, ['judgment and prose'], catalog, 't3', context)
+                row = report['positions']['judgment and prose'][0]
+                self.assertEqual(row['status'], 'blocked')
+                self.assertIn('codex', row['error'])
+                self.assertNotIn('binding', row)
+                self.assertNotIn('judgment and prose', report['resolved'])
+                with self.assertRaisesRegex(ValueError, 'codex'):
+                    models.resolve(config, 'judgment and prose', catalog, 't3', context)
 
     def test_malformed_model_only_blocks_its_position(self):
         for values in (['high', True], [], [None], {'high': True}):
