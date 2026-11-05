@@ -70,7 +70,7 @@ Le message relu depuis T3 correspond au prompt préparé après suppression du L
 
 ## Résultat des contrôles dans ce worktree
 
-`bash scripts/check.sh` a passé les faits générés, le validateur du paquet, la suite Python, les 29 tests Bun racine, l'installation verrouillée, les 238 tests Bun assistants, les types stricts et racine et la syntaxe Bash. Il s'est arrêté avec le code 127 sur `docker: command not found`. ShellCheck et Actionlint via les images épinglées restent donc non exécutés ici. `git diff --check` a été exécuté séparément et passe. La relance complète du parent collecte 299 tests Python avec un ignoré, puis passe 29 tests Bun racine et 238 tests Bun assistants. La suite T3 ciblée comporte 21 tests Python ; les six tests Bun de préparation réussissent. Le log local est `.cstack/t3-adaptation/r3-fixes-check.log`.
+`bash scripts/check.sh` a passé les faits générés, le validateur du paquet, la suite Python, les 29 tests Bun racine, l'installation verrouillée, les 238 tests Bun assistants, les types stricts et racine et la syntaxe Bash. Il s'est arrêté avec le code 127 sur `docker: command not found`. ShellCheck et Actionlint via les images épinglées restent donc non exécutés ici. `git diff --check` a été exécuté séparément et passe. La relance complète du parent collecte 308 tests Python avec un ignoré, puis passe 29 tests Bun racine et 238 tests Bun assistants. La suite T3 ciblée comporte 21 tests Python ; les six tests Bun de préparation réussissent. Le log local est `.cstack/t3-adaptation/r5-check.log`.
 
 ## Frontière avec les preuves antérieures
 
@@ -81,6 +81,19 @@ La [CI historique du commit 6fa0f11](https://github.com/charlescstpierr/cstack/a
 
 ## Correctifs après la revue R3
 
-Le plan et le résultat d’application indiquent désormais `preserved_agents: {chemin: "t3-role"}` quand un agent existant reste présent pour un rôle T3. Le cas `native_agents: false` avec configuration invalide reste bloqué avant écriture : un test public vérifie la conservation de tous les octets et la procédure de réparation est documentée. Cette fermeture évite une suppression fondée sur un rôle inconnu.
+Le plan et le résultat d’application indiquent désormais `preserved_agents: {chemin: "t3-role"}` quand un choix T3 validé explique la préservation. Les agents manuels non identifiés par un choix validé sont signalés `manual-agent`, y compris sans lecture des choix sauvegardés. Le cas `native_agents: false` avec configuration invalide reste bloqué avant écriture : un test public vérifie la conservation de tous les octets et la procédure de réparation est documentée. Cette fermeture évite une suppression fondée sur un rôle inconnu.
 
 Le [contrôle comparatif CLI terminé](evidence/comparison-review-controls.json) contient vingt-cinq résultats comparables et leur recalcul sans écart. Ce jeu reste synthétique et ne distingue aucun gagnant. La suite suivante `behavior-controls` ajoute des contrats de cache traversant plusieurs modules et une investigation sur des données importées explicitement sans autorité ; ses résultats sont distincts et ne sont pas inférés ici.
+
+
+## Catalogue filtré et troisième avis Grok
+
+La demande utilisateur de Grok high non-Fast a été vérifiée par une vraie découverte `search: "grok"`. Cette réponse expose `grok-4.7` avec `reasoningEffort: high` et conserve les capacités des autres fournisseurs, mais omet leurs modèles. Le normaliseur échouait globalement parce que le modèle du coordinateur n’était pas listé. Le test reproduit ce refus avant correction. Il vérifie désormais une position héritée bloquée et une cible explicite Grok prête, sans remplacement ni variante Fast. `omittedModels: null` conserve une complétude inconnue.
+
+La fixture publique filtrée est une projection de cette réponse : thread et item redigés, fournisseurs sans rapport retirés, date d’observation conservée. La capture réelle reste ignorée. Le snapshot réel normalisé a le SHA `e7f340865cfefdae897ad6586b52b637c2194766883ae2078a7723276b01bd32`. Les captures et un JSON cohérent ne remplacent pas la preuve d’une délégation.
+
+Les reçus de transport précédents sont historiques : le reçu principal porte explicitement le commit `4c76814`. La modification du normaliseur après ce commit n’est pas présentée comme déjà exercée par son ancien smoke.
+
+Le pilote natif cinq approches est maintenant terminé et audité par le parent : [preuves et exclusions](evidence/comparison-native-pilot.json). Il couvre dix tâches et deux descendants terminés, avec contrôle de l’index, des fichiers et des permissions observables. Les instructions globales non neutralisées empêchent une conclusion comparative propre. Les états T3 ne prouvent pas l’arrêt de tous les processus backend.
+
+Un [test de chargeur installé](INSTALLED-LOADER.md) est préparé dans un runner CI vierge. Les deux méthodes IPC ont été vérifiées localement en lecture seule, sans installation ni tour de modèle. La première installation réelle reste à observer dans ce job ; elle ne modifiera pas le profil humain et ne prouvera pas automatiquement T3 App.

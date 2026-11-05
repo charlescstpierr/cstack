@@ -270,6 +270,18 @@ class ComparisonTests(unittest.TestCase):
             self.assertEqual(len(value['check_sha256']), 64)
             self.assertFalse((Path(d)/'projects/task/cache-consistency-check.py').exists())
 
+    def test_cache_grader_accepts_successful_tests_with_stdout_diagnostics(self):
+        fixed = C.CACHE_FILES['src/cache.py'].replace(
+            'self.entries.pop(key, None)', 'self.entries.pop((namespace, key), None)')
+        noisy_test = C.CACHE_FILES['tests/test_directory.py'] + "\nprint('debug diagnostic')\n"
+        with tempfile.TemporaryDirectory() as d:
+            value, _ = self.behavior_result(Path(d), 'cache-consistency',
+                {'src/cache.py': fixed, 'tests/test_directory.py': noisy_test})
+            self.assertEqual(value['exit_code'], 0)
+            self.assertTrue(value['correct'])
+            self.assertTrue(value['scope_preserved'])
+            self.assertIn('debug diagnostic', value['checks'])
+
     def test_cache_checker_requires_completed_assertions_after_import(self):
         with tempfile.TemporaryDirectory() as d:
             value, _ = self.behavior_result(Path(d), 'cache-consistency',

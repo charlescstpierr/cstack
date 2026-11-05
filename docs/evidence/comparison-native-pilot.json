@@ -1,0 +1,292 @@
+{
+  "kind": "native T3 source-mode pilot, parent audit",
+  "candidateCount": 10,
+  "behaviorPass": 10,
+  "explicitComparisonExclusions": 2,
+  "cleanVanillaBaselineEstablished": false,
+  "cstackSourceCommit": "4c768145dd977201312233d13cb5f477c69d36c1",
+  "sourceSealsSha256": "c8bdcff3b33cdbb48c90e075193e555aafffb7ba7456f1681d0d1f1392aff1a9",
+  "parentAudit": {
+    "threadsRead": 10,
+    "knownTerminalCompleted": 10,
+    "currentIndexesRead": 10,
+    "receiptFilesModesRechecked": 10,
+    "externalChecksRerunOnCopies": 10,
+    "outcomeMismatches": 0
+  },
+  "limits": [
+    "External CLI campaign and reviews may run concurrently; no performance/cost claim",
+    "Global T3 instructions not neutralized; source activation is not installed-plugin discovery; host settings do not prove backend identity",
+    "One pilot repetition and two cases cannot establish a 9.5 rating or superiority. No numeric rating assigned.",
+    "CLI cstack source 7bd differs from native cstack V2 4c76814; no cross-host causal before/after claim.",
+    "Host-created candidate repositories began at coordinator commit bd4870c7cd49674ee081905dfe250a4c14688f17; frozen source package is from parent 4c768145dd977201312233d13cb5f477c69d36c1. No checkouts changed to hide this difference.",
+    "Observed global Superpowers workflow reads contaminate cache positions 4 and 5; excluded from isolated-arm comparison. Other global instructions remain a limitation in every position.",
+    "Usage/backend identity/confinement not independently attested by host metadata. Same-UID agents trusted to obey scope.",
+    "No clean vanilla baseline proved; no performance/cost ranking, and no universal winner."
+  ],
+  "gradeCorrection": [
+    "First provisional position 1 exclusion was a grader permission assumption error: Git omits group write permissions, host umask 002 yields 0664. Corrected and all positions regraded with independently derived modes; raw provisional row preserved."
+  ],
+  "rows": [
+    {
+      "position": 1,
+      "case": "cache-consistency",
+      "arm": "cstack",
+      "behavior": "pass",
+      "comparisonOutcome": "eligible-with-global-instruction-limit",
+      "comparisonExclusions": [],
+      "terminalStatus": "completed",
+      "link": "<t3-thread://v2/4bd98d01-5ea5-4d57-b993-162051324aa8/thread:delegated-task:command%3Amcp%3Ab30cd617-df97-469c-9ad9-98ae0316c6d7%3Adelegate-task%3A3e05795e-6b38-4612-92df-9fbb80e7c592>",
+      "provider": "codex",
+      "model": "gpt-6.1-sol",
+      "options": {
+        "reasoningEffort": "high",
+        "serviceTier": "priority"
+      },
+      "indexPreservedParentRead": true,
+      "receiptFilesAndModesRechecked": true,
+      "initialFixtureCommit": "66469e656712a0bf64053ee1684489853f13add6",
+      "externalChecksSha256": "4c4c8a5e19811dcbb325eaeaf875926d6679fbe822c539829b9b528ff1fbb9a8",
+      "completion": {
+        "checks_completed": 12,
+        "success": true
+      },
+      "patchScopeRechecked": true,
+      "activationObserved": true,
+      "descendantCount": 0
+    },
+    {
+      "position": 2,
+      "case": "cache-consistency",
+      "arm": "superpowers",
+      "behavior": "pass",
+      "comparisonOutcome": "eligible-with-global-instruction-limit",
+      "comparisonExclusions": [],
+      "terminalStatus": "completed",
+      "link": "<t3-thread://v2/4bd98d01-5ea5-4d57-b993-162051324aa8/thread:delegated-task:command%3Amcp%3Ab30cd617-df97-469c-9ad9-98ae0316c6d7%3Adelegate-task%3A6288ac3d-9f91-413e-b1bf-0f52f0fd3db2>",
+      "provider": "codex",
+      "model": "gpt-6.1-sol",
+      "options": {
+        "reasoningEffort": "high",
+        "serviceTier": "priority"
+      },
+      "indexPreservedParentRead": true,
+      "receiptFilesAndModesRechecked": true,
+      "initialFixtureCommit": "694302167a48de586205eee94a93d50181981654",
+      "externalChecksSha256": "4c4c8a5e19811dcbb325eaeaf875926d6679fbe822c539829b9b528ff1fbb9a8",
+      "completion": {
+        "checks_completed": 12,
+        "success": true
+      },
+      "patchScopeRechecked": true,
+      "activationObserved": true,
+      "descendantCount": 0
+    },
+    {
+      "position": 3,
+      "case": "cache-consistency",
+      "arm": "pstack",
+      "behavior": "pass",
+      "comparisonOutcome": "eligible-with-global-instruction-limit",
+      "comparisonExclusions": [],
+      "terminalStatus": "completed",
+      "link": "<t3-thread://v2/4bd98d01-5ea5-4d57-b993-162051324aa8/thread:delegated-task:command%3Amcp%3Ab30cd617-df97-469c-9ad9-98ae0316c6d7%3Adelegate-task%3Ab4ac1a61-c10b-4ab6-93c3-742318f2009f>",
+      "provider": "codex",
+      "model": "gpt-6.1-sol",
+      "options": {
+        "reasoningEffort": "high",
+        "serviceTier": "priority"
+      },
+      "indexPreservedParentRead": true,
+      "receiptFilesAndModesRechecked": true,
+      "initialFixtureCommit": "3f44cf2368fa256222d46ab0ac2123ce3799eba6",
+      "externalChecksSha256": "4c4c8a5e19811dcbb325eaeaf875926d6679fbe822c539829b9b528ff1fbb9a8",
+      "completion": {
+        "checks_completed": 12,
+        "success": true
+      },
+      "patchScopeRechecked": true,
+      "activationObserved": true,
+      "descendantCount": 0
+    },
+    {
+      "position": 4,
+      "case": "cache-consistency",
+      "arm": "tstack",
+      "behavior": "pass",
+      "comparisonOutcome": "excluded",
+      "comparisonExclusions": [
+        "Observed additional global Superpowers debugging/TDD/verification reads; not an isolated tstack workflow on the cache case."
+      ],
+      "terminalStatus": "completed",
+      "link": "<t3-thread://v2/4bd98d01-5ea5-4d57-b993-162051324aa8/thread:delegated-task:command%3Amcp%3Ab30cd617-df97-469c-9ad9-98ae0316c6d7%3Adelegate-task%3Afd4e7b06-3b40-4b9f-81d0-6c9a788efe2e>",
+      "provider": "codex",
+      "model": "gpt-6.1-sol",
+      "options": {
+        "reasoningEffort": "high",
+        "serviceTier": "priority"
+      },
+      "indexPreservedParentRead": true,
+      "receiptFilesAndModesRechecked": true,
+      "initialFixtureCommit": "f2866472403bf4f4af3fd365cead8e464f580fdb",
+      "externalChecksSha256": "4c4c8a5e19811dcbb325eaeaf875926d6679fbe822c539829b9b528ff1fbb9a8",
+      "completion": {
+        "checks_completed": 9,
+        "success": true
+      },
+      "patchScopeRechecked": true,
+      "activationObserved": true,
+      "descendantCount": 1
+    },
+    {
+      "position": 5,
+      "case": "cache-consistency",
+      "arm": "vanilla",
+      "behavior": "pass",
+      "comparisonOutcome": "excluded",
+      "comparisonExclusions": [
+        "Observed additional global Superpowers debugging/TDD/verification reads; not an isolated vanilla workflow on the cache case."
+      ],
+      "terminalStatus": "completed",
+      "link": "<t3-thread://v2/4bd98d01-5ea5-4d57-b993-162051324aa8/thread:delegated-task:command%3Amcp%3Ab30cd617-df97-469c-9ad9-98ae0316c6d7%3Adelegate-task%3A26385d17-b53d-4c29-825b-1f7d737dc15b>",
+      "provider": "codex",
+      "model": "gpt-6.1-sol",
+      "options": {
+        "reasoningEffort": "high",
+        "serviceTier": "priority"
+      },
+      "indexPreservedParentRead": true,
+      "receiptFilesAndModesRechecked": true,
+      "initialFixtureCommit": "cad14e26477fee8be57822f1ec014e539bd3697e",
+      "externalChecksSha256": "4c4c8a5e19811dcbb325eaeaf875926d6679fbe822c539829b9b528ff1fbb9a8",
+      "completion": {
+        "checks_completed": 14,
+        "success": true
+      },
+      "patchScopeRechecked": true,
+      "activationObserved": true,
+      "descendantCount": 0
+    },
+    {
+      "position": 6,
+      "case": "import-investigation",
+      "arm": "pstack",
+      "behavior": "pass",
+      "comparisonOutcome": "eligible-with-global-instruction-limit",
+      "comparisonExclusions": [],
+      "terminalStatus": "completed",
+      "link": "<t3-thread://v2/4bd98d01-5ea5-4d57-b993-162051324aa8/thread:delegated-task:command%3Amcp%3Ab30cd617-df97-469c-9ad9-98ae0316c6d7%3Adelegate-task%3A6a7fc4e4-213d-4af0-8de4-c6feab098b4a>",
+      "provider": "codex",
+      "model": "gpt-6.1-sol",
+      "options": {
+        "reasoningEffort": "high",
+        "serviceTier": "priority"
+      },
+      "indexPreservedParentRead": true,
+      "receiptFilesAndModesRechecked": true,
+      "initialFixtureCommit": "1c61401282ddb21e378c9d0ba1920e5efd43f85d",
+      "externalChecksSha256": "36a02c92d14c4efa41db43265b9a63a18e5dca70341306b8f77b4b534eb5634f",
+      "completion": null,
+      "patchScopeRechecked": true,
+      "activationObserved": true,
+      "descendantCount": 0
+    },
+    {
+      "position": 7,
+      "case": "import-investigation",
+      "arm": "tstack",
+      "behavior": "pass",
+      "comparisonOutcome": "eligible-with-global-instruction-limit",
+      "comparisonExclusions": [],
+      "terminalStatus": "completed",
+      "link": "<t3-thread://v2/4bd98d01-5ea5-4d57-b993-162051324aa8/thread:delegated-task:command%3Amcp%3Ab30cd617-df97-469c-9ad9-98ae0316c6d7%3Adelegate-task%3A537da631-0cca-4ea0-9c8c-7dfd7c373a3e>",
+      "provider": "codex",
+      "model": "gpt-6.1-sol",
+      "options": {
+        "reasoningEffort": "high",
+        "serviceTier": "priority"
+      },
+      "indexPreservedParentRead": true,
+      "receiptFilesAndModesRechecked": true,
+      "initialFixtureCommit": "4d64ccebc4f5372d6aeba149d6dd65a10b3e3bde",
+      "externalChecksSha256": "36a02c92d14c4efa41db43265b9a63a18e5dca70341306b8f77b4b534eb5634f",
+      "completion": null,
+      "patchScopeRechecked": true,
+      "activationObserved": true,
+      "descendantCount": 1
+    },
+    {
+      "position": 8,
+      "case": "import-investigation",
+      "arm": "vanilla",
+      "behavior": "pass",
+      "comparisonOutcome": "eligible-with-global-instruction-limit",
+      "comparisonExclusions": [],
+      "terminalStatus": "completed",
+      "link": "<t3-thread://v2/4bd98d01-5ea5-4d57-b993-162051324aa8/thread:delegated-task:command%3Amcp%3Ab30cd617-df97-469c-9ad9-98ae0316c6d7%3Adelegate-task%3Abaaf8638-45e1-453a-a2f2-189220257f49>",
+      "provider": "codex",
+      "model": "gpt-6.1-sol",
+      "options": {
+        "reasoningEffort": "high",
+        "serviceTier": "priority"
+      },
+      "indexPreservedParentRead": true,
+      "receiptFilesAndModesRechecked": true,
+      "initialFixtureCommit": "99a31b2f7f6170dcada1544bbbd0a5cc4484ab46",
+      "externalChecksSha256": "36a02c92d14c4efa41db43265b9a63a18e5dca70341306b8f77b4b534eb5634f",
+      "completion": null,
+      "patchScopeRechecked": true,
+      "activationObserved": true,
+      "descendantCount": 0
+    },
+    {
+      "position": 9,
+      "case": "import-investigation",
+      "arm": "cstack",
+      "behavior": "pass",
+      "comparisonOutcome": "eligible-with-global-instruction-limit",
+      "comparisonExclusions": [],
+      "terminalStatus": "completed",
+      "link": "<t3-thread://v2/4bd98d01-5ea5-4d57-b993-162051324aa8/thread:delegated-task:command%3Amcp%3Ab30cd617-df97-469c-9ad9-98ae0316c6d7%3Adelegate-task%3A4b7b9b52-6b7d-4a94-a05d-6c3b2592189e>",
+      "provider": "codex",
+      "model": "gpt-6.1-sol",
+      "options": {
+        "reasoningEffort": "high",
+        "serviceTier": "priority"
+      },
+      "indexPreservedParentRead": true,
+      "receiptFilesAndModesRechecked": true,
+      "initialFixtureCommit": "e8fb447d1cc75093152e1a83d4fd31822993d102",
+      "externalChecksSha256": "36a02c92d14c4efa41db43265b9a63a18e5dca70341306b8f77b4b534eb5634f",
+      "completion": null,
+      "patchScopeRechecked": true,
+      "activationObserved": true,
+      "descendantCount": 0
+    },
+    {
+      "position": 10,
+      "case": "import-investigation",
+      "arm": "superpowers",
+      "behavior": "pass",
+      "comparisonOutcome": "eligible-with-global-instruction-limit",
+      "comparisonExclusions": [],
+      "terminalStatus": "completed",
+      "link": "<t3-thread://v2/4bd98d01-5ea5-4d57-b993-162051324aa8/thread:delegated-task:command%3Amcp%3Ab30cd617-df97-469c-9ad9-98ae0316c6d7%3Adelegate-task%3A6c69d559-1784-455a-b49f-bdf475d01f2d>",
+      "provider": "codex",
+      "model": "gpt-6.1-sol",
+      "options": {
+        "reasoningEffort": "high",
+        "serviceTier": "priority"
+      },
+      "indexPreservedParentRead": true,
+      "receiptFilesAndModesRechecked": true,
+      "initialFixtureCommit": "2caf5f56c5ea8a66143464ac92381c883996ec05",
+      "externalChecksSha256": "36a02c92d14c4efa41db43265b9a63a18e5dca70341306b8f77b4b534eb5634f",
+      "completion": null,
+      "patchScopeRechecked": true,
+      "activationObserved": true,
+      "descendantCount": 0
+    }
+  ],
+  "descendantCount": 2
+}

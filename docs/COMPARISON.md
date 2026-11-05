@@ -81,3 +81,14 @@ bash scripts/check.sh
 
 
 Les graders d’implémentation exigent un reçu d’assertions effectivement terminées en plus d’un code de succès. Une importation qui quitte immédiatement avec le code zéro ne compte pas comme une réussite. Les anciens protocoles scellés ne sont pas réécrits ; toute évolution du grader impose une nouvelle campagne.
+
+
+## Résultats conservés
+
+Le [jeu de revue](evidence/comparison-review-controls.json) contient 25 essais CLI comparables. Le [jeu de comportement](evidence/comparison-behavior-controls.json) contient 30 résultats primaires comparables, soit trois répétitions de deux cas pour chaque bras. Tous les résultats primaires réussissent ; aucun gagnant n’est établi. Le second jeu conserve aussi une tentative cstack terminée après interruption du contrôleur, avant collecte du résultat. La reprise a relancé cet identifiant absent du journal. La tentative originale, ses reçus et son exclusion restent visibles ; ses assertions récupérées passent également. Il y a donc 31 tentatives pour 30 lignes primaires, pas 30 appels de candidat au total.
+
+Le grader scellé du second jeu exigeait tout stdout comme reçu JSON. Cela pouvait refuser une bonne solution dont les tests imprimaient des diagnostics. Aucun faux négatif de ce type n’apparaît dans les 30 lignes. Le protocole futur ne lit que la dernière ligne du reçu ; le test de non-régression couvre les diagnostics et conserve le refus d’une importation qui quitte avec succès avant les assertions. Les anciens résultats ne sont pas réécrits.
+
+Le [pilote natif T3](evidence/comparison-native-pilot.json) utilise cstack V2 `4c76814`, les autres sources figées et une répétition de deux cas. Le parent a relu les dix threads terminés, vérifié les index et reçus sur disque et réexécuté les checks externes sur des copies. Les dix comportements passent. Deux positions cache sont exclues de l’attribution à un bras isolé : vanilla et tstack ont aussi lu les workflows globaux Superpowers. Les autres positions gardent la limite des instructions globales non neutralisées ; aucun vanilla propre n’est établi. Le reçu conserve la correction d’une hypothèse de permissions du premier grader, appliquée ensuite aux dix positions sans nouveau candidat.
+
+Ces observations natives ne sont pas comparables causalement au CLI : hôte et version cstack diffèrent. Elles établissent des tâches observées dans l’hôte, sans prouver une supériorité, un confinement général ou un coût total.

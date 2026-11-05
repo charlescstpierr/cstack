@@ -578,9 +578,9 @@ def grade_behavior(task, workspace, baseline, target, private, initial_index):
     complete = True
     if task == 'cache-consistency':
         try:
-            proof = json.loads(result.stdout)
+            proof = json.loads(result.stdout.splitlines()[-1])
             complete = proof.get('success') is True and type(proof.get('checks_completed')) is int and proof['checks_completed'] >= 4
-        except (ValueError, AttributeError):
+        except (ValueError, AttributeError, IndexError):
             complete = False
     return {'correct': result.returncode == 0 and complete, 'scope_preserved': scope,
             'index_preserved': index_preserved, 'patch_applied': True,

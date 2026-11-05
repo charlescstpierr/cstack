@@ -98,8 +98,13 @@ def main():
     dependency_sources = {name: dependencies(path) for name, path in paths.items()}
     modules = {name: load(path, "catalog_bench_" + name) for name, path in paths.items()}
     catalog, context, values = workload(args.values, args.format)
-    expected = check(preview(modules["before"], catalog, context), values)
-    check(preview(modules["after"], catalog, context), values)
+    warmed = {}
+    for name, module in modules.items():
+        try:
+            warmed[name] = check(preview(module, catalog, context), values)
+        except (KeyError, ValueError, TypeError) as error:
+            parser.error(f"BLOCKED: --{name} incompatible avec --format {args.format}: {error}")
+    expected = warmed["before"]
     profiler = cProfile.Profile()
     profiler.runcall(preview, modules["before"], catalog, context)
     stats = pstats.Stats(profiler)

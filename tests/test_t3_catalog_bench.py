@@ -29,6 +29,20 @@ class CatalogBenchTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             BENCH.workload(4, 'unknown')
 
+    def test_cli_explains_an_incompatible_helper_before_measuring(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            before = root/'old_helper.py'
+            before.write_text("def preview(*args, **kwargs): return {'supported': {}}\n")
+            output = root/'result.json'
+            result = subprocess.run([sys.executable, '-B', str(SCRIPT), '--before', str(before),
+                '--after', str(MODELS), '--values', '4', '--repetitions', '5', '--output', str(output)],
+                capture_output=True, text=True, timeout=20)
+            self.assertEqual(result.returncode, 2)
+            self.assertIn('BLOCKED: --before incompatible avec --format v2', result.stderr)
+            self.assertNotIn('Traceback', result.stderr)
+            self.assertFalse(output.exists())
+
     def test_cli_exercises_complete_direct_and_subprocess_previews(self):
         with tempfile.TemporaryDirectory() as directory:
             output = Path(directory)/'result.json'

@@ -45,5 +45,6 @@
     "Same-UID scope compliance is not general confinement",
     "Cumulative application metadata is not backend identity or cryptographic transport attestation",
     "One leaf task; no independent score or comparative superiority inferred"
-  ]
+  ],
+  "sourceCommit": "4c768145dd977201312233d13cb5f477c69d36c1"
 }
