@@ -60,7 +60,7 @@ def options(rows):
                 or len({(type(v), v) for v in values}) != len(values)):
             fail('déclaration option mixed/malformed: ' + name)
         result[name] = {'type': 'string' if type(values[0]) is str else 'boolean', 'values': values}
-        if 'default' in row:
+        if row.get('default') is not None:
             if not any(type(row['default']) is type(v) and row['default'] == v for v in values):
                 fail('default incohérent: ' + name)
             result[name]['default'] = row['default']
@@ -128,7 +128,7 @@ def normalize(capabilities_raw, thread_raw):
             fail('constraints fournisseur requises')
         normalized['constraints'] = constraints
         if 'omittedModels' in provider:
-            if type(provider['omittedModels']) is not int or provider['omittedModels'] < 0:
+            if provider['omittedModels'] is not None and (type(provider['omittedModels']) is not int or provider['omittedModels'] < 0):
                 fail('omittedModels incohérent')
             normalized['omittedModels'] = provider['omittedModels']
         if 'runtimeModes' in provider:
@@ -137,10 +137,10 @@ def normalize(capabilities_raw, thread_raw):
             normalized['runtimeModes'] = provider['runtimeModes']
         providers[name] = normalized
     coordinator_provider = providers.get(scope['providerInstanceId'])
-    if not coordinator_provider or scope['model'] not in coordinator_provider['models']:
-        fail('coordinator absent du catalogue')
-    coordinator_model = coordinator_provider['models'][scope['model']]
-    if 'options' in coordinator_model:
+    if not coordinator_provider:
+        fail('fournisseur coordinator absent du catalogue')
+    coordinator_model = coordinator_provider['models'].get(scope['model'])
+    if coordinator_model is not None and 'options' in coordinator_model:
         for key, value in scope['options'].items():
             declaration = coordinator_model['options'].get(key)
             if declaration is None or not any(type(value) is type(v) and value == v for v in declaration['values']):

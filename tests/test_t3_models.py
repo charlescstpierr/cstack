@@ -113,10 +113,33 @@ class T3ModelsTests(unittest.TestCase):
             tampered['plan_sha256'] = project._sha(project._canonical({k: v for k, v in tampered.items() if k != 'plan_sha256'}))
             with self.assertRaisesRegex(project.ProjectError, 'recalculés'):
                 project.apply_plan(root, tampered, {'native_agents': False}, None)
+            for invalid_reason in ([], {}, None, False):
+                malformed = copy.deepcopy(plan)
+                malformed['preserved_agents']['.codex/agents/cstack-explorer.toml'] = invalid_reason
+                malformed['plan_sha256'] = project._sha(project._canonical({k: v for k, v in malformed.items() if k != 'plan_sha256'}))
+                with self.assertRaises(project.ProjectError):
+                    project.apply_plan(root, malformed, {'native_agents': False}, None)
             result = project.apply_plan(root, plan, {'native_agents': False}, None)
             self.assertIn(result['status'], ('applied', 'noop'))
             self.assertEqual(result['preserved_agents'], plan['preserved_agents'])
             self.assertEqual(agent.read_text(), '# cstack:managed\nmodel="old"\n')
+
+    def test_preview_reports_manual_agents_even_without_loading_saved_choices(self):
+        project = models.project_helper()
+        for mode, reason in [(None, 'manual-agent'), (False, 'manual-agent'), (True, 't3-role')]:
+            with self.subTest(mode=mode), tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                (root / '.cstack').mkdir()
+                (root / '.cstack/models.json').write_text(json.dumps({'how explorer': self.selected}))
+                agent = root / '.codex/agents/cstack-explorer.toml'
+                agent.parent.mkdir(parents=True)
+                content = '# manual agent\nmodel="old"\n'
+                agent.write_text(content)
+                plan = project.preview_plan(root, {'native_agents': mode} if mode is not None else {}, None)
+                self.assertEqual(plan['preserved_agents'], {'.codex/agents/cstack-explorer.toml': reason})
+                result = project.apply_plan(root, plan, {'native_agents': mode} if mode is not None else {}, None)
+                self.assertEqual(result['preserved_agents'], plan['preserved_agents'])
+                self.assertEqual(agent.read_text(), content)
 
     def test_disable_with_invalid_models_preserves_files_and_requires_repair(self):
         project = models.project_helper()
@@ -285,6 +308,24 @@ class T3NormalizerTests(unittest.TestCase):
                     expiresAt='2099-01-01T00:00:00Z',
                     **{name + 'Sha256': value['sha256'] for name, value in catalog['sources'].items()})
 
+    def test_filtered_grok_discovery_blocks_only_unknown_inheritance(self):
+        filtered = (self.base / 'capabilities-grok-filtered.json').read_bytes()
+        catalog = self.helper.normalize(filtered, self.thread)
+        context = self.context(catalog)
+        context['revalidatedAt'] = json.loads(filtered)['observedAt']
+        chosen = dict(runtime='t3', providerInstanceId='grok', model='grok-4.7',
+                      options={'reasoningEffort': 'high'})
+        report = models.preflight({'interrogate reviewers': ['inherit-parent', chosen]},
+            ['interrogate reviewers'], catalog, 't3', context)
+        rows = report['positions']['interrogate reviewers']
+        self.assertEqual([r['status'] for r in rows], ['blocked', 'ready'])
+        self.assertEqual(rows[1]['target'], {k: chosen[k] for k in ('providerInstanceId', 'model', 'options')})
+        self.assertEqual(catalog['providers']['codex']['models'], {})
+        self.assertFalse(catalog['providers']['codex']['modelsComplete'])
+        single = models.preflight({'interrogate reviewers': [chosen]}, ['interrogate reviewers'],
+            catalog, 't3', context)
+        self.assertEqual(single['status'], 'ready')
+
     def test_malformed_model_only_blocks_its_position(self):
         for values in (['high', True], [], [None], {'high': True}):
             cap = json.loads(self.cap)
@@ -295,6 +336,14 @@ class T3NormalizerTests(unittest.TestCase):
             report = models.preflight({'interrogate reviewers': [chosen, 'inherit-parent']},
                                      ['interrogate reviewers'], catalog, 't3', self.context(catalog))
             self.assertEqual([r['status'] for r in report['positions']['interrogate reviewers']], ['blocked', 'ready'])
+
+    def test_nullable_host_default_is_unknown_and_not_an_invalid_option_value(self):
+        cap = json.loads(self.cap)
+        cap['output']['providers'][0]['models'][0]['options'][0]['default'] = None
+        catalog = self.normalize(cap=cap)
+        declaration = catalog['providers']['codex']['models']['gpt-6.1-sol']['options']['reasoningEffort']
+        self.assertNotIn('default', declaration)
+        self.assertEqual(models.t3_position({}, catalog, self.context(catalog))['dispatch'], 'delegate_task')
 
     def test_malformed_option_container_blocks_only_affected_model(self):
         cap = json.loads(self.cap)
@@ -311,6 +360,11 @@ class T3NormalizerTests(unittest.TestCase):
             if omitted is not None:
                 provider['omittedModels'] = omitted
             self.assertEqual(self.normalize(cap=cap)['providers']['codex']['modelsComplete'], complete)
+        cap = json.loads(self.cap)
+        cap['output']['providers'][0]['omittedModels'] = None
+        partial = self.normalize(cap=cap)['providers']['codex']
+        self.assertIsNone(partial['omittedModels'])
+        self.assertFalse(partial['modelsComplete'])
         catalog = self.normalize()
         context = self.context(catalog)
         selected = dict(runtime='t3', providerInstanceId='claudeAgent', model='claude-opus-5-5', options={'effort': 'high'})

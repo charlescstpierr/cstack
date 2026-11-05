@@ -71,6 +71,6 @@ Sa sortie `show` fournit les choix exacts groupe-vers-rôle, les tailles de pane
 
 ## Désactivation des agents natifs et rôles T3
 
-`native_agents: false` retire les agents gérés pour les rôles Codex connus. Un agent correspondant à un rôle T3 sauvegardé reste intact ; `preserved_agents` dans le plan associe son chemin à `t3-role`. Ce signal ne le désactive pas dans Codex. Le préflight bloque le rôle T3 hors T3, même si cet agent périmé est encore visible. Les agents manuels ne sont jamais supprimés par ce réglage.
+`native_agents: false` retire les agents gérés pour les rôles Codex connus. Un agent correspondant à un rôle T3 sauvegardé reste intact ; `preserved_agents` dans le plan associe son chemin à `t3-role`. Ce signal ne le désactive pas dans Codex. Le préflight bloque le rôle T3 hors T3, même si cet agent périmé est encore visible. Les agents manuels ne sont jamais supprimés par ce réglage. Ils figurent dans `preserved_agents` avec `manual-agent` lorsque leur préservation vient de leur propriété manuelle plutôt que d’un choix T3 validé. Le signal reste présent même si aucun agent géré ne nécessite de charger les choix sauvegardés.
 
 Si des agents gérés existent et que `models.json` est invalide, la désactivation est bloquée avant toute écriture. Le helper ne peut pas déterminer quels rôles doivent être préservés. Réparer le fichier puis produire un nouveau plan. La configuration et les agents existants restent intacts pendant ce blocage.

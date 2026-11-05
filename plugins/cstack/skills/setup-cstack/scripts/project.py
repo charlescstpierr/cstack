@@ -462,9 +462,16 @@ def _payload(options: dict[str, Any], snapshots: dict[str, bytes | None], models
     for relative, new in _agent_changes(mode, snapshots, config, models).items():
         files.append(_entry(relative, snapshots[relative], new))
     payload = {"files": files, "observed": {path: _record(snapshots[path]) for path in OBSERVED_PATHS}}
-    preserved = {relative: "t3-role" for name, relative in AGENT_PATHS.items()
-                 if snapshots[relative] is not None and models.selection(
-                     models.role_value(config or {}, NATIVE_AGENTS[name]["role"])).get("runtime") == "t3"}
+    preserved = {}
+    for name, relative in AGENT_PATHS.items():
+        old = snapshots[relative]
+        if old is None:
+            continue
+        chosen = models.selection(models.role_value(config or {}, NATIVE_AGENTS[name]["role"]))
+        if chosen.get("runtime") == "t3":
+            preserved[relative] = "t3-role"
+        elif not _managed_agent(old):
+            preserved[relative] = "manual-agent"
     if preserved:
         payload["preserved_agents"] = preserved
     return payload
@@ -488,7 +495,7 @@ def _shape(plan: Any) -> dict[str, Any]:
         raise ProjectError("le plan contient des champs inconnus ou manquants")
     preserved = plan.get("preserved_agents", {})
     if (not isinstance(preserved, dict) or ("preserved_agents" in plan and not preserved)
-            or any(path not in AGENT_PATHS.values() or reason != "t3-role"
+            or any(path not in AGENT_PATHS.values() or not isinstance(reason, str) or reason not in {"t3-role", "manual-agent"}
                    for path, reason in preserved.items())):
         raise ProjectError("agents préservés du plan invalides")
     body = dict(plan)
