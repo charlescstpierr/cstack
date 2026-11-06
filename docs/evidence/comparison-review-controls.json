@@ -1,0 +1,900 @@
+{
+  "kind": "synthetic-stdlib-cli-controls",
+  "verdict": "INCONCLUSIVE",
+  "expected": 25,
+  "recorded": 25,
+  "comparable": 25,
+  "requested": {
+    "model": "gpt-6.1-sol",
+    "effort": "high"
+  },
+  "sourceRule": "same immutable snapshots as traced pilot, before workflow tuning; not the latest T3 runtime code",
+  "sources": {
+    "cstack": {
+      "inventorySha256": "63a932d93e8cfe4e831992f7e0bb6b985635855e88634eddba575c21156f1958",
+      "gitHeadRecorded": null,
+      "entry": "skills/cstack/SKILL.md",
+      "variant": "source"
+    },
+    "pstack": {
+      "inventorySha256": "12a0fde9a535dc970ed22ac19e854cb11ee81353952713ebc4a638e428e464f3",
+      "gitHeadRecorded": null,
+      "entry": "skills/poteto-mode/SKILL.md",
+      "variant": "source"
+    },
+    "superpowers": {
+      "inventorySha256": "fdc421d0e2fa98b69878f73786240995bdc7602b77a54fb5fa3957d0243e38d6",
+      "gitHeadRecorded": null,
+      "entry": "skills/using-superpowers/SKILL.md",
+      "variant": "source"
+    },
+    "tstack": {
+      "inventorySha256": "507b4d4bea81b4ef586b20b7982204c67112ca114ef97da3ebb761f95482f340",
+      "gitHeadRecorded": null,
+      "entry": "skills/sol-loop/SKILL.md",
+      "variant": "native-Sol fallback, not T3 native"
+    }
+  },
+  "cstack_vs": {
+    "vanilla": {
+      "wins": 0,
+      "ties": 5,
+      "losses": 0,
+      "excluded": 0
+    },
+    "pstack": {
+      "wins": 0,
+      "ties": 5,
+      "losses": 0,
+      "excluded": 0
+    },
+    "superpowers": {
+      "wins": 0,
+      "ties": 5,
+      "losses": 0,
+      "excluded": 0
+    },
+    "tstack": {
+      "wins": 0,
+      "ties": 5,
+      "losses": 0,
+      "excluded": 0
+    }
+  },
+  "audit": {
+    "reexecutedSameFrozenGrader": 25,
+    "mismatches": 0,
+    "durationAssertionReceiptsChecked": 5,
+    "independentGraderDesign": false
+  },
+  "limits": [
+    "One repetition per case; no performance inference",
+    "tstack uses native Codex fallback, not T3",
+    "No independent score >=9.5 or overall superiority established",
+    "Review evidence strings checked for presence only, not semantic quality",
+    "Same-UID hostile agents are outside local grading isolation",
+    "stream_max tokens do not establish aggregate workflow cost"
+  ],
+  "rows": [
+    {
+      "id": "case-58e00e8c64beb012331241a982f11ec0--vanilla--r1",
+      "task": "case-58e00e8c64beb012331241a982f11ec0",
+      "arm": "vanilla",
+      "repetition": 1,
+      "comparable": true,
+      "activation_observed": true,
+      "grader_sha256": "a9cab325c9cd384cb3c4348ba61a7ec7255ad48ac852d45c0c4d0f7da8ad6769",
+      "patch_sha256": "0fac60f72051ab79850696fe4f1bacbf29f3d79f639a88eba7e371dba563e2fc",
+      "kind": "duration",
+      "grade": {
+        "correct": true,
+        "scope_preserved": true,
+        "check_sha256": "40ba5e173094bc8e383d087bc2811db6daf881e11d97d6d93cca8792cdabe419",
+        "exit_code": 0,
+        "checks": "[true, true, true, true, true, true, true, true, true, true]\n",
+        "patch_applied": true
+      },
+      "observedSettings": [
+        {
+          "thread": "parent",
+          "model": "gpt-6.1-sol",
+          "reasoning_effort": "high"
+        }
+      ]
+    },
+    {
+      "id": "case-58e00e8c64beb012331241a982f11ec0--cstack--r1",
+      "task": "case-58e00e8c64beb012331241a982f11ec0",
+      "arm": "cstack",
+      "repetition": 1,
+      "comparable": true,
+      "activation_observed": true,
+      "grader_sha256": "a9cab325c9cd384cb3c4348ba61a7ec7255ad48ac852d45c0c4d0f7da8ad6769",
+      "patch_sha256": "624b641dc63fd187ad43d78e9a857018a044278df0303fed29645230de6b97cf",
+      "kind": "duration",
+      "grade": {
+        "correct": true,
+        "scope_preserved": true,
+        "check_sha256": "40ba5e173094bc8e383d087bc2811db6daf881e11d97d6d93cca8792cdabe419",
+        "exit_code": 0,
+        "checks": "[true, true, true, true, true, true, true, true, true, true]\n",
+        "patch_applied": true
+      },
+      "observedSettings": [
+        {
+          "thread": "parent",
+          "model": "gpt-6.1-sol",
+          "reasoning_effort": "high"
+        },
+        {
+          "thread": "child",
+          "model": "gpt-6.1-sol",
+          "reasoning_effort": "high"
+        }
+      ]
+    },
+    {
+      "id": "case-58e00e8c64beb012331241a982f11ec0--pstack--r1",
+      "task": "case-58e00e8c64beb012331241a982f11ec0",
+      "arm": "pstack",
+      "repetition": 1,
+      "comparable": true,
+      "activation_observed": true,
+      "grader_sha256": "a9cab325c9cd384cb3c4348ba61a7ec7255ad48ac852d45c0c4d0f7da8ad6769",
+      "patch_sha256": "ff9b3bc2e91803a00b66d230fbb9dd6a46de9133796343c6201b0957cca271e8",
+      "kind": "duration",
+      "grade": {
+        "correct": true,
+        "scope_preserved": true,
+        "check_sha256": "40ba5e173094bc8e383d087bc2811db6daf881e11d97d6d93cca8792cdabe419",
+        "exit_code": 0,
+        "checks": "[true, true, true, true, true, true, true, true, true, true]\n",
+        "patch_applied": true
+      },
+      "observedSettings": [
+        {
+          "thread": "parent",
+          "model": "gpt-6.1-sol",
+          "reasoning_effort": "high"
+        },
+        {
+          "thread": "child",
+          "model": "gpt-6.1-sol",
+          "reasoning_effort": "high"
+        }
+      ]
+    },
+    {
+      "id": "case-58e00e8c64beb012331241a982f11ec0--superpowers--r1",
+      "task": "case-58e00e8c64beb012331241a982f11ec0",
+      "arm": "superpowers",
+      "repetition": 1,
+      "comparable": true,
+      "activation_observed": true,
+      "grader_sha256": "a9cab325c9cd384cb3c4348ba61a7ec7255ad48ac852d45c0c4d0f7da8ad6769",
+      "patch_sha256": "273aa07d1f8c7bcbcb3a2600086025f12dff7be8ada92ab41af61487a6df8bc6",
+      "kind": "duration",
+      "grade": {
+        "correct": true,
+        "scope_preserved": true,
+        "check_sha256": "40ba5e173094bc8e383d087bc2811db6daf881e11d97d6d93cca8792cdabe419",
+        "exit_code": 0,
+        "checks": "[true, true, true, true, true, true, true, true, true, true]\n",
+        "patch_applied": true
+      },
+      "observedSettings": [
+        {
+          "thread": "parent",
+          "model": "gpt-6.1-sol",
+          "reasoning_effort": "high"
+        }
+      ]
+    },
+    {
+      "id": "case-58e00e8c64beb012331241a982f11ec0--tstack--r1",
+      "task": "case-58e00e8c64beb012331241a982f11ec0",
+      "arm": "tstack",
+      "repetition": 1,
+      "comparable": true,
+      "activation_observed": true,
+      "grader_sha256": "a9cab325c9cd384cb3c4348ba61a7ec7255ad48ac852d45c0c4d0f7da8ad6769",
+      "patch_sha256": "78df6f32b15db4e60485c58557cf2d286a30be02bce3a04df6d37ab4457d0e24",
+      "kind": "duration",
+      "grade": {
+        "correct": true,
+        "scope_preserved": true,
+        "check_sha256": "40ba5e173094bc8e383d087bc2811db6daf881e11d97d6d93cca8792cdabe419",
+        "exit_code": 0,
+        "checks": "[true, true, true, true, true, true, true, true, true, true]\n",
+        "patch_applied": true
+      },
+      "observedSettings": [
+        {
+          "thread": "parent",
+          "model": "gpt-6.1-sol",
+          "reasoning_effort": "high"
+        },
+        {
+          "thread": "child",
+          "model": "gpt-6.1-sol",
+          "reasoning_effort": "high"
+        }
+      ]
+    },
+    {
+      "id": "case-95af4c654a13d22e877994afff2f6504--vanilla--r1",
+      "task": "case-95af4c654a13d22e877994afff2f6504",
+      "arm": "vanilla",
+      "repetition": 1,
+      "comparable": true,
+      "activation_observed": true,
+      "grader_sha256": "a9cab325c9cd384cb3c4348ba61a7ec7255ad48ac852d45c0c4d0f7da8ad6769",
+      "patch_sha256": "c61886829ffd39076fc73812c9f402b6869ae628d66a6349f1e9b9e17ff47c8c",
+      "kind": "review",
+      "grade": {
+        "correct": true,
+        "precision": 1.0,
+        "recall": 1.0,
+        "hits": [
+          "field_order"
+        ],
+        "duplicates": 0,
+        "false_positives": 0,
+        "report_valid": true,
+        "scope_preserved": true,
+        "patch_applied": true
+      },
+      "observedSettings": [
+        {
+          "thread": "parent",
+          "model": "gpt-6.1-sol",
+          "reasoning_effort": "high"
+        }
+      ]
+    },
+    {
+      "id": "case-95af4c654a13d22e877994afff2f6504--tstack--r1",
+      "task": "case-95af4c654a13d22e877994afff2f6504",
+      "arm": "tstack",
+      "repetition": 1,
+      "comparable": true,
+      "activation_observed": true,
+      "grader_sha256": "a9cab325c9cd384cb3c4348ba61a7ec7255ad48ac852d45c0c4d0f7da8ad6769",
+      "patch_sha256": "5c346e0cb5246c379c370901672ff99ce2916c99724d9c2a8ee9b861cad320cc",
+      "kind": "review",
+      "grade": {
+        "correct": true,
+        "precision": 1.0,
+        "recall": 1.0,
+        "hits": [
+          "field_order"
+        ],
+        "duplicates": 0,
+        "false_positives": 0,
+        "report_valid": true,
+        "scope_preserved": true,
+        "patch_applied": true
+      },
+      "observedSettings": [
+        {
+          "thread": "parent",
+          "model": "gpt-6.1-sol",
+          "reasoning_effort": "high"
+        },
+        {
+          "thread": "child",
+          "model": "gpt-6.1-sol",
+          "reasoning_effort": "high"
+        }
+      ]
+    },
+    {
+      "id": "case-95af4c654a13d22e877994afff2f6504--superpowers--r1",
+      "task": "case-95af4c654a13d22e877994afff2f6504",
+      "arm": "superpowers",
+      "repetition": 1,
+      "comparable": true,
+      "activation_observed": true,
+      "grader_sha256": "a9cab325c9cd384cb3c4348ba61a7ec7255ad48ac852d45c0c4d0f7da8ad6769",
+      "patch_sha256": "8bf987695c646121db691d5618c65421789537d1eec553563d86d3e1ecd1f2ab",
+      "kind": "review",
+      "grade": {
+        "correct": true,
+        "precision": 1.0,
+        "recall": 1.0,
+        "hits": [
+          "field_order"
+        ],
+        "duplicates": 0,
+        "false_positives": 0,
+        "report_valid": true,
+        "scope_preserved": true,
+        "patch_applied": true
+      },
+      "observedSettings": [
+        {
+          "thread": "parent",
+          "model": "gpt-6.1-sol",
+          "reasoning_effort": "high"
+        },
+        {
+          "thread": "child",
+          "model": "gpt-6.1-sol",
+          "reasoning_effort": "high"
+        }
+      ]
+    },
+    {
+      "id": "case-95af4c654a13d22e877994afff2f6504--pstack--r1",
+      "task": "case-95af4c654a13d22e877994afff2f6504",
+      "arm": "pstack",
+      "repetition": 1,
+      "comparable": true,
+      "activation_observed": true,
+      "grader_sha256": "a9cab325c9cd384cb3c4348ba61a7ec7255ad48ac852d45c0c4d0f7da8ad6769",
+      "patch_sha256": "eb96e33f2572289093b47ae376d57ba121a232d455dc35eb89950be4cfd7fe11",
+      "kind": "review",
+      "grade": {
+        "correct": true,
+        "precision": 1.0,
+        "recall": 1.0,
+        "hits": [
+          "field_order"
+        ],
+        "duplicates": 0,
+        "false_positives": 0,
+        "report_valid": true,
+        "scope_preserved": true,
+        "patch_applied": true
+      },
+      "observedSettings": [
+        {
+          "thread": "parent",
+          "model": "gpt-6.1-sol",
+          "reasoning_effort": "high"
+        },
+        {
+          "thread": "child",
+          "model": "gpt-6.1-sol",
+          "reasoning_effort": "high"
+        }
+      ]
+    },
+    {
+      "id": "case-95af4c654a13d22e877994afff2f6504--cstack--r1",
+      "task": "case-95af4c654a13d22e877994afff2f6504",
+      "arm": "cstack",
+      "repetition": 1,
+      "comparable": true,
+      "activation_observed": true,
+      "grader_sha256": "a9cab325c9cd384cb3c4348ba61a7ec7255ad48ac852d45c0c4d0f7da8ad6769",
+      "patch_sha256": "6a96cd92551f542e9f8e6772870b8999129be55110c50b681b039c9f6418cace",
+      "kind": "review",
+      "grade": {
+        "correct": true,
+        "precision": 1.0,
+        "recall": 1.0,
+        "hits": [
+          "field_order"
+        ],
+        "duplicates": 0,
+        "false_positives": 0,
+        "report_valid": true,
+        "scope_preserved": true,
+        "patch_applied": true
+      },
+      "observedSettings": [
+        {
+          "thread": "parent",
+          "model": "gpt-6.1-sol",
+          "reasoning_effort": "high"
+        }
+      ]
+    },
+    {
+      "id": "case-1b901e7842d60baa9851e4d525f45a82--pstack--r1",
+      "task": "case-1b901e7842d60baa9851e4d525f45a82",
+      "arm": "pstack",
+      "repetition": 1,
+      "comparable": true,
+      "activation_observed": true,
+      "grader_sha256": "a9cab325c9cd384cb3c4348ba61a7ec7255ad48ac852d45c0c4d0f7da8ad6769",
+      "patch_sha256": "b76268434f3ab16496df4f90ed0538dc0a33f6629b1205c895b794d3de82d58f",
+      "kind": "review",
+      "grade": {
+        "correct": true,
+        "precision": 1.0,
+        "recall": 1.0,
+        "hits": [],
+        "duplicates": 0,
+        "false_positives": 0,
+        "report_valid": true,
+        "scope_preserved": true,
+        "patch_applied": true
+      },
+      "observedSettings": [
+        {
+          "thread": "parent",
+          "model": "gpt-6.1-sol",
+          "reasoning_effort": "high"
+        },
+        {
+          "thread": "child",
+          "model": "gpt-6.1-sol",
+          "reasoning_effort": "high"
+        }
+      ]
+    },
+    {
+      "id": "case-1b901e7842d60baa9851e4d525f45a82--superpowers--r1",
+      "task": "case-1b901e7842d60baa9851e4d525f45a82",
+      "arm": "superpowers",
+      "repetition": 1,
+      "comparable": true,
+      "activation_observed": true,
+      "grader_sha256": "a9cab325c9cd384cb3c4348ba61a7ec7255ad48ac852d45c0c4d0f7da8ad6769",
+      "patch_sha256": "b76268434f3ab16496df4f90ed0538dc0a33f6629b1205c895b794d3de82d58f",
+      "kind": "review",
+      "grade": {
+        "correct": true,
+        "precision": 1.0,
+        "recall": 1.0,
+        "hits": [],
+        "duplicates": 0,
+        "false_positives": 0,
+        "report_valid": true,
+        "scope_preserved": true,
+        "patch_applied": true
+      },
+      "observedSettings": [
+        {
+          "thread": "parent",
+          "model": "gpt-6.1-sol",
+          "reasoning_effort": "high"
+        },
+        {
+          "thread": "child",
+          "model": "gpt-6.1-sol",
+          "reasoning_effort": "high"
+        }
+      ]
+    },
+    {
+      "id": "case-1b901e7842d60baa9851e4d525f45a82--tstack--r1",
+      "task": "case-1b901e7842d60baa9851e4d525f45a82",
+      "arm": "tstack",
+      "repetition": 1,
+      "comparable": true,
+      "activation_observed": true,
+      "grader_sha256": "a9cab325c9cd384cb3c4348ba61a7ec7255ad48ac852d45c0c4d0f7da8ad6769",
+      "patch_sha256": "b76268434f3ab16496df4f90ed0538dc0a33f6629b1205c895b794d3de82d58f",
+      "kind": "review",
+      "grade": {
+        "correct": true,
+        "precision": 1.0,
+        "recall": 1.0,
+        "hits": [],
+        "duplicates": 0,
+        "false_positives": 0,
+        "report_valid": true,
+        "scope_preserved": true,
+        "patch_applied": true
+      },
+      "observedSettings": [
+        {
+          "thread": "parent",
+          "model": "gpt-6.1-sol",
+          "reasoning_effort": "high"
+        },
+        {
+          "thread": "child",
+          "model": "gpt-6.1-sol",
+          "reasoning_effort": "high"
+        }
+      ]
+    },
+    {
+      "id": "case-1b901e7842d60baa9851e4d525f45a82--vanilla--r1",
+      "task": "case-1b901e7842d60baa9851e4d525f45a82",
+      "arm": "vanilla",
+      "repetition": 1,
+      "comparable": true,
+      "activation_observed": true,
+      "grader_sha256": "a9cab325c9cd384cb3c4348ba61a7ec7255ad48ac852d45c0c4d0f7da8ad6769",
+      "patch_sha256": "b76268434f3ab16496df4f90ed0538dc0a33f6629b1205c895b794d3de82d58f",
+      "kind": "review",
+      "grade": {
+        "correct": true,
+        "precision": 1.0,
+        "recall": 1.0,
+        "hits": [],
+        "duplicates": 0,
+        "false_positives": 0,
+        "report_valid": true,
+        "scope_preserved": true,
+        "patch_applied": true
+      },
+      "observedSettings": [
+        {
+          "thread": "parent",
+          "model": "gpt-6.1-sol",
+          "reasoning_effort": "high"
+        }
+      ]
+    },
+    {
+      "id": "case-1b901e7842d60baa9851e4d525f45a82--cstack--r1",
+      "task": "case-1b901e7842d60baa9851e4d525f45a82",
+      "arm": "cstack",
+      "repetition": 1,
+      "comparable": true,
+      "activation_observed": true,
+      "grader_sha256": "a9cab325c9cd384cb3c4348ba61a7ec7255ad48ac852d45c0c4d0f7da8ad6769",
+      "patch_sha256": "b76268434f3ab16496df4f90ed0538dc0a33f6629b1205c895b794d3de82d58f",
+      "kind": "review",
+      "grade": {
+        "correct": true,
+        "precision": 1.0,
+        "recall": 1.0,
+        "hits": [],
+        "duplicates": 0,
+        "false_positives": 0,
+        "report_valid": true,
+        "scope_preserved": true,
+        "patch_applied": true
+      },
+      "observedSettings": [
+        {
+          "thread": "parent",
+          "model": "gpt-6.1-sol",
+          "reasoning_effort": "high"
+        }
+      ]
+    },
+    {
+      "id": "case-f7cf5a6c53ce530e6970159142ac030c--pstack--r1",
+      "task": "case-f7cf5a6c53ce530e6970159142ac030c",
+      "arm": "pstack",
+      "repetition": 1,
+      "comparable": true,
+      "activation_observed": true,
+      "grader_sha256": "a9cab325c9cd384cb3c4348ba61a7ec7255ad48ac852d45c0c4d0f7da8ad6769",
+      "patch_sha256": "8ee83226b5caff77d4aad4d68eeb56818bf7086a119f75e417303c238d5364d1",
+      "kind": "review",
+      "grade": {
+        "correct": true,
+        "precision": 1.0,
+        "recall": 1.0,
+        "hits": [
+          "malformed_exit"
+        ],
+        "duplicates": 0,
+        "false_positives": 0,
+        "report_valid": true,
+        "scope_preserved": true,
+        "patch_applied": true
+      },
+      "observedSettings": [
+        {
+          "thread": "parent",
+          "model": "gpt-6.1-sol",
+          "reasoning_effort": "high"
+        },
+        {
+          "thread": "child",
+          "model": "gpt-6.1-sol",
+          "reasoning_effort": "high"
+        }
+      ]
+    },
+    {
+      "id": "case-f7cf5a6c53ce530e6970159142ac030c--cstack--r1",
+      "task": "case-f7cf5a6c53ce530e6970159142ac030c",
+      "arm": "cstack",
+      "repetition": 1,
+      "comparable": true,
+      "activation_observed": true,
+      "grader_sha256": "a9cab325c9cd384cb3c4348ba61a7ec7255ad48ac852d45c0c4d0f7da8ad6769",
+      "patch_sha256": "58d6c624ac97e7bb8933e7b4eb85306e9326bde81516e88d5d79a71ef6040d10",
+      "kind": "review",
+      "grade": {
+        "correct": true,
+        "precision": 1.0,
+        "recall": 1.0,
+        "hits": [
+          "malformed_exit"
+        ],
+        "duplicates": 0,
+        "false_positives": 0,
+        "report_valid": true,
+        "scope_preserved": true,
+        "patch_applied": true
+      },
+      "observedSettings": [
+        {
+          "thread": "parent",
+          "model": "gpt-6.1-sol",
+          "reasoning_effort": "high"
+        }
+      ]
+    },
+    {
+      "id": "case-f7cf5a6c53ce530e6970159142ac030c--vanilla--r1",
+      "task": "case-f7cf5a6c53ce530e6970159142ac030c",
+      "arm": "vanilla",
+      "repetition": 1,
+      "comparable": true,
+      "activation_observed": true,
+      "grader_sha256": "a9cab325c9cd384cb3c4348ba61a7ec7255ad48ac852d45c0c4d0f7da8ad6769",
+      "patch_sha256": "62db1fbff7efa600862d2cd86f7e185fcc6bf2b3ed601b6869378f53dc1f3476",
+      "kind": "review",
+      "grade": {
+        "correct": true,
+        "precision": 1.0,
+        "recall": 1.0,
+        "hits": [
+          "malformed_exit"
+        ],
+        "duplicates": 0,
+        "false_positives": 0,
+        "report_valid": true,
+        "scope_preserved": true,
+        "patch_applied": true
+      },
+      "observedSettings": [
+        {
+          "thread": "parent",
+          "model": "gpt-6.1-sol",
+          "reasoning_effort": "high"
+        }
+      ]
+    },
+    {
+      "id": "case-f7cf5a6c53ce530e6970159142ac030c--tstack--r1",
+      "task": "case-f7cf5a6c53ce530e6970159142ac030c",
+      "arm": "tstack",
+      "repetition": 1,
+      "comparable": true,
+      "activation_observed": true,
+      "grader_sha256": "a9cab325c9cd384cb3c4348ba61a7ec7255ad48ac852d45c0c4d0f7da8ad6769",
+      "patch_sha256": "fa322081e637ab0cab70905120db8b24891bde29299017019fd0538452405cbc",
+      "kind": "review",
+      "grade": {
+        "correct": true,
+        "precision": 1.0,
+        "recall": 1.0,
+        "hits": [
+          "malformed_exit"
+        ],
+        "duplicates": 0,
+        "false_positives": 0,
+        "report_valid": true,
+        "scope_preserved": true,
+        "patch_applied": true
+      },
+      "observedSettings": [
+        {
+          "thread": "parent",
+          "model": "gpt-6.1-sol",
+          "reasoning_effort": "high"
+        },
+        {
+          "thread": "child",
+          "model": "gpt-6.1-sol",
+          "reasoning_effort": "high"
+        }
+      ]
+    },
+    {
+      "id": "case-f7cf5a6c53ce530e6970159142ac030c--superpowers--r1",
+      "task": "case-f7cf5a6c53ce530e6970159142ac030c",
+      "arm": "superpowers",
+      "repetition": 1,
+      "comparable": true,
+      "activation_observed": true,
+      "grader_sha256": "a9cab325c9cd384cb3c4348ba61a7ec7255ad48ac852d45c0c4d0f7da8ad6769",
+      "patch_sha256": "ccaa6fc0c5c1bda155013f57c800d764328412235815702711e716caa7ca6efe",
+      "kind": "review",
+      "grade": {
+        "correct": true,
+        "precision": 1.0,
+        "recall": 1.0,
+        "hits": [
+          "malformed_exit"
+        ],
+        "duplicates": 0,
+        "false_positives": 0,
+        "report_valid": true,
+        "scope_preserved": true,
+        "patch_applied": true
+      },
+      "observedSettings": [
+        {
+          "thread": "parent",
+          "model": "gpt-6.1-sol",
+          "reasoning_effort": "high"
+        },
+        {
+          "thread": "child",
+          "model": "gpt-6.1-sol",
+          "reasoning_effort": "high"
+        }
+      ]
+    },
+    {
+      "id": "case-c5f6ffa81b8e8d8dd5a262c84495ce11--tstack--r1",
+      "task": "case-c5f6ffa81b8e8d8dd5a262c84495ce11",
+      "arm": "tstack",
+      "repetition": 1,
+      "comparable": true,
+      "activation_observed": true,
+      "grader_sha256": "a9cab325c9cd384cb3c4348ba61a7ec7255ad48ac852d45c0c4d0f7da8ad6769",
+      "patch_sha256": "7ce2455a3727fbae67dce266d50dee92aed1700828c0113f6944d5767a83bfbe",
+      "kind": "review",
+      "grade": {
+        "correct": true,
+        "precision": 1.0,
+        "recall": 1.0,
+        "hits": [
+          "field_order",
+          "malformed_exit"
+        ],
+        "duplicates": 0,
+        "false_positives": 0,
+        "report_valid": true,
+        "scope_preserved": true,
+        "patch_applied": true
+      },
+      "observedSettings": [
+        {
+          "thread": "parent",
+          "model": "gpt-6.1-sol",
+          "reasoning_effort": "high"
+        },
+        {
+          "thread": "child",
+          "model": "gpt-6.1-sol",
+          "reasoning_effort": "high"
+        }
+      ]
+    },
+    {
+      "id": "case-c5f6ffa81b8e8d8dd5a262c84495ce11--vanilla--r1",
+      "task": "case-c5f6ffa81b8e8d8dd5a262c84495ce11",
+      "arm": "vanilla",
+      "repetition": 1,
+      "comparable": true,
+      "activation_observed": true,
+      "grader_sha256": "a9cab325c9cd384cb3c4348ba61a7ec7255ad48ac852d45c0c4d0f7da8ad6769",
+      "patch_sha256": "2948a4f9571f53aa79896c9615e2fd916488fa513389e189cfd07bb84f8ec1a4",
+      "kind": "review",
+      "grade": {
+        "correct": true,
+        "precision": 1.0,
+        "recall": 1.0,
+        "hits": [
+          "field_order",
+          "malformed_exit"
+        ],
+        "duplicates": 0,
+        "false_positives": 0,
+        "report_valid": true,
+        "scope_preserved": true,
+        "patch_applied": true
+      },
+      "observedSettings": [
+        {
+          "thread": "parent",
+          "model": "gpt-6.1-sol",
+          "reasoning_effort": "high"
+        }
+      ]
+    },
+    {
+      "id": "case-c5f6ffa81b8e8d8dd5a262c84495ce11--cstack--r1",
+      "task": "case-c5f6ffa81b8e8d8dd5a262c84495ce11",
+      "arm": "cstack",
+      "repetition": 1,
+      "comparable": true,
+      "activation_observed": true,
+      "grader_sha256": "a9cab325c9cd384cb3c4348ba61a7ec7255ad48ac852d45c0c4d0f7da8ad6769",
+      "patch_sha256": "e27c63682471d572fd3d0fdb9ccaac89b2b0c142e7c094db659d6339520011b5",
+      "kind": "review",
+      "grade": {
+        "correct": true,
+        "precision": 1.0,
+        "recall": 1.0,
+        "hits": [
+          "field_order",
+          "malformed_exit"
+        ],
+        "duplicates": 0,
+        "false_positives": 0,
+        "report_valid": true,
+        "scope_preserved": true,
+        "patch_applied": true
+      },
+      "observedSettings": [
+        {
+          "thread": "parent",
+          "model": "gpt-6.1-sol",
+          "reasoning_effort": "high"
+        }
+      ]
+    },
+    {
+      "id": "case-c5f6ffa81b8e8d8dd5a262c84495ce11--pstack--r1",
+      "task": "case-c5f6ffa81b8e8d8dd5a262c84495ce11",
+      "arm": "pstack",
+      "repetition": 1,
+      "comparable": true,
+      "activation_observed": true,
+      "grader_sha256": "a9cab325c9cd384cb3c4348ba61a7ec7255ad48ac852d45c0c4d0f7da8ad6769",
+      "patch_sha256": "3a8b6a43119b877b1557e93e2ae88bbd3ca4d262d468f2da45cc3f2557538609",
+      "kind": "review",
+      "grade": {
+        "correct": true,
+        "precision": 1.0,
+        "recall": 1.0,
+        "hits": [
+          "field_order",
+          "malformed_exit"
+        ],
+        "duplicates": 0,
+        "false_positives": 0,
+        "report_valid": true,
+        "scope_preserved": true,
+        "patch_applied": true
+      },
+      "observedSettings": [
+        {
+          "thread": "parent",
+          "model": "gpt-6.1-sol",
+          "reasoning_effort": "high"
+        },
+        {
+          "thread": "child",
+          "model": "gpt-6.1-sol",
+          "reasoning_effort": "high"
+        }
+      ]
+    },
+    {
+      "id": "case-c5f6ffa81b8e8d8dd5a262c84495ce11--superpowers--r1",
+      "task": "case-c5f6ffa81b8e8d8dd5a262c84495ce11",
+      "arm": "superpowers",
+      "repetition": 1,
+      "comparable": true,
+      "activation_observed": true,
+      "grader_sha256": "a9cab325c9cd384cb3c4348ba61a7ec7255ad48ac852d45c0c4d0f7da8ad6769",
+      "patch_sha256": "a3227c125d1e3666a6e3db603c4ffa5762b734ba77cbf1782da9c26296321e4d",
+      "kind": "review",
+      "grade": {
+        "correct": true,
+        "precision": 1.0,
+        "recall": 1.0,
+        "hits": [
+          "field_order",
+          "malformed_exit"
+        ],
+        "duplicates": 0,
+        "false_positives": 0,
+        "report_valid": true,
+        "scope_preserved": true,
+        "patch_applied": true
+      },
+      "observedSettings": [
+        {
+          "thread": "parent",
+          "model": "gpt-6.1-sol",
+          "reasoning_effort": "high"
+        },
+        {
+          "thread": "child",
+          "model": "gpt-6.1-sol",
+          "reasoning_effort": "high"
+        }
+      ]
+    }
+  ]
+}

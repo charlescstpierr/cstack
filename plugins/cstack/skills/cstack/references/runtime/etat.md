@@ -1,5 +1,8 @@
 # Etat, scripts helper et reprise
 
+Dans une tâche cstack explicitement invoquée dans T3, le [contrat T3](t3.md) prime sur les règles autonomes de ce document.
+
+
 Utilise le `.cstack/` du workspace cible pour l’état généré. Garde le point de reprise, les décisions et le store d’orchestration de chaque tâche dans un sous-répertoire séparé propre à la tâche. Utilise un ID de tâche connu ou crée un répertoire unique. Le point de reprise nomme l’objectif, les actions autorisées par la conversation, branche/worktree, commit courant, contrôles terminés, travail restant et chemins d’artéfact. N’inclus pas de credentials ni de contenu de conversation non lié.
 
 Mets le point de reprise à jour après chaque étape vérifiée : un résumé de conversation arrive sans prévenir, et seul ce qui est sur disque lui survit. Nomme son chemin dans la conversation à sa création et à chaque changement de tâche, pour que le résumé le porte. Après un résumé qui ne le nomme pas, ne prends pas un répertoire de `.cstack/` au hasard : retiens celui dont l’objectif et la branche correspondent au résumé ; si aucun ou plusieurs correspondent, dis-le et reconstruis l’état depuis git.

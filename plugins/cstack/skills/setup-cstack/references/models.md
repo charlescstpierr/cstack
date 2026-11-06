@@ -1,5 +1,8 @@
 # Modèles, rôles et recommandations
 
+Après invocation dans T3, le [contrat T3](../../cstack/references/runtime/t3.md) prime pour catalogue, choix explicites et synchronisation. Le chemin T3 modèle seul utilise `models.py --host t3 --catalog ... --host-context ...`, sans conversion automatique ni CLI de repli.
+
+
 Référence de [setup-cstack](../SKILL.md). L'ordre de présentation (propositions avant configuration actuelle) est fixé dans le SKILL.
 
 ## Proposition `show`

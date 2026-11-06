@@ -1,5 +1,8 @@
 ### Expédition
 
+Dans une tâche cstack explicitement invoquée dans T3, le [contrat T3](../references/runtime/t3.md) prime sur les règles autonomes de ce document.
+
+
 Suivez [le contrat d’exécution Codex](../references/codex-runtime.md) et
 [Sécurité de fusion et de restack](../references/merge-safety.md).
 

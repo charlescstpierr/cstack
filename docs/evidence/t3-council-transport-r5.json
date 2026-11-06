@@ -1,0 +1,144 @@
+{
+  "kind": "observed-t3-council-prepared-transport",
+  "sourceCommit": "4dd58cffeb24ce2538c1bf1e6057ca12213ec493",
+  "sourceTree": "3d39fa1705308aaa8cc72b3ff8be6e627bbaa602",
+  "transportLimitBytes": 120000,
+  "members": {
+    "gpt": {
+      "target": {
+        "providerInstanceId": "codex",
+        "model": "gpt-6.1-sol",
+        "options": {
+          "reasoningEffort": "high",
+          "serviceTier": "priority"
+        }
+      },
+      "catalogSha256": "c7725f66d4dbe99b2dc867b1da42a4df2e17933ed8491247064c9887efce3c8e",
+      "catalogSources": {
+        "capabilities": {
+          "sha256": "7cfccf73c618f127ecad4d82356a96d4f7d6ac8b498a40f176f0452cd4083f22",
+          "itemId": "turn-item:provider:codex:native-item:exec-0883ab67-eb06-4821-aa9b-241600520ff7",
+          "observedAt": "2026-11-04T23:02:50.878Z",
+          "toolName": "t3-code.orchestrator_capabilities"
+        },
+        "thread": {
+          "sha256": "ae13174b0318ebc939df4ece5e8f2372ef48bbadc4c2d2fd795191459042502d",
+          "itemId": "turn-item:provider:codex:native-item:exec-f4395f43-6e10-4df4-94d4-09c948962d7f",
+          "observedAt": "2026-11-05T00:36:23.734Z",
+          "toolName": "t3-code.t3_thread_read"
+        }
+      },
+      "preparedBytes": 25753,
+      "preparedCharacters": 25088,
+      "preparedSha256": "3280a2420a78f54cddfc3afe8303c760da1284753173f38a6c51e5fb230954f0",
+      "storedMessageMatchesWithDocumentedDisplayTransform": true,
+      "storedMessageExactBackendBytes": false,
+      "challengeMatched": true,
+      "challengeSha256": "23064f351a680a112320a7cb58326e4b177cfcf163f747bda1f47b4a961787b1",
+      "threadId": "thread:delegated-task:command%3Amcp%3Ad94abbab-0409-4fa3-8f15-9db2f1951e34%3Adelegate-task%3A59c1f814-4270-46ee-a195-b7a6b4468cfb",
+      "threadLink": "<t3-thread://v2/4bd98d01-5ea5-4d57-b993-162051324aa8/thread:delegated-task:command%3Amcp%3Ad94abbab-0409-4fa3-8f15-9db2f1951e34%3Adelegate-task%3A59c1f814-4270-46ee-a195-b7a6b4468cfb>",
+      "terminalRunId": "run:thread:thread%3Adelegated-task%3Acommand%253Amcp%253Ad94abbab-0409-4fa3-8f15-9db2f1951e34%253Adelegate-task%253A59c1f814-4270-46ee-a195-b7a6b4468cfb:ordinal:1",
+      "terminalStatus": "completed",
+      "completedAt": "2026-11-05T02:46:51.209Z",
+      "skillSourcesSha256": {
+        "skills/cstack/references/agents/cstack-agent.md": "243a660902c698f7ff9472d96d275cac664dc9e20a980e072675d42ee2a8cfa0",
+        "skills/cstack/references/runtime/t3.md": "dd4b4b7a252da36eb9a053116413f598dfa287423df0f56598886712d68de9da"
+      }
+    },
+    "claude": {
+      "target": {
+        "providerInstanceId": "claudeAgent",
+        "model": "claude-opus-5-5",
+        "options": {
+          "effort": "high"
+        }
+      },
+      "catalogSha256": "c7725f66d4dbe99b2dc867b1da42a4df2e17933ed8491247064c9887efce3c8e",
+      "catalogSources": {
+        "capabilities": {
+          "sha256": "7cfccf73c618f127ecad4d82356a96d4f7d6ac8b498a40f176f0452cd4083f22",
+          "itemId": "turn-item:provider:codex:native-item:exec-0883ab67-eb06-4821-aa9b-241600520ff7",
+          "observedAt": "2026-11-04T23:02:50.878Z",
+          "toolName": "t3-code.orchestrator_capabilities"
+        },
+        "thread": {
+          "sha256": "ae13174b0318ebc939df4ece5e8f2372ef48bbadc4c2d2fd795191459042502d",
+          "itemId": "turn-item:provider:codex:native-item:exec-f4395f43-6e10-4df4-94d4-09c948962d7f",
+          "observedAt": "2026-11-05T00:36:23.734Z",
+          "toolName": "t3-code.t3_thread_read"
+        }
+      },
+      "preparedBytes": 25755,
+      "preparedCharacters": 25089,
+      "preparedSha256": "e471b60ce12f7ecee0af2f24298394e4887de2985abbeda5d08d6d6ff8322347",
+      "storedMessageMatchesWithDocumentedDisplayTransform": true,
+      "storedMessageExactBackendBytes": false,
+      "challengeMatched": true,
+      "challengeSha256": "ffd099c936bdc07853aaa0f699dc7ed538a74c3b7df478edfcd86a67ef953b3d",
+      "threadId": "thread:delegated-task:command%3Amcp%3Ad94abbab-0409-4fa3-8f15-9db2f1951e34%3Adelegate-task%3A3889cc4f-7edc-4dec-9c36-8c1c7b59bc5f",
+      "threadLink": "<t3-thread://v2/4bd98d01-5ea5-4d57-b993-162051324aa8/thread:delegated-task:command%3Amcp%3Ad94abbab-0409-4fa3-8f15-9db2f1951e34%3Adelegate-task%3A3889cc4f-7edc-4dec-9c36-8c1c7b59bc5f>",
+      "terminalRunId": "run:thread:thread%3Adelegated-task%3Acommand%253Amcp%253Ad94abbab-0409-4fa3-8f15-9db2f1951e34%253Adelegate-task%253A3889cc4f-7edc-4dec-9c36-8c1c7b59bc5f:ordinal:1",
+      "terminalStatus": "completed",
+      "completedAt": "2026-11-05T02:53:10.817Z",
+      "skillSourcesSha256": {
+        "skills/cstack/references/agents/cstack-agent.md": "243a660902c698f7ff9472d96d275cac664dc9e20a980e072675d42ee2a8cfa0",
+        "skills/cstack/references/runtime/t3.md": "dd4b4b7a252da36eb9a053116413f598dfa287423df0f56598886712d68de9da"
+      }
+    },
+    "grok": {
+      "target": {
+        "providerInstanceId": "grok",
+        "model": "grok-4.7",
+        "options": {
+          "reasoningEffort": "high"
+        }
+      },
+      "catalogSha256": "e7f340865cfefdae897ad6586b52b637c2194766883ae2078a7723276b01bd32",
+      "catalogSources": {
+        "capabilities": {
+          "sha256": "2455c64fd2a051838a179e20ce599d57c2bc7c4168f409d3e6e161114c3c01e4",
+          "itemId": "turn-item:provider:codex:native-item:exec-e2b8c005-bcf1-471f-bc22-ffd4b1e087d4",
+          "observedAt": "2026-11-05T01:44:36.883Z",
+          "toolName": "t3-code.orchestrator_capabilities"
+        },
+        "thread": {
+          "sha256": "ae13174b0318ebc939df4ece5e8f2372ef48bbadc4c2d2fd795191459042502d",
+          "itemId": "turn-item:provider:codex:native-item:exec-f4395f43-6e10-4df4-94d4-09c948962d7f",
+          "observedAt": "2026-11-05T00:36:23.734Z",
+          "toolName": "t3-code.t3_thread_read"
+        }
+      },
+      "preparedBytes": 25828,
+      "preparedCharacters": 25157,
+      "preparedSha256": "99bef98606da200fe603fb03759d1e128d0da42069bee87ef588014166f4c91b",
+      "storedMessageMatchesWithDocumentedDisplayTransform": true,
+      "storedMessageExactBackendBytes": false,
+      "challengeMatched": true,
+      "challengeSha256": "1cc7acffad4a4452c3601d99d40b7557495be05e38309a501b62727efe8785c5",
+      "threadId": "thread:delegated-task:command%3Amcp%3Ad94abbab-0409-4fa3-8f15-9db2f1951e34%3Adelegate-task%3A0e6b2160-d3be-453c-9fb4-b8dec1577243",
+      "threadLink": "<t3-thread://v2/4bd98d01-5ea5-4d57-b993-162051324aa8/thread:delegated-task:command%3Amcp%3Ad94abbab-0409-4fa3-8f15-9db2f1951e34%3Adelegate-task%3A0e6b2160-d3be-453c-9fb4-b8dec1577243>",
+      "terminalRunId": "run:thread:thread%3Adelegated-task%3Acommand%253Amcp%253Ad94abbab-0409-4fa3-8f15-9db2f1951e34%253Adelegate-task%253A0e6b2160-d3be-453c-9fb4-b8dec1577243:ordinal:1",
+      "terminalStatus": "completed",
+      "completedAt": "2026-11-05T02:56:36.940Z",
+      "skillSourcesSha256": {
+        "skills/cstack/references/agents/cstack-agent.md": "243a660902c698f7ff9472d96d275cac664dc9e20a980e072675d42ee2a8cfa0",
+        "skills/cstack/references/runtime/t3.md": "dd4b4b7a252da36eb9a053116413f598dfa287423df0f56598886712d68de9da"
+      }
+    }
+  },
+  "sourceFilesSha256": {
+    "plugins/cstack/skills/cstack/scripts/runtime/runtime.ts": "33feb6fa211cd68df9f2a779819d18bfff829592ec0b690ec89fbc79a891b0e1",
+    "plugins/cstack/skills/cstack/scripts/runtime/prepare.ts": "7c0db7c7fdc10a370f1cb49287057331f63fdbaa225c1c9988edfea0d25dc47d",
+    "plugins/cstack/skills/cstack/scripts/worker-skills.ts": "cfb83eb0f824845f53d4aed18eb5f68ac9e166802401be62abdb73ce35d6642c",
+    "plugins/cstack/skills/cstack/scripts/worker-context.ts": "16f5dff1485fdf3fa38a94be238dbc8ac4d04e7b1862d02b8934b02c3e834ecd",
+    "plugins/cstack/skills/setup-cstack/scripts/models.py": "9cdba2b797e93e9d5c54ff2b2c590006696e2888bea4d99c15f9b0e64b87251d",
+    "plugins/cstack/skills/setup-cstack/scripts/t3_catalog.py": "5259225ed518a6355732299ef64e6b7457b11ba65806a2724b525b4ac0662b0c"
+  },
+  "limits": [
+    "Source-mode prepared briefs, not installed T3 App discovery",
+    "Host-added review prefix and removed terminal LF are display transformations",
+    "Markers and application metadata are not cryptographic backend or identity attestation",
+    "This receipt covers 4dd58cf, not subsequent council fixes",
+    "Reviews and comparison outcomes do not establish >=9.5 or general superiority"
+  ]
+}

@@ -1,5 +1,8 @@
 # Utiliser Codex et Claude ensemble
 
+Dans T3 avec coordinateur Codex, après invocation explicite de cstack, suivre le [contrat T3](../../skills/cstack/references/runtime/t3.md). Une position T3 est non portable, les CLI y sont bloqués en V1, et les checkouts appartiennent à l’hôte. Le support du plugin installé reste à vérifier dans la session réelle.
+
+
 Configurez un panel pour faire travailler Codex CLI et Claude Code dans un même workflow CStack. Le coordinateur reste dans Codex App ou CLI. Les workers externes sont des processus CLI, pas des sous-agents affichés comme des threads natifs dans Codex.
 
 ## Préparer les CLI

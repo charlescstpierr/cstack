@@ -1,0 +1,764 @@
+{
+  "kind": "synthetic-stdlib-cli-behavior",
+  "recorded": 30,
+  "comparable": 30,
+  "repetitionsPerCase": 3,
+  "candidateAttempts": 31,
+  "extraControllerInterruptedAttempt": {
+    "controllerExit": 143,
+    "cause": "unknown",
+    "workerStatus": "completed",
+    "workerWallSeconds": 103.084,
+    "explicitKillCommandsObserved": 0,
+    "originalWorkspaceAvailable": true,
+    "primaryResultPolicy": "completed rows retained; absent result ID retried on resume, original receipt kept; no new winner inferred",
+    "recoveredBehaviorChecksPass": true,
+    "completion": {
+      "checks_completed": 15,
+      "success": true
+    }
+  },
+  "graderSha256": "664608d22fbe2d52d6416dace27b185bc2ffe6a4e209e655832e1d372a32e5f2",
+  "sourceRule": "immutable original CLI snapshots including cstack7bd; no workflow tuning",
+  "cstackVs": {
+    "vanilla": {
+      "wins": 0,
+      "ties": 6,
+      "losses": 0,
+      "excluded": 0
+    },
+    "pstack": {
+      "wins": 0,
+      "ties": 6,
+      "losses": 0,
+      "excluded": 0
+    },
+    "superpowers": {
+      "wins": 0,
+      "ties": 6,
+      "losses": 0,
+      "excluded": 0
+    },
+    "tstack": {
+      "wins": 0,
+      "ties": 6,
+      "losses": 0,
+      "excluded": 0
+    }
+  },
+  "graderStdoutAudit": {
+    "exitZeroFalseNegativesObserved": [],
+    "oldSealedProtocolUnchanged": true,
+    "futureGraderAcceptsDiagnosticLines": true
+  },
+  "verdict": "INCONCLUSIVE",
+  "limits": [
+    "Two synthetic cases, all arms solve every primary trial; no superiority established",
+    "Three repetitions per case are below the predeclared minimum for performance claims",
+    "Extra interrupted controller attempt is retained; recovered checks pass, excluded from primary rows",
+    "stream_max is not aggregate usage and no dollar cost ranking is provided",
+    "tstack uses Codex fallback here, not T3"
+  ],
+  "rows": [
+    {
+      "id": "case-14936f87bd809f39c892e5ba1667106e--vanilla--r1",
+      "arm": "vanilla",
+      "case": "cache-consistency",
+      "repetition": 1,
+      "comparable": true,
+      "correct": true,
+      "scopePreserved": true,
+      "indexPreserved": true,
+      "exitCode": 0,
+      "checksSha256": "4c4c8a5e19811dcbb325eaeaf875926d6679fbe822c539829b9b528ff1fbb9a8",
+      "patchSha256": "43aabccd8ac54fff14ba4f55a6b47be0b923030cd73368efedac187cad95eac9",
+      "observedSettings": [
+        {
+          "thread": "parent",
+          "model": "gpt-6.1-sol",
+          "reasoning_effort": "high"
+        }
+      ]
+    },
+    {
+      "id": "case-14936f87bd809f39c892e5ba1667106e--cstack--r1",
+      "arm": "cstack",
+      "case": "cache-consistency",
+      "repetition": 1,
+      "comparable": true,
+      "correct": true,
+      "scopePreserved": true,
+      "indexPreserved": true,
+      "exitCode": 0,
+      "checksSha256": "4c4c8a5e19811dcbb325eaeaf875926d6679fbe822c539829b9b528ff1fbb9a8",
+      "patchSha256": "264359b0bde645086227b242742238f1fad54ee5fd464be043c3c8e317ab7fab",
+      "observedSettings": [
+        {
+          "thread": "parent",
+          "model": "gpt-6.1-sol",
+          "reasoning_effort": "high"
+        },
+        {
+          "thread": "child",
+          "model": "gpt-6.1-sol",
+          "reasoning_effort": "high"
+        }
+      ]
+    },
+    {
+      "id": "case-14936f87bd809f39c892e5ba1667106e--pstack--r1",
+      "arm": "pstack",
+      "case": "cache-consistency",
+      "repetition": 1,
+      "comparable": true,
+      "correct": true,
+      "scopePreserved": true,
+      "indexPreserved": true,
+      "exitCode": 0,
+      "checksSha256": "4c4c8a5e19811dcbb325eaeaf875926d6679fbe822c539829b9b528ff1fbb9a8",
+      "patchSha256": "55b45e74ec28cbd9dda36072564cf50db796f57d8c579bf8ce89fd5d10063e4c",
+      "observedSettings": [
+        {
+          "thread": "parent",
+          "model": "gpt-6.1-sol",
+          "reasoning_effort": "high"
+        },
+        {
+          "thread": "child",
+          "model": "gpt-6.1-sol",
+          "reasoning_effort": "high"
+        },
+        {
+          "thread": "child",
+          "model": "gpt-6.1-sol",
+          "reasoning_effort": "high"
+        }
+      ]
+    },
+    {
+      "id": "case-14936f87bd809f39c892e5ba1667106e--superpowers--r1",
+      "arm": "superpowers",
+      "case": "cache-consistency",
+      "repetition": 1,
+      "comparable": true,
+      "correct": true,
+      "scopePreserved": true,
+      "indexPreserved": true,
+      "exitCode": 0,
+      "checksSha256": "4c4c8a5e19811dcbb325eaeaf875926d6679fbe822c539829b9b528ff1fbb9a8",
+      "patchSha256": "c39bf34b33ad7234181600796fb800f53bfe4d2683a77205d75d72aaebfaa272",
+      "observedSettings": [
+        {
+          "thread": "parent",
+          "model": "gpt-6.1-sol",
+          "reasoning_effort": "high"
+        }
+      ]
+    },
+    {
+      "id": "case-14936f87bd809f39c892e5ba1667106e--tstack--r1",
+      "arm": "tstack",
+      "case": "cache-consistency",
+      "repetition": 1,
+      "comparable": true,
+      "correct": true,
+      "scopePreserved": true,
+      "indexPreserved": true,
+      "exitCode": 0,
+      "checksSha256": "4c4c8a5e19811dcbb325eaeaf875926d6679fbe822c539829b9b528ff1fbb9a8",
+      "patchSha256": "98c2be2d9a254b22027b7554b77eb7bfd48b8f96ace5dc64ab78b97d7fb526f5",
+      "observedSettings": [
+        {
+          "thread": "parent",
+          "model": "gpt-6.1-sol",
+          "reasoning_effort": "high"
+        },
+        {
+          "thread": "child",
+          "model": "gpt-6.1-sol",
+          "reasoning_effort": "high"
+        }
+      ]
+    },
+    {
+      "id": "case-3fe722c51c96b7e6b6924ff06a31cff7--vanilla--r1",
+      "arm": "vanilla",
+      "case": "import-investigation",
+      "repetition": 1,
+      "comparable": true,
+      "correct": true,
+      "scopePreserved": true,
+      "indexPreserved": true,
+      "exitCode": 0,
+      "checksSha256": "36a02c92d14c4efa41db43265b9a63a18e5dca70341306b8f77b4b534eb5634f",
+      "patchSha256": "b74c45429c34ad0f988a51fcb1a5aa73b1f74723adf7dc98d15aa1d1f7a247ee",
+      "observedSettings": [
+        {
+          "thread": "parent",
+          "model": "gpt-6.1-sol",
+          "reasoning_effort": "high"
+        }
+      ]
+    },
+    {
+      "id": "case-3fe722c51c96b7e6b6924ff06a31cff7--tstack--r1",
+      "arm": "tstack",
+      "case": "import-investigation",
+      "repetition": 1,
+      "comparable": true,
+      "correct": true,
+      "scopePreserved": true,
+      "indexPreserved": true,
+      "exitCode": 0,
+      "checksSha256": "36a02c92d14c4efa41db43265b9a63a18e5dca70341306b8f77b4b534eb5634f",
+      "patchSha256": "b74c45429c34ad0f988a51fcb1a5aa73b1f74723adf7dc98d15aa1d1f7a247ee",
+      "observedSettings": [
+        {
+          "thread": "parent",
+          "model": "gpt-6.1-sol",
+          "reasoning_effort": "high"
+        },
+        {
+          "thread": "child",
+          "model": "gpt-6.1-sol",
+          "reasoning_effort": "high"
+        }
+      ]
+    },
+    {
+      "id": "case-3fe722c51c96b7e6b6924ff06a31cff7--superpowers--r1",
+      "arm": "superpowers",
+      "case": "import-investigation",
+      "repetition": 1,
+      "comparable": true,
+      "correct": true,
+      "scopePreserved": true,
+      "indexPreserved": true,
+      "exitCode": 0,
+      "checksSha256": "36a02c92d14c4efa41db43265b9a63a18e5dca70341306b8f77b4b534eb5634f",
+      "patchSha256": "b74c45429c34ad0f988a51fcb1a5aa73b1f74723adf7dc98d15aa1d1f7a247ee",
+      "observedSettings": [
+        {
+          "thread": "parent",
+          "model": "gpt-6.1-sol",
+          "reasoning_effort": "high"
+        }
+      ]
+    },
+    {
+      "id": "case-3fe722c51c96b7e6b6924ff06a31cff7--pstack--r1",
+      "arm": "pstack",
+      "case": "import-investigation",
+      "repetition": 1,
+      "comparable": true,
+      "correct": true,
+      "scopePreserved": true,
+      "indexPreserved": true,
+      "exitCode": 0,
+      "checksSha256": "36a02c92d14c4efa41db43265b9a63a18e5dca70341306b8f77b4b534eb5634f",
+      "patchSha256": "b74c45429c34ad0f988a51fcb1a5aa73b1f74723adf7dc98d15aa1d1f7a247ee",
+      "observedSettings": [
+        {
+          "thread": "parent",
+          "model": "gpt-6.1-sol",
+          "reasoning_effort": "high"
+        },
+        {
+          "thread": "child",
+          "model": "gpt-6.1-sol",
+          "reasoning_effort": "high"
+        }
+      ]
+    },
+    {
+      "id": "case-3fe722c51c96b7e6b6924ff06a31cff7--cstack--r1",
+      "arm": "cstack",
+      "case": "import-investigation",
+      "repetition": 1,
+      "comparable": true,
+      "correct": true,
+      "scopePreserved": true,
+      "indexPreserved": true,
+      "exitCode": 0,
+      "checksSha256": "36a02c92d14c4efa41db43265b9a63a18e5dca70341306b8f77b4b534eb5634f",
+      "patchSha256": "b74c45429c34ad0f988a51fcb1a5aa73b1f74723adf7dc98d15aa1d1f7a247ee",
+      "observedSettings": [
+        {
+          "thread": "parent",
+          "model": "gpt-6.1-sol",
+          "reasoning_effort": "high"
+        }
+      ]
+    },
+    {
+      "id": "case-14936f87bd809f39c892e5ba1667106e--cstack--r2",
+      "arm": "cstack",
+      "case": "cache-consistency",
+      "repetition": 2,
+      "comparable": true,
+      "correct": true,
+      "scopePreserved": true,
+      "indexPreserved": true,
+      "exitCode": 0,
+      "checksSha256": "4c4c8a5e19811dcbb325eaeaf875926d6679fbe822c539829b9b528ff1fbb9a8",
+      "patchSha256": "f3c675054aa3661deaa5ec73a2f6e3ee5ba2edc3f63b2b8b5801dfcaaa18238b",
+      "observedSettings": [
+        {
+          "thread": "parent",
+          "model": "gpt-6.1-sol",
+          "reasoning_effort": "high"
+        },
+        {
+          "thread": "child",
+          "model": "gpt-6.1-sol",
+          "reasoning_effort": "high"
+        }
+      ]
+    },
+    {
+      "id": "case-14936f87bd809f39c892e5ba1667106e--vanilla--r2",
+      "arm": "vanilla",
+      "case": "cache-consistency",
+      "repetition": 2,
+      "comparable": true,
+      "correct": true,
+      "scopePreserved": true,
+      "indexPreserved": true,
+      "exitCode": 0,
+      "checksSha256": "4c4c8a5e19811dcbb325eaeaf875926d6679fbe822c539829b9b528ff1fbb9a8",
+      "patchSha256": "570603da4abd2cf91ebb7cb6fd62729f30dd7fcff0e21c99216c8d38f55d051e",
+      "observedSettings": [
+        {
+          "thread": "parent",
+          "model": "gpt-6.1-sol",
+          "reasoning_effort": "high"
+        }
+      ]
+    },
+    {
+      "id": "case-14936f87bd809f39c892e5ba1667106e--tstack--r2",
+      "arm": "tstack",
+      "case": "cache-consistency",
+      "repetition": 2,
+      "comparable": true,
+      "correct": true,
+      "scopePreserved": true,
+      "indexPreserved": true,
+      "exitCode": 0,
+      "checksSha256": "4c4c8a5e19811dcbb325eaeaf875926d6679fbe822c539829b9b528ff1fbb9a8",
+      "patchSha256": "eaf9cf14653fa79271c3c54a444d1de99aff32c7a373ca88e1bc9282fdad92a9",
+      "observedSettings": [
+        {
+          "thread": "parent",
+          "model": "gpt-6.1-sol",
+          "reasoning_effort": "high"
+        },
+        {
+          "thread": "child",
+          "model": "gpt-6.1-sol",
+          "reasoning_effort": "high"
+        }
+      ]
+    },
+    {
+      "id": "case-14936f87bd809f39c892e5ba1667106e--superpowers--r2",
+      "arm": "superpowers",
+      "case": "cache-consistency",
+      "repetition": 2,
+      "comparable": true,
+      "correct": true,
+      "scopePreserved": true,
+      "indexPreserved": true,
+      "exitCode": 0,
+      "checksSha256": "4c4c8a5e19811dcbb325eaeaf875926d6679fbe822c539829b9b528ff1fbb9a8",
+      "patchSha256": "9cc0a495258ec1762efb0055ddc234ba93d7d83c4747fed814cb407e5c1301bb",
+      "observedSettings": [
+        {
+          "thread": "parent",
+          "model": "gpt-6.1-sol",
+          "reasoning_effort": "high"
+        }
+      ]
+    },
+    {
+      "id": "case-14936f87bd809f39c892e5ba1667106e--pstack--r2",
+      "arm": "pstack",
+      "case": "cache-consistency",
+      "repetition": 2,
+      "comparable": true,
+      "correct": true,
+      "scopePreserved": true,
+      "indexPreserved": true,
+      "exitCode": 0,
+      "checksSha256": "4c4c8a5e19811dcbb325eaeaf875926d6679fbe822c539829b9b528ff1fbb9a8",
+      "patchSha256": "ad268dde332f8e113c92b51fe41ea7dc3bcf2592653d247f171159e1b3335a42",
+      "observedSettings": [
+        {
+          "thread": "parent",
+          "model": "gpt-6.1-sol",
+          "reasoning_effort": "high"
+        },
+        {
+          "thread": "child",
+          "model": "gpt-6.1-sol",
+          "reasoning_effort": "high"
+        },
+        {
+          "thread": "child",
+          "model": "gpt-6.1-sol",
+          "reasoning_effort": "high"
+        }
+      ]
+    },
+    {
+      "id": "case-3fe722c51c96b7e6b6924ff06a31cff7--superpowers--r2",
+      "arm": "superpowers",
+      "case": "import-investigation",
+      "repetition": 2,
+      "comparable": true,
+      "correct": true,
+      "scopePreserved": true,
+      "indexPreserved": true,
+      "exitCode": 0,
+      "checksSha256": "36a02c92d14c4efa41db43265b9a63a18e5dca70341306b8f77b4b534eb5634f",
+      "patchSha256": "b74c45429c34ad0f988a51fcb1a5aa73b1f74723adf7dc98d15aa1d1f7a247ee",
+      "observedSettings": [
+        {
+          "thread": "parent",
+          "model": "gpt-6.1-sol",
+          "reasoning_effort": "high"
+        }
+      ]
+    },
+    {
+      "id": "case-3fe722c51c96b7e6b6924ff06a31cff7--tstack--r2",
+      "arm": "tstack",
+      "case": "import-investigation",
+      "repetition": 2,
+      "comparable": true,
+      "correct": true,
+      "scopePreserved": true,
+      "indexPreserved": true,
+      "exitCode": 0,
+      "checksSha256": "36a02c92d14c4efa41db43265b9a63a18e5dca70341306b8f77b4b534eb5634f",
+      "patchSha256": "b74c45429c34ad0f988a51fcb1a5aa73b1f74723adf7dc98d15aa1d1f7a247ee",
+      "observedSettings": [
+        {
+          "thread": "parent",
+          "model": "gpt-6.1-sol",
+          "reasoning_effort": "high"
+        },
+        {
+          "thread": "child",
+          "model": "gpt-6.1-sol",
+          "reasoning_effort": "high"
+        }
+      ]
+    },
+    {
+      "id": "case-3fe722c51c96b7e6b6924ff06a31cff7--vanilla--r2",
+      "arm": "vanilla",
+      "case": "import-investigation",
+      "repetition": 2,
+      "comparable": true,
+      "correct": true,
+      "scopePreserved": true,
+      "indexPreserved": true,
+      "exitCode": 0,
+      "checksSha256": "36a02c92d14c4efa41db43265b9a63a18e5dca70341306b8f77b4b534eb5634f",
+      "patchSha256": "b74c45429c34ad0f988a51fcb1a5aa73b1f74723adf7dc98d15aa1d1f7a247ee",
+      "observedSettings": [
+        {
+          "thread": "parent",
+          "model": "gpt-6.1-sol",
+          "reasoning_effort": "high"
+        }
+      ]
+    },
+    {
+      "id": "case-3fe722c51c96b7e6b6924ff06a31cff7--cstack--r2",
+      "arm": "cstack",
+      "case": "import-investigation",
+      "repetition": 2,
+      "comparable": true,
+      "correct": true,
+      "scopePreserved": true,
+      "indexPreserved": true,
+      "exitCode": 0,
+      "checksSha256": "36a02c92d14c4efa41db43265b9a63a18e5dca70341306b8f77b4b534eb5634f",
+      "patchSha256": "b74c45429c34ad0f988a51fcb1a5aa73b1f74723adf7dc98d15aa1d1f7a247ee",
+      "observedSettings": [
+        {
+          "thread": "parent",
+          "model": "gpt-6.1-sol",
+          "reasoning_effort": "high"
+        }
+      ]
+    },
+    {
+      "id": "case-3fe722c51c96b7e6b6924ff06a31cff7--pstack--r2",
+      "arm": "pstack",
+      "case": "import-investigation",
+      "repetition": 2,
+      "comparable": true,
+      "correct": true,
+      "scopePreserved": true,
+      "indexPreserved": true,
+      "exitCode": 0,
+      "checksSha256": "36a02c92d14c4efa41db43265b9a63a18e5dca70341306b8f77b4b534eb5634f",
+      "patchSha256": "b74c45429c34ad0f988a51fcb1a5aa73b1f74723adf7dc98d15aa1d1f7a247ee",
+      "observedSettings": [
+        {
+          "thread": "parent",
+          "model": "gpt-6.1-sol",
+          "reasoning_effort": "high"
+        },
+        {
+          "thread": "child",
+          "model": "gpt-6.1-sol",
+          "reasoning_effort": "high"
+        }
+      ]
+    },
+    {
+      "id": "case-14936f87bd809f39c892e5ba1667106e--tstack--r3",
+      "arm": "tstack",
+      "case": "cache-consistency",
+      "repetition": 3,
+      "comparable": true,
+      "correct": true,
+      "scopePreserved": true,
+      "indexPreserved": true,
+      "exitCode": 0,
+      "checksSha256": "4c4c8a5e19811dcbb325eaeaf875926d6679fbe822c539829b9b528ff1fbb9a8",
+      "patchSha256": "2efd795566a3adcef59a0a7b749d1ee69b4c5b644ff4be1c6d1061fb9648bd3d",
+      "observedSettings": [
+        {
+          "thread": "parent",
+          "model": "gpt-6.1-sol",
+          "reasoning_effort": "high"
+        },
+        {
+          "thread": "child",
+          "model": "gpt-6.1-sol",
+          "reasoning_effort": "high"
+        }
+      ]
+    },
+    {
+      "id": "case-14936f87bd809f39c892e5ba1667106e--vanilla--r3",
+      "arm": "vanilla",
+      "case": "cache-consistency",
+      "repetition": 3,
+      "comparable": true,
+      "correct": true,
+      "scopePreserved": true,
+      "indexPreserved": true,
+      "exitCode": 0,
+      "checksSha256": "4c4c8a5e19811dcbb325eaeaf875926d6679fbe822c539829b9b528ff1fbb9a8",
+      "patchSha256": "d481caabc10fada0080906c4e8bad7b3dad6f04e447db6d4da19220c7a928617",
+      "observedSettings": [
+        {
+          "thread": "parent",
+          "model": "gpt-6.1-sol",
+          "reasoning_effort": "high"
+        }
+      ]
+    },
+    {
+      "id": "case-14936f87bd809f39c892e5ba1667106e--cstack--r3",
+      "arm": "cstack",
+      "case": "cache-consistency",
+      "repetition": 3,
+      "comparable": true,
+      "correct": true,
+      "scopePreserved": true,
+      "indexPreserved": true,
+      "exitCode": 0,
+      "checksSha256": "4c4c8a5e19811dcbb325eaeaf875926d6679fbe822c539829b9b528ff1fbb9a8",
+      "patchSha256": "2e4dc6ff3b241a65f567ef77b51805fbb6f48d99c61003b9163bd99c96dd7424",
+      "observedSettings": [
+        {
+          "thread": "parent",
+          "model": "gpt-6.1-sol",
+          "reasoning_effort": "high"
+        },
+        {
+          "thread": "child",
+          "model": "gpt-6.1-sol",
+          "reasoning_effort": "high"
+        }
+      ]
+    },
+    {
+      "id": "case-14936f87bd809f39c892e5ba1667106e--pstack--r3",
+      "arm": "pstack",
+      "case": "cache-consistency",
+      "repetition": 3,
+      "comparable": true,
+      "correct": true,
+      "scopePreserved": true,
+      "indexPreserved": true,
+      "exitCode": 0,
+      "checksSha256": "4c4c8a5e19811dcbb325eaeaf875926d6679fbe822c539829b9b528ff1fbb9a8",
+      "patchSha256": "1aed2dd454cd602b1693b02a411ba447198797ccac021962f9fbfacf471cdd9e",
+      "observedSettings": [
+        {
+          "thread": "parent",
+          "model": "gpt-6.1-sol",
+          "reasoning_effort": "high"
+        },
+        {
+          "thread": "child",
+          "model": "gpt-6.1-sol",
+          "reasoning_effort": "high"
+        },
+        {
+          "thread": "child",
+          "model": "gpt-6.1-sol",
+          "reasoning_effort": "high"
+        },
+        {
+          "thread": "child",
+          "model": "gpt-6.1-sol",
+          "reasoning_effort": "high"
+        }
+      ]
+    },
+    {
+      "id": "case-14936f87bd809f39c892e5ba1667106e--superpowers--r3",
+      "arm": "superpowers",
+      "case": "cache-consistency",
+      "repetition": 3,
+      "comparable": true,
+      "correct": true,
+      "scopePreserved": true,
+      "indexPreserved": true,
+      "exitCode": 0,
+      "checksSha256": "4c4c8a5e19811dcbb325eaeaf875926d6679fbe822c539829b9b528ff1fbb9a8",
+      "patchSha256": "1ab6dcd4ffe6eb319ff044075351491902ab5c93c093bd2ad09256e04f74a123",
+      "observedSettings": [
+        {
+          "thread": "parent",
+          "model": "gpt-6.1-sol",
+          "reasoning_effort": "high"
+        }
+      ]
+    },
+    {
+      "id": "case-3fe722c51c96b7e6b6924ff06a31cff7--tstack--r3",
+      "arm": "tstack",
+      "case": "import-investigation",
+      "repetition": 3,
+      "comparable": true,
+      "correct": true,
+      "scopePreserved": true,
+      "indexPreserved": true,
+      "exitCode": 0,
+      "checksSha256": "36a02c92d14c4efa41db43265b9a63a18e5dca70341306b8f77b4b534eb5634f",
+      "patchSha256": "b74c45429c34ad0f988a51fcb1a5aa73b1f74723adf7dc98d15aa1d1f7a247ee",
+      "observedSettings": [
+        {
+          "thread": "parent",
+          "model": "gpt-6.1-sol",
+          "reasoning_effort": "high"
+        },
+        {
+          "thread": "child",
+          "model": "gpt-6.1-sol",
+          "reasoning_effort": "high"
+        }
+      ]
+    },
+    {
+      "id": "case-3fe722c51c96b7e6b6924ff06a31cff7--superpowers--r3",
+      "arm": "superpowers",
+      "case": "import-investigation",
+      "repetition": 3,
+      "comparable": true,
+      "correct": true,
+      "scopePreserved": true,
+      "indexPreserved": true,
+      "exitCode": 0,
+      "checksSha256": "36a02c92d14c4efa41db43265b9a63a18e5dca70341306b8f77b4b534eb5634f",
+      "patchSha256": "b74c45429c34ad0f988a51fcb1a5aa73b1f74723adf7dc98d15aa1d1f7a247ee",
+      "observedSettings": [
+        {
+          "thread": "parent",
+          "model": "gpt-6.1-sol",
+          "reasoning_effort": "high"
+        }
+      ]
+    },
+    {
+      "id": "case-3fe722c51c96b7e6b6924ff06a31cff7--pstack--r3",
+      "arm": "pstack",
+      "case": "import-investigation",
+      "repetition": 3,
+      "comparable": true,
+      "correct": true,
+      "scopePreserved": true,
+      "indexPreserved": true,
+      "exitCode": 0,
+      "checksSha256": "36a02c92d14c4efa41db43265b9a63a18e5dca70341306b8f77b4b534eb5634f",
+      "patchSha256": "b74c45429c34ad0f988a51fcb1a5aa73b1f74723adf7dc98d15aa1d1f7a247ee",
+      "observedSettings": [
+        {
+          "thread": "parent",
+          "model": "gpt-6.1-sol",
+          "reasoning_effort": "high"
+        },
+        {
+          "thread": "child",
+          "model": "gpt-6.1-sol",
+          "reasoning_effort": "high"
+        }
+      ]
+    },
+    {
+      "id": "case-3fe722c51c96b7e6b6924ff06a31cff7--cstack--r3",
+      "arm": "cstack",
+      "case": "import-investigation",
+      "repetition": 3,
+      "comparable": true,
+      "correct": true,
+      "scopePreserved": true,
+      "indexPreserved": true,
+      "exitCode": 0,
+      "checksSha256": "36a02c92d14c4efa41db43265b9a63a18e5dca70341306b8f77b4b534eb5634f",
+      "patchSha256": "b74c45429c34ad0f988a51fcb1a5aa73b1f74723adf7dc98d15aa1d1f7a247ee",
+      "observedSettings": [
+        {
+          "thread": "parent",
+          "model": "gpt-6.1-sol",
+          "reasoning_effort": "high"
+        },
+        {
+          "thread": "child",
+          "model": "gpt-6.1-sol",
+          "reasoning_effort": "high"
+        }
+      ]
+    },
+    {
+      "id": "case-3fe722c51c96b7e6b6924ff06a31cff7--vanilla--r3",
+      "arm": "vanilla",
+      "case": "import-investigation",
+      "repetition": 3,
+      "comparable": true,
+      "correct": true,
+      "scopePreserved": true,
+      "indexPreserved": true,
+      "exitCode": 0,
+      "checksSha256": "36a02c92d14c4efa41db43265b9a63a18e5dca70341306b8f77b4b534eb5634f",
+      "patchSha256": "b74c45429c34ad0f988a51fcb1a5aa73b1f74723adf7dc98d15aa1d1f7a247ee",
+      "observedSettings": [
+        {
+          "thread": "parent",
+          "model": "gpt-6.1-sol",
+          "reasoning_effort": "high"
+        }
+      ]
+    }
+  ]
+}

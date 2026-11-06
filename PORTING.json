@@ -1333,6 +1333,22 @@
     {
       "path": "plugins/cstack/skills/cstack/references/runtime/parcours-court.md",
       "reason": "Règle propre à cstack du parcours proportionné, ancrée sur les observations natives de #53 ; rédaction originale, sans copie de contenu amont."
+    },
+    {
+      "path": "plugins/cstack/skills/cstack/references/runtime/t3.md",
+      "reason": "Contrat T3 original consolidé V5, activé seulement sur invocation explicite."
+    },
+    {
+      "path": "plugins/cstack/skills/cstack/scripts/runtime/prepare.ts",
+      "reason": "Préparation T3 originale sans lancement, réutilisant context et skills avec snapshot borné."
+    },
+    {
+      "path": "plugins/cstack/skills/cstack/scripts/runtime/prepare.test.ts",
+      "reason": "Tests comportementaux de préparation et rejet CLI T3, sans hôte simulé comme preuve réelle."
+    },
+    {
+      "path": "plugins/cstack/skills/setup-cstack/scripts/t3_catalog.py",
+      "reason": "Normaliseur pur original T3 v2 depuis deux enveloppes réelles; identité thread, options et preuves sans attestation inventée."
     }
   ]
 }
