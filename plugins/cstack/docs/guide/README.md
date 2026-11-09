@@ -15,6 +15,7 @@ Voici le parcours :
 9. [Adapter cstack](./09-make-it-yours.md). Créer une compétence ciblée et l'évaluer.
 10. [Recettes et pièges](./10-recipes-and-pitfalls.md). Copier des demandes courtes et éviter les erreurs fréquentes.
 11. [Utiliser Codex et Claude ensemble](./11-cli-workers.md). Configurer les CLI, partager les skills et vérifier les résultats.
+12. [Installer cstack dans T3 Code](./12-t3-code.md). Installer le plugin, lancer un premier fil et choisir les modèles des délégués.
 
 Si vous ne retenez qu'une chose, demandez un résultat et sa preuve :
 

@@ -26,6 +26,6 @@ La [livraison des PR](skills/cstack/playbooks/shipping.md) impose le head vérif
 
 Installation, mise à jour, diagnostic et retrait : `install.sh install`, `update`, `doctor` et `uninstall`, à la racine du dépôt. Voir [l'installation](https://github.com/charlescstpierr/cstack#installation). Ouvrez ensuite une nouvelle conversation.
 
-Installation et sources : [charlescstpierr/cstack](https://github.com/charlescstpierr/cstack). Le dépôt est privé.
+Installation et sources : [charlescstpierr/cstack](https://github.com/charlescstpierr/cstack). Le dépôt est public.
 
 Licence MIT. Voir [LICENSE](LICENSE) et [NOTICE](NOTICE.md) pour la provenance et le crédit de Lauren Tan.
