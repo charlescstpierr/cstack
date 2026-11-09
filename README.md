@@ -113,7 +113,7 @@ codex exec '$cstack:cstack Examine cette modification sans changer les fichiers.
 
 Le mode reste actif dans la tâche jusqu'à ce que vous demandiez de l'arrêter, par exemple « arrête cstack ». Les compétences spécialisées restent utilisables à la demande.
 
-Codex exige que la demande de délégation figure dans votre message : le texte d'une compétence ne suffit pas à lancer un sous-agent. Les prompts par défaut des compétences qui délèguent la contiennent, donc sélectionnez la compétence dans le sélecteur plutôt que de taper son nom. En texte brut, ajoutez-la vous-même : `$cstack:cstack Corrige ce bug. Délègue le travail indépendant à des sous-agents natifs en parallèle.` Voir [le dépannage](plugins/cstack/docs/guide/10-recipes-and-pitfalls.md#un-seul-agent-travaille) si un seul agent travaille.
+Codex ne lance un sous-agent que sur demande explicite, venue de votre message, d'un `AGENTS.md` ou d'une compétence. Si cstack travaille seul, ajoutez-la à votre message : `$cstack:cstack Corrige ce bug. Délègue le travail indépendant à des sous-agents natifs en parallèle.` Voir [le dépannage](plugins/cstack/docs/guide/10-recipes-and-pitfalls.md#un-seul-agent-travaille) si un seul agent travaille.
 
 ## Les compétences
 

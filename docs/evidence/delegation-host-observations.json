@@ -1,0 +1,122 @@
+{
+  "kind": "observed-host-delegation-behavior",
+  "observedAt": "2026-11-09",
+  "method": "Lecture des transcripts Codex locaux de sessions réelles. Comptage des appels spawn_agent, de leur argument fork_turns et des lignes d'annonce « Sous-agent : » dans les messages de l'assistant ; lecture du premier message utilisateur et de la consigne multi_agent_mode. Aucun contenu de conversation n'est conservé ici.",
+  "sessions": [
+    {
+      "id": "desktop-1",
+      "date": "2026-10-01",
+      "originator": "Codex Desktop",
+      "codex": "0.157.1",
+      "cstack": "0.7.0",
+      "invocation": "[$cstack:cstack](<chemin du SKILL.md>) <demande>",
+      "delegationWordsInUserMessage": false,
+      "spawnAgentCalls": 12,
+      "agentsMdAskedForNativeSubagents": true
+    },
+    {
+      "id": "desktop-2",
+      "date": "2026-10-01",
+      "originator": "Codex Desktop",
+      "codex": "0.157.1",
+      "cstack": "0.7.0",
+      "invocation": "[$cstack:cstack](<chemin du SKILL.md>) <demande>",
+      "delegationWordsInUserMessage": false,
+      "spawnAgentCalls": 13,
+      "agentsMdAskedForNativeSubagents": true
+    },
+    {
+      "id": "t3-a",
+      "date": "2026-10-06",
+      "originator": "T3 Code",
+      "codex": "0.160.1",
+      "cstack": "0.8.0",
+      "invocation": "$cstack:cstack <demande>",
+      "delegationWordsInUserMessage": false,
+      "precededByAnotherSkillTurn": true,
+      "spawnAgentCalls": 18,
+      "forkTurns": {
+        "all": 17,
+        "none": 1
+      },
+      "reviewerAgentForkTurns": "all",
+      "announcementLines": 2,
+      "agentsMdAskedForNativeSubagents": true
+    },
+    {
+      "id": "t3-b",
+      "date": "2026-10-06",
+      "originator": "T3 Code",
+      "codex": "0.160.1",
+      "cstack": "0.8.0",
+      "invocation": "$cstack:cstack <demande>",
+      "delegationWordsInUserMessage": false,
+      "spawnAgentCalls": 9,
+      "forkTurns": {
+        "omitted": 9
+      },
+      "reviewerAgentForkTurns": "omitted",
+      "announcementLines": 0,
+      "agentsMdAskedForNativeSubagents": true
+    }
+  ],
+  "findings": [
+    "Les quatre sessions ont lancé des enfants sans mot de délégation dans le message de l'utilisateur ; la demande n'a donc pas à figurer dans son tour.",
+    "Dans les quatre sessions, un AGENTS.md applicable demandait des sous-agents natifs : l'effet du texte de la compétence seul n'est pas séparé.",
+    "Les deux messages T3 portent « $cstack:<skill> <demande> » sans le default_prompt de la compétence.",
+    "26 des 27 enfants lancés dans T3 Code ont reçu tout l'historique du parent, relecteurs compris ; un fork omis vaut un fork complet selon la consigne multi_agent_role.",
+    "La ligne d'annonce à sept champs exigée avant chaque appel apparaît 2 fois pour 27 appels."
+  ],
+  "limits": [
+    "Quatre sessions d'un seul utilisateur ; aucune session codex exec.",
+    "Le déclencheur de la délégation n'est pas isolé : message, AGENTS.md et compétence étaient tous présents, seul le message ne portait aucune demande.",
+    "Le mode de sélection de la compétence dans T3 Code (sélecteur ou saisie) n'est pas enregistré.",
+    "La session t3-a suit un tour d'une autre compétence dans la même conversation.",
+    "Les versions de l'hôte postérieures à 0.162.1 ne sont pas observées.",
+    "Le modèle effectif d'un enfant lancé sans historique et sans surcharge n'est pas vérifié."
+  ],
+  "hostInstructions": [
+    {
+      "tag": "multi_agent_mode",
+      "text": "Any earlier instruction enabling proactive multi-agent delegation no longer applies. Do not spawn sub-agents unless the user or applicable AGENTS.md/skill instructions explicitly ask for sub-agents, delegation, or parallel agent work.",
+      "seenIn": [
+        {
+          "originator": "Codex Desktop",
+          "codex": "0.157.1",
+          "date": "2026-10-01"
+        },
+        {
+          "originator": "T3 Code",
+          "codex": "0.160.1",
+          "date": "2026-10-06"
+        },
+        {
+          "originator": "T3 Code",
+          "codex": "0.162.1",
+          "date": "2026-11-09"
+        }
+      ]
+    },
+    {
+      "tag": "multi_agent_role",
+      "text": "Full-history forks (`fork_turns` omitted or `\"all\"`) inherit the parent model and reasoning effort and do not accept overrides.",
+      "seenIn": [
+        {
+          "originator": "Codex Desktop",
+          "codex": "0.157.1",
+          "date": "2026-10-01"
+        },
+        {
+          "originator": "T3 Code",
+          "codex": "0.160.1",
+          "date": "2026-10-06"
+        },
+        {
+          "originator": "T3 Code",
+          "codex": "0.162.1",
+          "date": "2026-11-09"
+        }
+      ]
+    }
+  ]
+}
