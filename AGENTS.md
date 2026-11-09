@@ -38,3 +38,9 @@ Voir `docs/agents/triage-labels.md`.
 
 Organisation single-context : `CONTEXT.md` et `docs/adr/` à la racine.
 Voir `docs/agents/domain.md`.
+
+## Erreurs répétées : règle et mécanisme
+
+| Règle | Mécanisme exécuté par `scripts/check.sh` |
+|---|---|
+| Un seul écrivain Orchestrate, même après crash ou avec `--force`. Fermer les anciens workers avant de changer de version. | Transaction SQLite `BEGIN IMMEDIATE` conservée jusqu’à `Store.close()`, fichier `.orch-lock.sqlite` permanent ; `tests/store-lock.test.ts` lance trois puis huit écrivains et tue un propriétaire. Les TSV restent le format de données. |
