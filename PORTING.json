@@ -1307,12 +1307,16 @@
       "derived_from": "pstack/skills/interrogate/SKILL.md"
     },
     {
+      "path": "plugins/cstack/.claude-plugin/plugin.json",
+      "reason": "Claude Code manifest for the same plugin, so Claude Code and T3 Code Claude tasks load the skills; name, version and license must match the Codex manifest; not present in pstack."
+    },
+    {
       "path": "plugins/cstack/hooks/hooks.json",
-      "reason": "Codex plugin hooks declaring the cstack mode reminder (UserPromptSubmit and SessionStart compact/resume), the Codex equivalent of pstack's Cursor `reminder:`; not present in pstack."
+      "reason": "Plugin hooks declaring the cstack mode reminder (UserPromptSubmit and SessionStart compact/resume), the Codex and Claude Code equivalent of pstack's Cursor `reminder:`; one command resolves the plugin root on both hosts; not present in pstack."
     },
     {
       "path": "plugins/cstack/hooks/mode.py",
-      "reason": "Mode reminder hook script: silent outside conversations that invoked $cstack:cstack, stores only hashed session ids under PLUGIN_DATA; not present in pstack."
+      "reason": "Mode reminder hook script: silent outside conversations that invoked $cstack:cstack or /cstack:cstack, stores only hashed session ids under PLUGIN_DATA or CLAUDE_PLUGIN_DATA; not present in pstack."
     },
     {
       "path": "plugins/cstack/skills/maintain-verification-skill/references/bug-bash.md",

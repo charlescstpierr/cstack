@@ -106,10 +106,49 @@ FAKE_GIT = textwrap.dedent("""\
     case " $FAKE_GIT_DENY " in *" $transport "*) exit 128 ;; esac
 """)
 
+# Reproduit les sorties JSON de `claude plugin` observées avec Claude Code 2.1.321.
+FAKE_CLAUDE = textwrap.dedent("""\
+    import json, os, sys
+    state_path = os.environ["FAKE_CLAUDE_STATE"]
+    state = json.load(open(state_path)) if os.path.exists(state_path) else {"source": None, "installed": False}
+    args = sys.argv[1:]
+    with open(os.environ["FAKE_CLAUDE_LOG"], "a") as log:
+        log.write(" ".join(args) + "\\n")
+    def save():
+        json.dump(state, open(state_path, "w"))
+    if args == ["--version"]:
+        print("2.1.321 (Claude Code)")
+    elif args[:3] == ["plugin", "marketplace", "list"]:
+        print(json.dumps([{"name": "cstack", "source": "github"}] if state["source"] else []))
+    elif args[:3] == ["plugin", "marketplace", "add"]:
+        # Claude Code garde la source existante sans erreur : il faut retirer avant de changer de ref.
+        state["source"] = state["source"] or args[3]
+        save()
+    elif args[:3] == ["plugin", "marketplace", "remove"]:
+        state.update(source=None, installed=False)
+        save()
+    elif args[:3] == ["plugin", "marketplace", "update"]:
+        pass
+    elif args[:2] in (["plugin", "install"], ["plugin", "update"]):
+        if not state["source"]:
+            print("Plugin not found in any marketplace", file=sys.stderr)
+            sys.exit(1)
+        state["installed"] = True
+        save()
+    elif args[:2] == ["plugin", "uninstall"]:
+        state["installed"] = False
+        save()
+    elif args[:2] == ["plugin", "list"]:
+        print(json.dumps([{"id": "cstack@cstack", "version": "0.8.0", "enabled": True}] if state["installed"] else []))
+    else:
+        print("unexpected arguments: " + " ".join(args), file=sys.stderr)
+        sys.exit(1)
+""")
+
 FAKE_BUN = "#!/bin/sh\n[ \"$1\" = --version ] && echo 1.4.0 || echo '  --no-env-file'\n"
 
 
-class InstallScriptTest(unittest.TestCase):
+class InstallHarness(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         root = Path(self.temp.name)
@@ -136,6 +175,8 @@ class InstallScriptTest(unittest.TestCase):
             "CODEX_HOME": str(self.home),
             "FAKE_MAIN_HOME": str(self.home),
             "FAKE_CODEX_LOG": str(self.log),
+            # Jamais le vrai `claude` de la machine : il modifierait le profil de l'utilisateur.
+            "CSTACK_CLAUDE": str(self.bin / "absent-claude"),
             **env,
         }
         return subprocess.run([BASH, str(SCRIPT), *args], capture_output=True, text=True, env=environment)
@@ -148,6 +189,9 @@ class InstallScriptTest(unittest.TestCase):
 
     def installed(self):
         return json.loads(self.state.read_text())["installed"]
+
+
+class InstallScriptTest(InstallHarness):
 
     def test_install_adds_the_github_marketplace_then_the_plugin(self):
         result = self.run_script("install")
@@ -407,6 +451,74 @@ class AgentRunbookTest(unittest.TestCase):
         self.assertIn(download, readme)
         self.assertIn("(INSTALL-AGENT.md)", readme)
         self.assertIn("main/INSTALL-AGENT.md", readme)
+
+class ClaudeInstallTest(InstallHarness):
+    def setUp(self):
+        super().setUp()
+        root = Path(self.temp.name)
+        self.claude = self.bin / "fake-claude"
+        self.claude.write_text("#!{}\n{}".format(sys.executable, FAKE_CLAUDE))
+        self.claude.chmod(0o755)
+        self.claude_state = root / "claude-state.json"
+        self.claude_log = root / "claude.log"
+        self.claude_log.touch()
+
+    def run_claude_script(self, *args, codex=True, **env):
+        claude = {"CSTACK_CLAUDE": str(self.claude), "FAKE_CLAUDE_STATE": str(self.claude_state),
+                  "FAKE_CLAUDE_LOG": str(self.claude_log)}
+        if not codex:
+            claude["CSTACK_CODEX"] = str(self.bin / "absent-codex")
+        return self.run_script(*args, **claude, **env)
+
+    def claude_calls(self):
+        return [call for call in self.claude_log.read_text().splitlines() if "--json" not in call]
+
+    def test_install_covers_codex_and_claude(self):
+        result = self.run_claude_script("install")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(self.calls(), ["plugin marketplace add charlescstpierr/cstack", "plugin add cstack@cstack"])
+        self.assertEqual(self.claude_calls(), ["plugin marketplace add charlescstpierr/cstack", "plugin install cstack@cstack"])
+        self.assertIn("$cstack:cstack", result.stdout)
+        self.assertIn("/cstack:cstack", result.stdout)
+
+    def test_claude_alone_is_enough(self):
+        result = self.run_claude_script("install", "--ref", "main", codex=False, FAKE_GIT_DENY="https")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(self.calls(), [])
+        self.assertEqual(self.claude_calls(), ["plugin marketplace add git@github.com:charlescstpierr/cstack.git#main",
+                                               "plugin install cstack@cstack"])
+        self.assertNotIn("$cstack:cstack", result.stdout)
+        doctor = self.run_claude_script("doctor", codex=False)
+        self.assertEqual(doctor.returncode, 0, doctor.stdout)
+        self.assertIn("✓ plugin cstack@cstack dans Claude Code : installed, enabled 0.8.0", doctor.stdout)
+        self.assertIn("! Codex CLI absent", doctor.stdout)
+
+    def test_claude_alone_stops_when_the_private_repo_is_unreachable(self):
+        result = self.run_claude_script("install", codex=False, FAKE_GIT_DENY="https ssh")
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("gh auth setup-git", result.stderr)
+        self.assertEqual(self.claude_calls(), [])
+
+    def test_claude_ref_replaces_the_existing_source(self):
+        self.run_claude_script("install", codex=False)
+        result = self.run_claude_script("update", "--ref", "v1.0.0", codex=False)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(json.loads(self.claude_state.read_text()),
+                         {"source": "charlescstpierr/cstack#v1.0.0", "installed": True})
+
+    def test_claude_update_and_uninstall(self):
+        self.run_claude_script("install", codex=False)
+        self.assertEqual(self.run_claude_script("update", codex=False).returncode, 0)
+        self.assertEqual(self.claude_calls()[-2:], ["plugin marketplace update cstack", "plugin update cstack@cstack"])
+        result = self.run_claude_script("uninstall", codex=False)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(json.loads(self.claude_state.read_text()), {"source": None, "installed": False})
+
+    def test_without_any_host_nothing_is_installed(self):
+        result = self.run_script("install", CSTACK_CODEX=str(self.bin / "absent-codex"))
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("Claude Code aussi", result.stderr)
+
 
 if __name__ == "__main__":
     unittest.main()

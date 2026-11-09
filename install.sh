@@ -1,10 +1,13 @@
 #!/usr/bin/env bash
-# Installe, met à jour, diagnostique ou retire le plugin cstack de Codex App et CLI.
-# Toutes les modifications passent par `codex plugin` ; le script n'écrit jamais dans ~/.codex.
+# Installe, met à jour, diagnostique ou retire le plugin cstack de Codex et de Claude Code,
+# donc aussi des tâches Codex et Claude de T3 Code. Chaque hôte présent est traité.
+# Toutes les modifications passent par `codex plugin` et `claude plugin` ; le script n'écrit jamais
+# dans ~/.codex ni dans ~/.claude.
 set -euo pipefail
 
 REPO="${CSTACK_REPO:-charlescstpierr/cstack}"
 CODEX="${CSTACK_CODEX:-codex}"
+CLAUDE="${CSTACK_CLAUDE:-claude}"
 MARKETPLACE="cstack"
 PLUGIN="cstack@cstack"
 
@@ -13,7 +16,8 @@ usage() {
 Usage : install.sh <commande> [options]
 
 Commandes :
-  install [--ref REF | --local]   Installe cstack depuis GitHub (ou ce clone avec --local).
+  install [--ref REF | --local]   Installe cstack depuis GitHub (ou ce clone avec --local),
+                                  dans Codex et dans Claude Code s'ils sont présents.
   update [--ref REF]              Met à jour vers la dernière révision, ou vers REF.
   doctor                          Vérifie les prérequis, l'accès au dépôt et l'installation.
   uninstall                       Retire le plugin et sa source. Les dossiers .cstack/ des projets restent.
@@ -35,16 +39,19 @@ die() { printf 'cstack : %s\n' "$1" >&2; exit 1; }
 die_with() { printf '%s\n' "$1" >&2; exit 1; }
 
 run_codex() { "$CODEX" "$@"; }
+run_claude() { "$CLAUDE" "$@"; }
 
 # Masque les identifiants d'une URL (https://user:token@hôte) avant tout affichage.
 redact() { sed -E 's#://[^/@]+@#://***@#g' <<<"$*"; }
 
 has_codex() { command -v "$CODEX" >/dev/null 2>&1; }
+has_claude() { command -v "$CLAUDE" >/dev/null 2>&1; }
 
 python_ok() { python3 -c 'import sys; sys.exit(sys.version_info < (3, 9))' 2>/dev/null; }
 
 require_tools() {
-  has_codex || die "Codex CLI introuvable. Installez-le d'abord : npm install -g @openai/codex"
+  has_codex || has_claude ||
+    die "Codex CLI introuvable, Claude Code aussi. Installez-en au moins un : npm install -g @openai/codex"
   python_ok || die "Python 3.9 ou plus récent est requis."
 }
 
@@ -190,9 +197,70 @@ switch_marketplace() {
   redact "$out"
 }
 
+read -r -d '' CLAUDE_PARSER <<'PY' || true
+import json, sys
+query, marketplace, plugin = sys.argv[1:]
+data = json.load(sys.stdin)
+if query == "marketplace":
+    if any(entry.get("name") == marketplace for entry in data):
+        print("present")
+else:
+    for entry in data:
+        if entry.get("id") == plugin:
+            print("installed, {} {}".format("enabled" if entry.get("enabled") else "disabled", entry.get("version", "")).strip())
+PY
+
+# État de Claude Code, lu dans sa sortie JSON : « present » ou rien, « installed, enabled 0.8.0 » ou rien.
+claude_state() {
+  local query="$1" json
+  case "$query" in
+    marketplace) json="$(run_claude plugin marketplace list --json 2>/dev/null)" || return 1 ;;
+    plugin-status) json="$(run_claude plugin list --json 2>/dev/null)" || return 1 ;;
+  esac
+  python3 -c "$CLAUDE_PARSER" "$query" "$MARKETPLACE" "$PLUGIN" <<<"$json" 2>/dev/null
+}
+
+# Claude Code lit la ref après « # » : owner/repo#ref ou git@github.com:owner/repo.git#ref.
+claude_source() {
+  local ref="$1" local_source="$2" source
+  if [[ -n "$local_source" ]]; then
+    source="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    [[ -f "$source/.claude-plugin/marketplace.json" ]] || die "--local exige un clone de ${REPO} ; $source n'en est pas un."
+  else
+    source="$(remote_source)" || return 1
+    source+="${ref:+#$ref}"
+  fi
+  printf '%s\n' "$source"
+}
+
+# Ajoute le catalogue puis installe le plugin. Une ref ou --local remplace le catalogue existant.
+claude_install() {
+  local ref="$1" local_source="$2" source present
+  source="$(claude_source "$ref" "$local_source")"
+  present="$(claude_state marketplace)" || die "impossible de lire l'état de Claude Code (claude plugin marketplace list --json)."
+  if [[ -n "$present" && -n "$ref$local_source" ]]; then
+    echo "Claude Code, changement de source : $(redact "$source")"
+    run_claude plugin marketplace remove "$MARKETPLACE" >/dev/null
+  fi
+  run_claude plugin marketplace add "$source" && run_claude plugin install "$PLUGIN" ||
+    die "installation dans Claude Code impossible."
+}
+
+claude_update() {
+  local ref="$1"
+  if [[ -n "$ref" ]]; then
+    claude_install "$ref" ""
+  else
+    run_claude plugin marketplace update "$MARKETPLACE" && run_claude plugin update "$PLUGIN" ||
+      die "mise à jour dans Claude Code impossible."
+  fi
+}
+
 finish() {
   echo
-  echo "cstack est prêt. Ouvrez une nouvelle tâche Codex, puis tapez \$cstack:cstack."
+  echo "cstack est prêt. Ouvrez une nouvelle tâche, dans T3 Code, Codex ou Claude Code, puis tapez :"
+  ! has_codex || echo "  \$cstack:cstack   (Codex)"
+  ! has_claude || echo "  /cstack:cstack   (Claude)"
 }
 
 # Lit --ref et --local dans ref et local_source, déclarées par l'appelant.
@@ -211,17 +279,28 @@ cmd_install() {
   local ref="" local_source=""
   parse_options "$@"
   require_tools
-  add_marketplace "$ref" "$local_source"
+  ! has_codex || add_marketplace "$ref" "$local_source"
+  ! has_claude || claude_install "$ref" "$local_source"
   finish
 }
 
 cmd_update() {
-  local ref="" local_source="" current branch url
+  local ref="" local_source="" current="" claude_present=""
   parse_options "$@"
   [[ -z "$local_source" ]] || die "update ne prend pas --local ; utilisez install --local."
   require_tools
-  current="$(current_marketplace)"
-  [[ -n "$current" ]] || die "cstack n'est pas installé. Lancez : install.sh install"
+  ! has_codex || current="$(current_marketplace)"
+  if has_claude; then
+    claude_present="$(claude_state marketplace)" || die "impossible de lire l'état de Claude Code (claude plugin marketplace list --json)."
+  fi
+  [[ -n "$current$claude_present" ]] || die "cstack n'est pas installé. Lancez : install.sh install"
+  [[ -z "$current" ]] || codex_update "$current" "$ref"
+  [[ -z "$claude_present" ]] || claude_update "$ref"
+  finish
+}
+
+codex_update() {
+  local current="$1" ref="$2" branch url
   if [[ -n "$ref" ]]; then
     # Même avec une ref déjà configurée, `marketplace add` ne rafraîchirait pas le clone : on remplace.
     url="$(remote_source)"
@@ -239,7 +318,6 @@ cmd_update() {
     echo "Source locale : recopie depuis le clone, sans mise à jour Git."
     run_codex plugin add "$PLUGIN"
   fi
-  finish
 }
 
 cmd_doctor() {
@@ -247,11 +325,22 @@ cmd_doctor() {
   (($# == 0)) || { usage >&2; exit 2; }
   echo "Diagnostic cstack"
   if ! has_codex; then
-    fail "Codex CLI introuvable (npm install -g @openai/codex)"; problems=1
+    if has_claude; then
+      warn "Codex CLI absent : cstack s'installe seulement dans Claude Code"
+    else
+      fail "Codex CLI introuvable (npm install -g @openai/codex)"; problems=1
+    fi
   elif version="$(run_codex --version 2>&1)"; then
     ok "Codex CLI : $(tail -n 1 <<<"$version")"
   else
     fail "Codex CLI inutilisable : $(tail -n 1 <<<"$version")"; problems=1
+  fi
+  if ! has_claude; then
+    warn "Claude Code absent : cstack s'installe seulement dans Codex"
+  elif version="$(run_claude --version 2>&1)"; then
+    ok "Claude Code : $(tail -n 1 <<<"$version")"
+  else
+    fail "Claude Code inutilisable : $(tail -n 1 <<<"$version")"; problems=1
   fi
   if python_ok; then
     ok "Python : $(python3 -c 'import platform; print(platform.python_version())')"
@@ -285,6 +374,14 @@ cmd_doctor() {
       fail "plugin ${PLUGIN} : ${status:-absent} (install.sh install)"; problems=1
     fi
   fi
+  if has_claude && python_ok; then
+    status="$(claude_state plugin-status)" || status="état illisible"
+    if [[ "$status" == installed,\ enabled* ]]; then
+      ok "plugin ${PLUGIN} dans Claude Code : ${status}"
+    else
+      fail "plugin ${PLUGIN} dans Claude Code : ${status:-absent} (install.sh install)"; problems=1
+    fi
+  fi
   return "$problems"
 }
 
@@ -292,10 +389,16 @@ cmd_uninstall() {
   (($# == 0)) || { usage >&2; exit 2; }
   local current
   require_tools
-  current="$(current_marketplace)"
-  run_codex plugin remove "$PLUGIN"
-  if [[ -n "$current" ]]; then
-    run_codex plugin marketplace remove "$MARKETPLACE"
+  if has_codex; then
+    current="$(current_marketplace)"
+    run_codex plugin remove "$PLUGIN"
+    if [[ -n "$current" ]]; then
+      run_codex plugin marketplace remove "$MARKETPLACE"
+    fi
+  fi
+  if has_claude && [[ -n "$(claude_state marketplace)" ]]; then
+    run_claude plugin uninstall "$PLUGIN" >/dev/null 2>&1 || true
+    run_claude plugin marketplace remove "$MARKETPLACE"
   fi
   echo "cstack est retiré. Les dossiers .cstack/ de vos projets sont conservés."
 }

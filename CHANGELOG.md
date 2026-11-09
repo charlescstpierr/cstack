@@ -4,6 +4,10 @@ Les versions suivent SemVer. Le format suit [Keep a Changelog](https://keepachan
 
 ## [Unreleased]
 
+- Installation pour T3 Code, Codex et Claude Code : `install.sh` installe cstack dans chaque hôte présent (`codex plugin`, `claude plugin`) et `doctor` vérifie les deux. Le dépôt publie un manifeste et un catalogue Claude Code, tenus par le validateur au même nom, à la même version et à la même licence que le manifeste Codex. Le README ouvre sur l'installation en une commande.
+- Le hook du mode trouve son dossier dans les deux hôtes (`${CLAUDE_PLUGIN_ROOT:-${PLUGIN_ROOT}}`, `PLUGIN_DATA` ou `CLAUDE_PLUGIN_DATA`) et reconnaît `/cstack:cstack`. Sous Claude Code, l'ancienne commande échouait avec le code 2 à chaque message. La commande ayant changé, Codex redemande une fois l'approbation du hook (`/hooks`).
+- Le contrat T3 s'applique aussi à un coordinateur Claude dans T3.
+
 ## [0.8.0] - 2026-10-02
 
 - Guide et preuves : le guide décrit les nouveautés de cette version (point de reprise après un résumé, recall par index et `<private>`, vérification des candidats d'Arena, lentilles d'Interrogate, sources versionnées, verdicts de pilotage et bug bash, corps de PR et doc contre diff, arrêt de `watch-pr` sur une barrière, hygiène de `reflect`, règle testée contre une base sans elle). `docs/VERIFICATION.md` « État 0.8.0 » et `docs/evidence/0.8.0.json` enregistrent les contrôles de la version.
