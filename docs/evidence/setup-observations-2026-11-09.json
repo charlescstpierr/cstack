@@ -25,7 +25,11 @@
   "realSessions": {
     "count": 5,
     "originator": "Codex Desktop",
-    "cstackVersions": ["0.4.0", "0.6.0", "0.7.0"],
+    "cstackVersions": [
+      "0.4.0",
+      "0.6.0",
+      "0.7.0"
+    ],
     "inT3Code": 0,
     "observations": [
       "Aucune écriture avant un choix, prévisualisation avec empreinte puis application et résolution des rôles dans les sessions menées à terme.",
@@ -44,7 +48,31 @@
   "openPoints": [
     "Dans T3, show ne propose aucun modèle : l'utilisateur doit nommer chaque sélection.",
     "Les recommandations du chemin Codex nomment gpt-5.6-luna et gpt-6-astra alors que le catalogue expose aussi gpt-6-luna, gpt-6.1-sol et gpt-6.1-terra.",
-    "Le bloc AGENTS.md généré demande de déléguer aux trois agents natifs du projet, y compris pour un rôle passé en sélection T3.",
-    "Le setup n'a jamais été lancé par un coordinateur Codex dans T3 Code sur cette machine."
-  ]
+    "Le setup n'a jamais été lancé par un coordinateur Codex dans T3 Code sur cette machine.",
+    "Le bloc AGENTS.md généré nomme les trois agents natifs même pour un rôle passé en sélection T3 ; dans le scénario ci-dessus, GPT-6.1 Sol suit quand même la sélection T3."
+  ],
+  "crossFamily": {
+    "hostMechanism": {
+      "gptCoordinatorToClaudeChild": "23 appels delegate_task relevés dans les sessions T3 Code de novembre de l'utilisateur, dont 3 avec un résultat en erreur",
+      "claudeCoordinatorToGptChild": "10 appels delegate_task vers le fournisseur codex pendant cette vérification, tous terminés"
+    },
+    "helpers": "preflight résout un panel de trois positions sur les fournisseurs codex et claudeAgent en trois cibles delegate_task exactes",
+    "coordinatorScenarios": [
+      {
+        "model": "gpt-6.1-sol",
+        "scenario": "revue confiée par models.json à un modèle Claude, bloc AGENTS.md du setup et trois agents natifs présents, outils T3 et helpers exposés",
+        "outcome": "onze étapes de préparation du contrat T3, puis delegate_task vers claudeAgent avec le modèle et l'option enregistrés, isolation worktree ; l'agent natif cstack-reviewer n'est pas utilisé"
+      },
+      {
+        "model": "gpt-6.1-sol",
+        "scenario": "même situation, sans les outils de capture ni le shell",
+        "outcome": "aucun appel ; le coordinateur annonce le blocage et refuse le repli sur l'agent natif"
+      }
+    ],
+    "limits": [
+      "Les scénarios sont décrits par le modèle, pas exécutés : un enfant délégué ne peut pas déléguer à son tour.",
+      "Aucun coordinateur cstack n'a lancé un enfant d'une autre famille dans un fil racine sur cette machine depuis l'ajout du contrat T3.",
+      "Hors T3 Code, le chemin d'une autre famille passe par les workers CLI et n'a pas été essayé ici."
+    ]
+  }
 }
