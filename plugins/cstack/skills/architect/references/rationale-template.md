@@ -30,6 +30,10 @@ La prose qui accompagne l'ébauche de types. Une page. Titres en casse phrase, p
 
 *Ce que tu as remarqué pendant l'ébauche et qui nécessite l'avis de l'humain, ainsi que les risques à signaler avant l'implémentation. Formule en questions, pas en assertions, pour que la réponse humaine soit la résolution plutôt qu'un commentaire.*
 
+## Préparation à la construction
+
+*Remplie après la synthèse par le coordinateur selon la Phase C d'Architect. Nomme le lecteur indépendant et son résultat, les réponses retrouvées avec leurs sources, les choix techniques faits par l'agent et les décisions humaines restantes avec les seules unités qu'elles bloquent. Un contrôle omis ou indisponible garde sa raison ; une auto-relecture ne vaut pas lecture indépendante.*
+
 ## Prochaine étape d'implémentation
 
-*La première chose à construire contre l'ébauche. Une phrase. Ce que tu commencerais à écrire immédiatement après la synthèse (ou après validation de Phase D si un checkpoint a été activé).*
+*La première unité résolue à construire contre l'ébauche après la Phase C, dans l'autorisation donnée. Une phrase.*

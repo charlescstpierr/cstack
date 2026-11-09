@@ -6,6 +6,8 @@ Suivez [le contrat d’exécution Codex](../references/codex-runtime.md).
 
 Les demandes d’investigation sont en lecture seule. Elles produisent une explication citée ou une recommandation, pas un changement de code.
 
+Si la demande relève du [diagnostic ciblé de Reflect](../../reflect/SKILL.md#diagnostic-ciblé-du-parcours), applique ce mode et termine ce playbook avant l’étape 1.
+
 1. Lis et applique `../../how/SKILL.md` dans cette session, avec le [contrat d’exploration déléguée](../references/runtime/exploration.md). Pour les questions de motivation, lis aussi `../../why/SKILL.md`. Un délégué ne lance pas de descendants sans décision explicite du parent, donc ventile les explorateurs plutôt que les compétences elles-mêmes.
 2. Le point de contrôle de débit reste sur une ligne : `throughput checkpoint: n/a, read-only investigation`.
 3. Produis la sortie en forme `how` (Vue d’ensemble / Concepts clés / Fonctionnement / Emplacements / Pièges), ou une recommandation avec tableau de compromis si la demande est une décision entre alternatives.

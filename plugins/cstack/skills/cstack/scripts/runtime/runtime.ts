@@ -14,6 +14,7 @@ import {
   writeFile,
 } from "node:fs/promises";
 import { basename, delimiter, dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
+import { prepareT3 } from "./prepare.ts";
 import { loadWorkerContext } from "../worker-context.ts";
 import { loadWorkerSkills } from "../worker-skills.ts";
 
@@ -187,6 +188,7 @@ const MAX_TIMEOUT_MS = 2 * 60 * 60 * 1000;
 const RECEIPT_LIMIT = 1024 * 1024;
 const MAX_RESUMES = 8;
 const MAX_ACCEPTANCE_BYTES = 4096;
+const MAX_CURSOR_PROMPT_BYTES = 128 * 1024 - 1;
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 const WORKER_SCHEMA = {
@@ -301,6 +303,11 @@ const RUNTIMES: Readonly<Record<RuntimeName, RuntimeDefinition>> = {
       if (request.selection.reasoning_effort !== undefined) {
         throw new UnsupportedError("cursor-agent: reasoning_effort doit être encodé dans le modèle Cursor si requis");
       }
+      const prompt = `${brief}\n\nReturn only a JSON object with status, summary, checks, and findings.`;
+      const bytes = Buffer.byteLength(prompt, "utf8");
+      if (bytes > MAX_CURSOR_PROMPT_BYTES) {
+        throw new UnsupportedError(`cursor-agent: prompt de ${bytes} octets dépasse le budget argv de ${MAX_CURSOR_PROMPT_BYTES}; aucun lancement ni troncature`);
+      }
       return {
         argv: [
           "--print",
@@ -313,7 +320,7 @@ const RUNTIMES: Readonly<Record<RuntimeName, RuntimeDefinition>> = {
           "--workspace",
           cwd,
           ...(request.selection.model ? ["--model", request.selection.model] : []),
-          `${brief}\n\nReturn only a JSON object with status, summary, checks, and findings.`,
+          prompt,
         ],
         stdin: null,
       };
@@ -457,6 +464,7 @@ function parseRequestJson(raw: string): RunRequest {
   if (!isRecord(parsed.selection)) {
     throw new UsageError("selection: objet attendu");
   }
+  if (parsed.selection.runtime === "t3") throw new UsageError("BLOCKED: t3 exige préparation seule et dispatch MCP par le coordinateur; aucun processus CLI");
   rejectExtraKeys(parsed.selection, ["runtime", "model", "reasoning_effort"], "selection");
   const contextFiles = parsed.context_files;
   if (contextFiles !== undefined && (!Array.isArray(contextFiles) || !contextFiles.every((item) => typeof item === "string" && item.trim() === item && item.length > 0))) {
@@ -1394,12 +1402,18 @@ export async function main(argv: readonly string[], io: Io = { stdout: (value) =
   try {
     const [command, ...rest] = argv;
     if ((command === "--help" || command === "-h") && rest.length === 0) {
-      io.stdout("runtime.ts probe <codex-cli|claude-code|cursor-agent|grok>\nruntime.ts run --request <chemin JSON absolu>\nChamps : selection, brief_file, context_files?, skills?, skill_references?, acceptance?, cwd, output_dir, permissions, timeout_ms?, resume_from?\n");
+      io.stdout("runtime.ts probe <codex-cli|claude-code|cursor-agent|grok>\nruntime.ts prepare --request <JSON absolu> (T3, sans lancement)\nruntime.ts run --request <chemin JSON absolu>\nChamps : selection, brief_file, context_files?, skills?, skill_references?, acceptance?, cwd, output_dir, permissions, timeout_ms?, resume_from?\n");
       return 0;
     }
     if (command === "probe") {
       if (rest.length !== 1) throw new UsageError("probe exige exactement un runtime");
       io.stdout(jsonLine(await probeRuntime(parseProbeRuntime(rest[0]))));
+      return 0;
+    }
+    if (command === "prepare") {
+      const path = await assertBoundedJsonFile(requestArg(rest), "prepare", RECEIPT_LIMIT);
+      const result = await prepareT3(JSON.parse(await readFile(path, "utf8")), resolve(import.meta.dir, "../../../.."));
+      io.stdout(jsonLine(result));
       return 0;
     }
     if (command === "run") {
@@ -1416,5 +1430,5 @@ export async function main(argv: readonly string[], io: Io = { stdout: (value) =
 
 if (import.meta.main) {
   const status = await main(process.argv.slice(2));
-  process.exit(status);
+  process.exitCode = status;
 }

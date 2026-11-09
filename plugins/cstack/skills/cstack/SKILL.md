@@ -3,6 +3,9 @@ name: cstack
 description: "À utiliser pour $cstack:cstack, seulement sur invocation explicite de l'utilisateur. Route le travail vers une prose concise, des sous-agents Codex natifs délibérés, du code simple et du travail vérifié."
 ---
 
+Après invocation, T3 utilise le [contrat prioritaire](references/runtime/t3.md).
+
+
 # cstack
 
 Applique cstack à la tâche qui a explicitement invoqué `$cstack:cstack` jusqu’à ce que la tâche soit terminée ou que l’utilisateur arrête cstack. Ne fais pas persister ces instructions dans du travail non lié, ni un mode actif dans l’`AGENTS.md` global ou la config. Cette compétence coordonne la préparation, l’exécution, la revue et la vérification ; sélectionne toi-même les compétences nécessaires, sans faire approuver chaque transition de phase.
@@ -16,12 +19,13 @@ Deux des [règles communes](references/runtime/base.md) valent toujours. Tout ce
 ## Déclencheurs non négociables
 
 - **Alignement d’abord.** Lis la demande, les consignes du projet, les faits utiles du dépôt et l’état de tâche existant ; réutilise les décisions tranchées. Reformule en une phrase le résultat, les limites et le critère de succès sans ajouter d’hypothèse. Si deux lectures raisonnables restent possibles après les faits consultables, qu’un terme ou une contrainte reste incertain, ou qu’un choix de données ou d’effet de bord n’est pas fixé, lis et applique `../clarify/SKILL.md` avant toute addition de fonctionnalité ou modification du code, de la configuration ou des données. Ne choisis pas silencieusement la lecture la plus probable. Si les faits ou une courte expérience lèvent le doute, continue sans question.
+- **Avant une modification** → choisis le [parcours proportionné](references/runtime/parcours-court.md) : critères, contrôles et escalade.
 - **Grand objectif durable** (carte de dépendances entre phases, PR ou sessions ; plusieurs fichiers ne suffisent pas) → `../horizon/SKILL.md`. Reprends une carte existante ; un grand objectif clair peut aller directement aux unités d’implémentation sans tickets de décision inventés. Pendant que cstack route Horizon, consomme son résultat, continue les prérequis autonomes admissibles et reviens à son prochain ticket sans faire invoquer une autre commande ; une décision humaine en attente bloque seulement le travail dépendant.
 - **Implémentation multi-phase** → vérifie l’autorisation du [Goal global](references/runtime/goal.md) dans la demande effective ; une invocation nue ne la donne pas. Autorisé : lis `playbooks/autonomous-run.md` et garde le même objectif à travers les playbooks.
 - **Mode Plan ou demande en lecture seule** → retourne le plan ou la réponse, sans implémentation ni écriture. Une préparation résolue n’autorise aucune action externe.
 - **Avant la première écriture d’implémentation** → travaille depuis une branche de tâche dans un worktree Git propre, selon l’[activation](references/runtime/activation.md) ; enregistre sa propriété dans le point de reprise ([état](references/runtime/etat.md)).
 - **Avant toute implémentation de bug ou de fonctionnalité qui change un comportement** → `../tdd/SKILL.md`, transmis aux builders. Les changements sans effet comportemental et les impossibilités réelles suivent ses exceptions ; vérifie ses preuves avant toute livraison.
-- **Changement non trivial ou architecture** → `../how/SKILL.md`. Motivation d’un comportement, régression ou décision inexpliquée → `../why/SKILL.md`. Demande d’enseignement plutôt que de correctif → `../teach/SKILL.md` (passes `how` et `why`, une leçon au lieu d’un diff).
+- **Explication seule d’un écart CStack** → diagnostic `../reflect/SKILL.md`, remplace Investigation. Sinon : changement non trivial ou architecture → `../how/SKILL.md` ; motivation, régression ou décision inexpliquée → `../why/SKILL.md` ; enseignement → `../teach/SKILL.md`.
 - **Avant d’écrire du code avec état ou branches** → nomme la forme de données et lis [Modéliser le domaine](references/principles/model-the-domain.md).
 - **Avant que le code traverse une nouvelle frontière** de fonction ou de module → `../architect/SKILL.md`.
 - **Conception disputée** → `../interrogate/SKILL.md`, relecteurs en sous-agents natifs ; sinon [Orchestration requise](references/runtime/orchestration.md) avec `route: Review`. Pas d’opinion de premier plan à la place de la comparaison.
@@ -29,7 +33,7 @@ Deux des [règles communes](references/runtime/base.md) valent toujours. Tout ce
 - **Avant de changer un symbole largement utilisé, une frontière de module ou un contrat partagé** → `../blast-radius/SKILL.md`.
 - **Question empirique** qu’une courte expérience trancherait → `playbooks/prototype.md`, au lieu de demander quelle branche prendre. Ne demande que pour une préférence produit, une autorité absente ou une action irréversible.
 - **Changement multi-étapes non trivial** → avant de ventiler, écris le point de contrôle de débit de `playbooks/feature.md` en quatre todos : étapes bloquantes, flux indépendants, état mutable partagé, plus petite décomposition sûre (`n/a: <reason>` sinon).
-- **Ventilation** → avant d’exécuter ou de déléguer le travail qui en dépend, lis [Orchestration requise](references/runtime/orchestration.md) : zones de couverture indépendantes vers [Swarm](../swarm/SKILL.md), solutions concurrentes vers [Arena](../arena/SKILL.md). Une capacité manquante ne supprime jamais une étape.
+- **Ventilation requise** → [Orchestration requise](references/runtime/orchestration.md) avant le travail dépendant, pour [Swarm](../swarm/SKILL.md) ou [Arena](../arena/SKILL.md).
 - **Avant l’implémentation déléguée** → `.cstack/models.json` présent ou surcharge : contrôle préalable des rôles requis selon [modèles](references/runtime/modeles.md). Avant chaque lancement : [délégation](references/runtime/delegation.md), annonce selon le [suivi visible](references/runtime/suivi.md). Exploration déléguée → [exploration](references/runtime/exploration.md). Sélection `runtime` → [workers CLI](references/runtime-workers.md).
 - **Avant chaque commit** → `../deslop/SKILL.md` sur le diff (il relance la vérification pour prouver qu’il n’a retiré que du poids ; sinon `deslop skipped: <reason>`), puis [Commits locaux](references/runtime/commits.md) : commit de chaque unité vérifiée sans autre confirmation, travail non lié préservé, vrais SHA rapportés.
 - **Avant de dire prêt pour PR ou merge** → un verdict d’un acteur qui ne l’a pas écrit. Un parent qui relit le diff d’un délégué suffit ; un parent auteur du code a besoin d’un reviewer séparé, sinon [Orchestration requise](references/runtime/orchestration.md) avec `route: Review`. Réutilise un verdict seulement pour le même périmètre et un patch inchangé. Jamais d’auto-revue appelée indépendante.

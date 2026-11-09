@@ -1,0 +1,124 @@
+{
+  "toolName": "t3-code.orchestrator_capabilities",
+  "input": {
+    "search": "grok"
+  },
+  "output": {
+    "parentThreadId": "public-thread",
+    "inheritedProviderInstanceId": "codex",
+    "inheritedModel": "gpt-6.1-sol",
+    "inheritedOptions": [
+      {
+        "id": "reasoningEffort",
+        "value": "high"
+      },
+      {
+        "id": "serviceTier",
+        "value": "priority"
+      }
+    ],
+    "runtimeMode": "full-access",
+    "interactionMode": "default",
+    "providers": [
+      {
+        "providerInstanceId": "codex",
+        "driverKind": "codex",
+        "displayName": "Codex",
+        "models": [],
+        "canRunChildTask": true,
+        "canRunCrossProviderChildTask": true,
+        "constraints": []
+      },
+      {
+        "providerInstanceId": "grok",
+        "driverKind": "grok",
+        "displayName": "Grok",
+        "models": [
+          {
+            "id": "grok-4.7",
+            "label": "Grok 4.7",
+            "options": [
+              {
+                "id": "reasoningEffort",
+                "values": [
+                  "xhigh",
+                  "high",
+                  "medium",
+                  "low"
+                ],
+                "default": "high"
+              }
+            ]
+          },
+          {
+            "id": "grok-4.7-build-fast",
+            "label": "Grok 4.7 Fast",
+            "options": [
+              {
+                "id": "reasoningEffort",
+                "values": [
+                  "xhigh",
+                  "high",
+                  "medium",
+                  "low"
+                ],
+                "default": "high"
+              }
+            ]
+          },
+          {
+            "id": "grok-4.6",
+            "label": "Grok 4.6",
+            "options": [
+              {
+                "id": "reasoningEffort",
+                "values": [
+                  "xhigh",
+                  "high",
+                  "medium",
+                  "low"
+                ],
+                "default": "high"
+              }
+            ]
+          },
+          {
+            "id": "grok-4.5",
+            "label": "Grok 4.5",
+            "options": [
+              {
+                "id": "reasoningEffort",
+                "values": [
+                  "high",
+                  "medium",
+                  "low"
+                ],
+                "default": "high"
+              }
+            ]
+          }
+        ],
+        "runtimeModes": [
+          "approval-required",
+          "auto",
+          "full-access"
+        ],
+        "canRunChildTask": true,
+        "canRunCrossProviderChildTask": true,
+        "constraints": []
+      }
+    ],
+    "features": {
+      "appOwnedSubagents": true,
+      "asyncPolling": true,
+      "cancellation": true,
+      "batchThreadCreation": true,
+      "threadManagement": true,
+      "incrementalThreadRead": true,
+      "scheduledTasks": true,
+      "maxBatchThreads": 20
+    }
+  },
+  "itemId": "public-filtered-capabilities",
+  "observedAt": "2026-11-05T01:44:36.883Z"
+}

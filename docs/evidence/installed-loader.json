@@ -1,0 +1,171 @@
+{
+  "status": "verified",
+  "phase": "uninstall",
+  "modelTurnsRequested": 0,
+  "codexVersion": "0.166.0",
+  "limits": [
+    "Codex CLI installed discovery only; no T3 installation claim",
+    "No model turn or ordinary-task activation behavior tested"
+  ],
+  "sourceHead": "3369f0dfacc1e8c592d990465d9c930bc3ca96e3",
+  "sourceTree": "d474eb08dd5a03ce929af505ac4a42af407e01a3",
+  "cliLockSha256": "6716dd5a3d02764a36674cdc6730a4096ac6085f8126420bef7fda3ad1d85ec1",
+  "nodeVersion": "v22.23.4",
+  "installed": {
+    "id": "cstack@cstack",
+    "version": "0.8.0",
+    "enabled": true,
+    "sourceFileCount": 248,
+    "packageInventorySha256": "e01f12d078c7e9643eb39bbb2adc14be899c7403acee76e4bc7220f4ec742c85",
+    "skillCount": 29,
+    "skills": {
+      "architect": {
+        "name": "cstack:architect",
+        "path": "/home/runner/.codex/plugins/cache/cstack/cstack/0.8.0/skills/architect/SKILL.md",
+        "sha256": "64dd5580bf8ee99697f8a6edf9058912e71980a0637b5d1055a8b2baf566996c"
+      },
+      "arena": {
+        "name": "cstack:arena",
+        "path": "/home/runner/.codex/plugins/cache/cstack/cstack/0.8.0/skills/arena/SKILL.md",
+        "sha256": "324b81c81f0936e4a3fdc7e4753373544e6f979463084be83e3aceac83792fb9"
+      },
+      "audit-architecture": {
+        "name": "cstack:audit-architecture",
+        "path": "/home/runner/.codex/plugins/cache/cstack/cstack/0.8.0/skills/audit-architecture/SKILL.md",
+        "sha256": "42f6eeabd4d885cd000739f88c9d6b890b97b252a04caa0e66da14f12ac6bdc3"
+      },
+      "automate-me": {
+        "name": "cstack:automate-me",
+        "path": "/home/runner/.codex/plugins/cache/cstack/cstack/0.8.0/skills/automate-me/SKILL.md",
+        "sha256": "028f7c88661a72e38a62ed780bbceabc8a9498399ceeb17cc2d7b6f68185d40f"
+      },
+      "blast-radius": {
+        "name": "cstack:blast-radius",
+        "path": "/home/runner/.codex/plugins/cache/cstack/cstack/0.8.0/skills/blast-radius/SKILL.md",
+        "sha256": "949d5b0e32df2a9895f1451a79cb4ee678d56625d1155e39ad4933d98dd9a513"
+      },
+      "bro": {
+        "name": "cstack:bro",
+        "path": "/home/runner/.codex/plugins/cache/cstack/cstack/0.8.0/skills/bro/SKILL.md",
+        "sha256": "aed78998e11e4e844882bb1174d6c62dfbd81ece07d63bd11b33412ed90d34a9"
+      },
+      "clarify": {
+        "name": "cstack:clarify",
+        "path": "/home/runner/.codex/plugins/cache/cstack/cstack/0.8.0/skills/clarify/SKILL.md",
+        "sha256": "f4599c53be4622655a6203c6c5b812ba3e2c36db9e0c437783eb293dda8e0f04"
+      },
+      "create-verification-skill": {
+        "name": "cstack:create-verification-skill",
+        "path": "/home/runner/.codex/plugins/cache/cstack/cstack/0.8.0/skills/create-verification-skill/SKILL.md",
+        "sha256": "1113901bd1344104aa4a683daa0f73bddc2a04f5cad7ceea80aea2375b891d03"
+      },
+      "cstack": {
+        "name": "cstack:cstack",
+        "path": "/home/runner/.codex/plugins/cache/cstack/cstack/0.8.0/skills/cstack/SKILL.md",
+        "sha256": "726ffee5eeb9743eb79f1ac8290444cc7b5928a0838c6229e90241b75526bf01"
+      },
+      "deslop": {
+        "name": "cstack:deslop",
+        "path": "/home/runner/.codex/plugins/cache/cstack/cstack/0.8.0/skills/deslop/SKILL.md",
+        "sha256": "3f20346ae5863186bcdca661c92b1eb4ba1f975776452b57faf650399dc42cd5"
+      },
+      "domain": {
+        "name": "cstack:domain",
+        "path": "/home/runner/.codex/plugins/cache/cstack/cstack/0.8.0/skills/domain/SKILL.md",
+        "sha256": "09cf01ce65dec99ae2fe328138f5e6fd9a1f323b7092b94d02212023819d156a"
+      },
+      "figure-it-out": {
+        "name": "cstack:figure-it-out",
+        "path": "/home/runner/.codex/plugins/cache/cstack/cstack/0.8.0/skills/figure-it-out/SKILL.md",
+        "sha256": "049c15b8871b33db79c777bec5088115c4dcdcc7c553bb056383a6f1f5eff153"
+      },
+      "horizon": {
+        "name": "cstack:horizon",
+        "path": "/home/runner/.codex/plugins/cache/cstack/cstack/0.8.0/skills/horizon/SKILL.md",
+        "sha256": "8e7a08f7231388559338868ab69ffd3025317d80e61f0889dbcce18c405bcecd"
+      },
+      "how": {
+        "name": "cstack:how",
+        "path": "/home/runner/.codex/plugins/cache/cstack/cstack/0.8.0/skills/how/SKILL.md",
+        "sha256": "79db4b2881e454205993a03ba6ecc28e7b2ea10bfd5745a74dfe93028093402e"
+      },
+      "interrogate": {
+        "name": "cstack:interrogate",
+        "path": "/home/runner/.codex/plugins/cache/cstack/cstack/0.8.0/skills/interrogate/SKILL.md",
+        "sha256": "36676cc8b807d1f6f490a0b0739fe7bbe3720cc22e04cc32cadb28d0afda47f6"
+      },
+      "maintain-verification-skill": {
+        "name": "cstack:maintain-verification-skill",
+        "path": "/home/runner/.codex/plugins/cache/cstack/cstack/0.8.0/skills/maintain-verification-skill/SKILL.md",
+        "sha256": "8e7acd21dcac73bb314abe5c7f7e26492cc42139edfe8129b003e13348a524f8"
+      },
+      "make-bot-ui": {
+        "name": "cstack:make-bot-ui",
+        "path": "/home/runner/.codex/plugins/cache/cstack/cstack/0.8.0/skills/make-bot-ui/SKILL.md",
+        "sha256": "6cb12f4775ebdd7b1be2c50cd6cd691e2bb0c99062989df69c8e403f5e222dbd"
+      },
+      "no-comments": {
+        "name": "cstack:no-comments",
+        "path": "/home/runner/.codex/plugins/cache/cstack/cstack/0.8.0/skills/no-comments/SKILL.md",
+        "sha256": "592ebf4c4fdf7460595bf446b92c92f0eeb7395bd52a9849eb71a4bc80a84bec"
+      },
+      "recall": {
+        "name": "cstack:recall",
+        "path": "/home/runner/.codex/plugins/cache/cstack/cstack/0.8.0/skills/recall/SKILL.md",
+        "sha256": "339d2a2b0ca4d9ef1b0ed95e334f0f111cd9bf2d6960b2fae1af10590f4a6569"
+      },
+      "reflect": {
+        "name": "cstack:reflect",
+        "path": "/home/runner/.codex/plugins/cache/cstack/cstack/0.8.0/skills/reflect/SKILL.md",
+        "sha256": "b6f2f1f0c7e68977ffceeceeec91765e01c5e568c237de1e8f4285b7234e5295"
+      },
+      "setup-cstack": {
+        "name": "cstack:setup-cstack",
+        "path": "/home/runner/.codex/plugins/cache/cstack/cstack/0.8.0/skills/setup-cstack/SKILL.md",
+        "sha256": "7712281951f56a5badd1bb65870cf10dc6deda9a44b4c33c7520374783fc2ae7"
+      },
+      "show-me-your-work": {
+        "name": "cstack:show-me-your-work",
+        "path": "/home/runner/.codex/plugins/cache/cstack/cstack/0.8.0/skills/show-me-your-work/SKILL.md",
+        "sha256": "c2ac0cf7ed916bbaf9b1f02169f8f9052d4ccd525c6d9e1a543437d49a97b719"
+      },
+      "swarm": {
+        "name": "cstack:swarm",
+        "path": "/home/runner/.codex/plugins/cache/cstack/cstack/0.8.0/skills/swarm/SKILL.md",
+        "sha256": "854ed0c01f001d28c8af819250eeac6abb1c9882dbd7a8cacc85ac3b26aa374c"
+      },
+      "tdd": {
+        "name": "cstack:tdd",
+        "path": "/home/runner/.codex/plugins/cache/cstack/cstack/0.8.0/skills/tdd/SKILL.md",
+        "sha256": "ebdc5418593dbf912905245c1de4738406ca0d6ddf15010dfd2ad0ac1463686e"
+      },
+      "teach": {
+        "name": "cstack:teach",
+        "path": "/home/runner/.codex/plugins/cache/cstack/cstack/0.8.0/skills/teach/SKILL.md",
+        "sha256": "8c15fed0bee503d028227f29644235d06a40f5e71b55022cbbd9487173dcac99"
+      },
+      "technical-writing": {
+        "name": "cstack:technical-writing",
+        "path": "/home/runner/.codex/plugins/cache/cstack/cstack/0.8.0/skills/technical-writing/SKILL.md",
+        "sha256": "f62118b9cb4c79a26727ae0e99290cfb1fe9fbde55a08bc6654d00a04bf22012"
+      },
+      "typescript-best-practices": {
+        "name": "cstack:typescript-best-practices",
+        "path": "/home/runner/.codex/plugins/cache/cstack/cstack/0.8.0/skills/typescript-best-practices/SKILL.md",
+        "sha256": "16e2cfd09dba55064417e77a83a2b33f9361ee88ce49759d3fa89f5f8f347016"
+      },
+      "unslop": {
+        "name": "cstack:unslop",
+        "path": "/home/runner/.codex/plugins/cache/cstack/cstack/0.8.0/skills/unslop/SKILL.md",
+        "sha256": "9f8ccff92e75d599419b0d3e22c92aa71ef982acc0700b66e84f518a4e100986"
+      },
+      "why": {
+        "name": "cstack:why",
+        "path": "/home/runner/.codex/plugins/cache/cstack/cstack/0.8.0/skills/why/SKILL.md",
+        "sha256": "38003bfc350053edae15a0b68cb472a19d2f7d46d6391470ce37f0240f4829d0"
+      }
+    }
+  },
+  "reapplyPreservedState": true,
+  "uninstallVerified": true
+}

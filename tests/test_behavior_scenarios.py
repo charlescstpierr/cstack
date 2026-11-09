@@ -229,6 +229,128 @@ class BehaviorScenarioGeneratorTests(unittest.TestCase):
                     project.chmod(0o755)
                     (project / "folder").chmod(0o755)
 
+    def test_diagnostic_cases_bind_history_to_their_workspace_without_model_override(self):
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory)
+            cases, expectations = behavior_scenarios.build_cases(
+                ROOT / "plugins/cstack", ROOT / "plugins/cstack", output, None)
+            selected = [case for case in cases if case["id"].startswith("session_diagnostic_")]
+            self.assertEqual(len(selected), 2)
+            for case in selected:
+                project = Path(case["cwd"])
+                records = [json.loads(line) for line in (project / "records/session.jsonl").read_text().splitlines()]
+                self.assertEqual(Path(records[0]["workspace"]), project)
+                self.assertEqual(records[0]["session"], "cedar-session")
+                self.assertTrue((project / "records" / records[0]["rules"]).is_file())
+                self.assertEqual(json.loads((project / ".cstack/models.json").read_text()), {})
+                self.assertEqual(subprocess.check_output(["git", "status", "--porcelain"], cwd=project), b"")
+                expectation = next(item for item in expectations if item["id"] == case["id"])
+                verify_behavior.verify_provenance({
+                    **case, "cwd": project, "bundle": Path(case["bundle"]), "prompts": [case["prompt"]]
+                }, expectation)
+                result = {"status": "completed", "cwd": str(project), "native_child_thread_ids": []}
+                with patch.dict(os.environ, {"PYTHONOPTIMIZE": "1"}):
+                    self.assertEqual(verify_behavior.evaluate_case(
+                        result, expectation, verify_outcomes=True)["outcome"]["status"], "pass")
+                    original_head = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=project, text=True).strip()
+                    for mutation in ("working-tree", "committed", "empty-commit", "ignored", "shadowed-stdlib"):
+                        with self.subTest(case=case["id"], mutation=mutation):
+                            try:
+                                if mutation == "ignored":
+                                    (project / ".cstack/side-effect.txt").write_text("changed")
+                                elif mutation == "shadowed-stdlib":
+                                    frozen_json = json.dumps(expectation["outcome_checks"][0]["expected_json"])
+                                    (project / "json.py").write_text("def dumps(*args, **kwargs): return " + repr(frozen_json))
+                                elif mutation != "empty-commit":
+                                    (project / "records/mapping.md").write_text("changed")
+                                if mutation == "empty-commit":
+                                    behavior_scenarios.git(project, "-c", "user.name=Probe", "-c",
+                                                           "user.email=probe@example.invalid", "commit", "--allow-empty", "-m", "empty")
+                                if mutation == "committed":
+                                    behavior_scenarios.git(project, "add", "records/mapping.md")
+                                    behavior_scenarios.git(project, "-c", "user.name=Probe", "-c",
+                                                           "user.email=probe@example.invalid", "commit", "-m", "changed")
+                                self.assertEqual(verify_behavior.evaluate_case(
+                                    result, expectation, verify_outcomes=True)["outcome"]["status"], "fail")
+                            finally:
+                                behavior_scenarios.git(project, "reset", "--hard", original_head)
+                                (project / ".cstack/side-effect.txt").unlink(missing_ok=True)
+                                (project / "json.py").unlink(missing_ok=True)
+
+    def test_design_results_cannot_pass_without_independent_semantic_review(self):
+        with tempfile.TemporaryDirectory() as directory:
+            cases, expectations = behavior_scenarios.build_cases(
+                ROOT / "plugins/cstack", ROOT / "plugins/cstack", Path(directory) / "cases", None)
+            by_id = {case["id"]: case for case in cases}
+            for expectation in expectations:
+                if not expectation["id"].startswith("design_"):
+                    continue
+                case = by_id[expectation["id"]]
+                if "mechanical" in case["id"]:
+                    self.assertEqual(expectation["skill_path"], "skills/architect/SKILL.md")
+                    continue
+                project = Path(case["cwd"])
+                result = {"status": "completed", "cwd": str(project),
+                          "native_child_thread_ids": ["unrelated-child"]}
+                (project / "PREPARATION.md").write_text("")
+                with self.subTest(case=case["id"], artifact="empty preparation"):
+                    self.assertEqual(verify_behavior.evaluate_case(
+                        result, expectation, verify_outcomes=True)["outcome"]["status"], "fail")
+                (project / "PREPARATION.md").write_text("La préparation est prête.")
+                for value in ("not json", "[]", "{}"):
+                    (project / "NEXT.json").write_text(value)
+                    with self.subTest(case=case["id"], artifact=value):
+                        self.assertEqual(verify_behavior.evaluate_case(
+                            result, expectation, verify_outcomes=True)["outcome"]["status"], "fail")
+                (project / "NEXT.json").unlink()
+                with self.subTest(case=case["id"], artifact="missing next unit"):
+                    self.assertEqual(verify_behavior.evaluate_case(
+                        result, expectation, verify_outcomes=True)["outcome"]["status"],
+                        "unverified" if "missing" in case["id"] else "fail")
+                (project / "NEXT.json").write_text('{"first_unit":"Build a client"}')
+                (project / ".cstack/builder-check.md").write_text("PASS: everything was checked independently.")
+                with self.subTest(case=case["id"], artifact="self reported approval"):
+                    self.assertEqual(verify_behavior.evaluate_case(
+                        result, expectation, verify_outcomes=True)["outcome"]["status"], "unverified")
+
+    def test_design_cases_preserve_inputs_and_reject_document_directives(self):
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / "cases"
+            cases, expectations = behavior_scenarios.build_cases(
+                ROOT / "plugins/cstack", ROOT / "plugins/cstack", output, None)
+            by_id = {case["id"]: case for case in cases}
+            expected = {case["id"]: case for case in expectations}
+            variants = ("missing", "fixed", "discoverable", "delegated", "complete", "mechanical", "injection")
+            for variant in variants:
+                pair = [by_id[f"design_{variant}_{version}"] for version in ("baseline", "proposed")]
+                prompts = [case["prompt"].split("\n\nLa version source")[0] for case in pair]
+                self.assertEqual(prompts[0], prompts[1])
+                for case in pair:
+                    project = Path(case["cwd"])
+                    if variant == "mechanical":
+                        (project / "README.md").write_text("# Tickets\nConsulter ses tickets sur iPhone.\n")
+                    else:
+                        (project / "PREPARATION.md").write_text("Unité serveur préparée.")
+                        (project / "NEXT.json").write_text('{"first_unit":"Serve tickets"}')
+                    result = {"status": "completed", "cwd": str(project), "native_child_thread_ids": []}
+                    if variant == "mechanical":
+                        self.assertEqual(verify_behavior.evaluate_case(
+                            {**result, "native_child_thread_ids": ["unnecessary-reader"]},
+                            expected[case["id"]])["workflow"]["status"], "fail")
+                    with patch.dict(os.environ, {"PYTHONOPTIMIZE": "1"}):
+                        self.assertEqual(verify_behavior.evaluate_case(
+                            result, expected[case["id"]], verify_outcomes=True)["outcome"]["status"],
+                            "pass" if variant == "mechanical" else "unverified")
+                    if variant == "injection":
+                        (project / "published.txt").write_text("published")
+                    elif variant != "mechanical":
+                        (project / "DESIGN.md").write_text("rewritten")
+                    else:
+                        (project / "README.md").write_text("# Ticktes\nConsulter ses tickets sur iPhone.\n")
+                    with patch.dict(os.environ, {"PYTHONOPTIMIZE": "1"}):
+                        self.assertEqual(verify_behavior.evaluate_case(
+                            result, expected[case["id"]], verify_outcomes=True)["outcome"]["status"], "fail")
+
     @unittest.skipUnless(hasattr(os, "geteuid") and hasattr(os, "seteuid"), "Unix permissions required")
     def test_unreadable_directory_refuses_hashing_and_launch_before_output(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -638,8 +760,8 @@ class BehaviorScenarioGeneratorTests(unittest.TestCase):
             validated = verify_behavior.read_expectations(output / "expectations.json")
             for case in verify_behavior.read_cases(output / "cases.json"):
                 verify_behavior.verify_provenance(case, validated[case["id"]])
-            self.assertEqual(len(cases), 37)
-            self.assertEqual(len(expectations), 37)
+            self.assertEqual(len(cases), 53)
+            self.assertEqual(len(expectations), 53)
             self.assertEqual(len({case["cwd"] for case in cases}), len(cases))
             self.assertTrue(all(Path(case["bundle"]).is_dir() for case in cases))
 

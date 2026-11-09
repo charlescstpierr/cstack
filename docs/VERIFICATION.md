@@ -1,5 +1,8 @@
 # Vérification de cstack
 
+Adaptation T3 : [preuves et procédure de smoke](T3-VERIFICATION.md), [notes pour council](T3-COUNCIL-NOTES.md). Les tests déterministes ne prouvent pas le chargement du plugin dans T3.
+
+
 Ce fichier distingue le catalogue courant des campagnes datées. Les nombres historiques restent ceux de leur campagne.
 
 ## Verdicts indépendants des scénarios
@@ -21,6 +24,8 @@ Les attentes avec empreintes exigent `hash_algorithm: cstack-tree-sha256-v2`. Ce
 Les options du lanceur (`--model`, `--effort`, `--turn-timeout`, traçage et commande app-server) sont choisies au lancement et ne sont pas authentifiées par les empreintes des scénarios. Le reçu enregistre `requested_runtime_config` et la commande app-server exécutée ; ces choix ne font pas partie de `case_sha256`.
 
 Place les vérificateurs hors du projet modifiable. Un test écrit ou affaibli par le candidat ne constitue pas une preuve indépendante. Sans `expected_json`, le code de sortie reste le contrat de la commande de vérification fournie.
+
+Une attente peut déclarer `requires_independent_review: true` quand la pertinence des décisions exige une revue indépendante que le runner ne sait pas authentifier. Ce booléen ajoute un contrôle de résultat `unverified`, même si les vérifications déterministes passent. Une vérification échouée reste prioritaire et donne `fail`. Aucun fichier de rapport ni champ fourni par le candidat ne satisfait ce contrôle : la revue indépendante se consigne séparément, hors du runner. Avec `--verify-outcomes`, un résultat encore `unverified` produit le code de sortie 2. Les scénarios de conception non mécaniques utilisent cette limite explicite.
 
 Un code de vérificateur non nul donne `fail`. Une commande inaccessible ou expirée reste `unverified`, sans empêcher les vérifications suivantes. Sans cette option, aucun vérificateur n’est exécuté et le résultat reste `unverified`. Les sorties conservées sont bornées à 4096 caractères par flux et nettoyées par le filtre de secrets du reçu.
 

@@ -1,5 +1,8 @@
 ### Nettoyage de worktree et de simulateur
 
+Dans une tâche cstack explicitement invoquée dans T3, le [contrat T3](../references/runtime/t3.md) prime sur les règles autonomes de ce document.
+
+
 Suivez [le contrat d’exécution Codex](../references/codex-runtime.md).
 
 **Le coordinateur possède le nettoyage.** Réutilise les barrières d’audit, d’usage et de préservation de pstack. Terminer un agent ou fermer une PR ne prouve pas que son worktree est jetable.

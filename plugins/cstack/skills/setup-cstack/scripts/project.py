@@ -352,6 +352,10 @@ def _agent_changes(mode: bool | None, snapshots: dict[str, bytes | None], config
     changes: dict[str, bytes | None] = {}
     for name, relative in AGENT_PATHS.items():
         old = snapshots[relative]
+        role = NATIVE_AGENTS[name]["role"]
+        selected = models.selection(models.role_value(config or {}, role))
+        if selected.get("runtime") == "t3":
+            continue
         managed = _managed_agent(old)
         if old is not None and not managed:
             if mode:
@@ -361,9 +365,6 @@ def _agent_changes(mode: bool | None, snapshots: dict[str, bytes | None], config
             if managed:
                 changes[relative] = None
             continue
-        role = NATIVE_AGENTS[name]["role"]
-        # Même lecture que models.resolve ; un rôle confié à un CLI n’a pas d’agent natif.
-        selected = models.selection((config or {}).get(role, (config or {}).get(models.LEGACY_FALLBACKS.get(role), "inherit-parent")))
         if "runtime" in selected:
             if managed:
                 changes[relative] = None
@@ -394,14 +395,14 @@ def _agent_result(entries: list[dict[str, Any]], changed: list[str]) -> dict[str
             for key, deleting in (("updated", False), ("removed", True))}
 
 
-def apply_model_choices(workspace: Path, choices: dict[str, Any], expected_digest: str, catalog: dict[str, Any] | None) -> dict[str, Any]:
+def apply_model_choices(workspace: Path, choices: dict[str, Any], expected_digest: str, catalog: dict[str, Any] | None, host: str = "codex", context: dict[str, Any] | None = None) -> dict[str, Any]:
     """Préparer modèles et agents avant toute écriture, puis restaurer ensemble en cas d’échec."""
     workspace = _workspace(workspace)
     models = _models()
     old = _read(workspace, ".cstack/models.json")
     if _sha(old or b"") != expected_digest:
         raise ProjectError("models.json a changé depuis la prévisualisation; le relire avant d’enregistrer")
-    models.validate(choices, catalog, check_available=True)
+    models.validate(choices, catalog, check_available=True, host=host, context=context)
     config = _models_config(old, choices, models)
     snapshots = {relative: _read(workspace, relative) for relative in AGENT_PATHS.values()}
     entries = [_entry(".cstack/models.json", old, (json.dumps(config, indent=2, ensure_ascii=False) + "\n").encode())]
@@ -454,14 +455,26 @@ def _payload(options: dict[str, Any], snapshots: dict[str, bytes | None], models
         files.append(_entry("docs/agents/issue-tracker.md", tracker_old, tracker_old))
     old_models = snapshots[".cstack/models.json"]
     choices, mode = options["model_choices"], options["native_agents"]
-    # Sans choix ni agent à écrire, un models.json existant est repris tel quel, sans relecture.
-    writes_agents = mode or (mode is None and any(_managed_agent(snapshots[relative]) for relative in AGENT_PATHS.values()))
-    config = _models_config(old_models, choices, models) if choices or writes_agents else None
+    changes_agents = mode or any(_managed_agent(snapshots[relative]) for relative in AGENT_PATHS.values())
+    config = _models_config(old_models, choices, models) if choices or changes_agents else None
     if old_models is not None or choices:
         files.append(_entry(".cstack/models.json", old_models, _models_content(old_models, config, choices)))
     for relative, new in _agent_changes(mode, snapshots, config, models).items():
         files.append(_entry(relative, snapshots[relative], new))
-    return {"files": files, "observed": {path: _record(snapshots[path]) for path in OBSERVED_PATHS}}
+    payload = {"files": files, "observed": {path: _record(snapshots[path]) for path in OBSERVED_PATHS}}
+    preserved = {}
+    for name, relative in AGENT_PATHS.items():
+        old = snapshots[relative]
+        if old is None:
+            continue
+        chosen = models.selection(models.role_value(config or {}, NATIVE_AGENTS[name]["role"]))
+        if chosen.get("runtime") == "t3":
+            preserved[relative] = "t3-role"
+        elif not _managed_agent(old):
+            preserved[relative] = "manual-agent"
+    if preserved:
+        payload["preserved_agents"] = preserved
+    return payload
 
 
 def preview_plan(workspace: Path, raw_options: Any, catalog: dict[str, Any] | None) -> dict[str, Any]:
@@ -478,8 +491,13 @@ def preview_plan(workspace: Path, raw_options: Any, catalog: dict[str, Any] | No
 
 def _shape(plan: Any) -> dict[str, Any]:
     required = {"catalog_sha256", "files", "model_choices", "observed", "options", "plan_sha256", "status", "version", "workflows"}
-    if not isinstance(plan, dict) or set(plan) != required or plan["version"] != PLAN_VERSION or plan["status"] != "preview":
+    if not isinstance(plan, dict) or set(plan) - {"preserved_agents"} != required or plan["version"] != PLAN_VERSION or plan["status"] != "preview":
         raise ProjectError("le plan contient des champs inconnus ou manquants")
+    preserved = plan.get("preserved_agents", {})
+    if (not isinstance(preserved, dict) or ("preserved_agents" in plan and not preserved)
+            or any(path not in AGENT_PATHS.values() or not isinstance(reason, str) or reason not in {"t3-role", "manual-agent"}
+                   for path, reason in preserved.items())):
+        raise ProjectError("agents préservés du plan invalides")
     body = dict(plan)
     fingerprint = body.pop("plan_sha256")
     if not isinstance(fingerprint, str) or _sha(_canonical(body)) != fingerprint:
@@ -616,6 +634,8 @@ def apply_plan(workspace: Path, supplied_plan: Any, raw_options: Any, catalog: d
         changes.append(entry)
     result = _apply_changes(workspace, changes, resume_on_interrupt=True)
     result["plan_sha256"] = plan["plan_sha256"]
+    if "preserved_agents" in plan:
+        result["preserved_agents"] = plan["preserved_agents"]
     return result
 
 

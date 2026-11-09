@@ -1,5 +1,8 @@
 # Contrat d’exécution Codex natif
 
+Dans une tâche cstack explicitement invoquée dans T3, le [contrat T3](runtime/t3.md) prime sur les règles autonomes de ce document.
+
+
 Index du contrat, pour une compétence cstack explicitement invoquée : chaque partie se lit au moment où sa situation se présente. Cet index et ses parties sont la définition partagée du comportement d’exécution ; les fichiers compagnons ne doivent pas l’affaiblir.
 
 Les [règles communes](runtime/base.md) (précédence, données externes, capacité manquante, annonces, commits, état) valent toujours ; pour le reste, ouvre seulement la partie de la situation en cours.
@@ -7,6 +10,7 @@ Les [règles communes](runtime/base.md) (précédence, données externes, capaci
 ## Parties
 
 - [Activation et routage](runtime/activation.md) : invocation, sœurs et principes, bloc de setup passif, porte `clarify`, portée de livraison par défaut et worktree de tâche.
+- [Parcours proportionné](runtime/parcours-court.md) : ancrage et édition directs, critères d'escalade, rôles et revue conservés.
 - [Suivi visible](runtime/suivi.md) : annonce du playbook, todo cochée en direct, annonce et preuves de chaque appel de délégué, relance unique.
 - [Goal global](runtime/goal.md) : implémentation multi-phase avec demande explicite de Goal.
 - [Exploration déléguée](runtime/exploration.md) : au moins deux explorateurs, normalement trois angles.

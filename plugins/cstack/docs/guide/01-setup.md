@@ -1,5 +1,8 @@
 # Configurer cstack
 
+Dans T3 avec coordinateur Codex, après invocation explicite de cstack, suivre le [contrat T3](../../skills/cstack/references/runtime/t3.md). Une position T3 est non portable, les CLI y sont bloqués en V1, et les checkouts appartiennent à l’hôte. Le support du plugin installé reste à vérifier dans la session réelle.
+
+
 cstack est un plugin Codex pour organiser un travail de code autour d'un objectif vérifiable. Le cœur fonctionne avec les outils natifs de Codex et des sous-agents natifs, ou des workers CLI explicitement sélectionnés. Il n'ajoute pas de moteur d'orchestration séparé.
 
 ## Installer le plugin

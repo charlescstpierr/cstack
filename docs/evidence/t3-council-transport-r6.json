@@ -1,0 +1,207 @@
+{
+  "kind": "observed-t3-council-prepared-transport",
+  "sourceCommit": "81fb88b6b091f6c3681093851eb634cdfde25b5d",
+  "sourceTree": "5eaaa22a77e216ff0a667bb65ba86bcb23eb433a",
+  "transportLimitBytes": 120000,
+  "members": {
+    "gpt": {
+      "binding": {
+        "coordinatorScope": {
+          "providerInstanceId": "codex",
+          "model": "gpt-6.1-sol",
+          "options": {
+            "reasoningEffort": "high",
+            "serviceTier": "priority"
+          },
+          "threadId": "83c65603-a346-4fc1-87c1-1a1681da218a",
+          "projectId": "015fc48c-7de7-46f8-8ccb-1b5f7b34eceb",
+          "link": "<t3-thread://v2/4bd98d01-5ea5-4d57-b993-162051324aa8/83c65603-a346-4fc1-87c1-1a1681da218a>",
+          "runtimeMode": "full-access",
+          "interactionMode": "default"
+        },
+        "catalogSha256": "c7725f66d4dbe99b2dc867b1da42a4df2e17933ed8491247064c9887efce3c8e",
+        "target": {
+          "providerInstanceId": "codex",
+          "model": "gpt-6.1-sol",
+          "options": {
+            "reasoningEffort": "high",
+            "serviceTier": "priority"
+          }
+        }
+      },
+      "catalogSources": {
+        "capabilities": {
+          "sha256": "7cfccf73c618f127ecad4d82356a96d4f7d6ac8b498a40f176f0452cd4083f22",
+          "itemId": "turn-item:provider:codex:native-item:exec-0883ab67-eb06-4821-aa9b-241600520ff7",
+          "observedAt": "2026-11-04T23:02:50.878Z",
+          "toolName": "t3-code.orchestrator_capabilities"
+        },
+        "thread": {
+          "sha256": "ae13174b0318ebc939df4ece5e8f2372ef48bbadc4c2d2fd795191459042502d",
+          "itemId": "turn-item:provider:codex:native-item:exec-f4395f43-6e10-4df4-94d4-09c948962d7f",
+          "observedAt": "2026-11-05T00:36:23.734Z",
+          "toolName": "t3-code.t3_thread_read"
+        }
+      },
+      "preparedBytes": 39872,
+      "preparedCharacters": 38820,
+      "preparedSha256": "8debbc5a7c7d8da584bdf95b8eb99fa704a0ab6940ed1d9151b2646cc52df665",
+      "storedDisplaySha256": "a56bc0f3fc8fe2eedbd41fe0ad3e0d8200fecc9d159b886778e6a9964e635006",
+      "storedMessageMatchesWithDocumentedDisplayTransform": true,
+      "storedMessageExactBackendBytes": false,
+      "challengeMatched": true,
+      "challengeSha256": "b91332074626772007c25e2f4ea2e1bb13102d20036f3bef433bf4f1d974a977",
+      "threadId": "thread:delegated-task:command%3Amcp%3Ad94abbab-0409-4fa3-8f15-9db2f1951e34%3Adelegate-task%3A440b2bbf-11fb-4521-a84e-3b1ca0129f97",
+      "threadLink": "<t3-thread://v2/4bd98d01-5ea5-4d57-b993-162051324aa8/thread:delegated-task:command%3Amcp%3Ad94abbab-0409-4fa3-8f15-9db2f1951e34%3Adelegate-task%3A440b2bbf-11fb-4521-a84e-3b1ca0129f97>",
+      "terminalRunId": "run:thread:thread%3Adelegated-task%3Acommand%253Amcp%253Ad94abbab-0409-4fa3-8f15-9db2f1951e34%253Adelegate-task%253A440b2bbf-11fb-4521-a84e-3b1ca0129f97:ordinal:1",
+      "terminalStatus": "completed",
+      "completedAt": "2026-11-05T03:18:27.655Z",
+      "skillSourcesSha256": {
+        "skills/cstack/references/agents/cstack-agent.md": "1766254a1f3637a21595b934b05a49d5e2d532a51d6a918a0285657021a15657",
+        "skills/cstack/references/principles/build-the-lever.md": "5cb75eb45463c3f5f89f96d3dcd1d48e81f397f936c817e9e0da9144ec48dfac",
+        "skills/cstack/references/principles/encode-lessons-in-structure.md": "8ae7155dcc16fc2609916bef93ff3105010f0b5f5ca4b5f03fe581ae3ca86486",
+        "skills/cstack/references/principles/laziness-protocol.md": "163f8816ff3890add1d0da10251e4bdf6f7bf2ea906d36bd52218777f9055dfe",
+        "skills/cstack/references/principles/prove-it-works.md": "f5beb9a4c1dd08337e04e01999410660b511a6594c3d7b37a91ad50ae6884e55",
+        "skills/cstack/references/principles/sequence-verifiable-units.md": "9a5987a207b4c52204615c937f537fcd59c6fd95e1e726870a50d5e4294754b1",
+        "skills/cstack/references/runtime/t3.md": "405a4cbfbf8adb394758f85ac1b7dc01d4e9b7049cfe4605843930a7a13d7d0a"
+      }
+    },
+    "claude": {
+      "binding": {
+        "coordinatorScope": {
+          "providerInstanceId": "codex",
+          "model": "gpt-6.1-sol",
+          "options": {
+            "reasoningEffort": "high",
+            "serviceTier": "priority"
+          },
+          "threadId": "83c65603-a346-4fc1-87c1-1a1681da218a",
+          "projectId": "015fc48c-7de7-46f8-8ccb-1b5f7b34eceb",
+          "link": "<t3-thread://v2/4bd98d01-5ea5-4d57-b993-162051324aa8/83c65603-a346-4fc1-87c1-1a1681da218a>",
+          "runtimeMode": "full-access",
+          "interactionMode": "default"
+        },
+        "catalogSha256": "c7725f66d4dbe99b2dc867b1da42a4df2e17933ed8491247064c9887efce3c8e",
+        "target": {
+          "providerInstanceId": "claudeAgent",
+          "model": "claude-opus-5-5",
+          "options": {
+            "effort": "high"
+          }
+        }
+      },
+      "catalogSources": {
+        "capabilities": {
+          "sha256": "7cfccf73c618f127ecad4d82356a96d4f7d6ac8b498a40f176f0452cd4083f22",
+          "itemId": "turn-item:provider:codex:native-item:exec-0883ab67-eb06-4821-aa9b-241600520ff7",
+          "observedAt": "2026-11-04T23:02:50.878Z",
+          "toolName": "t3-code.orchestrator_capabilities"
+        },
+        "thread": {
+          "sha256": "ae13174b0318ebc939df4ece5e8f2372ef48bbadc4c2d2fd795191459042502d",
+          "itemId": "turn-item:provider:codex:native-item:exec-f4395f43-6e10-4df4-94d4-09c948962d7f",
+          "observedAt": "2026-11-05T00:36:23.734Z",
+          "toolName": "t3-code.t3_thread_read"
+        }
+      },
+      "preparedBytes": 39811,
+      "preparedCharacters": 38760,
+      "preparedSha256": "5847544915039cdcd7b129ca8b429c753dcb59bba1f1685ef809584e5a77250d",
+      "storedDisplaySha256": "2ac1b27beaaea5bbd3c1b5d5627692e5f2612d1273d81b441aa779337515b807",
+      "storedMessageMatchesWithDocumentedDisplayTransform": true,
+      "storedMessageExactBackendBytes": false,
+      "challengeMatched": true,
+      "challengeSha256": "cb5e39e9b90d075117c3898c6508be0c4e2c96a12082503a516eff1e84aa39d5",
+      "threadId": "thread:delegated-task:command%3Amcp%3Ad94abbab-0409-4fa3-8f15-9db2f1951e34%3Adelegate-task%3A5c49a6e2-f933-4b6d-bdd5-1c1759f2ce64",
+      "threadLink": "<t3-thread://v2/4bd98d01-5ea5-4d57-b993-162051324aa8/thread:delegated-task:command%3Amcp%3Ad94abbab-0409-4fa3-8f15-9db2f1951e34%3Adelegate-task%3A5c49a6e2-f933-4b6d-bdd5-1c1759f2ce64>",
+      "terminalRunId": "run:thread:thread%3Adelegated-task%3Acommand%253Amcp%253Ad94abbab-0409-4fa3-8f15-9db2f1951e34%253Adelegate-task%253A5c49a6e2-f933-4b6d-bdd5-1c1759f2ce64:ordinal:1",
+      "terminalStatus": "completed",
+      "completedAt": "2026-11-05T03:20:20.549Z",
+      "skillSourcesSha256": {
+        "skills/cstack/references/agents/cstack-agent.md": "1766254a1f3637a21595b934b05a49d5e2d532a51d6a918a0285657021a15657",
+        "skills/cstack/references/principles/build-the-lever.md": "5cb75eb45463c3f5f89f96d3dcd1d48e81f397f936c817e9e0da9144ec48dfac",
+        "skills/cstack/references/principles/encode-lessons-in-structure.md": "8ae7155dcc16fc2609916bef93ff3105010f0b5f5ca4b5f03fe581ae3ca86486",
+        "skills/cstack/references/principles/laziness-protocol.md": "163f8816ff3890add1d0da10251e4bdf6f7bf2ea906d36bd52218777f9055dfe",
+        "skills/cstack/references/principles/prove-it-works.md": "f5beb9a4c1dd08337e04e01999410660b511a6594c3d7b37a91ad50ae6884e55",
+        "skills/cstack/references/principles/sequence-verifiable-units.md": "9a5987a207b4c52204615c937f537fcd59c6fd95e1e726870a50d5e4294754b1",
+        "skills/cstack/references/runtime/t3.md": "405a4cbfbf8adb394758f85ac1b7dc01d4e9b7049cfe4605843930a7a13d7d0a"
+      }
+    },
+    "grok": {
+      "binding": {
+        "coordinatorScope": {
+          "providerInstanceId": "codex",
+          "model": "gpt-6.1-sol",
+          "options": {
+            "reasoningEffort": "high",
+            "serviceTier": "priority"
+          },
+          "threadId": "83c65603-a346-4fc1-87c1-1a1681da218a",
+          "projectId": "015fc48c-7de7-46f8-8ccb-1b5f7b34eceb",
+          "link": "<t3-thread://v2/4bd98d01-5ea5-4d57-b993-162051324aa8/83c65603-a346-4fc1-87c1-1a1681da218a>",
+          "runtimeMode": "full-access",
+          "interactionMode": "default"
+        },
+        "catalogSha256": "e7f340865cfefdae897ad6586b52b637c2194766883ae2078a7723276b01bd32",
+        "target": {
+          "providerInstanceId": "grok",
+          "model": "grok-4.7",
+          "options": {
+            "reasoningEffort": "high"
+          }
+        }
+      },
+      "catalogSources": {
+        "capabilities": {
+          "sha256": "2455c64fd2a051838a179e20ce599d57c2bc7c4168f409d3e6e161114c3c01e4",
+          "itemId": "turn-item:provider:codex:native-item:exec-e2b8c005-bcf1-471f-bc22-ffd4b1e087d4",
+          "observedAt": "2026-11-05T01:44:36.883Z",
+          "toolName": "t3-code.orchestrator_capabilities"
+        },
+        "thread": {
+          "sha256": "ae13174b0318ebc939df4ece5e8f2372ef48bbadc4c2d2fd795191459042502d",
+          "itemId": "turn-item:provider:codex:native-item:exec-f4395f43-6e10-4df4-94d4-09c948962d7f",
+          "observedAt": "2026-11-05T00:36:23.734Z",
+          "toolName": "t3-code.t3_thread_read"
+        }
+      },
+      "preparedBytes": 39884,
+      "preparedCharacters": 38831,
+      "preparedSha256": "4da07403b9f7c204a0544084c5cd14861cd4bf996ef1c1af90b8eb9f61669895",
+      "storedDisplaySha256": "15ce296d41e31abd5804a2406eb4838c9ba35a48838a46b55ca7a044d0dc87fd",
+      "storedMessageMatchesWithDocumentedDisplayTransform": true,
+      "storedMessageExactBackendBytes": false,
+      "challengeMatched": true,
+      "challengeSha256": "362f1d080df04a6d5c9e73134ddc0f0e94599076ba239e681a8611820ab08e51",
+      "threadId": "thread:delegated-task:command%3Amcp%3Ad94abbab-0409-4fa3-8f15-9db2f1951e34%3Adelegate-task%3Ab882d2bb-2b8c-4917-b5fa-39643d3b74db",
+      "threadLink": "<t3-thread://v2/4bd98d01-5ea5-4d57-b993-162051324aa8/thread:delegated-task:command%3Amcp%3Ad94abbab-0409-4fa3-8f15-9db2f1951e34%3Adelegate-task%3Ab882d2bb-2b8c-4917-b5fa-39643d3b74db>",
+      "terminalRunId": "run:thread:thread%3Adelegated-task%3Acommand%253Amcp%253Ad94abbab-0409-4fa3-8f15-9db2f1951e34%253Adelegate-task%253Ab882d2bb-2b8c-4917-b5fa-39643d3b74db:ordinal:1",
+      "terminalStatus": "completed",
+      "completedAt": "2026-11-05T03:28:20.376Z",
+      "skillSourcesSha256": {
+        "skills/cstack/references/agents/cstack-agent.md": "1766254a1f3637a21595b934b05a49d5e2d532a51d6a918a0285657021a15657",
+        "skills/cstack/references/principles/build-the-lever.md": "5cb75eb45463c3f5f89f96d3dcd1d48e81f397f936c817e9e0da9144ec48dfac",
+        "skills/cstack/references/principles/encode-lessons-in-structure.md": "8ae7155dcc16fc2609916bef93ff3105010f0b5f5ca4b5f03fe581ae3ca86486",
+        "skills/cstack/references/principles/laziness-protocol.md": "163f8816ff3890add1d0da10251e4bdf6f7bf2ea906d36bd52218777f9055dfe",
+        "skills/cstack/references/principles/prove-it-works.md": "f5beb9a4c1dd08337e04e01999410660b511a6594c3d7b37a91ad50ae6884e55",
+        "skills/cstack/references/principles/sequence-verifiable-units.md": "9a5987a207b4c52204615c937f537fcd59c6fd95e1e726870a50d5e4294754b1",
+        "skills/cstack/references/runtime/t3.md": "405a4cbfbf8adb394758f85ac1b7dc01d4e9b7049cfe4605843930a7a13d7d0a"
+      }
+    }
+  },
+  "sourceFilesSha256": {
+    "plugins/cstack/skills/cstack/scripts/runtime/runtime.ts": "067625bab498254aba32928242b3580de36d68ed200675a6909efb1ab65dffb0",
+    "plugins/cstack/skills/cstack/scripts/runtime/prepare.ts": "7c0db7c7fdc10a370f1cb49287057331f63fdbaa225c1c9988edfea0d25dc47d",
+    "plugins/cstack/skills/cstack/scripts/worker-skills.ts": "cfb83eb0f824845f53d4aed18eb5f68ac9e166802401be62abdb73ce35d6642c",
+    "plugins/cstack/skills/cstack/scripts/worker-context.ts": "16f5dff1485fdf3fa38a94be238dbc8ac4d04e7b1862d02b8934b02c3e834ecd",
+    "plugins/cstack/skills/setup-cstack/scripts/models.py": "52055c5ef24428a5a5cc9fccddb262f503560b0b6953a728243a0e198a571b6a",
+    "plugins/cstack/skills/setup-cstack/scripts/t3_catalog.py": "5259225ed518a6355732299ef64e6b7457b11ba65806a2724b525b4ac0662b0c"
+  },
+  "limits": [
+    "Prepared source-mode T3 tasks, not installed T3 App discovery",
+    "Stored display adds a host review prefix and removes terminal LF",
+    "Full prompt bodies remain private; public receipt stores their hashes and full binding objects",
+    "This application-level evidence is not cryptographic backend or identity attestation",
+    "No comparative superiority or cost ranking established"
+  ]
+}
