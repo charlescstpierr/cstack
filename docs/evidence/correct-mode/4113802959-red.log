@@ -1,0 +1,23 @@
+FF
+======================================================================
+FAIL: test_historical_refusals_and_session_lifecycle (test_mode_corpus.ModeCorpusTests.test_historical_refusals_and_session_lifecycle) (case='negated-stop-fr', finding=4113802959)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-mode-1109/tests/test_mode_corpus.py", line 32, in test_historical_refusals_and_session_lifecycle
+    self.assertEqual(submit(case["prompt"]), case["expected_active"], case["prompt"])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False != True : N'arrête pas cstack
+
+======================================================================
+FAIL: test_historical_refusals_and_session_lifecycle (test_mode_corpus.ModeCorpusTests.test_historical_refusals_and_session_lifecycle) (case='negated-stop-en', finding=4113802959)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-mode-1109/tests/test_mode_corpus.py", line 32, in test_historical_refusals_and_session_lifecycle
+    self.assertEqual(submit(case["prompt"]), case["expected_active"], case["prompt"])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False != True : don't stop cstack
+
+----------------------------------------------------------------------
+Ran 1 test in 0.568s
+
+FAILED (failures=2)

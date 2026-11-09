@@ -1,0 +1,32 @@
+FFF
+======================================================================
+FAIL: test_historical_refusals_and_session_lifecycle (test_mode_corpus.ModeCorpusTests.test_historical_refusals_and_session_lifecycle) (case='refusal-en-this skill', finding=4210984706)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-mode-1109/tests/test_mode_corpus.py", line 32, in test_historical_refusals_and_session_lifecycle
+    self.assertEqual(submit(case["prompt"]), case["expected_active"], case["prompt"])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: True != False : $cstack:cstack Explain it, but do not activate this skill
+
+======================================================================
+FAIL: test_historical_refusals_and_session_lifecycle (test_mode_corpus.ModeCorpusTests.test_historical_refusals_and_session_lifecycle) (case='refusal-en-this cstack skill', finding=4210984706)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-mode-1109/tests/test_mode_corpus.py", line 32, in test_historical_refusals_and_session_lifecycle
+    self.assertEqual(submit(case["prompt"]), case["expected_active"], case["prompt"])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: True != False : $cstack:cstack Explain it, but do not activate this cstack skill
+
+======================================================================
+FAIL: test_historical_refusals_and_session_lifecycle (test_mode_corpus.ModeCorpusTests.test_historical_refusals_and_session_lifecycle) (case='refusal-en-the cstack skill', finding=4210984706)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-mode-1109/tests/test_mode_corpus.py", line 32, in test_historical_refusals_and_session_lifecycle
+    self.assertEqual(submit(case["prompt"]), case["expected_active"], case["prompt"])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: True != False : $cstack:cstack Explain it, but do not activate the cstack skill
+
+----------------------------------------------------------------------
+Ran 1 test in 0.455s
+
+FAILED (failures=3)

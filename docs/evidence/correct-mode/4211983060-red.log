@@ -1,0 +1,50 @@
+FFFFF
+======================================================================
+FAIL: test_historical_refusals_and_session_lifecycle (test_mode_corpus.ModeCorpusTests.test_historical_refusals_and_session_lifecycle) (case='refusal-fr-ne pas activer cstack', finding=4211983060)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-mode-1109/tests/test_mode_corpus.py", line 32, in test_historical_refusals_and_session_lifecycle
+    self.assertEqual(submit(case["prompt"]), case["expected_active"], case["prompt"])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: True != False : $cstack:cstack Explique la compétence, mais ne pas activer cstack
+
+======================================================================
+FAIL: test_historical_refusals_and_session_lifecycle (test_mode_corpus.ModeCorpusTests.test_historical_refusals_and_session_lifecycle) (case='refusal-fr-ne pas utiliser cstack', finding=4211983060)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-mode-1109/tests/test_mode_corpus.py", line 32, in test_historical_refusals_and_session_lifecycle
+    self.assertEqual(submit(case["prompt"]), case["expected_active"], case["prompt"])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: True != False : $cstack:cstack Explique la compétence, mais ne pas utiliser cstack
+
+======================================================================
+FAIL: test_historical_refusals_and_session_lifecycle (test_mode_corpus.ModeCorpusTests.test_historical_refusals_and_session_lifecycle) (case='refusal-fr-ne pas appliquer cstack', finding=4211983060)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-mode-1109/tests/test_mode_corpus.py", line 32, in test_historical_refusals_and_session_lifecycle
+    self.assertEqual(submit(case["prompt"]), case["expected_active"], case["prompt"])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: True != False : $cstack:cstack Explique la compétence, mais ne pas appliquer cstack
+
+======================================================================
+FAIL: test_historical_refusals_and_session_lifecycle (test_mode_corpus.ModeCorpusTests.test_historical_refusals_and_session_lifecycle) (case='refusal-fr-ne pas activer cette compétence', finding=4211983060)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-mode-1109/tests/test_mode_corpus.py", line 32, in test_historical_refusals_and_session_lifecycle
+    self.assertEqual(submit(case["prompt"]), case["expected_active"], case["prompt"])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: True != False : $cstack:cstack Explique la compétence, mais ne pas activer cette compétence
+
+======================================================================
+FAIL: test_historical_refusals_and_session_lifecycle (test_mode_corpus.ModeCorpusTests.test_historical_refusals_and_session_lifecycle) (case='refusal-fr-ne pas utiliser le skill cstack', finding=4211983060)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-mode-1109/tests/test_mode_corpus.py", line 32, in test_historical_refusals_and_session_lifecycle
+    self.assertEqual(submit(case["prompt"]), case["expected_active"], case["prompt"])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: True != False : $cstack:cstack Explique la compétence, mais ne pas utiliser le skill cstack
+
+----------------------------------------------------------------------
+Ran 1 test in 0.383s
+
+FAILED (failures=5)

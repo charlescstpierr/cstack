@@ -38,3 +38,9 @@ Voir `docs/agents/triage-labels.md`.
 
 Organisation single-context : `CONTEXT.md` et `docs/adr/` à la racine.
 Voir `docs/agents/domain.md`.
+
+## Erreurs répétées : règle et mécanisme
+
+| Règle | Mécanisme exécuté par `scripts/check.sh` |
+|---|---|
+| Un refus ne vise que cstack ; exemples cités et contraintes sur un autre outil ne refusent pas son activation. L’arrêt automatique reste une commande exacte. | `tests/fixtures/mode-refusals.json` rattache chaque cas bilingue aux six findings #70–#92 ; `tests/test_mode_corpus.py` vérifie la sortie, le marqueur, le tour suivant et la reprise avec le vrai hook. |
