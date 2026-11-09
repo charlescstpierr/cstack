@@ -1,0 +1,50 @@
+{
+  "kind": "observed-setup-behavior",
+  "observedAt": "2026-11-09",
+  "method": "Exécution réelle des helpers de setup-cstack dans un projet Git jetable, avec le catalogue vivant rendu par `codex debug models` ; exécution du chemin T3 sur deux captures réelles de la session (orchestrator_capabilities et t3_thread_read) ; lecture des cinq sessions réelles où setup-cstack a été invoqué. Aucun contenu de conversation n'est conservé ici.",
+  "helpers": {
+    "codexPath": {
+      "catalogModels": 11,
+      "show": "code 0, sept groupes de recommandations tous disponibles",
+      "projectPreviewApply": "code 0, huit fichiers écrits, AGENTS.md existant et CLAUDE.md préservés, .cstack/ ignoré, trois agents marqués cstack:managed",
+      "globalWrites": "aucun chemin hors du workspace dans models.py, project.py et t3_catalog.py"
+    },
+    "t3Path": {
+      "normalize": "code 0 sur les captures réelles, dix fournisseurs dont deux capables de lancer un enfant",
+      "show": "code 0, recommandations vides, champs supported, unavailable, inheritance et preflight présents",
+      "apply": "code 0 pour un rôle simple et un panel de trois positions sur deux fournisseurs",
+      "preflight": "ready, chaque position résolue en delegate_task avec fournisseur, modèle et options exacts",
+      "guards": [
+        "modèle inconnu refusé à l'application",
+        "sélection T3 bloquée hors T3, sans agent ni CLI de repli",
+        "enveloppe sans horodatage refusée par normalize"
+      ],
+      "coordinator": "session Claude, alors que le contrat T3 vise un coordinateur Codex : seule la mécanique des helpers est observée"
+    }
+  },
+  "realSessions": {
+    "count": 5,
+    "originator": "Codex Desktop",
+    "cstackVersions": ["0.4.0", "0.6.0", "0.7.0"],
+    "inT3Code": 0,
+    "observations": [
+      "Aucune écriture avant un choix, prévisualisation avec empreinte puis application et résolution des rôles dans les sessions menées à terme.",
+      "Les recommandations intégrées ont été remplacées par l'utilisateur dans les trois sessions où il a exprimé un choix de modèle.",
+      "Une session a posé son choix par l'entrée structurée et terminé le tour sur « j'attends ton choix » ; l'utilisateur est revenu dix heures plus tard avec une autre demande.",
+      "Deux sessions n'ont pas appliqué la partie projet."
+    ]
+  },
+  "pressureTest": {
+    "scenario": "Choix du setup à obtenir d'un utilisateur sur téléphone, entrée structurée exposée",
+    "model": "gpt-6.1-sol",
+    "base": "appel de l'entrée structurée, puis « J'attends ton choix » sans les options",
+    "rule": "appel de l'entrée structurée, puis les trois options écrites dans le message",
+    "separates": true
+  },
+  "openPoints": [
+    "Dans T3, show ne propose aucun modèle : l'utilisateur doit nommer chaque sélection.",
+    "Les recommandations du chemin Codex nomment gpt-5.6-luna et gpt-6-astra alors que le catalogue expose aussi gpt-6-luna, gpt-6.1-sol et gpt-6.1-terra.",
+    "Le bloc AGENTS.md généré demande de déléguer aux trois agents natifs du projet, y compris pour un rôle passé en sélection T3.",
+    "Le setup n'a jamais été lancé par un coordinateur Codex dans T3 Code sur cette machine."
+  ]
+}

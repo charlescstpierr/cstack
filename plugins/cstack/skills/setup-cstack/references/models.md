@@ -40,7 +40,7 @@ Les valeurs de modèle doivent être des sélections vérifiées, pas des défau
 
 ## Rôles
 
-Roles simples :
+Rôles simples :
 
 - `simple edits`
 - `documentation`
@@ -58,7 +58,7 @@ Roles simples :
 - `reflect judgment, divergent, synthesizer`
 - `swarm workers`
 
-Roles de panel :
+Rôles de panel :
 
 - `arena runners`
 - `arena cross-judge pool`
