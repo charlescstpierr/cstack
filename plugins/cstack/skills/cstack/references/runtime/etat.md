@@ -1,4 +1,4 @@
-# Etat, scripts helper et reprise
+# État, scripts helper et reprise
 
 Dans une tâche cstack explicitement invoquée dans T3, le [contrat T3](t3.md) prime sur les règles autonomes de ce document.
 

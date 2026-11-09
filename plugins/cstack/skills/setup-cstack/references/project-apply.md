@@ -66,7 +66,7 @@ python3 <absolute-plugin>/skills/setup-cstack/scripts/models.py --workspace <wor
 python3 <absolute-plugin>/skills/setup-cstack/scripts/models.py --workspace <workspace> --catalog <live-catalog.json> apply --choices <selected-role-map.json> --expected-sha256 <show.sha256>
 ```
 
-Sa sortie `show` fournit les choix exacts groupe-vers-rôle, les tailles de panel et `managed_agents`, les agents natifs gérés que `apply` alignera sur les nouveaux choix ; présente-les dans l'aperçu. La sortie d'`apply` donne `saved` et `agents` (`updated`, `removed`). Construis la carte de rôles sélectionnés seulement depuis les choix acceptés. Garde `.cstack/` non suivi sans remplacer les règles ignore existantes, puis relis et valide le résultat. Le modèle de la session parente reste inchange.
+Sa sortie `show` fournit les choix exacts groupe-vers-rôle, les tailles de panel et `managed_agents`, les agents natifs gérés que `apply` alignera sur les nouveaux choix ; présente-les dans l'aperçu. La sortie d'`apply` donne `saved` et `agents` (`updated`, `removed`). Construis la carte de rôles sélectionnés seulement depuis les choix acceptés. Garde `.cstack/` non suivi sans remplacer les règles ignore existantes, puis relis et valide le résultat. Le modèle de la session parente reste inchangé.
 
 
 ## Désactivation des agents natifs et rôles T3
