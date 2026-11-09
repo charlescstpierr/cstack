@@ -1,6 +1,6 @@
 # Modèles, rôles et recommandations
 
-Après invocation dans T3, le [contrat T3](../../cstack/references/runtime/t3.md) prime pour catalogue, choix explicites et synchronisation. Le chemin T3 modèle seul utilise `models.py --host t3 --catalog ... --host-context ...`, sans conversion automatique ni CLI de repli.
+Après invocation dans T3, le [contrat T3](../../cstack/references/runtime/t3.md) prime pour catalogue, choix explicites et synchronisation. Le chemin T3 modèle seul utilise `models.py --host t3 --capabilities <sortie de orchestrator_capabilities>`, sans conversion automatique ni CLI de repli.
 
 
 Référence de [setup-cstack](../SKILL.md). L'ordre de présentation (propositions avant configuration actuelle) est fixé dans le SKILL.
@@ -37,6 +37,31 @@ Ces choix sont facultatifs et validés contre le catalogue live avant sélection
 | Documentation | `gpt-5.6-luna` | `max` | Prose focalisée à partir de faits établis. |
 
 Les valeurs de modèle doivent être des sélections vérifiées, pas des défauts inconditionnels.
+
+## Dans T3
+
+`show` rend la feuille ci-dessous. Chaque palier nomme un modèle que le catalogue observé doit lister, et la sortie de `show` fait foi pour les rôles et les options exacts.
+
+| Palier | Modèle proposé | Emploi | Effort |
+| --- | --- | --- | --- |
+| `work` | `gpt-6.1-sol` | Développement, débogage, exploration, workers. | `medium` |
+| `judgment` | `claude-opus-5-5` | Jugement, prose, synthèse de `reflect`. | `medium` |
+| `hard` | `gpt-6-astra` | Tâches les plus dures en `high`, synthèse de `why` en `medium`. | |
+
+Les panels `arena runners`, `architect runners` et `interrogate reviewers` reçoivent une position par palier, en effort `high`. `arena cross-judge pool` reçoit `judgment` puis `hard`. `simple edits` et `documentation` gardent leurs replis.
+
+```sh
+python3 <absolute-plugin>/skills/setup-cstack/scripts/models.py --workspace <workspace> --host t3 --capabilities <capture.json> show
+python3 <absolute-plugin>/skills/setup-cstack/scripts/models.py --workspace <workspace> --host t3 --capabilities <capture.json> apply --choices <choix-acceptés.json> --expected-sha256 <show.sha256>
+```
+
+Pour utiliser un autre modèle, nouveau ou non :
+
+1. Si `supported` le liste, relance `show --tier <palier>=<modèle>`. Ajoute `@<effort>` pour fixer l'effort de ce palier partout, et `<fournisseur>/` quand deux fournisseurs listent le même modèle.
+2. Sinon, appelle `orchestrator_capabilities` avec `search`, enregistre cette sortie et ajoute-la par un second `--capabilities`.
+3. Présente la feuille obtenue, puis applique les groupes acceptés.
+
+Un effort n'est posé que si une seule option du modèle l'offre. Un effort demandé par `--tier` qu'aucune option n'offre rend le groupe `unavailable`. Un effort de la feuille qu'aucune option n'offre est omis, et le modèle garde son défaut.
 
 ## Rôles
 

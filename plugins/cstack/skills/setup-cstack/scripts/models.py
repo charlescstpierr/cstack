@@ -38,6 +38,20 @@ RUNTIMES = {"codex-cli", "claude-code", "cursor-agent", "grok"}
 # Trois entrées comme les panels par défaut : deux héritent du runtime natif, une passe par Claude Code.
 MIXED_PANEL_ROLES = ("arena runners", "architect runners", "interrogate reviewers")
 CODEX_NATIVE = "codex-native"
+# Feuille proposée dans T3 : trois paliers, chacun nommé par un modèle que le catalogue vivant doit lister.
+# Pour changer de modèle, modifier une ligne ici ou passer `show --tier palier=[fournisseur/]modèle[@effort]`.
+T3_TIERS = {"work": "gpt-6.1-sol", "judgment": "claude-opus-5-5", "hard": "gpt-6-astra"}
+T3_EFFORT = "medium"
+T3_PANEL = ["work@high", "judgment@high", "hard@high"]
+T3_GROUPS = {
+    "everyday work": {role: "work" for role in (
+        "feature, refactoring", "bug-fix", "perf-issue", "hillclimb", "how explorer", "how explainer",
+        "why investigators", "reflect tooling", "swarm workers")},
+    "judgment": {role: "judgment" for role in (
+        "judgment and prose", "reflect judgment, divergent, synthesizer")},
+    "hard decisions": {"hardest tasks": "hard@high", "why synthesizer": "hard"},
+    "mixed panels": {**{role: T3_PANEL for role in MIXED_PANEL_ROLES}, "arena cross-judge pool": T3_PANEL[1:]},
+}
 
 
 def mixed_panels():
@@ -167,9 +181,15 @@ def t3_catalog_helper():
     return module
 
 
+def t3_direct(catalog):
+    return isinstance(catalog, dict) and catalog.get("schema") == "cstack.t3-direct/1"
+
+
 def _t3_providers(catalog, host, context):
     if host != "t3":
         raise ValueError("BLOCKED: sélection t3 hors hôte T3; aucun agent ou CLI de repli")
+    if t3_direct(catalog) and context is None:
+        return catalog["providers"]
     return t3_catalog_helper().validate_context(catalog, context)
 
 
@@ -235,8 +255,70 @@ def t3_position(chosen, catalog, context):
         scope = catalog["coordinator"]
         chosen = selection({"runtime": "t3", **{k: scope[k] for k in ("providerInstanceId", "model", "options")}})
     target = _t3_target(chosen, providers, catalog["coordinator"])
+    if t3_direct(catalog):
+        return {"dispatch": "delegate_task", "target": target}
     return {"dispatch": "delegate_task", "target": target,
             "binding": {"coordinatorScope": catalog["coordinator"], "catalogSha256": catalog["sha256"], "target": target}}
+
+
+def _t3_tier(spec, providers, coordinator):
+    """Trouver `[fournisseur/]modèle[@effort]` dans le catalogue vivant. Rien n’est substitué."""
+    def listed(name):
+        models = providers[name].get("models") if isinstance(providers.get(name), dict) else None
+        return models if isinstance(models, dict) else {}
+    head, _, tail = spec.rpartition("@")
+    for name, effort in ((spec, None), (head, tail)):
+        found = [provider for provider in providers if name in listed(provider)]
+        if coordinator["providerInstanceId"] in found:
+            found = [coordinator["providerInstanceId"]]
+        if len(found) > 1:
+            raise ValueError(f"{spec}: modèle listé par {', '.join(found)}; écrire fournisseur/modèle")
+        if found:
+            return found[0], name, effort
+        provider, _, model = name.partition("/")
+        if model in listed(provider):
+            return provider, model, effort
+    raise ValueError(f"{spec}: modèle absent du catalogue T3 observé; le chercher avec orchestrator_capabilities "
+                     "et son paramètre search, puis ajouter cette capture par un second --capabilities")
+
+
+def _t3_choice(row, tiers, providers):
+    name, _, level = row.partition("@")
+    if isinstance(tiers[name], ValueError):
+        raise tiers[name]
+    provider, model, effort = tiers[name]
+    declared = _t3_options(providers[provider]["models"][model])
+    level = effort or level or T3_EFFORT
+    keys = [key for key, option in declared.items() if option["type"] == "string" and level in option["values"]]
+    if len(keys) > 1 or (effort and not keys):
+        raise ValueError(f"{provider}/{model}: {len(keys)} options offrent le niveau {level}; écrire la sélection avec ses options")
+    return {"runtime": "t3", "providerInstanceId": provider, "model": model,
+            "options": {keys[0]: level} if keys else {}}
+
+
+def t3_recommendations(catalog, providers, context, overrides):
+    unknown = sorted(set(overrides) - set(T3_TIERS))
+    if unknown or not all(overrides.values()):
+        raise ValueError(f"--tier attend palier=[fournisseur/]modèle[@effort] avec un palier parmi {', '.join(T3_TIERS)}"
+                         + (f"; palier inconnu: {', '.join(unknown)}" if unknown else ""))
+    tiers = {}
+    for name, spec in {**T3_TIERS, **overrides}.items():
+        try:
+            tiers[name] = _t3_tier(spec, providers, catalog["coordinator"])
+        except ValueError as error:
+            tiers[name] = error
+    groups = {}
+    for group, rows in T3_GROUPS.items():
+        choices, problem = {}, None
+        try:
+            for role, value in rows.items():
+                choices[role] = ([_t3_choice(row, tiers, providers) for row in value]
+                                 if isinstance(value, list) else _t3_choice(value, tiers, providers))
+            validate(choices, catalog, check_available=True, host="t3", context=context)
+        except ValueError as error:
+            choices, problem = {}, str(error)
+        groups[group] = {"choices": choices, "unavailable": problem}
+    return groups
 
 
 def runtime_catalog(catalog, runtime):
@@ -328,7 +410,9 @@ def read_config(path):
     return config, hashlib.sha256(raw).hexdigest()
 
 
-def preview(config, digest, catalog, claude_ready=False, host="codex", context=None):
+def preview(config, digest, catalog, claude_ready=False, host="codex", context=None, tiers=None):
+    if host != "t3" and tiers:
+        raise ValueError("--tier exige --host t3")
     if host == "t3":
         supported, unavailable = {}, {}
         try:
@@ -355,7 +439,10 @@ def preview(config, digest, catalog, claude_ready=False, host="codex", context=N
                             for key, option in options.items()}
                     except ValueError as error:
                         unavailable[label] = str(error)
-        return {"saved": config, "sha256": digest, "recommendations": {},
+        recommendations = (t3_recommendations(catalog, providers, context, tiers or {})
+                           if "catalog" not in unavailable else {})
+        return {"saved": config, "sha256": digest, "recommendations": recommendations,
+                "tiers": {**T3_TIERS, **(tiers or {})},
                 "supported": supported, "unavailable": unavailable,
                 "inheritance": catalog.get("coordinator") if isinstance(catalog, dict) else None,
                 "warning": "Entrée t3: TOUT le fichier illisible aux anciennes versions; rôle bloqué hors T3; providerInstanceId non portable. Aperçu seulement, sélection explicite requise.",
@@ -473,11 +560,15 @@ def main():
     parser.add_argument("--catalog", type=Path)
     parser.add_argument("--host", choices=("codex", "t3"), default="codex")
     parser.add_argument("--host-context", type=Path)
+    parser.add_argument("--capabilities", type=Path, action="append",
+                        help="chemin direct T3 : sortie de orchestrator_capabilities ; répéter pour une capture search")
     commands = parser.add_subparsers(dest="command", required=True, title="commandes", parser_class=FrenchArgumentParser)
     show = commands.add_parser("show", add_help=False)
     show.add_argument("-h", "--help", action="help", help="afficher ce message d’aide et quitter")
     show.add_argument("--claude-ready", action="store_true",
                       help="Claude Code est détecté et connecté : proposer aussi les panels mixtes")
+    show.add_argument("--tier", action="append", default=[], metavar="PALIER=MODÈLE",
+                      help="T3 : remplacer le modèle d’un palier, work, judgment ou hard, par [fournisseur/]modèle[@effort]")
     resolver = commands.add_parser("resolve", add_help=False)
     resolver.add_argument("-h", "--help", action="help", help="afficher ce message d’aide et quitter")
     resolver.add_argument("role", choices=sorted(ROLES))
@@ -507,11 +598,21 @@ def main():
     path = args.workspace / ".cstack" / "models.json"
     has_agents = (args.workspace / ".codex" / "agents").is_dir()
     try:
-        catalog = read_catalog(args.catalog)
+        if args.capabilities:
+            if args.host != "t3" or args.catalog or args.host_context:
+                raise ValueError("--capabilities exige --host t3, sans --catalog ni --host-context")
+            captures = []
+            for capture_path in args.capabilities:
+                with capture_path.open("rb") as stream:
+                    captures.append(stream.read(1024 * 1024 + 1))
+            catalog = t3_catalog_helper().direct(captures)
+        else:
+            catalog = read_catalog(args.catalog)
         context = read_bounded_json(args.host_context, "contexte")
         config, digest = read_config(path)
         if args.command == "show":
-            result = preview(config, digest, catalog, args.claude_ready, args.host, context)
+            tiers = dict(item.partition("=")[::2] for item in args.tier)
+            result = preview(config, digest, catalog, args.claude_ready, args.host, context, tiers)
             # Les agents natifs gérés suivent models.json : l’aperçu dit lesquels seront alignés.
             result["managed_agents"] = project_helper().managed_agents(args.workspace) if has_agents else []
         elif args.command == "resolve":

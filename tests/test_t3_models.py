@@ -211,9 +211,12 @@ class T3ModelsTests(unittest.TestCase):
         for pair in ('fixture-model', {'model': 'fixture-model', 'reasoning_effort': 'high'}):
             self.assertEqual(self.report([pair])['status'], 'blocked')
 
-    def test_t3_preview_and_explicit_apply_no_codex_recommendations(self):
+    def test_t3_preview_proposes_nothing_the_catalog_does_not_list(self):
         preview = models.preview({}, 'digest', self.catalog, host='t3', context=self.context)
-        self.assertEqual(preview['recommendations'], {})
+        self.assertEqual(set(preview['recommendations']), set(models.T3_GROUPS))
+        for group in preview['recommendations'].values():
+            self.assertEqual(group['choices'], {})
+            self.assertIn('absent du catalogue', group['unavailable'])
         self.assertIn('TOUT', preview['warning'])
         self.assertEqual(preview['supported']['fixture-provider']['fixture-model']['effort']['values'], ['fixture-high'])
         self.assertEqual(models.preview({}, 'digest', self.catalog, host='t3')['supported'], {})
@@ -436,3 +439,168 @@ class T3NormalizerTests(unittest.TestCase):
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertEqual(json.loads(result.stdout), self.normalize())
             self.assertEqual(before, sorted(str(p.relative_to(root)) for p in root.rglob('*')))
+
+
+class T3DirectTests(unittest.TestCase):
+    """Chemin direct : la sortie brute d'orchestrator_capabilities suffit, sans trace du fil ni contexte."""
+
+    def setUp(self):
+        base = Path(__file__).parent / 'fixtures/t3-normalizer'
+        self.caps = json.loads((base / 'capabilities.json').read_text())['output']
+        self.tmp = tempfile.TemporaryDirectory()
+        self.root = Path(self.tmp.name)
+        self.script = Path(__file__).parents[1] / 'plugins/cstack/skills/setup-cstack/scripts/models.py'
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def run_cli(self, *args, caps=None, raw=None):
+        path = self.root / 'capabilities.json'
+        path.write_text(raw if raw is not None else json.dumps(self.caps if caps is None else caps))
+        result = subprocess.run([sys.executable, str(self.script), '--host', 't3', '--capabilities', str(path),
+                                 '--workspace', str(self.root), *args], capture_output=True, text=True, check=False)
+        return result.returncode, (json.loads(result.stdout) if result.stdout.strip() else None), result.stderr
+
+    def apply(self, choices, **kwargs):
+        _, shown, _ = self.run_cli('show', **kwargs)
+        path = self.root / 'choices.json'
+        path.write_text(json.dumps(choices))
+        return self.run_cli('apply', '--choices', str(path), '--expected-sha256', shown['sha256'], **kwargs)
+
+    def test_show_proposes_a_sheet_checked_against_the_live_catalog(self):
+        code, shown, error = self.run_cli('show')
+        self.assertEqual(code, 0, error)
+        groups = shown['recommendations']
+        self.assertEqual(set(groups), {'everyday work', 'judgment', 'hard decisions', 'mixed panels'})
+        self.assertTrue(all(group['unavailable'] is None for group in groups.values()), groups)
+        self.assertEqual(groups['everyday work']['choices']['bug-fix'],
+                         {'runtime': 't3', 'providerInstanceId': 'codex', 'model': 'gpt-6.1-sol',
+                          'options': {'reasoningEffort': 'medium'}})
+        self.assertEqual(groups['judgment']['choices']['judgment and prose'],
+                         {'runtime': 't3', 'providerInstanceId': 'claudeAgent', 'model': 'claude-opus-5-5',
+                          'options': {'effort': 'medium'}})
+        reviewers = groups['mixed panels']['choices']['interrogate reviewers']
+        self.assertEqual([(row['providerInstanceId'], row['model']) for row in reviewers],
+                         [('codex', 'gpt-6.1-sol'), ('claudeAgent', 'claude-opus-5-5'), ('codex', 'gpt-6-astra')])
+        self.assertEqual(shown['inheritance']['model'], 'gpt-6.1-sol')
+
+    def test_accepted_sheet_resolves_to_delegate_targets_in_one_step(self):
+        _, shown, _ = self.run_cli('show')
+        choices = {}
+        for group in shown['recommendations'].values():
+            choices.update(group['choices'])
+        code, applied, error = self.apply(choices)
+        self.assertEqual(code, 0, error)
+        self.assertEqual(applied['saved']['hardest tasks']['model'], 'gpt-6-astra')
+        code, report, error = self.run_cli('preflight', 'interrogate reviewers', 'judgment and prose', 'simple edits')
+        self.assertEqual((code, report['status']), (0, 'ready'), error)
+        targets = [row['target'] for row in report['resolved']['interrogate reviewers']]
+        self.assertEqual([row['dispatch'] for row in report['resolved']['interrogate reviewers']], ['delegate_task'] * 3)
+        self.assertEqual(targets[1], {'providerInstanceId': 'claudeAgent', 'model': 'claude-opus-5-5',
+                                      'options': {'effort': 'high'}})
+
+    def test_raw_output_tool_result_and_envelope_are_all_accepted(self):
+        wrapped = json.dumps({'content': [{'type': 'text', 'text': json.dumps(self.caps)}]})
+        envelope = json.dumps({'toolName': 't3-code.orchestrator_capabilities', 'input': {}, 'output': self.caps})
+        for raw in (json.dumps(self.caps), wrapped, envelope):
+            code, shown, error = self.run_cli('show', raw=raw)
+            self.assertEqual(code, 0, error)
+            self.assertIn('gpt-6.1-sol', shown['supported']['codex'])
+
+    def test_unavailable_provider_blocks_without_substitution(self):
+        caps = copy.deepcopy(self.caps)
+        claude = next(row for row in caps['providers'] if row['providerInstanceId'] == 'claudeAgent')
+        selection = {'runtime': 't3', 'providerInstanceId': 'claudeAgent', 'model': 'claude-opus-5-5',
+                     'options': {'effort': 'high'}}
+        self.assertEqual(self.apply({'judgment and prose': selection})[0], 0)
+        claude['canRunChildTask'] = False
+        claude['constraints'] = ['Provider instance is disabled.']
+        _, shown, _ = self.run_cli('show', caps=caps)
+        self.assertIsNotNone(shown['recommendations']['judgment']['unavailable'])
+        self.assertIsNone(shown['recommendations']['everyday work']['unavailable'])
+        code, report, _ = self.run_cli('preflight', 'judgment and prose', 'bug-fix', caps=caps)
+        self.assertEqual((code, report['status']), (2, 'blocked'))
+        self.assertIn('judgment and prose', report['errors'])
+        self.assertNotIn('bug-fix', report['errors'])
+
+    def test_a_model_missing_from_the_short_list_is_unavailable_not_replaced(self):
+        caps = copy.deepcopy(self.caps)
+        codex = next(row for row in caps['providers'] if row['providerInstanceId'] == 'codex')
+        codex['models'] = [row for row in codex['models'] if row['id'] != 'gpt-6-astra']
+        _, shown, _ = self.run_cli('show', caps=caps)
+        self.assertIn('gpt-6-astra', shown['recommendations']['hard decisions']['unavailable'])
+        self.assertIsNone(shown['recommendations']['everyday work']['unavailable'])
+
+    def test_a_new_model_replaces_a_tier_with_one_option(self):
+        code, shown, error = self.run_cli('show', '--tier', 'work=gpt-6.1-terra@high', '--tier', 'judgment=claudeAgent/claude-sonnet-5-5')
+        self.assertEqual(code, 0, error)
+        groups = shown['recommendations']
+        self.assertEqual(groups['everyday work']['choices']['feature, refactoring'],
+                         {'runtime': 't3', 'providerInstanceId': 'codex', 'model': 'gpt-6.1-terra',
+                          'options': {'reasoningEffort': 'high'}})
+        self.assertEqual(groups['judgment']['choices']['judgment and prose']['model'], 'claude-sonnet-5-5')
+        self.assertEqual(groups['mixed panels']['choices']['arena runners'][0]['model'], 'gpt-6.1-terra')
+        _, shown, _ = self.run_cli('show', '--tier', 'work=modele-inconnu')
+        self.assertIn('modele-inconnu', shown['recommendations']['everyday work']['unavailable'])
+        code, _, error = self.run_cli('show', '--tier', 'vitesse=gpt-6.1-sol')
+        self.assertEqual(code, 2)
+        self.assertIn('vitesse', error)
+
+    def test_a_search_capture_adds_a_model_outside_the_short_list(self):
+        found = copy.deepcopy(self.caps)
+        for provider in found['providers']:
+            provider.pop('omittedModels', None)
+            provider['models'] = []
+        claude = next(row for row in found['providers'] if row['providerInstanceId'] == 'claudeAgent')
+        claude['models'] = [{'id': 'claude-next-1', 'options': [{'id': 'effort', 'values': ['low', 'high']}]}]
+        first, second = self.root / 'capabilities.json', self.root / 'search.json'
+        first.write_text(json.dumps(self.caps))
+
+        def show(*captures):
+            command = [sys.executable, str(self.script), '--host', 't3', '--workspace', str(self.root)]
+            for capture in captures:
+                command += ['--capabilities', str(capture)]
+            result = subprocess.run(command + ['show', '--tier', 'judgment=claude-next-1@high'],
+                                    capture_output=True, text=True, check=False)
+            return result.returncode, (json.loads(result.stdout) if result.stdout.strip() else None), result.stderr
+
+        second.write_text(json.dumps(found))
+        _, alone, _ = show(first)
+        self.assertIn('claude-next-1', alone['recommendations']['judgment']['unavailable'])
+        code, merged, error = show(first, second)
+        self.assertEqual(code, 0, error)
+        self.assertEqual(merged['recommendations']['judgment']['choices']['judgment and prose'],
+                         {'runtime': 't3', 'providerInstanceId': 'claudeAgent', 'model': 'claude-next-1',
+                          'options': {'effort': 'high'}})
+        self.assertEqual(merged['recommendations']['everyday work']['choices']['bug-fix']['model'], 'gpt-6.1-sol')
+        found['parentThreadId'] = 'another-thread'
+        second.write_text(json.dumps(found))
+        code, _, error = show(first, second)
+        self.assertEqual(code, 2)
+        self.assertIn('fils', error)
+
+    def test_an_effort_no_option_offers_is_refused_when_asked_and_left_out_when_defaulted(self):
+        _, shown, _ = self.run_cli('show', '--tier', 'work=gpt-6.1-sol@turbo')
+        self.assertIn('turbo', shown['recommendations']['everyday work']['unavailable'])
+        _, shown, _ = self.run_cli('show', '--tier', 'work=opencode/big-pickle')
+        self.assertEqual(shown['recommendations']['everyday work']['choices']['bug-fix'],
+                         {'runtime': 't3', 'providerInstanceId': 'opencode', 'model': 'opencode/big-pickle', 'options': {}})
+        self.assertEqual(shown['tiers'], {'work': 'opencode/big-pickle', 'judgment': 'claude-opus-5-5', 'hard': 'gpt-6-astra'})
+
+    def test_the_setup_reference_and_the_guide_name_the_proposed_models(self):
+        plugin = Path(__file__).parents[1] / 'plugins/cstack'
+        for page in ('skills/setup-cstack/references/models.md', 'docs/guide/12-t3-code.md'):
+            text = (plugin / page).read_text()
+            for tier, model in models.T3_TIERS.items():
+                self.assertIn(f'| `{tier}` | `{model}` |', text, page)
+
+    def test_direct_and_audited_inputs_do_not_mix(self):
+        path = self.root / 'capabilities.json'
+        path.write_text(json.dumps(self.caps))
+        for extra in (['--catalog', str(path)], ['--host-context', str(path)]):
+            result = subprocess.run([sys.executable, str(self.script), '--host', 't3', '--capabilities', str(path),
+                                     *extra, '--workspace', str(self.root), 'show'], capture_output=True, text=True, check=False)
+            self.assertEqual(result.returncode, 2, result.stdout)
+        result = subprocess.run([sys.executable, str(self.script), '--capabilities', str(path),
+                                 '--workspace', str(self.root), 'show'], capture_output=True, text=True, check=False)
+        self.assertEqual(result.returncode, 2, result.stdout)

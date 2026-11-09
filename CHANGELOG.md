@@ -7,6 +7,8 @@ Les versions suivent SemVer. Le format suit [Keep a Changelog](https://keepachan
 - Installation pour T3 Code, Codex et Claude Code : `install.sh` installe cstack dans chaque hôte présent (`codex plugin`, `claude plugin`) et `doctor` vérifie les deux. Le dépôt publie un manifeste et un catalogue Claude Code, tenus par le validateur au même nom, à la même version et à la même licence que le manifeste Codex. Le README ouvre sur l'installation en une commande.
 - Le hook du mode trouve son dossier dans les deux hôtes (`${CLAUDE_PLUGIN_ROOT:-${PLUGIN_ROOT}}`, `PLUGIN_DATA` ou `CLAUDE_PLUGIN_DATA`) et reconnaît `/cstack:cstack`. Sous Claude Code, l'ancienne commande échouait avec le code 2 à chaque message. La commande ayant changé, Codex redemande une fois l'approbation du hook (`/hooks`).
 - Le contrat T3 s'applique aussi à un coordinateur Claude dans T3.
+- Chemin direct dans T3 Code, désormais le défaut : `models.py --host t3 --capabilities <sortie de orchestrator_capabilities> preflight <rôles>` rend la cible exacte de chaque position, que le coordinateur passe telle quelle à `delegate_task`. La trace du fil, le contexte et le bundle préparé deviennent le chemin audité, facultatif.
+- Le setup T3 propose une feuille en trois paliers, `work`, `judgment` et `hard`, avec des panels qui prennent une position par palier. Chaque modèle proposé doit figurer dans le catalogue observé ; un groupe dont le modèle manque est rendu indisponible, sans substitution. `show --tier <palier>=[fournisseur/]<modèle>[@effort]` remplace le modèle d'un palier par tout modèle exposé, et un second `--capabilities` ajoute une capture `search` pour un modèle hors liste courte.
 
 ## [0.8.0] - 2026-10-02
 

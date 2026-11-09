@@ -1,0 +1,40 @@
+{
+  "kind": "observed-t3-direct-path",
+  "observedAt": "2026-11-09",
+  "method": "Scénario sur papier donné à quatre enfants GPT-6.1 Sol (effort high) lancés par delegate_task depuis un fil Claude de T3 Code : deux lisent les règles de main (48f8d04), deux lisent celles de cette branche. Chaque enfant liste les appels et commandes d'un coordinateur Codex jusqu'au lancement d'un reviewer du rôle `judgment and prose`, configuré sur claudeAgent/claude-opus-5-5 en effort high. Les dossiers portent des noms opaques. Les helpers sont exécutés réellement sur la sortie de orchestrator_capabilities de cette machine. Aucun contenu de conversation n'est conservé ici.",
+  "pressureTest": {
+    "scenario": "Revue indépendante avant PR, cible d'un autre fournisseur, coordinateur Codex gpt-6.1-sol",
+    "model": "gpt-6.1-sol",
+    "base": {
+      "commit": "48f8d04",
+      "stepsUntilReviewer": [
+        16,
+        15
+      ],
+      "dispatchPreparation": "orchestrator_capabilities, t3_thread_read, deux enveloppes, normalize, contexte, preflight avec binding, brief et fichiers empreintés, requête, runtime.ts prepare, comparaison du binding",
+      "finalCall": "delegate_task vers claudeAgent/claude-opus-5-5, effort high, dans les deux essais"
+    },
+    "branch": {
+      "stepsUntilReviewer": [
+        8,
+        10
+      ],
+      "dispatchPreparation": "orchestrator_capabilities, enregistrement de la sortie, preflight avec --capabilities",
+      "finalCall": "delegate_task vers claudeAgent/claude-opus-5-5, effort high, brief autonome avec chemins absolus, dans les deux essais",
+      "notUsed": [
+        "t3_thread_read",
+        "normalize",
+        "contexte",
+        "runtime.ts prepare"
+      ]
+    },
+    "limits": "Exercice sur papier, deux essais par bras, un seul modèle coordinateur. Les enfants de T3 Code ne peuvent pas appeler delegate_task : un coordinateur Codex qui exécute réellement ce chemin n'est pas observé."
+  },
+  "helpers": {
+    "capture": "sortie réelle de orchestrator_capabilities, dix fournisseurs dont deux capables de lancer un enfant, coordinateur claudeAgent/claude-fable-5-2",
+    "show": "code 0, quatre groupes disponibles : work sur codex/gpt-6.1-sol, judgment sur claudeAgent/claude-opus-5-5, hard sur codex/gpt-6-astra, panels à une position par palier",
+    "apply": "code 0 pour la feuille entière dans un workspace jetable",
+    "preflight": "ready en 0,13 s pour `interrogate reviewers`, `judgment and prose` et `documentation` ; chaque position rend dispatch delegate_task et son target exact",
+    "search": "orchestrator_capabilities avec search ne rend que les modèles trouvés : une capture search s'ajoute par un second --capabilities"
+  }
+}
