@@ -202,15 +202,29 @@ import json, sys
 query, marketplace, plugin = sys.argv[1:]
 data = json.load(sys.stdin)
 if query == "marketplace":
-    if any(entry.get("name") == marketplace for entry in data):
-        print("present")
+    for entry in data:
+        if entry.get("name") == marketplace:
+            # La source telle que `claude plugin marketplace add` la reprend ; « ? » si sa forme est inconnue.
+            ref = "#" + entry["ref"] if entry.get("ref") else ""
+            kind = entry.get("source")
+            if kind == "github" and entry.get("repo"):
+                print(entry["repo"] + ref)
+            elif kind == "git" and entry.get("url"):
+                print(entry["url"] + ref)
+            elif kind == "directory" and entry.get("path"):
+                print(entry["path"])
+            else:
+                print("?")
 else:
     for entry in data:
         if entry.get("id") == plugin:
             print("installed, {} {}".format("enabled" if entry.get("enabled") else "disabled", entry.get("version", "")).strip())
 PY
 
-# État de Claude Code, lu dans sa sortie JSON : « present » ou rien, « installed, enabled 0.8.0 » ou rien.
+# État de Claude Code, lu dans sa sortie JSON.
+#   marketplace   : la source du catalogue cstack (« ? » si sa forme est inconnue), rien s'il est absent.
+#   plugin-status : « installed, enabled 0.8.0 » ou rien.
+# Échoue si Claude Code ou sa sortie sont illisibles : un état inconnu n'est jamais pris pour « absent ».
 claude_state() {
   local query="$1" json
   case "$query" in
@@ -233,17 +247,49 @@ claude_source() {
   printf '%s\n' "$source"
 }
 
+current_claude_marketplace() {
+  claude_state marketplace || die "impossible de lire l'état de Claude Code (claude plugin marketplace list --json)."
+}
+
 # Ajoute le catalogue puis installe le plugin. Une ref ou --local remplace le catalogue existant.
 claude_install() {
-  local ref="$1" local_source="$2" source present
+  local ref="$1" local_source="$2" source current
   source="$(claude_source "$ref" "$local_source")"
-  present="$(claude_state marketplace)" || die "impossible de lire l'état de Claude Code (claude plugin marketplace list --json)."
-  if [[ -n "$present" && -n "$ref$local_source" ]]; then
+  current="$(current_claude_marketplace)"
+  if [[ -n "$current" && -n "$ref$local_source" ]]; then
     echo "Claude Code, changement de source : $(redact "$source")"
-    run_claude plugin marketplace remove "$MARKETPLACE" >/dev/null
+    claude_switch "$current" "$source"
+    return
   fi
-  run_claude plugin marketplace add "$source" && run_claude plugin install "$PLUGIN" ||
+  run_claude plugin marketplace add "$source" || die "ajout du catalogue dans Claude Code impossible."
+  if ! run_claude plugin install "$PLUGIN"; then
+    # Un catalogue créé par cet appel ne survit pas à l'échec de l'installation du plugin.
+    [[ -n "$current" ]] || run_claude plugin marketplace remove "$MARKETPLACE" >/dev/null 2>&1 || true
     die "installation dans Claude Code impossible."
+  fi
+}
+
+# Remplace le catalogue Claude Code ($1, sa source actuelle) par la source $2, plugin compris.
+# Comme côté Codex : essai dans un profil jetable, puis restauration de l'ancienne source si le remplacement échoue.
+claude_switch() {
+  local old_source="$1" source="$2" status was_installed="" trial out trial_failed=""
+  [[ "$old_source" != "?" ]] || die "source actuelle de Claude Code illisible ; l'installation actuelle est conservée."
+  status="$(claude_state plugin-status)" || die "état du plugin illisible dans Claude Code ; l'installation actuelle est conservée."
+  [[ -z "$status" ]] || was_installed=1
+  trial="$(mktemp -d)"
+  out="$({ CLAUDE_CONFIG_DIR="$trial" run_claude plugin marketplace add "$source" &&
+    CLAUDE_CONFIG_DIR="$trial" run_claude plugin install "$PLUGIN"; } 2>&1)" || trial_failed=1
+  rm -rf "$trial"
+  [[ -z "$trial_failed" ]] || die_with "$(redact "$out")"$'\n'"cstack : source inutilisable dans Claude Code. L'installation actuelle est conservée."
+  run_claude plugin marketplace remove "$MARKETPLACE" >/dev/null
+  if ! out="$({ run_claude plugin marketplace add "$source" && run_claude plugin install "$PLUGIN"; } 2>&1)"; then
+    redact "$out" >&2
+    run_claude plugin marketplace remove "$MARKETPLACE" >/dev/null 2>&1 || true
+    { run_claude plugin marketplace add "$old_source" && { [[ -z "$was_installed" ]] || run_claude plugin install "$PLUGIN"; }; } >/dev/null 2>&1 ||
+      die "échec dans Claude Code, et l'ancienne source ($(redact "$old_source")) n'a pas pu être restaurée : relancez install.sh install."
+    die "échec dans Claude Code ; l'ancienne source ($(redact "$old_source")) est restaurée."
+  fi
+  redact "$out"
 }
 
 claude_update() {
@@ -290,9 +336,7 @@ cmd_update() {
   [[ -z "$local_source" ]] || die "update ne prend pas --local ; utilisez install --local."
   require_tools
   ! has_codex || current="$(current_marketplace)"
-  if has_claude; then
-    claude_present="$(claude_state marketplace)" || die "impossible de lire l'état de Claude Code (claude plugin marketplace list --json)."
-  fi
+  ! has_claude || claude_present="$(current_claude_marketplace)"
   [[ -n "$current$claude_present" ]] || die "cstack n'est pas installé. Lancez : install.sh install"
   [[ -z "$current" ]] || codex_update "$current" "$ref"
   [[ -z "$claude_present" ]] || claude_update "$ref"
@@ -387,8 +431,10 @@ cmd_doctor() {
 
 cmd_uninstall() {
   (($# == 0)) || { usage >&2; exit 2; }
-  local current
+  local current claude_current=""
   require_tools
+  # Lire les deux états avant de retirer quoi que ce soit : un état illisible arrête tout.
+  ! has_claude || claude_current="$(current_claude_marketplace)"
   if has_codex; then
     current="$(current_marketplace)"
     run_codex plugin remove "$PLUGIN"
@@ -396,7 +442,7 @@ cmd_uninstall() {
       run_codex plugin marketplace remove "$MARKETPLACE"
     fi
   fi
-  if has_claude && [[ -n "$(claude_state marketplace)" ]]; then
+  if [[ -n "$claude_current" ]]; then
     run_claude plugin uninstall "$PLUGIN" >/dev/null 2>&1 || true
     run_claude plugin marketplace remove "$MARKETPLACE"
   fi
