@@ -96,7 +96,7 @@ Valide la skill et laisse-la à l'emplacement local demandé. Commit ou ouvre un
 
 Une skill `-mode` est une sortie subjective. Une boucle de benchmark n'est pas utile ici. Fais une vérification de ton avec l'utilisateur : est-ce que ça lui ressemble? Est-ce qu'il manque quelque chose? Puis livre.
 
-Lance une boucle d'optimisation de description seulement si la précision de declenchement de la skill s'avere être un problème en pratique.
+Lance une boucle d'optimisation de description seulement si la précision de déclenchement de la skill s'avère être un problème en pratique.
 
 ## Quand ne pas l'utiliser
 

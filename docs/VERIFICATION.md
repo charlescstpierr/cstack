@@ -311,6 +311,8 @@ Une relecture des preuves de `docs/evidence/0.3.0.json` établit un fait qui n'a
 
 Cette corrélation est mesurée, pas inférée ; son mécanisme, lui, est inféré d'une consigne d'outil de l'hôte qui prime sur le texte de compétence. Les `default_prompt` des compétences qui délèguent portent désormais cette demande, et trois d'entre eux reprennent le noyau des formulations ci-dessus, en y ajoutant la nature native du délégué. L'effet de ce changement n'est pas mesuré : il faut un essai natif où la demande vient du prompt par défaut et non du corps de la consigne.
 
+Observation du 9 novembre 2026 (`docs/evidence/delegation-host-observations.json`) : quatre sessions réelles, sous Codex Desktop 0.157.1 et T3 Code 0.160.1, ont lancé de 9 à 18 enfants sans mot de délégation dans le message de l'utilisateur. Leur `AGENTS.md` demandait des sous-agents natifs, et la consigne `multi_agent_mode` de ces hôtes accepte une demande venue d'un `AGENTS.md` ou d'une compétence. La demande n'a donc pas à figurer dans le tour de l'utilisateur ; l'effet du texte d'une compétence seul reste non mesuré. Le `default_prompt` n'apparaît dans aucun des messages T3 observés.
+
 Le trou de couverture reste ouvert. Les deux seules exécutions de `how` enregistrées interdisent la délégation par construction, donc aucun scénario existant ne peut détecter une régression de ventilation de `how`.
 
 ## Historique des versions précédentes

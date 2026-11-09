@@ -16,15 +16,17 @@ C'est le portage des processus de [pstack](https://github.com/cursor/plugins/tre
 
 ## Dans T3 Code
 
-Dans T3, le coordinateur utilise les outils natifs de l'hôte pour choisir les modèles et efforts, déléguer, isoler les checkouts et collecter les résultats. Les helpers cstack normalisent les captures, vérifient les sélections et préparent les briefs complets ; ils ne lancent aucun moteur d'orchestration ni CLI de repli T3.
+cstack s'installe dans Codex sur la machine qui exécute vos agents T3, puis s'invoque dans un fil Codex.
 
-Le parcours observé utilise les sources du plugin dans un checkout. Dans une tâche T3 ouverte sur ce checkout, demander explicitement :
+1. Installez le plugin sur cette machine avec la [commande d'installation](#installer), ou collez le [message pour agent](#faire-installer-par-un-agent-ia) dans un fil T3 Code.
+2. Ouvrez un nouveau fil Codex dans T3 Code.
+3. Commencez votre message par `$cstack:cstack`, puis écrivez la demande.
 
-```text
-Utilise cstack pour cette tâche dans T3 Code. Lis plugins/cstack/skills/cstack/SKILL.md et son contrat T3. Délègue le travail indépendant avec les outils natifs T3 et vérifie les résultats reçus.
-```
+Le guide [Installer cstack dans T3 Code](plugins/cstack/docs/guide/12-t3-code.md) détaille les worktrees, le choix des modèles, la mise à jour et le dépannage.
 
-Le [contrat T3](plugins/cstack/skills/cstack/references/runtime/t3.md) prime alors sur les consignes Codex autonome. Trois revues réelles, sur trois fournisseurs, ont suivi ce pipeline et renvoyé leurs findings au parent : [reçu et limites](docs/evidence/t3-council-transport-r5.json), [vérification T3](docs/T3-VERIFICATION.md). L'installation dans T3 App et l'activation d'une tâche ordinaire restent non vérifiées. L'installateur ci-dessous et son test de chargement installé concernent Codex.
+Dans T3 Code, le coordinateur utilise les outils de l'hôte pour choisir les modèles et les efforts, déléguer, isoler les checkouts et collecter les résultats. Le [contrat T3](plugins/cstack/skills/cstack/references/runtime/t3.md) prime alors sur les consignes Codex autonome. Les helpers cstack vérifient les sélections et préparent les briefs. Ils ne lancent ni moteur d'orchestration ni CLI de repli.
+
+Le chargement du plugin installé est observé dans un fil Codex de T3 Code sur un serveur Linux : [reçu](docs/evidence/t3-installed-plugin-2026-11-09.json). Trois revues réelles, sur trois fournisseurs, ont suivi le pipeline T3 et renvoyé leurs findings au parent : [reçu et limites](docs/evidence/t3-council-transport-r5.json), [vérification T3](docs/T3-VERIFICATION.md). L'application de bureau T3 Code sur macOS et sur Windows n'est pas observée.
 
 ## Installation
 
@@ -33,20 +35,22 @@ Le [contrat T3](plugins/cstack/skills/cstack/references/runtime/t3.md) prime alo
 | Outil | Rôle | Obligatoire |
 | --- | --- | --- |
 | [Codex CLI](https://github.com/openai/codex) (`npm install -g @openai/codex`) | Installe et exécute le plugin | Oui |
-| `git` connecté à GitHub, en HTTPS ou en SSH | Cloner ce dépôt privé | Oui |
-| [`gh`](https://cli.github.com) authentifié | Installation en une ligne, suivi de PR | Recommandé |
+| `git` | Cloner ce dépôt | Oui |
+| [`gh`](https://cli.github.com) authentifié | Suivi de PR | Facultatif |
 | Python 3.9 ou plus récent | Script d'installation et lanceur des assistants | Oui |
 | [Bun](https://bun.sh) | Suivi de PR et orchestration | Facultatif |
 
-Le dépôt est privé : votre compte GitHub doit y avoir accès. Si Git n'est pas encore connecté, lancez `gh auth login` puis `gh auth setup-git`.
+Le dépôt est public : l'installation ne demande aucun compte GitHub.
 
 ### Installer
 
 En une ligne, qui télécharge le script puis le lance (un téléchargement refusé arrête tout) :
 
 ```sh
-gh api repos/charlescstpierr/cstack/contents/install.sh -H "Accept: application/vnd.github.raw" > install-cstack.sh && bash install-cstack.sh install
+curl -fsSL https://raw.githubusercontent.com/charlescstpierr/cstack/main/install.sh -o install-cstack.sh && bash install-cstack.sh install
 ```
+
+Cette commande exécute le script de la branche `main` avec vos droits. Pour le lire avant, lancez d'abord la partie `curl`, ouvrez `install-cstack.sh`, puis lancez `bash install-cstack.sh install`.
 
 Ou depuis un clone :
 
@@ -60,10 +64,10 @@ Ouvrez ensuite une **nouvelle tâche** dans Codex App ou une nouvelle session CL
 
 ### Faire installer par un agent IA
 
-Donnez ce message à Codex, dans une tâche ouverte sur n'importe quel dossier. Le dépôt étant privé, l'agent lit la procédure avec `gh` ou Git plutôt que par le web :
+Donnez ce message à Codex, dans une tâche ouverte sur n'importe quel dossier :
 
 ```text
-Installe le plugin cstack. Lis d'abord sa procédure pour agents dans le dépôt privé charlescstpierr/cstack (gh api repos/charlescstpierr/cstack/contents/INSTALL-AGENT.md -H "Accept: application/vnd.github.raw", ou sans gh : clone le dépôt avec git, en HTTPS ou en SSH, dans un dossier temporaire), puis suis-la.
+Installe le plugin cstack. Lis d'abord sa procédure pour agents à l'adresse https://raw.githubusercontent.com/charlescstpierr/cstack/main/INSTALL-AGENT.md, puis suis-la.
 ```
 
 Étapes et garde-fous : [INSTALL-AGENT.md](INSTALL-AGENT.md). L'agent vous demande votre accord avant d'installer un outil global.
@@ -113,7 +117,7 @@ codex exec '$cstack:cstack Examine cette modification sans changer les fichiers.
 
 Le mode reste actif dans la tâche jusqu'à ce que vous demandiez de l'arrêter, par exemple « arrête cstack ». Les compétences spécialisées restent utilisables à la demande.
 
-Codex exige que la demande de délégation figure dans votre message : le texte d'une compétence ne suffit pas à lancer un sous-agent. Les prompts par défaut des compétences qui délèguent la contiennent, donc sélectionnez la compétence dans le sélecteur plutôt que de taper son nom. En texte brut, ajoutez-la vous-même : `$cstack:cstack Corrige ce bug. Délègue le travail indépendant à des sous-agents natifs en parallèle.` Voir [le dépannage](plugins/cstack/docs/guide/10-recipes-and-pitfalls.md#un-seul-agent-travaille) si un seul agent travaille.
+Codex ne lance un sous-agent que sur demande explicite, venue de votre message, d'un `AGENTS.md` ou d'une compétence. Si cstack travaille seul, ajoutez-la à votre message : `$cstack:cstack Corrige ce bug. Délègue le travail indépendant à des sous-agents natifs en parallèle.` Voir [le dépannage](plugins/cstack/docs/guide/10-recipes-and-pitfalls.md#un-seul-agent-travaille) si un seul agent travaille.
 
 ## Les compétences
 
