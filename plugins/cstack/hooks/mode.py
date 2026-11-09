@@ -33,50 +33,66 @@ def _instruction_text(text: str) -> str:
 
     # Ignorer le contenu cité, sauf une cible seule dans « ne pas activer `cstack` ».
     # Une apostrophe dans un mot reste du texte pour n'utilise/don't.
+    # Un seul parcours : une expression unique relançait sa recherche de fermeture à chaque guillemet
+    # ouvrant et dépassait le délai du hook sur un long message.
     target = re.compile(r"(?:it|cstack|\$cstack:cstack|(?:this|the)\s+(?:cstack\s+)?skill)", re.IGNORECASE)
     word = re.compile(r"\w")
     double = re.compile(r'"[^"\n]*"')
-    closing = {"'": re.compile(r"'(?!\w)"), "‘": re.compile(r"’(?!\w)")}
-    # Une fermeture introuvable depuis une position l'est aussi depuis les suivantes : ne la chercher
-    # qu'une fois garde le parcours linéaire, là où une expression unique repartait de chaque apostrophe.
-    absent = set()
+    quote_line = re.compile(r"[ \t]{0,3}>[^\n]*")
+    closing = {"«": re.compile("»"), "“": re.compile("”"), "‘": re.compile(r"’(?!\w)"), "'": re.compile(r"'(?!\w)")}
+    absent = set()  # une fermeture introuvable depuis une position l'est aussi depuis les suivantes
 
-    def find(closer, start):
-        if closer in absent:
+    def closed(opener, start):
+        if opener in absent:
             return -1
-        if closer in closing:
-            found = closing[closer].search(text, start)
-            end = found.start() if found else -1
-        else:
-            end = text.find(closer, start)
-        if end < 0:
-            absent.add(closer)
-        return end
+        found = closing[opener].search(text, start)
+        if not found:
+            absent.add(opener)
+            return -1
+        return found.end()
 
-    text = re.sub(r"(?m)^[ \t]{0,3}>[^\n]*", " ", text)
+    # Séries d'accents graves et de tildes, avec la plus longue série qui suit chacune : la fermeture se
+    # déduit des longueurs, sans construire chaque chaîne candidate.
+    series = {}
+    for mark in "`~":
+        spans = [found.span() for found in re.finditer(re.escape(mark) + "+", text)]
+        longest_after, longest = [0] * len(spans), 0
+        for index in range(len(spans) - 1, -1, -1):
+            longest_after[index] = longest
+            longest = max(longest, spans[index][1] - spans[index][0])
+        series[mark] = [spans, longest_after, 0]
+
+    def fenced(mark, start):
+        spans, longest_after, at = series[mark]
+        while spans[at][1] <= start:
+            at += 1
+        series[mark][2] = at
+        length = spans[at][1] - start
+        size = min(length, longest_after[at])
+        if size < length and length // 2 >= size:
+            size = length // 2  # la série se referme sur sa propre moitié
+            return start + 2 * size if size >= (3 if mark == "~" else 1) else -1
+        if size < (3 if mark == "~" else 1):
+            return -1
+        at += 1
+        while spans[at][1] - spans[at][0] < size:
+            at += 1
+        return spans[at][0] + size
+
     out = []
     i = 0
     while i < len(text):
         char = text[i]
         end = -1
-        if char in "`~":
-            run = i
-            while run < len(text) and text[run] == char:
-                run += 1
-            for size in range(run - i, 2 if char == "~" else 0, -1):
-                close = find(char * size, i + size)
-                if close >= 0:
-                    end = close + size
-                    break
-        elif char in "«“":
-            close = find("»" if char == "«" else "”", i + 1)
-            end = close + 1 if close >= 0 else -1
+        if (not i or text[i - 1] == "\n") and quote_line.match(text, i):
+            end = quote_line.match(text, i).end()  # ligne de citation Markdown hors de toute autre citation
+        elif char in "`~":
+            end = fenced(char, i)
         elif char == '"':
             match = double.match(text, i)
             end = match.end() if match else -1
-        elif char == "‘" or (char == "'" and not (i and word.match(text[i - 1]))):
-            close = find(char, i + 1)
-            end = close + 1 if close >= 0 else -1
+        elif char in "«“‘" or (char == "'" and not (i and word.match(text[i - 1]))):
+            end = closed(char, i + 1)
         if end < 0:
             out.append(char)
             i += 1

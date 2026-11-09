@@ -166,10 +166,12 @@ class ModeHookTests(unittest.TestCase):
 
     def test_long_prompts_full_of_unclosed_quotes_activate_within_the_hook_timeout(self):
         # Le hook a cinq secondes : une recherche de fermeture relancée à chaque apostrophe les dépassait.
-        for index, filler in enumerate(("&'a str, ", "‘l’a ", "`a ``b ```c ")):
-            with self.subTest(filler=filler):
+        fillers = ("&'a str, " * 10000, "‘l’a " * 10000, "`a ``b ```c " * 10000, "`" * 100000, "~" * 100000,
+                   " ".join("`" * size for size in range(1, 400)))
+        for index, filler in enumerate(fillers):
+            with self.subTest(filler=filler[:12]):
                 started = time.monotonic()
-                out = self.prompt("$cstack:cstack Analyse ce texte :\n" + filler * 10000, session=f"long-{index}")
+                out = self.prompt("$cstack:cstack Analyse ce texte :\n" + filler, session=f"long-{index}")
                 self.assertLess(time.monotonic() - started, 2.5)
                 self.assertIn("Mode cstack actif", out)
 
@@ -178,6 +180,9 @@ class ModeHookTests(unittest.TestCase):
         self.assertIn("Mode cstack actif", self.prompt(quoted, session="quote-1"))
         refused = "$cstack:cstack Ajoute ce passage :\n> un texte\nFinalement, ne pas utiliser cstack."
         self.assertEqual(self.prompt(refused, session="quote-2"), "")
+        # Une ligne `>` située dans une citation déjà ouverte ne doit pas avaler sa fermeture.
+        nested = "$cstack:cstack Lis «\n> exemple »\nNe pas utiliser cstack. Réponds « OK »."
+        self.assertEqual(self.prompt(nested, session="quote-3"), "")
 
     def test_stop_request_ends_the_reminder(self):
         self.prompt("$cstack:cstack Refactorise ce module.")
