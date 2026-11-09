@@ -33,21 +33,58 @@ def _instruction_text(text: str) -> str:
 
     # Ignorer le contenu cité, sauf une cible seule dans « ne pas activer `cstack` ».
     # Une apostrophe dans un mot reste du texte pour n'utilise/don't.
-    def quoted(match):
-        content = match.group().strip("`~«»“”‘’\"' \t\r\n")
-        target = re.fullmatch(
-            r"(?:it|cstack|\$cstack:cstack|(?:this|the)\s+(?:cstack\s+)?skill)",
-            content,
-            re.IGNORECASE,
-        )
-        return content if target else " "
+    target = re.compile(r"(?:it|cstack|\$cstack:cstack|(?:this|the)\s+(?:cstack\s+)?skill)", re.IGNORECASE)
+    word = re.compile(r"\w")
+    double = re.compile(r'"[^"\n]*"')
+    closing = {"'": re.compile(r"'(?!\w)"), "‘": re.compile(r"’(?!\w)")}
+    # Une fermeture introuvable depuis une position l'est aussi depuis les suivantes : ne la chercher
+    # qu'une fois garde le parcours linéaire, là où une expression unique repartait de chaque apostrophe.
+    absent = set()
 
-    return re.sub(
-        r"(?P<code>`+|~{3,})[\s\S]*?(?P=code)|«[^»]*»|“[^”]*”|‘[\s\S]*?’(?!\w)"
-        r"|\"[^\"\n]*\"|(?<!\w)'[\s\S]*?'(?!\w)",
-        quoted,
-        text,
-    )
+    def find(closer, start):
+        if closer in absent:
+            return -1
+        if closer in closing:
+            found = closing[closer].search(text, start)
+            end = found.start() if found else -1
+        else:
+            end = text.find(closer, start)
+        if end < 0:
+            absent.add(closer)
+        return end
+
+    text = re.sub(r"(?m)^[ \t]{0,3}>[^\n]*", " ", text)
+    out = []
+    i = 0
+    while i < len(text):
+        char = text[i]
+        end = -1
+        if char in "`~":
+            run = i
+            while run < len(text) and text[run] == char:
+                run += 1
+            for size in range(run - i, 2 if char == "~" else 0, -1):
+                close = find(char * size, i + size)
+                if close >= 0:
+                    end = close + size
+                    break
+        elif char in "«“":
+            close = find("»" if char == "«" else "”", i + 1)
+            end = close + 1 if close >= 0 else -1
+        elif char == '"':
+            match = double.match(text, i)
+            end = match.end() if match else -1
+        elif char == "‘" or (char == "'" and not (i and word.match(text[i - 1]))):
+            close = find(char, i + 1)
+            end = close + 1 if close >= 0 else -1
+        if end < 0:
+            out.append(char)
+            i += 1
+            continue
+        content = text[i:end].strip("`~«»“”‘’\"' \t\r\n")
+        out.append(content if target.fullmatch(content) else " ")
+        i = end
+    return "".join(out)
 
 
 def _activation_requested(prompt: str) -> bool:

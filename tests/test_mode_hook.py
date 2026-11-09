@@ -6,6 +6,7 @@ from pathlib import Path
 import subprocess
 import sys
 import tempfile
+import time
 import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -162,6 +163,21 @@ class ModeHookTests(unittest.TestCase):
                 self.assertEqual(self.run_hook({"hook_event_name": "SessionStart", "session_id": refused_session,
                                                "source": "resume"}), "")
                 self.assertEqual(set((self.data / "sessions").iterdir()), markers)
+
+    def test_long_prompts_full_of_unclosed_quotes_activate_within_the_hook_timeout(self):
+        # Le hook a cinq secondes : une recherche de fermeture relancée à chaque apostrophe les dépassait.
+        for index, filler in enumerate(("&'a str, ", "‘l’a ", "`a ``b ```c ")):
+            with self.subTest(filler=filler):
+                started = time.monotonic()
+                out = self.prompt("$cstack:cstack Analyse ce texte :\n" + filler * 10000, session=f"long-{index}")
+                self.assertLess(time.monotonic() - started, 2.5)
+                self.assertIn("Mode cstack actif", out)
+
+    def test_markdown_quote_lines_are_content(self):
+        quoted = "$cstack:cstack Ajoute au README ce passage :\n> ne pas utiliser cstack\n  > n'utilise pas cstack"
+        self.assertIn("Mode cstack actif", self.prompt(quoted, session="quote-1"))
+        refused = "$cstack:cstack Ajoute ce passage :\n> un texte\nFinalement, ne pas utiliser cstack."
+        self.assertEqual(self.prompt(refused, session="quote-2"), "")
 
     def test_stop_request_ends_the_reminder(self):
         self.prompt("$cstack:cstack Refactorise ce module.")
