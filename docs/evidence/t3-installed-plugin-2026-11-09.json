@@ -38,5 +38,11 @@
     "L'approbation des hooks du plugin depuis T3 Code n'est pas observée : ils étaient déjà approuvés dans Codex CLI.",
     "Le fil du 9 novembre est un enfant délégué, pas un message saisi dans le compositeur.",
     "Le binaire Codex de T3 Code (0.162.1) diffère du CLI du PATH (0.167.0) ; les deux lisent le même dossier Codex."
-  ]
+  ],
+  "publicInstall": {
+    "repositoryVisibility": "public depuis le 2026-11-09",
+    "command": "curl -fsSL https://raw.githubusercontent.com/charlescstpierr/cstack/main/install.sh -o install-cstack.sh && bash install-cstack.sh install, puis doctor",
+    "environment": "HOME et CODEX_HOME neufs, aucune configuration Git, gh absent",
+    "result": "accès Git au dépôt réussi sans compte, plugin cstack@cstack : installed, enabled 0.8.0"
+  }
 }

@@ -18,13 +18,13 @@ Ce fichier s'adresse à un agent de code (Codex CLI, Codex App ou un fil T3 Code
 
    ```sh
    tmp="$(mktemp -d)" && echo "$tmp" &&
-     gh api repos/charlescstpierr/cstack/contents/install.sh -H "Accept: application/vnd.github.raw" > "$tmp/install.sh" &&
+     curl -fsSL https://raw.githubusercontent.com/charlescstpierr/cstack/main/install.sh -o "$tmp/install.sh" &&
      test -s "$tmp/install.sh"
    ```
 
    Lancez ce bloc en une seule commande et notez le chemin affiché : `$tmp` n'existe que dans ce shell, alors dans les commandes suivantes, repli ci-dessous compris, écrivez ce chemin en toutes lettres jusqu'au nettoyage.
 
-   Si cette commande échoue (`gh` absent ou non authentifié) : `git clone --depth 1 https://github.com/charlescstpierr/cstack.git "$tmp/cstack"` (ou l'URL SSH `git@github.com:charlescstpierr/cstack.git`), puis `$tmp/cstack/install.sh`. Dans la suite, `install.sh` désigne le script obtenu, lancé avec `bash`.
+   Si cette commande échoue (`curl` absent ou adresse injoignable) : `git clone --depth 1 https://github.com/charlescstpierr/cstack.git "$tmp/cstack"` (ou l'URL SSH `git@github.com:charlescstpierr/cstack.git`), puis `$tmp/cstack/install.sh`. Dans la suite, `install.sh` désigne le script obtenu, lancé avec `bash`.
 
 3. **Voir l'état actuel.** Lancez `install.sh doctor`.
    - `doctor` affiche une ligne `✓ plugin cstack@cstack` (précédée d'espaces) : cstack est installé et fonctionne. Ne changez rien, sauf si l'utilisateur demande la dernière version (`install.sh update`) ou une version précise (`install.sh update --ref <ref>`, qui récupère réellement cette version).
@@ -48,7 +48,7 @@ Dans `doctor`, `✓` est vérifié, `!` est facultatif (Bun, `gh`) et n'empêche
 | Message | Action |
 | --- | --- |
 | `Codex CLI introuvable` | Proposez `npm install -g @openai/codex` et attendez l'accord de l'utilisateur. |
-| `refusé à charlescstpierr/cstack` | Le compte GitHub n'a pas accès au dépôt privé, ou Git n'est pas connecté. Demandez à l'utilisateur de lancer `gh auth login` puis `gh auth setup-git`. |
+| `refusé à charlescstpierr/cstack` | Git ne joint le dépôt ni en HTTPS ni en SSH. Faites vérifier le réseau. Si Git passe par un compte GitHub mal connecté, l'utilisateur lance `gh auth login` puis `gh auth setup-git`. |
 | `cstack est désactivé` | L'utilisateur l'a désactivé exprès. Ne forcez rien : demandez-lui de le réactiver dans Codex, ou de choisir `install.sh uninstall` puis `install.sh install`. |
 | `source inutilisable. L'installation actuelle est conservée.` | L'essai de la nouvelle source a échoué et rien n'a changé. Lisez l'erreur de Codex affichée juste avant : référence introuvable, réseau, permissions ou disque plein. Rapportez cette cause ; ne supposez pas une mauvaise `--ref`. |
 | `impossible de lire l'état de Codex` ou `état du plugin illisible` | Codex CLI ne répond pas correctement. Faites vérifier `codex --version` et la mise à jour de Codex ; ne touchez pas à ses fichiers. |

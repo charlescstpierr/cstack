@@ -7,7 +7,7 @@ T3 Code lance Codex sur la machine de votre environnement T3. cstack s'installe 
 Vérifiez ces points sur la machine qui exécute vos agents T3 :
 
 - Le fournisseur Codex est connecté dans T3 Code.
-- `git` ou `gh` accède au dépôt privé `charlescstpierr/cstack`.
+- `git` et `curl` joignent GitHub.
 - Python 3.9 ou plus récent et Bash sont présents.
 
 Le fournisseur Claude est facultatif. Connectez-le dans T3 Code si vous voulez des délégués Claude.
@@ -17,7 +17,7 @@ Le fournisseur Claude est facultatif. Connectez-le dans T3 Code si vous voulez d
 Lancez cette commande dans un terminal de la machine T3 :
 
 ```sh
-gh api repos/charlescstpierr/cstack/contents/install.sh -H "Accept: application/vnd.github.raw" > install-cstack.sh && bash install-cstack.sh install
+curl -fsSL https://raw.githubusercontent.com/charlescstpierr/cstack/main/install.sh -o install-cstack.sh && bash install-cstack.sh install
 ```
 
 Puis vérifiez l'installation :
@@ -33,7 +33,7 @@ Si votre T3 Code utilise un autre dossier Codex que `~/.codex`, lancez les deux 
 Pour laisser un agent faire l'installation, collez ce message dans un fil T3 Code. Le fil s'exécute sur la machine T3, donc le plugin arrive au bon endroit :
 
 ```text
-Installe le plugin cstack. Lis d'abord sa procédure pour agents dans le dépôt privé charlescstpierr/cstack (gh api repos/charlescstpierr/cstack/contents/INSTALL-AGENT.md -H "Accept: application/vnd.github.raw", ou sans gh : clone le dépôt avec git, en HTTPS ou en SSH, dans un dossier temporaire), puis suis-la.
+Installe le plugin cstack. Lis d'abord sa procédure pour agents à l'adresse https://raw.githubusercontent.com/charlescstpierr/cstack/main/INSTALL-AGENT.md, puis suis-la.
 ```
 
 ## 2. Approuver le rappel du mode

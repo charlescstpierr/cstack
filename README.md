@@ -35,19 +35,19 @@ Le chargement du plugin installé est observé dans un fil Codex de T3 Code sur 
 | Outil | Rôle | Obligatoire |
 | --- | --- | --- |
 | [Codex CLI](https://github.com/openai/codex) (`npm install -g @openai/codex`) | Installe et exécute le plugin | Oui |
-| `git` connecté à GitHub, en HTTPS ou en SSH | Cloner ce dépôt privé | Oui |
-| [`gh`](https://cli.github.com) authentifié | Installation en une ligne, suivi de PR | Recommandé |
+| `git` | Cloner ce dépôt | Oui |
+| [`gh`](https://cli.github.com) authentifié | Suivi de PR | Facultatif |
 | Python 3.9 ou plus récent | Script d'installation et lanceur des assistants | Oui |
 | [Bun](https://bun.sh) | Suivi de PR et orchestration | Facultatif |
 
-Le dépôt est privé : votre compte GitHub doit y avoir accès. Si Git n'est pas encore connecté, lancez `gh auth login` puis `gh auth setup-git`.
+Le dépôt est public : l'installation ne demande aucun compte GitHub.
 
 ### Installer
 
 En une ligne, qui télécharge le script puis le lance (un téléchargement refusé arrête tout) :
 
 ```sh
-gh api repos/charlescstpierr/cstack/contents/install.sh -H "Accept: application/vnd.github.raw" > install-cstack.sh && bash install-cstack.sh install
+curl -fsSL https://raw.githubusercontent.com/charlescstpierr/cstack/main/install.sh -o install-cstack.sh && bash install-cstack.sh install
 ```
 
 Ou depuis un clone :
@@ -62,10 +62,10 @@ Ouvrez ensuite une **nouvelle tâche** dans Codex App ou une nouvelle session CL
 
 ### Faire installer par un agent IA
 
-Donnez ce message à Codex, dans une tâche ouverte sur n'importe quel dossier. Le dépôt étant privé, l'agent lit la procédure avec `gh` ou Git plutôt que par le web :
+Donnez ce message à Codex, dans une tâche ouverte sur n'importe quel dossier :
 
 ```text
-Installe le plugin cstack. Lis d'abord sa procédure pour agents dans le dépôt privé charlescstpierr/cstack (gh api repos/charlescstpierr/cstack/contents/INSTALL-AGENT.md -H "Accept: application/vnd.github.raw", ou sans gh : clone le dépôt avec git, en HTTPS ou en SSH, dans un dossier temporaire), puis suis-la.
+Installe le plugin cstack. Lis d'abord sa procédure pour agents à l'adresse https://raw.githubusercontent.com/charlescstpierr/cstack/main/INSTALL-AGENT.md, puis suis-la.
 ```
 
 Étapes et garde-fous : [INSTALL-AGENT.md](INSTALL-AGENT.md). L'agent vous demande votre accord avant d'installer un outil global.

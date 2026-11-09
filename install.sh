@@ -22,8 +22,8 @@ Options :
   --ref REF   Branche, tag ou commit de ${REPO} à installer.
   --local     Installe depuis le dossier de ce script (copie locale, sans mise à jour Git).
 
-Sans clone, dépôt privé (gh authentifié) :
-  gh api repos/${REPO}/contents/install.sh -H "Accept: application/vnd.github.raw" > install-cstack.sh && bash install-cstack.sh install
+Sans clone :
+  curl -fsSL https://raw.githubusercontent.com/${REPO}/main/install.sh -o install-cstack.sh && bash install-cstack.sh install
 EOF
 }
 
@@ -106,7 +106,7 @@ tracked_branch() {
 
 reachable() { GIT_TERMINAL_PROMPT=0 GIT_SSH_COMMAND="ssh -o BatchMode=yes" git ls-remote --exit-code "$1" HEAD >/dev/null 2>&1; }
 
-# Choisit le transport Git qui a accès au dépôt privé : HTTPS d'abord, SSH ensuite.
+# Choisit le transport Git qui joint le dépôt : HTTPS d'abord, SSH ensuite.
 remote_source() {
   command -v git >/dev/null 2>&1 || die "git introuvable ; Codex en a besoin pour cloner ${REPO}."
   if reachable "https://github.com/${REPO}.git"; then
