@@ -50,6 +50,8 @@ En une ligne, qui télécharge le script puis le lance (un téléchargement refu
 curl -fsSL https://raw.githubusercontent.com/charlescstpierr/cstack/main/install.sh -o install-cstack.sh && bash install-cstack.sh install
 ```
 
+Cette commande exécute le script de la branche `main` avec vos droits. Pour le lire avant, lancez d'abord la partie `curl`, ouvrez `install-cstack.sh`, puis lancez `bash install-cstack.sh install`.
+
 Ou depuis un clone :
 
 ```sh

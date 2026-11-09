@@ -114,7 +114,7 @@ remote_source() {
   elif reachable "git@github.com:${REPO}.git"; then
     echo "git@github.com:${REPO}.git"
   else
-    die "accès refusé à ${REPO} en HTTPS comme en SSH. Connectez Git à GitHub : gh auth login && gh auth setup-git"
+    die "accès refusé à ${REPO} en HTTPS comme en SSH. Vérifiez le réseau ; si Git passe par un compte GitHub, lancez gh auth login && gh auth setup-git"
   fi
 }
 
@@ -263,7 +263,7 @@ cmd_doctor() {
   elif (remote_source >/dev/null 2>&1); then
     ok "accès Git à ${REPO}"
   else
-    fail "accès Git refusé à ${REPO} (gh auth login && gh auth setup-git)"; problems=1
+    fail "accès Git refusé à ${REPO} (vérifiez le réseau, ou gh auth login && gh auth setup-git)"; problems=1
   fi
   if ! version="$(bun --version 2>/dev/null)"; then
     warn "Bun absent : suivi de PR et orchestration indisponibles (https://bun.sh)"

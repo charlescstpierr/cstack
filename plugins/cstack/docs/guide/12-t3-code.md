@@ -7,6 +7,7 @@ T3 Code lance Codex sur la machine de votre environnement T3. cstack s'installe 
 Vérifiez ces points sur la machine qui exécute vos agents T3 :
 
 - Le fournisseur Codex est connecté dans T3 Code.
+- Codex CLI est installé, et `codex --version` répond dans un terminal de cette machine. L'installateur en a besoin, même si T3 Code embarque son propre Codex.
 - `git` et `curl` joignent GitHub.
 - Python 3.9 ou plus récent et Bash sont présents.
 
@@ -19,6 +20,8 @@ Lancez cette commande dans un terminal de la machine T3 :
 ```sh
 curl -fsSL https://raw.githubusercontent.com/charlescstpierr/cstack/main/install.sh -o install-cstack.sh && bash install-cstack.sh install
 ```
+
+Cette commande exécute le script de la branche `main` avec vos droits. Pour le lire avant, lancez d'abord la partie `curl`, ouvrez `install-cstack.sh`, puis lancez `bash install-cstack.sh install`.
 
 Puis vérifiez l'installation :
 
@@ -38,7 +41,7 @@ Installe le plugin cstack. Lis d'abord sa procédure pour agents à l'adresse ht
 
 ## 2. Approuver le rappel du mode
 
-Cette étape est facultative et se fait une seule fois. Dans un terminal de la même machine, lancez `codex`, tapez `/hooks`, puis approuvez les deux hooks cstack. Sans cette approbation, cstack fonctionne, mais il ne rappelle pas son mode à chaque message.
+Cette étape est facultative et se fait une seule fois. Dans un terminal de la même machine, lancez `codex`, tapez `/hooks`, puis approuvez les deux hooks cstack. Si vous avez installé avec une variable `CODEX_HOME`, lancez `codex` avec la même variable. Sans cette approbation, cstack fonctionne, mais il ne rappelle pas son mode à chaque message.
 
 ## 3. Lancer une première tâche
 
@@ -102,7 +105,7 @@ Ouvrez ensuite un nouveau fil. Un fil déjà ouvert garde l'ancienne version.
 
 - Le plugin installé se charge dans un fil Codex de T3 Code, et le rappel du mode s'affiche. Le reçu est `docs/evidence/t3-installed-plugin-2026-11-09.json`, à la racine du dépôt.
 - L'installateur fonctionne dans un dossier Codex isolé, avec `install --local` puis `doctor`.
-- Le setup T3 accepte les vraies réponses de T3 Code et résout un panel sur deux fournisseurs.
+- Le setup T3 accepte les vraies réponses de T3 Code et résout un panel sur deux fournisseurs. Le reçu est `docs/evidence/setup-observations-2026-11-09.json`.
 
 Ces observations viennent d'un seul serveur Linux. L'application de bureau T3 Code sur macOS et sur Windows n'est pas observée. L'approbation des hooks depuis T3 Code non plus. Le refus d'écrire hors worktree vient du contrat T3 et n'a pas été observé.
 
