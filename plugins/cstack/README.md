@@ -1,6 +1,6 @@
 # cstack
 
-Les processus de pstack 0.15.5 adaptés aux outils natifs de Codex App et CLI. Plugin `0.8.0`. Version amont épinglée `12d587dfb20741cafc376c42c696c5f6e2a64487`.
+Les processus de pstack 0.15.5 adaptés aux outils natifs de Codex App et CLI. Plugin `0.9.0`. Version amont épinglée `12d587dfb20741cafc376c42c696c5f6e2a64487`.
 
 Les préparations `$cstack:clarify`, `$cstack:domain`, `$cstack:horizon` et `$cstack:audit-architecture` sont disponibles sur demande. La configuration peut préparer un bloc de projet dans `AGENTS.md` et les conventions documentaires, en conservant les instructions existantes. Voir [la configuration](docs/guide/01-setup.md) et [les processus de préparation](docs/guide/04-design.md).
 
@@ -8,7 +8,7 @@ Dans le sélecteur, cherchez `$cstack` et choisissez **cstack**. Pour une comman
 
 Activez `$cstack:cstack` dans une tâche pour choisir un processus d'investigation, d'implémentation, de revue ou de livraison vérifiée. Le mode reste limité à cette tâche et se désactive sur demande. L'installation seule n'active aucune compétence.
 
-Le plugin expose 29 compétences. Ses [23 principes](docs/guide/08-principles.md) sont des références consultées au besoin, sans commandes individuelles dans le sélecteur. Pour en demander un, nommez-le dans votre demande à `$cstack:cstack`. L'exploration déléguée utilise au moins deux explorateurs, normalement trois angles distincts, puis une synthèse. Une cible unique ne réduit pas ce nombre à un. Codex exige que la demande de délégation figure dans votre tour : sélectionnez la compétence dans le sélecteur, dont le prompt par défaut la porte, ou ajoutez-la vous-même. Voir [le dépannage](docs/guide/10-recipes-and-pitfalls.md#un-seul-agent-travaille).
+Le plugin expose 30 compétences. Ses [23 principes](docs/guide/08-principles.md) sont des références consultées au besoin, sans commandes individuelles dans le sélecteur. Pour en demander un, nommez-le dans votre demande à `$cstack:cstack`. L'exploration déléguée utilise au moins deux explorateurs, normalement trois angles distincts, puis une synthèse. Une cible unique ne réduit pas ce nombre à un. Codex exige que la demande de délégation figure dans votre tour : sélectionnez la compétence dans le sélecteur, dont le prompt par défaut la porte, ou ajoutez-la vous-même. Voir [le dépannage](docs/guide/10-recipes-and-pitfalls.md#un-seul-agent-travaille).
 
 Pour une implémentation multi-phase, une demande explicite de Goal natif permet de garder le même objectif entre les playbooks jusqu’à une PR testée et revue. Voir [la continuation autonome](docs/guide/07-overnight.md).
 

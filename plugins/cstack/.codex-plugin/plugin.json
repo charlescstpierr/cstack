@@ -1,6 +1,6 @@
 {
   "name": "cstack",
-  "version": "0.8.0",
+  "version": "0.9.0",
   "description": "Workflows d'ingénierie vérifiés pour Codex : investiguer, concevoir, implémenter, relire par des sous-agents indépendants et prouver le résultat avant de livrer. Portage de pstack.",
   "author": {
     "name": "charlescstpierr",

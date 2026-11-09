@@ -117,7 +117,7 @@ Codex ne lance un sous-agent que sur demande explicite, venue de votre message, 
 
 ## Les compétences
 
-Le catalogue contient 29 compétences. Chacune s'invoque par `$cstack:<nom>`.
+Le catalogue contient 30 compétences. Chacune s'invoque par `$cstack:<nom>`.
 
 | Domaine | Compétences |
 | --- | --- |
@@ -128,7 +128,7 @@ Le catalogue contient 29 compétences. Chacune s'invoque par `$cstack:<nom>`.
 | Construire | `tdd` du rouge au vert · `swarm` distribue le travail en parallèle · `typescript-best-practices` · `technical-writing` |
 | Relire et nettoyer | `interrogate` revue contradictoire · `blast-radius` ce qu'un changement peut casser · `deslop` le code · `unslop` la prose · `no-comments` les commentaires |
 | Vérifier et tracer | `create-verification-skill` et `maintain-verification-skill` pilotent l'app comme un utilisateur · `show-me-your-work` journalise les décisions |
-| Personnaliser | `automate-me` crée votre propre mode · `reflect` transforme les leçons en améliorations · `make-bot-ui` réveille Codex depuis une page locale |
+| Personnaliser | `automate-me` crée votre propre mode · `reflect` transforme les leçons en améliorations · `correct` rend impossibles les erreurs répétées des agents · `make-bot-ui` réveille Codex depuis une page locale |
 
 Les 23 principes sont des [références internes](plugins/cstack/docs/guide/08-principles.md), lues seulement quand elles servent le travail ou que vous en nommez un : `$cstack:cstack applique le principe « Discipline aux frontières » à cette validation`.
 

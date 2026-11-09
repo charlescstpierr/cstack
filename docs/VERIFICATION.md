@@ -48,6 +48,12 @@ Le reçu `native_child_thread_ids` exclut le fil parent, y compris lorsqu'un év
 
 Le [reçu du 6 octobre 2026](evidence/behavior-runner-2026-10-06.json) enregistre une sonde via l'interface CLI corrigée. Le parent est persistant, un enfant est confirmé par ses métadonnées et le parent est absent de la liste d'enfants. La correction du message et une assertion indépendante sur sa sortie passent. Le bundle source était chargé directement, sans observation des hooks installés. C'est un essai unique, pas une campagne comparative ni une preuve générale de conformité des workflows.
 
+## État 0.9.0
+
+Le catalogue 0.9.0 contient 30 skills, 23 références de principes et 23 guides d'exécution. La couverture conserve 158 fichiers source, épinglés sur pstack 0.15.5. `correct` vient d'une révision amont plus récente (`236e548`), enregistrée dans `NOTICE.md` sans déplacer le pin.
+
+Le validateur du paquet, les faits générés et les tests sont relancés sur ce changement ; le détail est dans la PR qui l'introduit. Aucun essai natif n'a encore exercé `correct`. Son relevé de départ, les 199 findings de revue de cstack, est dans [agent-errors.md](evidence/agent-errors.md).
+
 ## État 0.8.0
 
 Le catalogue 0.8.0 contient 29 skills, 23 références de principes et 23 guides d'exécution. La couverture conserve 158 fichiers source, épinglés sur pstack 0.15.5.

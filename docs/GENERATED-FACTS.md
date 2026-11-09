@@ -3,10 +3,10 @@
 
 | Fait | Valeur |
 | --- | --- |
-| Version du plugin | 0.8.0 |
+| Version du plugin | 0.9.0 |
 | Version amont | 0.15.5 |
 | Commit amont | `12d587dfb20741cafc376c42c696c5f6e2a64487` |
-| Compétences | 29 |
+| Compétences | 30 |
 | Principes internes | 23 |
 | Guides d’exécution | 23 |
 | Fichiers source amont | 158 |

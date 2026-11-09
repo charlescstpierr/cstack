@@ -1016,6 +1016,14 @@
       "reason": "Codex skill UI and invocation policy, not present in pstack."
     },
     {
+      "path": "plugins/cstack/skills/correct/SKILL.md",
+      "reason": "Adapted from pstack skills/correct/SKILL.md at cursor/plugins 236e5481d05cbadc315b374a5de54971858c27bb (pstack 0.15.36), absent from the primary pin; provenance in NOTICE.md."
+    },
+    {
+      "path": "plugins/cstack/skills/correct/agents/openai.yaml",
+      "reason": "Codex skill UI and invocation policy, not present in pstack."
+    },
+    {
       "path": "plugins/cstack/skills/create-verification-skill/agents/openai.yaml",
       "reason": "Codex skill UI and invocation policy, not present in pstack."
     },
