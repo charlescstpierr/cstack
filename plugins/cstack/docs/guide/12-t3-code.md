@@ -1,17 +1,17 @@
 # Installer cstack dans T3 Code
 
-T3 Code lance Codex sur la machine de votre environnement T3. cstack s'installe dans Codex sur cette machine, puis s'invoque dans un fil Codex de T3 Code. Votre téléphone ou votre navigateur n'ont rien à installer.
+T3 Code lance Codex et Claude sur la machine de votre environnement T3. cstack s'installe dans Codex et dans Claude Code sur cette machine, puis s'invoque dans un fil Codex ou Claude de T3 Code. Votre téléphone ou votre navigateur n'ont rien à installer.
 
 ## Avant de commencer
 
 Vérifiez ces points sur la machine qui exécute vos agents T3 :
 
-- Le fournisseur Codex est connecté dans T3 Code.
-- Codex CLI est installé, et `codex --version` répond dans un terminal de cette machine. L'installateur en a besoin, même si T3 Code embarque son propre Codex.
+- Le fournisseur Codex ou Claude est connecté dans T3 Code.
+- Codex CLI ou Claude Code est installé, et `codex --version` ou `claude --version` répond dans un terminal de cette machine. L'installateur installe cstack dans chacun de ceux qui répondent, même si T3 Code embarque son propre Codex.
 - `git` et `curl` joignent GitHub.
 - Python 3.9 ou plus récent et Bash sont présents.
 
-Le fournisseur Claude est facultatif. Connectez-le dans T3 Code si vous voulez des délégués Claude.
+Le second fournisseur est facultatif. Connectez Claude dans T3 Code si vous voulez des fils ou des délégués Claude.
 
 ## 1. Installer le plugin
 
@@ -29,9 +29,9 @@ Puis vérifiez l'installation :
 bash install-cstack.sh doctor
 ```
 
-La sortie doit contenir la ligne `✓ plugin cstack@cstack : installed, enabled`, suivie de la version.
+La sortie doit contenir la ligne `✓ plugin cstack@cstack : installed, enabled` pour Codex, et `✓ plugin cstack@cstack dans Claude Code : installed, enabled` pour Claude Code, chacune suivie de la version.
 
-Si votre T3 Code utilise un autre dossier Codex que `~/.codex`, lancez les deux commandes avec la même variable `CODEX_HOME`.
+Si votre T3 Code utilise un autre dossier Codex que `~/.codex`, ou un autre dossier Claude que `~/.claude`, lancez les deux commandes avec la même variable `CODEX_HOME` ou `CLAUDE_CONFIG_DIR`.
 
 Pour laisser un agent faire l'installation, collez ce message dans un fil T3 Code. Le fil s'exécute sur la machine T3, donc le plugin arrive au bon endroit :
 
@@ -41,12 +41,12 @@ Installe le plugin cstack. Lis d'abord sa procédure pour agents à l'adresse ht
 
 ## 2. Approuver le rappel du mode
 
-Cette étape est facultative et se fait une seule fois. Dans un terminal de la même machine, lancez `codex`, tapez `/hooks`, puis approuvez les deux hooks cstack. Si vous avez installé avec une variable `CODEX_HOME`, lancez `codex` avec la même variable. Sans cette approbation, cstack fonctionne, mais il ne rappelle pas son mode à chaque message.
+Cette étape est facultative et se fait une seule fois. Dans un terminal de la même machine, lancez `codex`, tapez `/hooks`, puis approuvez les deux hooks cstack. Si vous avez installé avec une variable `CODEX_HOME`, lancez `codex` avec la même variable. Sans cette approbation, cstack fonctionne, mais il ne rappelle pas son mode à chaque message. Une mise à jour qui change la commande du hook redemande cette approbation. Claude Code n'a rien à approuver.
 
 ## 3. Lancer une première tâche
 
-1. Ouvrez un **nouveau fil** dans T3 Code avec le fournisseur Codex. Un fil ouvert avant l'installation ne voit pas le plugin.
-2. Commencez votre message par `$cstack:cstack`, puis écrivez la demande :
+1. Ouvrez un **nouveau fil** dans T3 Code avec le fournisseur Codex ou Claude. Un fil ouvert avant l'installation ne voit pas le plugin.
+2. Commencez votre message par `$cstack:cstack` dans un fil Codex, ou par `/cstack:cstack` dans un fil Claude, puis écrivez la demande :
 
    ```text
    $cstack:cstack Explique en lecture seule comment ce projet lance ses tests.
@@ -54,7 +54,7 @@ Cette étape est facultative et se fait une seule fois. Dans un terminal de la m
 
 3. cstack annonce une ligne `Playbook : <nom>` et une liste d'étapes. Si elles n'apparaissent pas, consultez le [dépannage](#dépannage).
 
-Un fil Claude ne charge pas les compétences `$cstack:*`. Le coordinateur est un fil Codex. Les modèles Claude interviennent comme délégués.
+Le coordinateur peut être un fil Codex ou un fil Claude. Les deux fournisseurs peuvent aussi intervenir comme délégués.
 
 ## 4. Écrire du code depuis un worktree
 
@@ -95,7 +95,7 @@ Si vous avez installé avec une variable `CODEX_HOME`, lancez cette commande ave
 
 | Symptôme | Action |
 | --- | --- |
-| `$cstack:cstack` ne déclenche rien | Lancez `bash install-cstack.sh doctor` sur la machine T3, puis ouvrez un nouveau fil Codex. Le plugin est peut-être installé dans un autre dossier Codex. |
+| `$cstack:cstack` ou `/cstack:cstack` ne déclenche rien | Lancez `bash install-cstack.sh doctor` sur la machine T3, puis ouvrez un nouveau fil. Le plugin est peut-être installé dans un autre dossier Codex ou Claude. |
 | Aucun rappel « Mode cstack actif » | Approuvez les hooks à l'étape 2, puis retapez `$cstack:cstack` dans le fil. |
 | Un seul agent travaille | Ajoutez la demande à votre message : « Délègue le travail indépendant à des sous-agents en parallèle. » Voir [Un seul agent travaille](./10-recipes-and-pitfalls.md#un-seul-agent-travaille). |
 | Un délégué Claude est refusé | Connectez le fournisseur Claude dans T3 Code, puis relancez la demande. |
@@ -104,7 +104,8 @@ Si vous avez installé avec une variable `CODEX_HOME`, lancez cette commande ave
 ## Ce qui est vérifié
 
 - Le plugin installé se charge dans un fil Codex de T3 Code, et le rappel du mode s'affiche. Le reçu est `docs/evidence/t3-installed-plugin-2026-11-09.json`, à la racine du dépôt.
-- L'installateur fonctionne dans un dossier Codex isolé, avec `install --local` puis `doctor`.
+- L'installateur fonctionne dans des dossiers Codex et Claude Code isolés, avec `install --local` puis `doctor`, et depuis GitHub avec `install --ref`.
+- Claude Code 2.1.321 charge le plugin installé, ses 29 compétences et son hook ; `/cstack:cstack` active le rappel du mode. Un fil Claude de T3 Code qui charge cstack n'est pas observé.
 - Les helpers du setup T3 acceptent les vraies réponses de T3 Code et résolvent un panel sur deux fournisseurs. Le reçu est `docs/evidence/setup-observations-2026-11-09.json`. Un setup complet mené par un coordinateur Codex dans T3 Code n'est pas observé.
 
 Ces observations viennent d'un seul serveur Linux. L'application de bureau T3 Code sur macOS et sur Windows n'est pas observée. L'approbation des hooks depuis T3 Code non plus. Le refus d'écrire hors worktree vient du contrat T3 et n'a pas été observé.

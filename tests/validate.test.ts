@@ -8,7 +8,7 @@ test("le paquet charge 29 skills et rejette les distributions dangereuses ou inc
   const root = resolve(import.meta.dir, "..");
   const copy = mkdtempSync(join(tmpdir(), "cstack-package-"));
   try {
-    for (const path of ["plugins", ".agents", "UPSTREAM.json", "PORTING.json"]) {
+    for (const path of ["plugins", ".agents", ".claude-plugin", "UPSTREAM.json", "PORTING.json"]) {
       cpSync(join(root, path), join(copy, path), {
         recursive: true,
         filter: (source) => !source.split("/").some((part) => ["node_modules", "__pycache__"].includes(part)),
@@ -53,6 +53,8 @@ test("le paquet charge 29 skills et rejette les distributions dangereuses ou inc
       ["plugins/cstack/sources/pstack-claude.json", (text: string) => text.replace(/"sha256": "[a-f0-9]+"/, '"sha256": "invalid"'), /empreinte pstack-claude invalide/],
       ["plugins/cstack/sources/pstack-claude.json", (text: string) => text.replace(/"target": "[^"]+"/, '"target": "../../README.md"'), /cible pstack-claude invalide/],
       ["plugins/cstack/.codex-plugin/plugin.json", (text: string) => text.replace('"name": "cstack"', '"name": "other"'), /identité du manifeste/],
+      ["plugins/cstack/.claude-plugin/plugin.json", (text: string) => text.replace(/"version": "[^"]+"/, '"version": "0.0.1"'), /manifeste Claude Code diverge/],
+      [".claude-plugin/marketplace.json", (text: string) => text.replace('"./plugins/cstack"', '"./plugins/other"'), /catalogue Claude Code doit contenir uniquement cstack/],
       ["plugins/cstack/skills/cstack/agents/openai.yaml", (text: string) => text.replace("allow_implicit_invocation: false", "allow_implicit_invocation: true"), /invocation explicite/],
       ["plugins/cstack/skills/tdd/SKILL.md", (text: string) => text + " mot".repeat(3000), /tdd: \d+ mots dépassent le plafond/],
       ["plugins/cstack/hooks/hooks.json", (text: string) => text.replace('"SessionStart"', '"Stop"'), /diffère du seul rappel de mode permis/],

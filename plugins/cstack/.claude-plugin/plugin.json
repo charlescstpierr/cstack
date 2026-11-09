@@ -1,0 +1,12 @@
+{
+  "name": "cstack",
+  "version": "0.8.0",
+  "description": "Workflows d'ingénierie vérifiés pour Claude Code, Codex et T3 Code : investiguer, concevoir, implémenter, relire par des sous-agents indépendants et prouver le résultat avant de livrer. Portage de pstack.",
+  "author": {
+    "name": "charlescstpierr",
+    "url": "https://github.com/charlescstpierr"
+  },
+  "homepage": "https://github.com/charlescstpierr/cstack",
+  "repository": "https://github.com/charlescstpierr/cstack",
+  "license": "MIT"
+}

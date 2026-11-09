@@ -20,10 +20,10 @@ class ModeHookTests(unittest.TestCase):
     def tearDown(self):
         self.tmp.cleanup()
 
-    def run_hook(self, event, *, data=True, raw=None):
-        env = {key: value for key, value in os.environ.items() if key != "PLUGIN_DATA"}
+    def run_hook(self, event, *, data=True, raw=None, data_variable="PLUGIN_DATA"):
+        env = {key: value for key, value in os.environ.items() if key not in ("PLUGIN_DATA", "CLAUDE_PLUGIN_DATA")}
         if data:
-            env["PLUGIN_DATA"] = str(self.data)
+            env[data_variable] = str(self.data)
         result = subprocess.run([sys.executable, "-S", str(HOOK)], input=raw if raw is not None else json.dumps(event),
                                 capture_output=True, text=True, env=env, check=False)
         self.assertEqual(result.returncode, 0, result.stderr)
@@ -44,6 +44,14 @@ class ModeHookTests(unittest.TestCase):
         self.assertEqual(self.prompt("Autre conversation.", session="s2"), "")
         # Le rappel reste court, comme le `reminder:` de pstack, bien sous la limite d'injection.
         self.assertLess(len(first.split()), 30)
+
+    def test_claude_code_slash_command_activates_with_its_own_data_directory(self):
+        event = {"hook_event_name": "UserPromptSubmit", "session_id": "claude", "prompt": "/cstack:cstack Corrige ce bug."}
+        first = self.run_hook(event, data_variable="CLAUDE_PLUGIN_DATA")
+        self.assertIn("Mode cstack actif", first)
+        event["prompt"] = "Et ajoute un test."
+        self.assertEqual(self.run_hook(event, data_variable="CLAUDE_PLUGIN_DATA"), first)
+        self.assertEqual(self.prompt("/cstack:cstack-extra Corrige ce bug.", session="other"), "")
 
     def test_mentions_and_explicit_refusals_do_not_activate(self):
         prompts = (

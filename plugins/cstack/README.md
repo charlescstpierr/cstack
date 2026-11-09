@@ -1,6 +1,6 @@
 # cstack
 
-Les processus de pstack 0.15.5 adaptés aux outils natifs de Codex App et CLI. Plugin `0.8.0`. Version amont épinglée `12d587dfb20741cafc376c42c696c5f6e2a64487`.
+Les processus de pstack 0.15.5 adaptés aux outils natifs de T3 Code, Codex et Claude Code. Plugin `0.8.0`. Version amont épinglée `12d587dfb20741cafc376c42c696c5f6e2a64487`.
 
 Les préparations `$cstack:clarify`, `$cstack:domain`, `$cstack:horizon` et `$cstack:audit-architecture` sont disponibles sur demande. La configuration peut préparer un bloc de projet dans `AGENTS.md` et les conventions documentaires, en conservant les instructions existantes. Voir [la configuration](docs/guide/01-setup.md) et [les processus de préparation](docs/guide/04-design.md).
 
@@ -24,7 +24,7 @@ Les assistants TypeScript utilisent Bun et leurs dépendances verrouillées. Leu
 
 La [livraison des PR](skills/cstack/playbooks/shipping.md) impose le head vérifié à GitHub et relit les merges en attente avant une réécriture. L’assistant `watch-pr/ship-pr` inspecte ou annule ces demandes ; il ne fusionne aucune PR. Les limites du contrôle de destination et des files de merge sont précisées dans [la référence de sécurité](skills/cstack/references/merge-safety.md).
 
-Installation, mise à jour, diagnostic et retrait : `install.sh install`, `update`, `doctor` et `uninstall`, à la racine du dépôt. Voir [l'installation](https://github.com/charlescstpierr/cstack#installation). Ouvrez ensuite une nouvelle conversation.
+Installation, mise à jour, diagnostic et retrait, dans Codex et Claude Code : `install.sh install`, `update`, `doctor` et `uninstall`, à la racine du dépôt. Dans Claude, la compétence principale s'appelle `/cstack:cstack`. Voir [l'installation](https://github.com/charlescstpierr/cstack#installer-en-une-minute). Ouvrez ensuite une nouvelle conversation.
 
 Installation et sources : [charlescstpierr/cstack](https://github.com/charlescstpierr/cstack). Le dépôt est public.
 

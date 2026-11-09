@@ -176,6 +176,14 @@ export function validate(root: string): { skills: number; sourceFiles: number } 
   requireValue(record(entry) && entry.name === "cstack" && record(entry.source), "plugin du catalogue invalide");
   requireValue(entry.source.source === "local" && entry.source.path === "./plugins/cstack", "la source du catalogue ne pointe pas vers cstack");
   requireValue(record(entry.policy) && entry.policy.installation === "AVAILABLE" && entry.policy.authentication === "ON_INSTALL", "politique du catalogue invalide");
+  // Claude Code lit ses propres manifestes : ils doivent décrire le même plugin que celui de Codex.
+  const claudeManifest = json(join(plugin, ".claude-plugin/plugin.json"));
+  requireValue(claudeManifest.name === manifest.name && claudeManifest.version === manifest.version && claudeManifest.license === manifest.license,
+    "le manifeste Claude Code diverge du manifeste Codex (nom, version ou licence)");
+  const claudeMarketplace = json(join(root, ".claude-plugin/marketplace.json"));
+  const claudeEntry: unknown = Array.isArray(claudeMarketplace.plugins) && claudeMarketplace.plugins.length === 1 ? claudeMarketplace.plugins[0] : undefined;
+  requireValue(claudeMarketplace.name === "cstack" && record(claudeEntry) && claudeEntry.name === "cstack" && claudeEntry.source === "./plugins/cstack",
+    "le catalogue Claude Code doit contenir uniquement cstack, depuis ./plugins/cstack");
 
   const inventory = json(join(root, "UPSTREAM.json"));
   const coverage = json(join(root, "PORTING.json"));
@@ -474,7 +482,8 @@ export function validate(root: string): { skills: number; sourceFiles: number } 
     }
   }
   // Les hooks du plugin se limitent au rappel du mode cstack : une seule forme permise.
-  const reminderHook = { type: "command", command: 'python3 -S "${PLUGIN_ROOT}/hooks/mode.py"', timeout: 5 };
+  // Claude Code fournit CLAUDE_PLUGIN_ROOT ; Codex remplace ${PLUGIN_ROOT}. Une seule commande sert les deux hôtes.
+  const reminderHook = { type: "command", command: 'python3 -S "${CLAUDE_PLUGIN_ROOT:-${PLUGIN_ROOT}}/hooks/mode.py"', timeout: 5 };
   const expectedHooks = { hooks: { UserPromptSubmit: [{ hooks: [reminderHook] }], SessionStart: [{ matcher: "compact|resume", hooks: [reminderHook] }] } };
   requireValue(JSON.stringify(json(join(plugin, "hooks/hooks.json"))) === JSON.stringify(expectedHooks), "hooks: hooks.json diffère du seul rappel de mode permis");
   for (const rel of EXECUTABLES) {

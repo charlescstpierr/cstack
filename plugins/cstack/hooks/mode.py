@@ -11,6 +11,8 @@ import os
 import sys
 
 ACTIVATE = "$cstack:cstack"
+# Claude Code invoque la même compétence par sa commande slash.
+CLAUDE_ACTIVATE = "/cstack:cstack"
 # Comme l'activation, l'arrêt est une commande exacte (« arrête cstack ») ; une phrase plus longue
 # reste au jugement du modèle, que le rappel invite déjà à ne pas appliquer cstack sur demande d'arrêt.
 STOP_VERBS = ("arrête", "arrete", "stop", "stoppe", "désactive", "desactive", "quitte")
@@ -35,7 +37,7 @@ def _activation_requested(prompt: str) -> bool:
     # de commande explicites, jamais une mention citée ou insérée dans une explication.
     invocation = re.match(
         r"\s*(?:(?i:utilise|applique|active|use|invoke|activate)\s+)?"
-        r"(?:\$cstack:cstack|\[\$cstack(?::cstack)?\]\((?P<path>[^)\r\n]+)\))(?=\s|$)",
+        r"(?:\$cstack:cstack|/cstack:cstack|\[\$cstack(?::cstack)?\]\((?P<path>[^)\r\n]+)\))(?=\s|$)",
         prompt,
     )
     if not invocation:
@@ -58,7 +60,7 @@ def _activation_requested(prompt: str) -> bool:
 def reminder(raw: str, data: str) -> str:
     sessions = os.path.join(data, "sessions")
     # Chemin chaud : hors cstack, sortir avant tout import ou accès disque coûteux.
-    if ACTIVATE not in raw and "[$cstack]" not in raw and not os.path.isdir(sessions):
+    if ACTIVATE not in raw and CLAUDE_ACTIVATE not in raw and "[$cstack]" not in raw and not os.path.isdir(sessions):
         return ""
     import hashlib
     import json
@@ -85,7 +87,7 @@ def reminder(raw: str, data: str) -> str:
 
 
 def main() -> int:
-    data = os.environ.get("PLUGIN_DATA")
+    data = os.environ.get("PLUGIN_DATA") or os.environ.get("CLAUDE_PLUGIN_DATA")
     try:
         text = reminder(sys.stdin.read(), data) if data else ""
         if text:
