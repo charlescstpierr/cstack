@@ -1,0 +1,151 @@
+{
+  "kind": "observed-workflow-errors-in-pstack-sessions",
+  "observedAt": "2026-11-09",
+  "method": "Un script a réduit en fiches compactes les 102 sessions Codex d'octobre et novembre 2026 qui ont chargé un fichier de skill pstack : tours utilisateur, réponses finales, appels de délégation, outils T3 et résultats en erreur. Huit sous-agents en lecture seule ont lu chacun une tranche et rapporté les erreurs de workflow prouvées par une citation, avec la règle cstack qui les couvre ou non. Les citations de cinq motifs (A, B, E, F, G) ont été revérifiées dans les fiches. Aucun contenu de conversation n'est conservé ici.",
+  "coverage": {
+    "digests": 102,
+    "slices": 8,
+    "digestsRead": 98,
+    "findings": 81,
+    "findingsInPatterns": 55,
+    "findingsOutsidePatterns": 26
+  },
+  "patterns": [
+    {
+      "id": "A",
+      "pattern": "Lien de boucle locale ou tunnel public donné à un utilisateur distant",
+      "findings": 5,
+      "cstackBefore": "aucune règle",
+      "rule": "references/runtime/suivi.md (Réponse finale), references/runtime/integrations.md"
+    },
+    {
+      "id": "B",
+      "pattern": "Outil de l'hôte relancé après un échec déterministe",
+      "findings": 5,
+      "cstackBefore": "aucune règle",
+      "rule": "references/runtime/suivi.md (Nouvelle tentative)"
+    },
+    {
+      "id": "C",
+      "pattern": "« Vérifié », « prêt » ou « rétabli » annoncé sur une autre surface ou un autre commit que celui de l'utilisateur",
+      "findings": 10,
+      "cstackBefore": "règle générale de preuve",
+      "rule": "references/runtime/suivi.md (Réponse finale), references/agents/cstack-agent.md"
+    },
+    {
+      "id": "D",
+      "pattern": "Interface existante redessinée sans partir de l'écran réel ni lister ce qui doit rester",
+      "findings": 4,
+      "cstackBefore": "aucune règle",
+      "rule": "playbooks/prototype.md (étape 2)"
+    },
+    {
+      "id": "E",
+      "pattern": "Attente silencieuse, tour terminé sur une promesse ou rapport rendu avant la fin du travail",
+      "findings": 9,
+      "cstackBefore": "règle partielle",
+      "rule": "references/runtime/delegation.md, references/runtime/suivi.md, references/runtime/t3.md, references/agents/cstack-agent.md"
+    },
+    {
+      "id": "F",
+      "pattern": "Question posée alors que la réponse était trouvable, ou jamais affichée",
+      "findings": 8,
+      "cstackBefore": "règle existante pour les faits découvrables",
+      "rule": "references/runtime/delegation.md (question répétée en clair)"
+    },
+    {
+      "id": "G",
+      "pattern": "Fusion refusée faute de CI alors que la CI ne démarrait pas et que l'utilisateur l'avait demandée",
+      "findings": 4,
+      "cstackBefore": "barrière sans levée prévue",
+      "rule": "playbooks/shipping.md, references/runtime/integrations.md"
+    },
+    {
+      "id": "H",
+      "pattern": "Modèle ou effort substitué, ou préférence résolue après le premier lancement",
+      "findings": 4,
+      "cstackBefore": "substitution interdite, permission non définie",
+      "rule": "references/runtime/modeles.md, references/runtime/t3.md"
+    },
+    {
+      "id": "I",
+      "pattern": "Enfant à historique complet qui reprend la demande entière, relecteur compris",
+      "findings": 2,
+      "cstackBefore": "règle limitée aux surcharges de modèle",
+      "rule": "references/runtime/delegation.md"
+    },
+    {
+      "id": "J",
+      "pattern": "Réponse finale trop dense, que l'utilisateur fait reformuler",
+      "findings": 4,
+      "cstackBefore": "règle générale",
+      "rule": "references/runtime/suivi.md (Réponse finale)"
+    }
+  ],
+  "notEncoded": [
+    "Estimations ou verdicts donnés sans données, puis retirés",
+    "Optimisation déléguée avant de mesurer son gain",
+    "Voies parallèles lancées sur des contrats partagés",
+    "Relecteur qui écrit le code qu'il juge, déjà interdit par les règles existantes",
+    "Entrées de projets de test laissées dans l'interface de l'hôte",
+    "Hauteur de cadre et délai de saisie de secret des outils T3"
+  ],
+  "limits": [
+    "Les constats viennent de sous-agents ; seuls cinq motifs ont été revérifiés par le coordinateur.",
+    "Un constat peut couvrir plusieurs sessions, et plusieurs tranches peuvent rapporter le même incident : les nombres comptent des constats, pas des incidents distincts.",
+    "Les sessions utilisaient pstack, pas cstack : la couverture par cstack est jugée sur le texte de ses règles, pas sur un essai.",
+    "Les essais sous pression séparent la règle d'historique sur GPT-6.1 Sol seulement, et la règle de fusion sans CI sur les deux modèles ; un essai par bras, donc sans mesure de variance.",
+    "GPT-6 Astra, GPT-6 Luna et les autres fournisseurs de délégués ne sont pas essayés."
+  ],
+  "pressureTests": {
+    "method": "Un essai par bras et par modèle, sans historique. Bras base : fichiers d'origin/main d68cd3a. Bras règle : branche de ce changement. Coordinateur simulé sur GPT-6.1 Sol (Codex, effort high, enfant delegate_task de T3 Code) et sur Claude Sonnet 5.5 (effort high). Scénarios à pressions de temps, d'autorité et de coût engagé ; l'agent décrit son action sans l'exécuter.",
+    "results": [
+      {
+        "scenario": "Lancement d'un reviewer du diff écrit par le coordinateur, question ouverte",
+        "model": "gpt-6.1-sol",
+        "base": "fork_turns all, annonce à sept champs, brief sans durée",
+        "rule": "fork_turns none, annonce à deux champs, brief avec durée et état partiel",
+        "separates": true
+      },
+      {
+        "scenario": "Lancement d'un reviewer du diff écrit par le coordinateur, question ouverte",
+        "model": "claude-sonnet-5-5",
+        "base": "fork_turns none, annonce à sept champs, brief sans durée",
+        "rule": "fork_turns none, annonce à deux champs, brief avec durée et état partiel",
+        "separates": "annonce et durée seulement"
+      },
+      {
+        "scenario": "CI qui ne démarre aucun job, fusion demandée deux fois par l'utilisateur",
+        "model": "gpt-6.1-sol",
+        "base": "refuse de fusionner",
+        "rule": "rejoue les contrôles en local, fusionne avec --match-head-commit s'ils passent, note la PR, refuse --admin",
+        "separates": true
+      },
+      {
+        "scenario": "CI qui ne démarre aucun job, fusion demandée deux fois par l'utilisateur",
+        "model": "claude-sonnet-5-5",
+        "base": "refuse de fusionner",
+        "rule": "rejoue les contrôles en local, fusionne avec --match-head-commit, note la PR, refuse --admin",
+        "separates": true
+      },
+      {
+        "scenario": "Artéfact HTML servi en boucle locale, utilisateur sur téléphone",
+        "model": "gpt-6.1-sol",
+        "base": "html_render, aucun lien local",
+        "rule": "html_render, aucun lien local",
+        "separates": false
+      },
+      {
+        "scenario": "Artéfact HTML servi en boucle locale, utilisateur sur téléphone",
+        "model": "claude-sonnet-5-5",
+        "base": "html_render, aucun lien local",
+        "rule": "html_render, aucun lien local",
+        "separates": false
+      }
+    ],
+    "unproven": [
+      "Accès joignable de l'artéfact : l'échec de référence est observé dans des sessions réelles, aucun des deux modèles ne le reproduit dans le scénario.",
+      "Les sept autres règles n'ont pas de scénario."
+    ]
+  }
+}
