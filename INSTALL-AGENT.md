@@ -1,6 +1,6 @@
 # Installer cstack : procédure pour un agent IA
 
-Ce fichier s'adresse à un agent de code (Codex CLI ou Codex App) à qui l'utilisateur a demandé d'installer cstack. Suivez les étapes dans l'ordre et rapportez le résultat réel. Les humains trouveront la même installation, expliquée, dans le [README](README.md#installation).
+Ce fichier s'adresse à un agent de code (Codex CLI, Codex App ou un fil T3 Code) à qui l'utilisateur a demandé d'installer cstack. Suivez les étapes dans l'ordre et rapportez le résultat réel. Les humains trouveront la même installation, expliquée, dans le [README](README.md#installation).
 
 ## Règles
 
@@ -32,7 +32,7 @@ Ce fichier s'adresse à un agent de code (Codex CLI ou Codex App) à qui l'utili
 
 4. **Vérifier.** Si l'étape 3 a lancé une commande, relancez `install.sh doctor`. Le code de sortie doit être 0 et la ligne `✓ plugin cstack@cstack : installed, enabled <version>` doit apparaître.
 
-5. **Conclure.** Supprimez les dossiers temporaires que vous avez créés, à l'étape 2 ou pour lire ce fichier, mais jamais un clone qui existait avant vous : l'installation n'en dépend pas. Donnez la version installée et dites à l'utilisateur d'ouvrir une **nouvelle tâche** Codex, puis de taper `$cstack:cstack`. La tâche en cours, y compris la vôtre, ne voit pas les compétences ajoutées.
+5. **Conclure.** Supprimez les dossiers temporaires que vous avez créés, à l'étape 2 ou pour lire ce fichier, mais jamais un clone qui existait avant vous : l'installation n'en dépend pas. Donnez la version installée et dites à l'utilisateur d'ouvrir une **nouvelle tâche** Codex, puis de taper `$cstack:cstack`. Dans T3 Code, c'est un nouveau fil Codex, et le [guide T3](plugins/cstack/docs/guide/12-t3-code.md) décrit la suite. La tâche en cours, y compris la vôtre, ne voit pas les compétences ajoutées.
 
 ## Lire les résultats
 

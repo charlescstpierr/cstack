@@ -16,15 +16,17 @@ C'est le portage des processus de [pstack](https://github.com/cursor/plugins/tre
 
 ## Dans T3 Code
 
-Dans T3, le coordinateur utilise les outils natifs de l'hôte pour choisir les modèles et efforts, déléguer, isoler les checkouts et collecter les résultats. Les helpers cstack normalisent les captures, vérifient les sélections et préparent les briefs complets ; ils ne lancent aucun moteur d'orchestration ni CLI de repli T3.
+cstack s'installe dans Codex sur la machine qui exécute vos agents T3, puis s'invoque dans un fil Codex.
 
-Le parcours observé utilise les sources du plugin dans un checkout. Dans une tâche T3 ouverte sur ce checkout, demander explicitement :
+1. Installez le plugin sur cette machine avec la [commande d'installation](#installer), ou collez le [message pour agent](#faire-installer-par-un-agent-ia) dans un fil T3 Code.
+2. Ouvrez un nouveau fil Codex dans T3 Code.
+3. Commencez votre message par `$cstack:cstack`, puis écrivez la demande.
 
-```text
-Utilise cstack pour cette tâche dans T3 Code. Lis plugins/cstack/skills/cstack/SKILL.md et son contrat T3. Délègue le travail indépendant avec les outils natifs T3 et vérifie les résultats reçus.
-```
+Le guide [Installer cstack dans T3 Code](plugins/cstack/docs/guide/12-t3-code.md) détaille les worktrees, le choix des modèles, la mise à jour et le dépannage.
 
-Le [contrat T3](plugins/cstack/skills/cstack/references/runtime/t3.md) prime alors sur les consignes Codex autonome. Trois revues réelles, sur trois fournisseurs, ont suivi ce pipeline et renvoyé leurs findings au parent : [reçu et limites](docs/evidence/t3-council-transport-r5.json), [vérification T3](docs/T3-VERIFICATION.md). L'installation dans T3 App et l'activation d'une tâche ordinaire restent non vérifiées. L'installateur ci-dessous et son test de chargement installé concernent Codex.
+Dans T3 Code, le coordinateur utilise les outils de l'hôte pour choisir les modèles et les efforts, déléguer, isoler les checkouts et collecter les résultats. Le [contrat T3](plugins/cstack/skills/cstack/references/runtime/t3.md) prime alors sur les consignes Codex autonome. Les helpers cstack vérifient les sélections et préparent les briefs. Ils ne lancent ni moteur d'orchestration ni CLI de repli.
+
+Le chargement du plugin installé est observé dans un fil Codex de T3 Code sur un serveur Linux : [reçu](docs/evidence/t3-installed-plugin-2026-11-09.json). Trois revues réelles, sur trois fournisseurs, ont suivi le pipeline T3 et renvoyé leurs findings au parent : [reçu et limites](docs/evidence/t3-council-transport-r5.json), [vérification T3](docs/T3-VERIFICATION.md). L'application de bureau T3 Code sur macOS et sur Windows n'est pas observée.
 
 ## Installation
 

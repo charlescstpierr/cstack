@@ -1,0 +1,42 @@
+{
+  "kind": "observed-t3-installed-plugin-load",
+  "observedAt": "2026-11-09",
+  "method": "Lecture des transcripts Codex de deux fils T3 Code sur un serveur Linux où cstack est installé par `codex plugin`. Relevé du bloc de compétence injecté après le message de l'utilisateur, de son chemin, et du message de rappel du hook. Exécution de l'installateur dans un dossier Codex isolé. Aucun contenu de conversation n'est conservé ici.",
+  "threads": [
+    {
+      "date": "2026-10-06",
+      "originator": "T3 Code",
+      "codex": "0.160.1",
+      "cstack": "0.8.0",
+      "thread": "fil racine, message saisi par l'utilisateur",
+      "invocation": "$cstack:cstack <demande>",
+      "skillBlockInjected": true,
+      "skillPath": "<CODEX_HOME>/plugins/cache/cstack/cstack/0.8.0/skills/cstack/SKILL.md",
+      "modeReminderInjected": true
+    },
+    {
+      "date": "2026-11-09",
+      "originator": "T3 Code",
+      "codex": "0.162.1",
+      "cstack": "0.8.0",
+      "thread": "enfant delegate_task, fournisseur codex",
+      "invocation": "$cstack:cstack <question en lecture seule>",
+      "skillBlockInjected": true,
+      "skillPath": "<CODEX_HOME>/plugins/cache/cstack/cstack/0.8.0/skills/cstack/SKILL.md",
+      "modeReminderInjected": true
+    }
+  ],
+  "installer": {
+    "command": "CODEX_HOME=<dossier isolé> install.sh install --local, puis install.sh doctor",
+    "codexCli": "0.167.0",
+    "result": "plugin cstack@cstack : installed, enabled 0.8.0",
+    "userProfileTouched": false
+  },
+  "limits": [
+    "Un seul serveur Linux et un seul compte.",
+    "L'application de bureau T3 Code sur macOS et sur Windows n'est pas observée.",
+    "L'approbation des hooks du plugin depuis T3 Code n'est pas observée : ils étaient déjà approuvés dans Codex CLI.",
+    "Le fil du 9 novembre est un enfant délégué, pas un message saisi dans le compositeur.",
+    "Le binaire Codex de T3 Code (0.162.1) diffère du CLI du PATH (0.167.0) ; les deux lisent le même dossier Codex."
+  ]
+}

@@ -1224,6 +1224,10 @@
       "reason": "Guide pratique original des workers CLI, des skills communs et du contexte partagé."
     },
     {
+      "path": "plugins/cstack/docs/guide/12-t3-code.md",
+      "reason": "Guide pratique original d'installation et de premier fil dans T3 Code."
+    },
+    {
       "path": "plugins/cstack/skills/cstack/references/regression.md",
       "reason": "Comparaison conditionnelle originale des observations base/candidat, sans autorité de livraison."
     },
