@@ -1,0 +1,1601 @@
+{
+  "source": "https://github.com/charlescstpierr/cstack pulls/comments",
+  "reviewer": "chatgpt-codex-connector[bot]",
+  "collected": "2026-11-09",
+  "findings": 199,
+  "classification": "inférée : mots-clés sur le titre, relue à la main",
+  "rows": [
+    {
+      "pr": 10,
+      "priority": "P1",
+      "file": "store.ts",
+      "title": "Preserve legacy frontier files during schema extension",
+      "class": "compat-schema",
+      "comment_id": 3998337689
+    },
+    {
+      "pr": 66,
+      "priority": "P2",
+      "file": "outcome-bench.py",
+      "title": "Preserve string-valued arms in existing manifests",
+      "class": "compat-schema",
+      "comment_id": 4103934410
+    },
+    {
+      "pr": 67,
+      "priority": "P2",
+      "file": "project.py",
+      "title": "Reject invalid saved model JSON instead of crashing setup",
+      "class": "compat-schema",
+      "comment_id": 4113255738
+    },
+    {
+      "pr": 72,
+      "priority": "P2",
+      "file": "install.sh",
+      "title": "Refresh an already-selected ref during update",
+      "class": "compat-schema",
+      "comment_id": 4114105813
+    },
+    {
+      "pr": 74,
+      "priority": "P2",
+      "file": "INSTALL-AGENT.md",
+      "title": "Honor an explicitly requested ref on existing installs",
+      "class": "compat-schema",
+      "comment_id": 4115678948
+    },
+    {
+      "pr": 105,
+      "priority": "P1",
+      "file": "horizon.ts",
+      "title": "Preserve existing schema-1 Horizon handoffs",
+      "class": "compat-schema",
+      "comment_id": 4330744919
+    },
+    {
+      "pr": 6,
+      "priority": "P2",
+      "file": "worktree-cleanup-scenarios.py",
+      "title": "Preserve and verify worktree lock metadata",
+      "class": "concurrence",
+      "comment_id": 3985821630
+    },
+    {
+      "pr": 9,
+      "priority": "P1",
+      "file": "store.ts",
+      "title": "Prevent stale-lock takeover from replacing a new owner",
+      "class": "concurrence",
+      "comment_id": 3998043591
+    },
+    {
+      "pr": 10,
+      "priority": "P1",
+      "file": "store.ts",
+      "title": "Close the third-writer gap in lock takeover",
+      "class": "concurrence",
+      "comment_id": 3998337695
+    },
+    {
+      "pr": 11,
+      "priority": "P1",
+      "file": "store.ts",
+      "title": "Avoid replacing a successor lock during takeover",
+      "class": "concurrence",
+      "comment_id": 3998680920
+    },
+    {
+      "pr": 83,
+      "priority": "P2",
+      "file": "bug-bash.md",
+      "title": "Do not retry terminal blocker codes unconditionally",
+      "class": "concurrence",
+      "comment_id": 4161865440
+    },
+    {
+      "pr": 84,
+      "priority": "P2",
+      "file": "models.md",
+      "title": "Keep lower recommendations below the selected budget cap",
+      "class": "concurrence",
+      "comment_id": 4162227689
+    },
+    {
+      "pr": 84,
+      "priority": "P2",
+      "file": "SKILL.md",
+      "title": "Serialize start-marker checks with concurrent writers",
+      "class": "concurrence",
+      "comment_id": 4162227709
+    },
+    {
+      "pr": 108,
+      "priority": "P1",
+      "file": "store.ts",
+      "title": "Prevent new loop IDs from resetting a target's budget",
+      "class": "concurrence",
+      "comment_id": 4331029396
+    },
+    {
+      "pr": 9,
+      "priority": "P2",
+      "file": "VERIFICATION.md",
+      "title": "Update the current plugin file count",
+      "class": "doc-derive",
+      "comment_id": 3998043596
+    },
+    {
+      "pr": 10,
+      "priority": "P1",
+      "file": "VERIFICATION.md",
+      "title": "Update the version-specific validator mutations",
+      "class": "doc-derive",
+      "comment_id": 3998337704
+    },
+    {
+      "pr": 13,
+      "priority": "P2",
+      "file": "01-setup.md",
+      "title": "Add how to the setup preview before documenting it",
+      "class": "doc-derive",
+      "comment_id": 4068195252
+    },
+    {
+      "pr": 47,
+      "priority": "P2",
+      "file": "generate-facts.mjs",
+      "title": "Validate NOTICE when advancing the upstream pin",
+      "class": "doc-derive",
+      "comment_id": 4087228753
+    },
+    {
+      "pr": 72,
+      "priority": "P2",
+      "file": "README.md",
+      "title": "Keep single-target exploration guidance consistent",
+      "class": "doc-derive",
+      "comment_id": 4113948625
+    },
+    {
+      "pr": 74,
+      "priority": "P2",
+      "file": "INSTALL-AGENT.md",
+      "title": "Download the installer outside the user's worktree",
+      "class": "doc-derive",
+      "comment_id": 4115657384
+    },
+    {
+      "pr": 74,
+      "priority": "P2",
+      "file": "INSTALL-AGENT.md",
+      "title": "Name the actual setup skill in the prohibition",
+      "class": "doc-derive",
+      "comment_id": 4115657391
+    },
+    {
+      "pr": 74,
+      "priority": "P2",
+      "file": "INSTALL-AGENT.md",
+      "title": "Check Bash before prescribing the downloaded installer",
+      "class": "doc-derive",
+      "comment_id": 4115657395
+    },
+    {
+      "pr": 74,
+      "priority": "P2",
+      "file": "INSTALL-AGENT.md",
+      "title": "Avoid treating every trial failure as an invalid ref",
+      "class": "doc-derive",
+      "comment_id": 4115657397
+    },
+    {
+      "pr": 74,
+      "priority": "P2",
+      "file": "README.md",
+      "title": "Disclose that installation changes Codex plugin state",
+      "class": "doc-derive",
+      "comment_id": 4115657399
+    },
+    {
+      "pr": 74,
+      "priority": "P2",
+      "file": "README.md",
+      "title": "Provide a no-gh path for agent installation",
+      "class": "doc-derive",
+      "comment_id": 4115657403
+    },
+    {
+      "pr": 74,
+      "priority": "P2",
+      "file": "INSTALL-AGENT.md",
+      "title": "Preserve the temp path across agent commands",
+      "class": "doc-derive",
+      "comment_id": 4115678946
+    },
+    {
+      "pr": 74,
+      "priority": "P2",
+      "file": "INSTALL-AGENT.md",
+      "title": "Describe doctor failures separately from command errors",
+      "class": "doc-derive",
+      "comment_id": 4115678951
+    },
+    {
+      "pr": 74,
+      "priority": "P2",
+      "file": "INSTALL-AGENT.md",
+      "title": "Handle local sources before promising the latest version",
+      "class": "doc-derive",
+      "comment_id": 4115751724
+    },
+    {
+      "pr": 74,
+      "priority": "P2",
+      "file": "INSTALL-AGENT.md",
+      "title": "Account for raw Codex errors from non-doctor commands",
+      "class": "doc-derive",
+      "comment_id": 4115751728
+    },
+    {
+      "pr": 80,
+      "priority": "P1",
+      "file": "NOTICE.md",
+      "title": "Pin the upstream revisions behind these methods",
+      "class": "doc-derive",
+      "comment_id": 4161732735
+    },
+    {
+      "pr": 86,
+      "priority": "P2",
+      "file": "integrations.md",
+      "title": "Route version checks before ordinary dependency edits",
+      "class": "doc-derive",
+      "comment_id": 4166046836
+    },
+    {
+      "pr": 87,
+      "priority": "P2",
+      "file": "04-design.md",
+      "title": "Document the all-red Arena exception",
+      "class": "doc-derive",
+      "comment_id": 4166982602
+    },
+    {
+      "pr": 87,
+      "priority": "P2",
+      "file": "05-build-and-clean.md",
+      "title": "Include the manifest fallback in version-source guidance",
+      "class": "doc-derive",
+      "comment_id": 4166982621
+    },
+    {
+      "pr": 9,
+      "priority": "P2",
+      "file": "run_tool.py",
+      "title": "Preserve signal status during dependency setup",
+      "class": "echec-partiel",
+      "comment_id": 3998043584
+    },
+    {
+      "pr": 9,
+      "priority": "P2",
+      "file": "project.py",
+      "title": "Report all unstaged files after an interrupt",
+      "class": "echec-partiel",
+      "comment_id": 3998043587
+    },
+    {
+      "pr": 11,
+      "priority": "P2",
+      "file": "github-intake.yml",
+      "title": "Make retry branch creation recoverable",
+      "class": "echec-partiel",
+      "comment_id": 3998680926
+    },
+    {
+      "pr": 11,
+      "priority": "P2",
+      "file": "github-intake.yml",
+      "title": "Persist reproduction evidence before the runner exits",
+      "class": "echec-partiel",
+      "comment_id": 3998680930
+    },
+    {
+      "pr": 11,
+      "priority": "P2",
+      "file": "github-intake.yml",
+      "title": "Snapshot existing fix artifacts before offline reproduction",
+      "class": "echec-partiel",
+      "comment_id": 3998680932
+    },
+    {
+      "pr": 14,
+      "priority": "P2",
+      "file": "runtime.ts",
+      "title": "Preserve cancellation during runtime discovery",
+      "class": "echec-partiel",
+      "comment_id": 4071288205
+    },
+    {
+      "pr": 14,
+      "priority": "P2",
+      "file": "runtime.ts",
+      "title": "Await process-group shutdown after stdin errors",
+      "class": "echec-partiel",
+      "comment_id": 4071288213
+    },
+    {
+      "pr": 64,
+      "priority": "P2",
+      "file": "outcome-bench.py",
+      "title": "Tolerate an interrupted final JSONL record",
+      "class": "echec-partiel",
+      "comment_id": 4100678499
+    },
+    {
+      "pr": 64,
+      "priority": "P1",
+      "file": "outcome-bench.py",
+      "title": "Use a persistent thread for the cstack arm",
+      "class": "echec-partiel",
+      "comment_id": 4100678527
+    },
+    {
+      "pr": 72,
+      "priority": "P2",
+      "file": "install.sh",
+      "title": "Preserve the existing marketplace until replacement succeeds",
+      "class": "echec-partiel",
+      "comment_id": 4113948622
+    },
+    {
+      "pr": 72,
+      "priority": "P2",
+      "file": "install.sh",
+      "title": "Restore the old marketplace when the real add fails",
+      "class": "echec-partiel",
+      "comment_id": 4113983268
+    },
+    {
+      "pr": 72,
+      "priority": "P2",
+      "file": "install.sh",
+      "title": "Fail instead of silently skipping marketplace removal",
+      "class": "echec-partiel",
+      "comment_id": 4113983276
+    },
+    {
+      "pr": 72,
+      "priority": "P2",
+      "file": "install.sh",
+      "title": "Validate the plugin before replacing the marketplace",
+      "class": "echec-partiel",
+      "comment_id": 4114018143
+    },
+    {
+      "pr": 72,
+      "priority": "P2",
+      "file": "install.sh",
+      "title": "Roll back the source when the final plugin install fails",
+      "class": "echec-partiel",
+      "comment_id": 4114031723
+    },
+    {
+      "pr": 72,
+      "priority": "P2",
+      "file": "install.sh",
+      "title": "Roll back a marketplace added during a failed fresh install",
+      "class": "echec-partiel",
+      "comment_id": 4114049810
+    },
+    {
+      "pr": 72,
+      "priority": "P2",
+      "file": "install.sh",
+      "title": "Pin the exact previous commit for rollback",
+      "class": "echec-partiel",
+      "comment_id": 4114049812
+    },
+    {
+      "pr": 72,
+      "priority": "P2",
+      "file": "install.sh",
+      "title": "Abort when the previous revision cannot be pinned",
+      "class": "echec-partiel",
+      "comment_id": 4114072441
+    },
+    {
+      "pr": 72,
+      "priority": "P2",
+      "file": "install.sh",
+      "title": "Validate upgrades before replacing the active snapshot",
+      "class": "echec-partiel",
+      "comment_id": 4114072444
+    },
+    {
+      "pr": 72,
+      "priority": "P2",
+      "file": "install.sh",
+      "title": "Preserve an uninstalled plugin state during rollback",
+      "class": "echec-partiel",
+      "comment_id": 4114127345
+    },
+    {
+      "pr": 72,
+      "priority": "P2",
+      "file": "install.sh",
+      "title": "Abort when the prior plugin state cannot be read",
+      "class": "echec-partiel",
+      "comment_id": 4114148448
+    },
+    {
+      "pr": 72,
+      "priority": "P2",
+      "file": "install.sh",
+      "title": "Preserve the disabled state when refreshing the plugin",
+      "class": "echec-partiel",
+      "comment_id": 4114148450
+    },
+    {
+      "pr": 72,
+      "priority": "P2",
+      "file": "install.sh",
+      "title": "Preserve the installed local snapshot during rollback",
+      "class": "echec-partiel",
+      "comment_id": 4114185309
+    },
+    {
+      "pr": 74,
+      "priority": "P2",
+      "file": "INSTALL-AGENT.md",
+      "title": "Preserve an existing pinned installation",
+      "class": "echec-partiel",
+      "comment_id": 4115657387
+    },
+    {
+      "pr": 74,
+      "priority": "P2",
+      "file": "INSTALL-AGENT.md",
+      "title": "Restore the Bash prerequisite check",
+      "class": "echec-partiel",
+      "comment_id": 4115880810
+    },
+    {
+      "pr": 85,
+      "priority": "P2",
+      "file": "mode.py",
+      "title": "Persist the active checkpoint path before referring to it",
+      "class": "echec-partiel",
+      "comment_id": 4162247650
+    },
+    {
+      "pr": 109,
+      "priority": "P2",
+      "file": "feature.md",
+      "title": "Restore delegated authorship on the full feature path",
+      "class": "echec-partiel",
+      "comment_id": 4331035895
+    },
+    {
+      "pr": 8,
+      "priority": "P2",
+      "file": "ROUTING-AUDIT.md",
+      "title": "Pin the parent model in the replay command",
+      "class": "non-classe",
+      "comment_id": 3994193590
+    },
+    {
+      "pr": 8,
+      "priority": "P2",
+      "file": "ROUTING-AUDIT.md",
+      "title": "Use file-open tracing instead of access timestamps",
+      "class": "non-classe",
+      "comment_id": 3994193593
+    },
+    {
+      "pr": 9,
+      "priority": "P2",
+      "file": "log.sh",
+      "title": "Refuse dangling .gitignore symlinks",
+      "class": "non-classe",
+      "comment_id": 3998043589
+    },
+    {
+      "pr": 9,
+      "priority": "P2",
+      "file": "run_tool.py",
+      "title": "Ignore owner PIDs that exceed the platform range",
+      "class": "non-classe",
+      "comment_id": 3998043595
+    },
+    {
+      "pr": 10,
+      "priority": "P2",
+      "file": "bootstrap.ts",
+      "title": "Enforce a Bun version that honors no-env-file",
+      "class": "non-classe",
+      "comment_id": 3998337715
+    },
+    {
+      "pr": 11,
+      "priority": "P2",
+      "file": "SKILL.md",
+      "title": "Pass the prompt file's contents to Codex",
+      "class": "non-classe",
+      "comment_id": 3998680918
+    },
+    {
+      "pr": 11,
+      "priority": "P2",
+      "file": "github-intake.yml",
+      "title": "Require the body marker to match the marker output",
+      "class": "non-classe",
+      "comment_id": 3998680919
+    },
+    {
+      "pr": 11,
+      "priority": "P1",
+      "file": "configuration.example.yaml",
+      "title": "Use the same repository coordinate format",
+      "class": "non-classe",
+      "comment_id": 3998680922
+    },
+    {
+      "pr": 11,
+      "priority": "P1",
+      "file": "README.md",
+      "title": "Install committed intake files outside the ignored state directory",
+      "class": "non-classe",
+      "comment_id": 3998680928
+    },
+    {
+      "pr": 11,
+      "priority": "P2",
+      "file": "github-intake.yml",
+      "title": "Supply the issue corpus required for deduplication",
+      "class": "non-classe",
+      "comment_id": 3998680934
+    },
+    {
+      "pr": 14,
+      "priority": "P2",
+      "file": "runtime.ts",
+      "title": "Report log paths only when the files exist",
+      "class": "non-classe",
+      "comment_id": 4071288220
+    },
+    {
+      "pr": 18,
+      "priority": "P2",
+      "file": "claude-resume-installed.json",
+      "title": "Identifiez et conservez le script associé à l’empreinte",
+      "class": "non-classe",
+      "comment_id": 4078111040
+    },
+    {
+      "pr": 55,
+      "priority": "P2",
+      "file": "verify-goal.py",
+      "title": "Reset the Goal probe timeout for each continued turn",
+      "class": "non-classe",
+      "comment_id": 4094711232
+    },
+    {
+      "pr": 55,
+      "priority": "P2",
+      "file": "templates.md",
+      "title": "Separate safe artifact slugs from research angle labels",
+      "class": "non-classe",
+      "comment_id": 4094711254
+    },
+    {
+      "pr": 64,
+      "priority": "P1",
+      "file": "outcome-bench.py",
+      "title": "Isolate the reference mirror from the agent sandbox",
+      "class": "non-classe",
+      "comment_id": 4100678477
+    },
+    {
+      "pr": 64,
+      "priority": "P1",
+      "file": "outcome-bench.py",
+      "title": "Classify Docker launch failures as infrastructure errors",
+      "class": "non-classe",
+      "comment_id": 4100678483
+    },
+    {
+      "pr": 64,
+      "priority": "P1",
+      "file": "outcome-bench.py",
+      "title": "Run grading containers as the host user",
+      "class": "non-classe",
+      "comment_id": 4100678504
+    },
+    {
+      "pr": 64,
+      "priority": "P2",
+      "file": "outcome-bench.py",
+      "title": "Reject or label incomplete campaign reports",
+      "class": "non-classe",
+      "comment_id": 4100678521
+    },
+    {
+      "pr": 67,
+      "priority": "P1",
+      "file": "project.py",
+      "title": "Honor CLI-selected roles before naming native agents",
+      "class": "non-classe",
+      "comment_id": 4113255697
+    },
+    {
+      "pr": 67,
+      "priority": "P1",
+      "file": "project.py",
+      "title": "Regenerate agent model fields after model-only updates",
+      "class": "non-classe",
+      "comment_id": 4113255704
+    },
+    {
+      "pr": 67,
+      "priority": "P2",
+      "file": "models.py",
+      "title": "Use native inheritance for the Codex side of mixed panels",
+      "class": "non-classe",
+      "comment_id": 4113255710
+    },
+    {
+      "pr": 67,
+      "priority": "P2",
+      "file": "models.py",
+      "title": "Preserve the configured panel cardinalities",
+      "class": "non-classe",
+      "comment_id": 4113255718
+    },
+    {
+      "pr": 67,
+      "priority": "P2",
+      "file": "project.py",
+      "title": "Remove managed agents when native agents are disabled",
+      "class": "non-classe",
+      "comment_id": 4113255724
+    },
+    {
+      "pr": 67,
+      "priority": "P1",
+      "file": "outcome-bench.py",
+      "title": "Accept intentional child models in setup benchmark arms",
+      "class": "non-classe",
+      "comment_id": 4113255732
+    },
+    {
+      "pr": 68,
+      "priority": "P2",
+      "file": "outcome-bench.py",
+      "title": "Validate the frozen-plugin cache before reusing it",
+      "class": "non-classe",
+      "comment_id": 4113526476
+    },
+    {
+      "pr": 70,
+      "priority": "P2",
+      "file": "validate.ts",
+      "title": "Require both hook handlers in package validation",
+      "class": "non-classe",
+      "comment_id": 4113802965
+    },
+    {
+      "pr": 72,
+      "priority": "P2",
+      "file": "README.md",
+      "title": "Make the one-line installer propagate download failures",
+      "class": "non-classe",
+      "comment_id": 4113948626
+    },
+    {
+      "pr": 72,
+      "priority": "P3",
+      "file": "install.sh",
+      "title": "Treat a failing Codex version probe as a doctor failure",
+      "class": "non-classe",
+      "comment_id": 4113983280
+    },
+    {
+      "pr": 72,
+      "priority": "P2",
+      "file": "install.sh",
+      "title": "Reject an empty --ref instead of selecting the default revision",
+      "class": "non-classe",
+      "comment_id": 4114127344
+    },
+    {
+      "pr": 72,
+      "priority": "P2",
+      "file": "install.sh",
+      "title": "Check disabled state on the idempotent install path",
+      "class": "non-classe",
+      "comment_id": 4114164885
+    },
+    {
+      "pr": 72,
+      "priority": "P2",
+      "file": "README.md",
+      "title": "Use --ref in the manual installation example",
+      "class": "non-classe",
+      "comment_id": 4114164891
+    },
+    {
+      "pr": 72,
+      "priority": "P3",
+      "file": "install.sh",
+      "title": "Report a missing Git executable accurately",
+      "class": "non-classe",
+      "comment_id": 4114185314
+    },
+    {
+      "pr": 72,
+      "priority": "P3",
+      "file": "install.sh",
+      "title": "Reject unsupported doctor arguments",
+      "class": "non-classe",
+      "comment_id": 4114185318
+    },
+    {
+      "pr": 80,
+      "priority": "P1",
+      "file": "SKILL.md",
+      "title": "Compare failures with the baseline before excluding a candidate",
+      "class": "non-classe",
+      "comment_id": 4161732746
+    },
+    {
+      "pr": 80,
+      "priority": "P2",
+      "file": "rubric.md",
+      "title": "Require incorrect default behavior before reporting an enum case",
+      "class": "non-classe",
+      "comment_id": 4161732755
+    },
+    {
+      "pr": 80,
+      "priority": "P1",
+      "file": "SKILL.md",
+      "title": "Apply the verification gate inside both judge passes",
+      "class": "non-classe",
+      "comment_id": 4161732758
+    },
+    {
+      "pr": 82,
+      "priority": "P1",
+      "file": "outcome-bench.py",
+      "title": "Require every repetition before crediting pass^k",
+      "class": "non-classe",
+      "comment_id": 4161822257
+    },
+    {
+      "pr": 82,
+      "priority": "P2",
+      "file": "outcome-bench.py",
+      "title": "Compute pair statistics before rounding task rates",
+      "class": "non-classe",
+      "comment_id": 4161822262
+    },
+    {
+      "pr": 83,
+      "priority": "P2",
+      "file": "bug-bash.md",
+      "title": "Fall back to serial exploration for singleton applications",
+      "class": "non-classe",
+      "comment_id": 4161865426
+    },
+    {
+      "pr": 83,
+      "priority": "P2",
+      "file": "SKILL.md",
+      "title": "Preserve the three-level verdict taxonomy during maintenance",
+      "class": "non-classe",
+      "comment_id": 4161865443
+    },
+    {
+      "pr": 84,
+      "priority": "P2",
+      "file": "autopilot-stack.md",
+      "title": "Report every patch-changing push in stack mode",
+      "class": "non-classe",
+      "comment_id": 4162227701
+    },
+    {
+      "pr": 85,
+      "priority": "P2",
+      "file": "SKILL.md",
+      "title": "Resolve the active instruction filename before choosing the target",
+      "class": "non-classe",
+      "comment_id": 4162247656
+    },
+    {
+      "pr": 85,
+      "priority": "P2",
+      "file": "SKILL.md",
+      "title": "Stop conflicting lessons instead of only reporting them",
+      "class": "non-classe",
+      "comment_id": 4162247660
+    },
+    {
+      "pr": 86,
+      "priority": "P2",
+      "file": "rule-pressure-tests.md",
+      "title": "Reconcile negations with the positive-only authoring rule",
+      "class": "non-classe",
+      "comment_id": 4166046824
+    },
+    {
+      "pr": 90,
+      "priority": "P2",
+      "file": "verify-behavior.py",
+      "title": "Ignore empty workflow stages when computing exit status",
+      "class": "non-classe",
+      "comment_id": 4208736392
+    },
+    {
+      "pr": 90,
+      "priority": "P2",
+      "file": "verify-behavior.py",
+      "title": "Reject unknown expectation fields",
+      "class": "non-classe",
+      "comment_id": 4208736400
+    },
+    {
+      "pr": 91,
+      "priority": "P2",
+      "file": "verify-behavior.py",
+      "title": "Reject result directories nested inside the source bundle",
+      "class": "non-classe",
+      "comment_id": 4210984717
+    },
+    {
+      "pr": 91,
+      "priority": "P1",
+      "file": "github.ts",
+      "title": "Treat stale Codex summaries as an unresolved review",
+      "class": "non-classe",
+      "comment_id": 4211195089
+    },
+    {
+      "pr": 91,
+      "priority": "P1",
+      "file": "github.ts",
+      "title": "Discover pull_request_target runs without the head-SHA filter",
+      "class": "non-classe",
+      "comment_id": 4211485662
+    },
+    {
+      "pr": 91,
+      "priority": "P2",
+      "file": "github.ts",
+      "title": "Prefer an active retry over the prior completed failure",
+      "class": "non-classe",
+      "comment_id": 4211485678
+    },
+    {
+      "pr": 91,
+      "priority": "P1",
+      "file": "github.ts",
+      "title": "Bound pull_request_target history before requiring completeness",
+      "class": "non-classe",
+      "comment_id": 4211749968
+    },
+    {
+      "pr": 91,
+      "priority": "P2",
+      "file": "github.ts",
+      "title": "Ignore comments whose author has been deleted",
+      "class": "non-classe",
+      "comment_id": 4211749980
+    },
+    {
+      "pr": 103,
+      "priority": "P1",
+      "file": "behavior-scenarios.py",
+      "title": "Detect committed and ignored writes in the read-only oracle",
+      "class": "non-classe",
+      "comment_id": 4330595606
+    },
+    {
+      "pr": 105,
+      "priority": "P2",
+      "file": "horizon.ts",
+      "title": "Bind the `spec.md` sentinel to the loaded spec",
+      "class": "non-classe",
+      "comment_id": 4330744934
+    },
+    {
+      "pr": 105,
+      "priority": "P2",
+      "file": "horizon.ts",
+      "title": "Preserve contract value boundaries in generated briefs",
+      "class": "non-classe",
+      "comment_id": 4330744942
+    },
+    {
+      "pr": 110,
+      "priority": "P2",
+      "file": "review.ts",
+      "title": "Preserve the original opening contract during replans",
+      "class": "non-classe",
+      "comment_id": 4331337498
+    },
+    {
+      "pr": 110,
+      "priority": "P1",
+      "file": "review.ts",
+      "title": "Establish a new ancestry baseline when replanning",
+      "class": "non-classe",
+      "comment_id": 4331337511
+    },
+    {
+      "pr": 110,
+      "priority": "P1",
+      "file": "review.ts",
+      "title": "Reconcile review identities when a unit gains its PR",
+      "class": "non-classe",
+      "comment_id": 4331337521
+    },
+    {
+      "pr": 70,
+      "priority": "P2",
+      "file": "mode.py",
+      "title": "Ignore negated stop phrases",
+      "class": "parsing-langage-naturel",
+      "comment_id": 4113802959
+    },
+    {
+      "pr": 90,
+      "priority": "P2",
+      "file": "mode.py",
+      "title": "Scope activation refusals to cstack",
+      "class": "parsing-langage-naturel",
+      "comment_id": 4208736383
+    },
+    {
+      "pr": 91,
+      "priority": "P2",
+      "file": "mode.py",
+      "title": "Keep explicit “this skill” refusals inactive",
+      "class": "parsing-langage-naturel",
+      "comment_id": 4210984706
+    },
+    {
+      "pr": 91,
+      "priority": "P2",
+      "file": "mode.py",
+      "title": "Recognize infinitive French activation refusals",
+      "class": "parsing-langage-naturel",
+      "comment_id": 4211983060
+    },
+    {
+      "pr": 92,
+      "priority": "P2",
+      "file": "mode.py",
+      "title": "Ignore quoted refusal text after an explicit invocation",
+      "class": "parsing-langage-naturel",
+      "comment_id": 4212451947
+    },
+    {
+      "pr": 92,
+      "priority": "P2",
+      "file": "mode.py",
+      "title": "Exclude Markdown blockquotes from refusal detection",
+      "class": "parsing-langage-naturel",
+      "comment_id": 4212756301
+    },
+    {
+      "pr": 6,
+      "priority": "P2",
+      "file": "worktree-cleanup-scenarios.py",
+      "title": "Verify the durable cleanup checkpoint",
+      "class": "preuve-manquante",
+      "comment_id": 3985821629
+    },
+    {
+      "pr": 6,
+      "priority": "P2",
+      "file": "worktree-cleanup-scenarios.py",
+      "title": "Record owning agents before marking paths removable",
+      "class": "preuve-manquante",
+      "comment_id": 3985821633
+    },
+    {
+      "pr": 11,
+      "priority": "P1",
+      "file": "SKILL.md",
+      "title": "Resume the UI's recorded session instead of the latest session",
+      "class": "preuve-manquante",
+      "comment_id": 3998680917
+    },
+    {
+      "pr": 16,
+      "priority": "P2",
+      "file": "autopilot-stack.md",
+      "title": "Verify the branch before opening a ready PR",
+      "class": "preuve-manquante",
+      "comment_id": 4073850942
+    },
+    {
+      "pr": 18,
+      "priority": "P2",
+      "file": "claude-resume-installed.json",
+      "title": "Enregistrez le résultat métier de la reprise en lecture seule",
+      "class": "preuve-manquante",
+      "comment_id": 4078111033
+    },
+    {
+      "pr": 44,
+      "priority": "P2",
+      "file": "ticket-value-observations.json",
+      "title": "Conservez les sorties natives plutôt que des paraphrases",
+      "class": "preuve-manquante",
+      "comment_id": 4079114079
+    },
+    {
+      "pr": 64,
+      "priority": "P2",
+      "file": "outcome-bench.py",
+      "title": "Verify the actual model and reasoning effort",
+      "class": "preuve-manquante",
+      "comment_id": 4100678489
+    },
+    {
+      "pr": 73,
+      "priority": "P2",
+      "file": "0.7.0.json",
+      "title": "Record the fourth root-only skipped test",
+      "class": "preuve-manquante",
+      "comment_id": 4115522538
+    },
+    {
+      "pr": 73,
+      "priority": "P1",
+      "file": "VERIFICATION.md",
+      "title": "Rejouez les linters dans les images épinglées",
+      "class": "preuve-manquante",
+      "comment_id": 4115541770
+    },
+    {
+      "pr": 80,
+      "priority": "P1",
+      "file": "validate.test.ts",
+      "title": "Add behavioral evidence for the new workflows",
+      "class": "preuve-manquante",
+      "comment_id": 4161732720
+    },
+    {
+      "pr": 83,
+      "priority": "P1",
+      "file": "VERIFICATION.md",
+      "title": "Exercise the new workflows before declaring them complete",
+      "class": "preuve-manquante",
+      "comment_id": 4161865423
+    },
+    {
+      "pr": 83,
+      "priority": "P2",
+      "file": "behavior-scenarios.py",
+      "title": "Require the verdict scenario to drive `sync`",
+      "class": "preuve-manquante",
+      "comment_id": 4161865430
+    },
+    {
+      "pr": 83,
+      "priority": "P1",
+      "file": "bug-bash.md",
+      "title": "Stop using implementation code as proof of intended design",
+      "class": "preuve-manquante",
+      "comment_id": 4161865431
+    },
+    {
+      "pr": 83,
+      "priority": "P2",
+      "file": "SKILL.md",
+      "title": "Re-run Doctor after every non-passing drive",
+      "class": "preuve-manquante",
+      "comment_id": 4161865445
+    },
+    {
+      "pr": 83,
+      "priority": "P2",
+      "file": "bug-bash.md",
+      "title": "Verify the bug-bash artifact directory is ignored",
+      "class": "preuve-manquante",
+      "comment_id": 4161865448
+    },
+    {
+      "pr": 86,
+      "priority": "P2",
+      "file": "behavior-scenarios.py",
+      "title": "Assert the baseline and post-rule outcomes",
+      "class": "preuve-manquante",
+      "comment_id": 4166046853
+    },
+    {
+      "pr": 104,
+      "priority": "P1",
+      "file": "behavior-scenarios.py",
+      "title": "Verify the builder-check decision outcomes",
+      "class": "preuve-manquante",
+      "comment_id": 4330678949
+    },
+    {
+      "pr": 104,
+      "priority": "P2",
+      "file": "behavior-scenarios.py",
+      "title": "Exercise the mechanical exception through Architect",
+      "class": "preuve-manquante",
+      "comment_id": 4330678956
+    },
+    {
+      "pr": 108,
+      "priority": "P1",
+      "file": "review.ts",
+      "title": "Revalidate evidence from earlier resolution attempts",
+      "class": "preuve-manquante",
+      "comment_id": 4331029385
+    },
+    {
+      "pr": 46,
+      "priority": "P2",
+      "file": "runtime.ts",
+      "title": "Include acceptance in the candidate comparison fingerprint",
+      "class": "provenance-incomplete",
+      "comment_id": 4082419907
+    },
+    {
+      "pr": 64,
+      "priority": "P2",
+      "file": "outcome-bench.py",
+      "title": "Bind validation receipts to immutable image IDs",
+      "class": "provenance-incomplete",
+      "comment_id": 4100678514
+    },
+    {
+      "pr": 69,
+      "priority": "P2",
+      "file": "PORTING.json",
+      "title": "Preserve provenance for the extracted Interrogate rules",
+      "class": "provenance-incomplete",
+      "comment_id": 4113610836
+    },
+    {
+      "pr": 90,
+      "priority": "P1",
+      "file": "verify-behavior.py",
+      "title": "Verify fixture hashes before running scenarios",
+      "class": "provenance-incomplete",
+      "comment_id": 4208736411
+    },
+    {
+      "pr": 91,
+      "priority": "P1",
+      "file": "behavior-scenarios.py",
+      "title": "Reject directory symlinks from provenance trees",
+      "class": "provenance-incomplete",
+      "comment_id": 4210984697
+    },
+    {
+      "pr": 91,
+      "priority": "P2",
+      "file": "behavior-scenarios.py",
+      "title": "Include executable modes in provenance hashes",
+      "class": "provenance-incomplete",
+      "comment_id": 4211195095
+    },
+    {
+      "pr": 91,
+      "priority": "P1",
+      "file": "behavior-scenarios.py",
+      "title": "Bind scenario inputs to the generated provenance",
+      "class": "provenance-incomplete",
+      "comment_id": 4211485686
+    },
+    {
+      "pr": 91,
+      "priority": "P2",
+      "file": "behavior-scenarios.py",
+      "title": "Reject special files instead of omitting them from provenance",
+      "class": "provenance-incomplete",
+      "comment_id": 4211485693
+    },
+    {
+      "pr": 91,
+      "priority": "P1",
+      "file": "verify-behavior.py",
+      "title": "Include Git state in project provenance",
+      "class": "provenance-incomplete",
+      "comment_id": 4211983045
+    },
+    {
+      "pr": 91,
+      "priority": "P2",
+      "file": "behavior-scenarios.py",
+      "title": "Encode directory entries in tree hashes",
+      "class": "provenance-incomplete",
+      "comment_id": 4211983053
+    },
+    {
+      "pr": 91,
+      "priority": "P2",
+      "file": "behavior-scenarios.py",
+      "title": "Encode file-symlink targets in provenance",
+      "class": "provenance-incomplete",
+      "comment_id": 4212089947
+    },
+    {
+      "pr": 91,
+      "priority": "P2",
+      "file": "verify-behavior.py",
+      "title": "Preserve receipts when post-run hashing fails",
+      "class": "provenance-incomplete",
+      "comment_id": 4212089956
+    },
+    {
+      "pr": 92,
+      "priority": "P2",
+      "file": "verify-behavior.py",
+      "title": "Include in-progress Git state in the digest",
+      "class": "provenance-incomplete",
+      "comment_id": 4212451943
+    },
+    {
+      "pr": 92,
+      "priority": "P2",
+      "file": "verify-behavior.py",
+      "title": "Allow provenance hashing on unborn branches",
+      "class": "provenance-incomplete",
+      "comment_id": 4212451953
+    },
+    {
+      "pr": 92,
+      "priority": "P2",
+      "file": "verify-behavior.py",
+      "title": "Reject or hash nested Git repositories",
+      "class": "provenance-incomplete",
+      "comment_id": 4212756294
+    },
+    {
+      "pr": 7,
+      "priority": "P2",
+      "file": "codex-runtime.md",
+      "title": "Authorize the failing-test commit in TDD",
+      "class": "regle-trop-large",
+      "comment_id": 3986221254
+    },
+    {
+      "pr": 7,
+      "priority": "P2",
+      "file": "codex-runtime.md",
+      "title": "Permit WIP commits when pausing broken work",
+      "class": "regle-trop-large",
+      "comment_id": 3986221258
+    },
+    {
+      "pr": 7,
+      "priority": "P2",
+      "file": "codex-runtime.md",
+      "title": "Refuse default commits from a detached HEAD",
+      "class": "regle-trop-large",
+      "comment_id": 3986221260
+    },
+    {
+      "pr": 7,
+      "priority": "P2",
+      "file": "codex-runtime.md",
+      "title": "Allow working-diff cleanup without committing the underlying WIP",
+      "class": "regle-trop-large",
+      "comment_id": 3986221268
+    },
+    {
+      "pr": 8,
+      "priority": "P1",
+      "file": "behavior-scenarios.py",
+      "title": "Remove `how` from the forbidden route list",
+      "class": "regle-trop-large",
+      "comment_id": 3994193583
+    },
+    {
+      "pr": 8,
+      "priority": "P1",
+      "file": "behavior-scenarios.py",
+      "title": "Make child-count checks optional for routing cases",
+      "class": "regle-trop-large",
+      "comment_id": 3994193589
+    },
+    {
+      "pr": 13,
+      "priority": "P2",
+      "file": "openai.yaml",
+      "title": "Make the parallel exploration request conditional",
+      "class": "regle-trop-large",
+      "comment_id": 4068195238
+    },
+    {
+      "pr": 13,
+      "priority": "P2",
+      "file": "openai.yaml",
+      "title": "Preserve direct recall for small histories",
+      "class": "regle-trop-large",
+      "comment_id": 4068195244
+    },
+    {
+      "pr": 13,
+      "priority": "P2",
+      "file": "openai.yaml",
+      "title": "Do not force both teaching passes for small changes",
+      "class": "regle-trop-large",
+      "comment_id": 4068195248
+    },
+    {
+      "pr": 13,
+      "priority": "P2",
+      "file": "10-recipes-and-pitfalls.md",
+      "title": "Do not declare nested native agents unsupported",
+      "class": "regle-trop-large",
+      "comment_id": 4068195253
+    },
+    {
+      "pr": 13,
+      "priority": "P2",
+      "file": "CHANGELOG.md",
+      "title": "Cover mandatory delegators with default prompts",
+      "class": "regle-trop-large",
+      "comment_id": 4068195255
+    },
+    {
+      "pr": 15,
+      "priority": "P1",
+      "file": "SKILL.md",
+      "title": "Keep non-Claude requests out of the Claude-specific flow",
+      "class": "regle-trop-large",
+      "comment_id": 4073697946
+    },
+    {
+      "pr": 15,
+      "priority": "P1",
+      "file": "SKILL.md",
+      "title": "Avoid the stateful launcher during read-only discovery",
+      "class": "regle-trop-large",
+      "comment_id": 4073697953
+    },
+    {
+      "pr": 55,
+      "priority": "P1",
+      "file": "pause-safely.md",
+      "title": "Stop requesting an unsupported paused Goal state",
+      "class": "regle-trop-large",
+      "comment_id": 4094711208
+    },
+    {
+      "pr": 55,
+      "priority": "P2",
+      "file": "autonomous-run.md",
+      "title": "Make the Goal predicate respect unavailable PR delivery",
+      "class": "regle-trop-large",
+      "comment_id": 4094711218
+    },
+    {
+      "pr": 55,
+      "priority": "P2",
+      "file": "SKILL.md",
+      "title": "Preserve a valid route for indivisible How questions",
+      "class": "regle-trop-large",
+      "comment_id": 4094711241
+    },
+    {
+      "pr": 69,
+      "priority": "P2",
+      "file": "SKILL.md",
+      "title": "Keep visible tracking reachable for direct invocations",
+      "class": "regle-trop-large",
+      "comment_id": 4113610831
+    },
+    {
+      "pr": 69,
+      "priority": "P2",
+      "file": "SKILL.md",
+      "title": "Link activation before direct implementation",
+      "class": "regle-trop-large",
+      "comment_id": 4113610834
+    },
+    {
+      "pr": 70,
+      "priority": "P1",
+      "file": "mode.py",
+      "title": "Restrict the reminder to the activating task",
+      "class": "regle-trop-large",
+      "comment_id": 4113802958
+    },
+    {
+      "pr": 70,
+      "priority": "P2",
+      "file": "01-setup.md",
+      "title": "Approve hooks before the first cstack invocation",
+      "class": "regle-trop-large",
+      "comment_id": 4113802960
+    },
+    {
+      "pr": 70,
+      "priority": "P2",
+      "file": "pause-safely.md",
+      "title": "Do not treat automatic compaction as a user-requested pause",
+      "class": "regle-trop-large",
+      "comment_id": 4113802961
+    },
+    {
+      "pr": 72,
+      "priority": "P2",
+      "file": "install.sh",
+      "title": "Allow installations for SSH-authenticated GitHub users",
+      "class": "regle-trop-large",
+      "comment_id": 4113948627
+    },
+    {
+      "pr": 84,
+      "priority": "P2",
+      "file": "autopilot-full.md",
+      "title": "Stop requiring status messages for unchanged drains",
+      "class": "regle-trop-large",
+      "comment_id": 4162227694
+    },
+    {
+      "pr": 84,
+      "priority": "P2",
+      "file": "autopilot-full.md",
+      "title": "Obtain explicit authority before force-pushing rebases",
+      "class": "regle-trop-large",
+      "comment_id": 4162227698
+    },
+    {
+      "pr": 86,
+      "priority": "P2",
+      "file": "opening-a-pr.md",
+      "title": "Allow non-red verification paths in PR descriptions",
+      "class": "regle-trop-large",
+      "comment_id": 4166046841
+    },
+    {
+      "pr": 87,
+      "priority": "P2",
+      "file": "06-verify-and-ship.md",
+      "title": "Qualify bug-bash parallelism by instance isolation",
+      "class": "regle-trop-large",
+      "comment_id": 4166982611
+    },
+    {
+      "pr": 87,
+      "priority": "P2",
+      "file": "06-verify-and-ship.md",
+      "title": "Keep PR visuals conditional on text being insufficient",
+      "class": "regle-trop-large",
+      "comment_id": 4166982631
+    },
+    {
+      "pr": 91,
+      "priority": "P2",
+      "file": "github.ts",
+      "title": "Scope Actions runs to the current pull request",
+      "class": "regle-trop-large",
+      "comment_id": 4211195106
+    },
+    {
+      "pr": 91,
+      "priority": "P2",
+      "file": "github.ts",
+      "title": "Allow workflow runs without a name",
+      "class": "regle-trop-large",
+      "comment_id": 4211749987
+    },
+    {
+      "pr": 103,
+      "priority": "P2",
+      "file": "SKILL.md",
+      "title": "Exempt targeted diagnostics from the investigation playbook",
+      "class": "regle-trop-large",
+      "comment_id": 4330595590
+    },
+    {
+      "pr": 103,
+      "priority": "P2",
+      "file": "SKILL.md",
+      "title": "Keep correction requests out of the read-only diagnostic",
+      "class": "regle-trop-large",
+      "comment_id": 4330595618
+    },
+    {
+      "pr": 108,
+      "priority": "P1",
+      "file": "review.ts",
+      "title": "Allow replanned targets to leave the old loop",
+      "class": "regle-trop-large",
+      "comment_id": 4331029374
+    },
+    {
+      "pr": 109,
+      "priority": "P2",
+      "file": "bug-fix.md",
+      "title": "Make builder handoff conditional on delegated bug fixes",
+      "class": "regle-trop-large",
+      "comment_id": 4331035905
+    },
+    {
+      "pr": 109,
+      "priority": "P2",
+      "file": "orchestration.md",
+      "title": "Limit proportional routing to modification workflows",
+      "class": "regle-trop-large",
+      "comment_id": 4331035912
+    },
+    {
+      "pr": 110,
+      "priority": "P2",
+      "file": "review.ts",
+      "title": "Allow outside findings to start their own correction loops",
+      "class": "regle-trop-large",
+      "comment_id": 4331337505
+    },
+    {
+      "pr": 11,
+      "priority": "P1",
+      "file": "SKILL.md",
+      "title": "Do not expose the page token in the served HTML",
+      "class": "secret-expose",
+      "comment_id": 3998680914
+    },
+    {
+      "pr": 14,
+      "priority": "P2",
+      "file": "runtime.ts",
+      "title": "Send Cursor prompts outside argv",
+      "class": "secret-expose",
+      "comment_id": 4071288194
+    },
+    {
+      "pr": 71,
+      "priority": "P2",
+      "file": "validate.ts",
+      "title": "Require the canonical invocation as a complete token",
+      "class": "secret-expose",
+      "comment_id": 4113891219
+    },
+    {
+      "pr": 72,
+      "priority": "P2",
+      "file": "validate.ts",
+      "title": "Keep rejecting contradictory token-injection guidance",
+      "class": "secret-expose",
+      "comment_id": 4114072446
+    },
+    {
+      "pr": 72,
+      "priority": "P1",
+      "file": "install.sh",
+      "title": "Redact credentials from rollback diagnostics",
+      "class": "secret-expose",
+      "comment_id": 4114127351
+    },
+    {
+      "pr": 74,
+      "priority": "P2",
+      "file": "INSTALL-AGENT.md",
+      "title": "Support SSH credentials in the no-gh fallback",
+      "class": "secret-expose",
+      "comment_id": 4115678950
+    },
+    {
+      "pr": 85,
+      "priority": "P1",
+      "file": "SKILL.md",
+      "title": "Strip private passages before dispatching reviewers",
+      "class": "secret-expose",
+      "comment_id": 4162247658
+    }
+  ]
+}

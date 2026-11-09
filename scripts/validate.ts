@@ -6,6 +6,7 @@ import { dirname, isAbsolute, join, relative, resolve } from "node:path";
 const DIRECT_INVOCATION_ONLY: Record<string, string> = {
   "automate-me": "Utilitaire d’automatisation Cursor invoqué directement, sans passer par le routeur.",
   "bro": "Personnage conversationnel invoqué directement, sans passer par le routeur.",
+  "correct": "Maintenance du dépôt contre les erreurs répétées des agents, invoquée directement, sans passer par le routeur.",
   "create-verification-skill": "Générateur de skills de vérification invoqué directement, sans passer par le routeur.",
   "maintain-verification-skill": "Maintenance des skills de vérification invoquée directement, sans passer par le routeur.",
   "make-bot-ui": "Utilitaire d’interface de bot Grok invoqué directement, sans passer par le routeur.",
@@ -279,7 +280,7 @@ export function validate(root: string): { skills: number; sourceFiles: number } 
   }
   const skills = all.filter((path) => path.endsWith("/SKILL.md") && relative(plugin, path).startsWith("skills/"));
   requireValue(!skills.some((path) => relative(join(plugin, "skills"), dirname(path)).startsWith("principle-")), "les points d’entrée des skills de principes ont été déplacés vers les références");
-  requireValue(skills.length === 29, `29 points d’entrée de skills attendus, obtenu ${skills.length}`);
+  requireValue(skills.length === 30, `30 points d’entrée de skills attendus, obtenu ${skills.length}`);
   const principleRefs = all.filter((path) => path.endsWith(".md") && relative(plugin, path).startsWith("skills/cstack/references/principles/"));
   requireValue(principleRefs.length === 23, `23 références de principes attendues, obtenu ${principleRefs.length}`);
   for (const path of principleRefs) {

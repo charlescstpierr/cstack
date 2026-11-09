@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { validate } from "../scripts/validate.ts";
 
-test("le paquet charge 29 skills et rejette les distributions dangereuses ou incomplètes", () => {
+test("le paquet charge 30 skills et rejette les distributions dangereuses ou incomplètes", () => {
   const root = resolve(import.meta.dir, "..");
   const copy = mkdtempSync(join(tmpdir(), "cstack-package-"));
   try {
@@ -26,7 +26,7 @@ test("le paquet charge 29 skills et rejette les distributions dangereuses ou inc
     }
     if (existsSync(join(root, "README.md"))) cpSync(join(root, "README.md"), join(copy, "README.md"));
     const sourceFiles = JSON.parse(readFileSync(join(copy, "UPSTREAM.json"), "utf8")).files.length;
-    expect(validate(copy)).toEqual({ skills: 29, sourceFiles });
+    expect(validate(copy)).toEqual({ skills: 30, sourceFiles });
     const snapshots = new Map(["UPSTREAM.json", "PORTING.json", "README.md", "plugins/cstack/README.md", "docs/VERIFICATION.md"]
       .map((path) => [path, readFileSync(join(copy, path), "utf8")]));
     try {
@@ -41,7 +41,7 @@ test("le paquet charge 29 skills et rejette les distributions dangereuses ou inc
         writeFileSync(join(copy, path), readFileSync(join(copy, path), "utf8")
           .replace(new RegExp(`\\b${sourceFiles}\\b`, "g"), String(sourceFiles + 1)));
       }
-      expect(validate(copy)).toEqual({ skills: 29, sourceFiles: sourceFiles + 1 });
+      expect(validate(copy)).toEqual({ skills: 30, sourceFiles: sourceFiles + 1 });
       coverage.commit = "c".repeat(40);
       writeFileSync(join(copy, "PORTING.json"), JSON.stringify(coverage));
       expect(() => validate(copy)).toThrow(/le commit amont ne correspond pas/);
@@ -129,8 +129,8 @@ test("le paquet charge 29 skills et rejette les distributions dangereuses ou inc
         value.original.push({ path: "plugins/cstack/does-not-exist.md", reason: "manquant" });
         return JSON.stringify(value);
       }, /le chemin original n’existe pas/],
-      ["plugins/cstack/README.md", (text: string) => text.replace(/\b29 (?:skills|compétences)\b/g, "27 compétences"), /nombre de skills cité 27/],
-      ["docs/VERIFICATION.md", (text: string) => text.replace(/(Le catalogue \d+\.\d+\.\d+ contient )29 (?:skills|compétences)/, "$127 compétences"), /nombre de skills cité 27/],
+      ["plugins/cstack/README.md", (text: string) => text.replace(/\b30 (?:skills|compétences)\b/g, "27 compétences"), /nombre de skills cité 27/],
+      ["docs/VERIFICATION.md", (text: string) => text.replace(/(Le catalogue \d+\.\d+\.\d+ contient )30 (?:skills|compétences)/, "$127 compétences"), /nombre de skills cité 27/],
       ["docs/VERIFICATION.md", (text: string) => text.replace("23 guides d'exécution.", "22 guides d'exécution."), /nombre de guides opérationnels cité 22/],
       ["docs/VERIFICATION.md", (text: string) => text.replace("23 guides d'exécution.", "22 guides d’exécution."), /nombre de guides opérationnels cité 22/],
       ["plugins/cstack/.codex-plugin/plugin.json", (text: string) => text.replace(/"version": "\d+\.\d+\.\d+"/, '"version": "9.9.9"'), /journal des modifications ou preuve manquants/],
@@ -164,7 +164,7 @@ test("le paquet charge 29 skills et rejette les distributions dangereuses ou inc
     expect(removedTddLinks.length).toBeGreaterThan(0);
     expect(() => validate(copy)).toThrow(/tdd: le skill n’est ni accessible/);
     for (const { target, original } of removedTddLinks) writeFileSync(target, original);
-    expect(validate(copy)).toEqual({ skills: 29, sourceFiles: 158 });
+    expect(validate(copy)).toEqual({ skills: 30, sourceFiles: 158 });
     const extra = join(copy, "plugins/cstack/UNACCOUNTED.md");
     writeFileSync(extra, "orphelin\n");
     expect(() => validate(copy)).toThrow(/fichier du plugin non répertorié/);

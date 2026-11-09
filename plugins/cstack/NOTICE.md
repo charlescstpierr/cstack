@@ -7,12 +7,14 @@ cstack is an independent Codex adaptation of pstack by Lauren Tan.
 - Upstream manifest version: `0.15.5`
 - Original copyright: Copyright (c) 2026 Lauren Tan
 - License: MIT. The original license is preserved in LICENSE.
-- cstack plugin version: `0.8.0`
-- Catalog: 29 skills, 23 principle references, 23 playbooks, two agent prompts
+- cstack plugin version: `0.9.0`
+- Catalog: 30 skills, 23 principle references, 23 playbooks, two agent prompts
 
 The adaptation replaces Cursor-specific execution instructions, model routing and plugin packaging with native Codex workflows. Modified files retain the original license. cstack is not an official Cursor or OpenAI product.
 
 The source snapshot is recorded in the repository's UPSTREAM.json. docs/PORTING.md accounts for the skills, playbooks, agent prompts and unsupported integrations. Source attribution links are intentionally retained; they are not runtime dependencies.
+
+`correct` adapts the `correct` skill that pstack added after the primary pin: [cursor/plugins at `236e5481d05cbadc315b374a5de54971858c27bb`](https://github.com/cursor/plugins/blob/236e5481d05cbadc315b374a5de54971858c27bb/pstack/skills/correct/SKILL.md) (pstack 0.15.36, sha256 `e347045d00c967a0b831ef883cc6ac79d21329aa10b5968637df95de7febf0ba`; MIT, Copyright (c) 2026 Lauren Tan). The text is translated and adapted to Codex instruction files and cstack references. This addition does not change the primary pstack pin in UPSTREAM.json.
 
 `deslop` is original to cstack. It is not a port. pstack shipped `/deslop` in the separate `cursor-team-kit` plugin and had no portable source.
 

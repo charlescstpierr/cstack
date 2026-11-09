@@ -4,6 +4,10 @@ Les versions suivent SemVer. Le format suit [Keep a Changelog](https://keepachan
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-11-09
+
+- Nouvelle compétence `correct` (`$cstack:correct`) : cherche les classes d’erreurs que les agents répètent dans le dépôt (commentaires de revue, dont ceux des bots, commits de correction, reverts, historique natif), puis corrige chacune au niveau le plus haut qui fonctionne : architecture, types, lint dont l’erreur nomme le correctif, test, règle écrite en dernier. Chaque contrôle doit échouer sur une vraie erreur passée. Adaptée du skill `correct` de pstack 0.15.36 (`236e548`), absent du pin principal. `reflect` reste l’outil d’une seule tâche. Le relevé des 199 findings de revue de cstack est dans `docs/evidence/agent-errors.md`.
+
 ## [0.8.0] - 2026-10-02
 
 - Guide et preuves : le guide décrit les nouveautés de cette version (point de reprise après un résumé, recall par index et `<private>`, vérification des candidats d'Arena, lentilles d'Interrogate, sources versionnées, verdicts de pilotage et bug bash, corps de PR et doc contre diff, arrêt de `watch-pr` sur une barrière, hygiène de `reflect`, règle testée contre une base sans elle). `docs/VERIFICATION.md` « État 0.8.0 » et `docs/evidence/0.8.0.json` enregistrent les contrôles de la version.
