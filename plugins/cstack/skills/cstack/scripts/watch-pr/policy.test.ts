@@ -91,6 +91,112 @@ describe("table de vérité de l’état prêt", () => {
 });
 
 describe("planification des requêtes de snapshot", () => {
+  it("garde un échec GraphQL indépendant comme bloqueur pendant une relance REST", async () => {
+    const row = await readSnapshot({
+      reader: fakeReader({
+        rollupPages: [{ kind: "contexts", checks: [failedCheck("Independent workflow")], endCursor: null }],
+        headSignals: [pendingCheck("Actions: Retry workflow")],
+      }),
+      context: context(1), pendingHistory: "include", allowDraft: false,
+    });
+    expect(classifyPr(row)).toMatchObject({
+      kind: "blocker", blocker: { kind: "failing-checks", ci: {
+        failed: [{ name: "Independent workflow" }],
+        pending: [{ name: "Actions: Retry workflow" }],
+      } },
+    });
+  });
+
+  it("attend la revue Codex annoncée Running même sans check GitHub", async () => {
+    const row = await readSnapshot({
+      reader: fakeReader({
+        fastPath: { kind: "none-reported" },
+        commitRollups: [{ oid: "head", state: null }],
+        headSignals: [{ ...pendingCheck("Codex Code Review"), description: "Running pour head" }],
+      }),
+      context: context(1), pendingHistory: "include", allowDraft: false,
+    });
+    expect(classifyPr(row)).toMatchObject({ kind: "waiting" });
+    expect(row).toMatchObject({ reviewAutomationRunning: true });
+  });
+
+  it("bloque les échecs Actions du SHA même si aucun check n’a été créé", async () => {
+    const row = await readSnapshot({
+      reader: fakeReader({
+        fastPath: { kind: "none-reported" },
+        commitRollups: [{ oid: "head", state: null }],
+        headSignals: [{ ...failedCheck("Actions: Validate"), reportedState: "FAILURE" }],
+      }),
+      context: context(1), pendingHistory: "include", allowDraft: false,
+    });
+    expect(classifyPr(row)).toMatchObject({
+      kind: "blocker", blocker: { kind: "failing-checks" },
+    });
+  });
+
+  it("ne produit aucun verdict si les signaux du head sont indisponibles", async () => {
+    const base = fakeReader();
+    const reader: GitHubReader = { ...base, async headSignals() {
+      throw new WatcherQueryError({ kind: "command-exit", retryable: true, code: 1, detail: "HTTP 502" });
+    } };
+    await expect(readSnapshot({
+      reader, context: context(1), pendingHistory: "include", allowDraft: false,
+    })).rejects.toBeInstanceOf(WatcherQueryError);
+  });
+
+  it("refuse un head remplacé après les checks verts de l’ancien commit", async () => {
+    const base = fakeReader();
+    let pushed = false;
+    const reader: GitHubReader = {
+      ...base,
+      async pullRequest(request) {
+        const facts = await base.pullRequest(request);
+        return pushed
+          ? { ...facts, headRefOid: "new-head", mergeStateStatus: "UNSTABLE" }
+          : facts;
+      },
+      async checkRollupPage(request, after, headRefOid) {
+        expect(headRefOid).toBe(pushed ? "new-head" : "head");
+        return pushed
+          ? { kind: "contexts", checks: [failedCheck("new-ci")], endCursor: null }
+          : base.checkRollupPage(request, after, headRefOid);
+      },
+      async commitRollups() {
+        pushed = true;
+        return [
+          { oid: "head", state: "SUCCESS" },
+          { oid: "new-head", state: "FAILURE" },
+        ];
+      },
+    };
+    await expect(readSnapshot({
+      reader, context: context(1), pendingHistory: "include", allowDraft: false,
+    })).rejects.toBeInstanceOf(WatcherQueryError);
+    const current = await readSnapshot({
+      reader, context: context(1), pendingHistory: "include", allowDraft: false,
+    });
+    expect(classifyPr(current)).toMatchObject({
+      kind: "blocker", blocker: { kind: "failing-checks" },
+    });
+  });
+
+  it("inclut le SHA observé dans la preuve READY", async () => {
+    const snapshot = await readSnapshot({
+      reader: fakeReader(), context: context(1), pendingHistory: "include", allowDraft: false,
+    });
+    expect(classifyPr(snapshot)).toMatchObject({
+      kind: "ready", pr: { headRefOid: "head" },
+    });
+  });
+
+  it("refuse un snapshot ouvert dont le SHA est absent", async () => {
+    const reader = fakeReader({ facts: { headRefOid: null } });
+    await expect(readSnapshot({
+      reader, context: context(1), pendingHistory: "include", allowDraft: false,
+    })).rejects.toBeInstanceOf(WatcherQueryError);
+    expect(reader.calls).toEqual(["pullRequest"]);
+  });
+
   it("ne demande pas les rollups de commit pendant que les vérifications en file sont pending", async () => {
     const reader = fakeReader({
       fastPath: { kind: "checks", checks: [pendingCheck()] },
@@ -107,7 +213,9 @@ describe("planification des requêtes de snapshot", () => {
     expect(reader.calls).toEqual([
       "pullRequest",
       "reviewThreads",
-      "checksFastPath",
+      "checkRollupPage:null",
+      "headSignals",
+      "pullRequest",
     ]);
   });
 
@@ -300,10 +408,13 @@ describe("cadence queued-stack", () => {
     expect(timeline).toEqual([
       "emit:QUEUE",
       "read:20",
+      "read:20",
       "fail:21",
       "emit:RETRY",
       "sleep",
       "read:21",
+      "read:21",
+      "read:22",
       "read:22",
       "emit:STATUS",
       "emit:WAITING",
@@ -347,7 +458,7 @@ describe("cadence queued-stack", () => {
         const facts = await base.pullRequest(pr);
         const count = (reads.get(pr.number) ?? 0) + 1;
         reads.set(pr.number, count);
-        return pr.number === one.number && count > 1
+        return pr.number === one.number && count > 2
           ? {
               ...facts,
               state: "MERGED" as const,
@@ -383,10 +494,11 @@ describe("cadence queued-stack", () => {
     await expect(running).rejects.toThrow("arret apres preuve ADVANCE");
     expect(emitted.some((event) => event.kind === "ADVANCE")).toBe(true);
     const firstSleep = timeline.indexOf("sleep");
-    expect(timeline.slice(firstSleep, firstSleep + 5)).toEqual([
+    expect(timeline.slice(firstSleep, firstSleep + 6)).toEqual([
       "sleep",
       "read:40",
       "emit:ADVANCE",
+      "read:41",
       "read:41",
       "emit:WAITING",
     ]);

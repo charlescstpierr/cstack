@@ -7,8 +7,27 @@ export const REVIEW_THREADS_QUERY =
   "\nquery ReviewThreads($owner: String!, $repo: String!, $pr: Int!) {\n  repository(owner: $owner, name: $repo) {\n    pullRequest(number: $pr) {\n      reviewThreads(first: 100) {\n        pageInfo {\n          hasNextPage\n        }\n        nodes {\n          id\n          isResolved\n          comments(first: 10) {\n            nodes {\n              body\n              createdAt\n              path\n              line\n              author { login }\n            }\n          }\n        }\n      }\n    }\n  }\n}\n";
 export const PR_COMMIT_STATUS_QUERY =
   "\nquery PrCommitStatuses($owner: String!, $repo: String!, $pr: Int!) {\n  repository(owner: $owner, name: $repo) {\n    pullRequest(number: $pr) {\n      commits(last: 50) {\n        nodes {\n          commit {\n            oid\n            statusCheckRollup {\n              state\n            }\n          }\n        }\n      }\n    }\n  }\n}\n";
-export const PR_CHECK_ROLLUP_QUERY =
-  "\nquery PrCheckRollup($owner: String!, $repo: String!, $pr: Int!, $after: String) {\n  repository(owner: $owner, name: $repo) {\n    pullRequest(number: $pr) {\n      commits(last: 1) {\n        nodes {\n          commit {\n            statusCheckRollup {\n              contexts(first: 100, after: $after) {\n                pageInfo {\n                  hasNextPage\n                  endCursor\n                }\n                nodes {\n                  __typename\n                  ... on CheckRun {\n                    name\n                    status\n                    conclusion\n                    detailsUrl\n                  }\n                  ... on StatusContext {\n                    context\n                    state\n                    targetUrl\n                  }\n                }\n              }\n            }\n          }\n        }\n      }\n    }\n  }\n}\n";
+export const PR_CHECK_ROLLUP_QUERY = `
+query PrCheckRollup($owner: String!, $repo: String!, $head: String!, $after: String) {
+  repository(owner: $owner, name: $repo) {
+    object(expression: $head) {
+      ... on Commit {
+        oid
+        statusCheckRollup {
+          contexts(first: 100, after: $after) {
+            pageInfo { hasNextPage endCursor }
+            nodes {
+              __typename
+              ... on CheckRun { name status conclusion detailsUrl }
+              ... on StatusContext { context state targetUrl }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+`;
 
 interface CommandResult {
   readonly code: number;
@@ -513,6 +532,7 @@ export function parsePullRequest(
     missing("pull request.isDraft", object.isDraft);
   return {
     context,
+    createdAt: string(object.createdAt, "pull request.createdAt"),
     mergeable: enumValue(
       object.mergeable,
       ["MERGEABLE", "CONFLICTING", "UNKNOWN"] as const,
@@ -582,7 +602,269 @@ export function parseOpenPullRequests(
     };
   });
 }
+function createdSeconds(value: unknown, label: string): number {
+  const timestamp = Date.parse(string(value, label));
+  if (!Number.isFinite(timestamp) || timestamp % 1000 !== 0) missing(label, value);
+  return timestamp / 1000;
+}
+
+async function readTargetHistory(repository: string, createdAt: string): Promise<readonly unknown[]> {
+  const iso = (seconds: number): string => new Date(seconds * 1000).toISOString().replace(".000Z", "Z");
+  const seen = new Set<number>();
+  async function read(from: number, until: number | null): Promise<readonly unknown[]> {
+    const range = until === null ? `>=${iso(from)}` : `${iso(from)}..${iso(until)}`;
+    const endpoint = `${repository}/actions/runs?event=pull_request_target&per_page=100&created=${encodeURIComponent(range)}`;
+    const first = record(await runJson(["gh", "api", endpoint]), "target history page");
+    const count = first.total_count;
+    if (typeof count !== "number" || !Number.isSafeInteger(count) || count < 0)
+      missing("target history.total_count", count);
+    const initial = list(first.workflow_runs, "target history.workflow_runs");
+    function created(item: unknown): number {
+      const run = record(item, "target history run");
+      const timestamp = createdSeconds(run.created_at, "target history run.created_at");
+      if (timestamp < from || (until !== null && timestamp > until))
+        throw new ChecksUnavailable("un run target est hors de la tranche de création demandée");
+      return timestamp;
+    }
+    const timestamps = initial.map(created);
+    if (initial.length > count) throw new ChecksUnavailable("compte de la tranche target incohérent");
+    if (count > 1000) {
+      if (until === from) throw new ChecksUnavailable("plus de 1000 runs target dans une seule seconde");
+      const pivot = until === null
+        ? timestamps.reduce((latest, timestamp) => Math.max(latest, timestamp), -Infinity)
+        : Math.floor(from + (until - from) / 2);
+      if (!Number.isFinite(pivot) || pivot < from || (until !== null && pivot >= until))
+        throw new ChecksUnavailable("la recherche target ne peut pas progresser dans ses partitions");
+      const left = await read(from, pivot);
+      const right = await read(pivot + 1, until);
+      if (left.length + right.length !== count)
+        throw new ChecksUnavailable("le compte target a changé pendant le partitionnement");
+      return [...left, ...right];
+    }
+    const pages = count === initial.length ? [first] : list(
+      await runJson(["gh", "api", "--paginate", "--slurp", endpoint]), "target history pages"
+    );
+    const runs = pages.flatMap((item) => {
+      const page = record(item, "target history page");
+      if (page.total_count !== count) throw new ChecksUnavailable("le compte target a changé pendant la pagination");
+      return list(page.workflow_runs, "target history.workflow_runs");
+    });
+    if (runs.length !== count) throw new ChecksUnavailable("la tranche target est tronquée");
+    for (const item of runs) {
+      created(item);
+      const run = record(item, "target history run");
+      if (typeof run.id !== "number" || !Number.isSafeInteger(run.id) || run.id <= 0)
+        missing("target history run.id", run.id);
+      if (seen.has(run.id)) throw new ChecksUnavailable("un run target apparaît dans plusieurs pages ou tranches");
+      seen.add(run.id);
+    }
+    return runs;
+  }
+  const birth = Date.parse(string(createdAt, "pull request.createdAt"));
+  if (!Number.isFinite(birth)) missing("pull request.createdAt", createdAt);
+  return read(Math.floor(birth / 1000), null);
+}
+
+function actionSignals(
+  value: unknown,
+  context: T.PrContext,
+  headRefOid: string,
+  headRefName: string,
+  source: "head" | "target"
+): readonly T.Check[] {
+  const pages = list(value, "actions pages");
+  if (pages.length === 0) missing("actions pages");
+  const runs: unknown[] = [];
+  let expected: number | null = null;
+  for (const item of pages) {
+    const page = record(item, "actions page");
+    if (typeof page.total_count !== "number" || !Number.isSafeInteger(page.total_count) || page.total_count < 0)
+      missing("actions total_count", page.total_count);
+    if (expected !== null && expected !== page.total_count)
+      throw new ChecksUnavailable("la liste Actions a changé pendant la pagination");
+    expected = page.total_count;
+    runs.push(...list(page.workflow_runs, "workflow_runs"));
+  }
+  if (runs.length !== expected)
+    throw new ChecksUnavailable("la liste Actions est tronquée pour le head demandé");
+  const latest = new Map<string, { readonly started: number; readonly runs: readonly Record<string, unknown>[] }>();
+  const active: Record<string, unknown>[] = [];
+  const activeStarted = new Map<string, number>();
+  const activeUndated = new Set<string>();
+  const seen = new Set<number>();
+  for (const item of runs) {
+    const run = record(item, "workflow run");
+    if (typeof run.id !== "number" || !Number.isSafeInteger(run.id) || run.id <= 0)
+      missing("workflow run.id", run.id);
+    if (seen.has(run.id)) throw new ChecksUnavailable("la pagination Actions contient un run en double");
+    seen.add(run.id);
+    const event = string(run.event, "workflow run.event");
+    if (source === "head" && event === "pull_request_target") continue;
+    if (source === "target" && event !== "pull_request_target")
+      throw new ChecksUnavailable("la découverte pull_request_target a renvoyé un autre event");
+    if (event !== "pull_request_target" && string(run.head_sha, "workflow run.head_sha") !== headRefOid) continue;
+    const associations = list(run.pull_requests, "workflow run.pull_requests");
+    if (associations.length > 0) {
+      let matches = false;
+      for (const item of associations) {
+        const association = record(item, "workflow run.pull_requests entry");
+        if (typeof association.number !== "number" || !Number.isSafeInteger(association.number) || association.number <= 0)
+          missing("workflow run.pull_requests number", association.number);
+        if (association.number !== context.number) continue;
+        const base = record(at(association, ["base", "repo"]), "workflow run.pull_requests base repo");
+        const repositoryUrl = string(base.url, "workflow run.pull_requests base repo.url");
+        if (repositoryUrl.toLowerCase() !== `https://api.github.com/repos/${context.owner}/${context.repo}`.toLowerCase()) continue;
+        const head = record(association.head, "workflow run.pull_requests head");
+        if (string(head.sha, "workflow run.pull_requests head.sha") !== headRefOid ||
+            string(head.ref, "workflow run.pull_requests head.ref") !== headRefName) {
+          if (event === "pull_request_target") continue;
+          throw new ChecksUnavailable(`association PR Actions incohérente pour #${context.number}, run=${run.id}`);
+        }
+        matches = true;
+      }
+      if (!matches) continue;
+    } else {
+      if (event === "pull_request_target")
+        throw new ChecksUnavailable(`association PR pull_request_target indisponible pour #${context.number}, run=${run.id}`);
+      if (headRefName.length === 0)
+        throw new ChecksUnavailable("branche du head indisponible pour les signaux Actions");
+      if (string(run.head_branch, "workflow run.head_branch") !== headRefName) continue;
+      if (event === "pull_request" || event === "pull_request_target")
+        throw new ChecksUnavailable(`association PR Actions indisponible pour #${context.number}, run=${run.id}`);
+    }
+    if (typeof run.workflow_id !== "number" || !Number.isSafeInteger(run.workflow_id) || run.workflow_id <= 0)
+      missing("workflow run.workflow_id", run.workflow_id);
+    if (typeof run.run_attempt !== "number" || !Number.isSafeInteger(run.run_attempt) || run.run_attempt <= 0)
+      missing("workflow run.run_attempt", run.run_attempt);
+    const key = `${run.workflow_id}:${event}`;
+    if (string(run.status, "workflow run.status") !== "completed") {
+      active.push(run);
+      if (run.run_started_at === null || run.run_started_at === undefined) {
+        activeUndated.add(key);
+      } else {
+        const started = Date.parse(string(run.run_started_at, "workflow run.run_started_at"));
+        if (!Number.isFinite(started))
+          throw new ChecksUnavailable(`chronologie Actions inconnue pour ${headRefOid}, run=${run.id}`);
+        activeStarted.set(key, Math.max(activeStarted.get(key) ?? -Infinity, started));
+      }
+      continue;
+    }
+    const started = Date.parse(string(run.run_started_at, "workflow run.run_started_at"));
+    if (!Number.isFinite(started))
+      throw new ChecksUnavailable(`chronologie Actions inconnue pour ${headRefOid}, run=${run.id}`);
+    const previous = latest.get(key);
+    if (previous === undefined || started > previous.started)
+      latest.set(key, { started, runs: [run] });
+    else if (started === previous.started)
+      latest.set(key, { started, runs: [...previous.runs, run] });
+  }
+  const completed = [...latest.entries()].flatMap(([key, entry]) => {
+    const started = activeStarted.get(key);
+    if (started !== undefined && started > entry.started) return [];
+    if ((activeUndated.has(key) || started === entry.started) && entry.runs.some((run) =>
+      !["success", "neutral", "skipped"].includes(String(run.conclusion))
+    ))
+      throw new ChecksUnavailable(`ordre de relance Actions inconnu pour ${headRefOid}, workflow/event=${key}`);
+    return entry.runs;
+  });
+  return [...active, ...completed].map((run): T.Check => {
+    const status = string(run.status, "workflow run.status");
+    const conclusion = optionalString(run.conclusion, "workflow run.conclusion");
+    const details = {
+      name: `Actions: ${optionalString(run.name, "workflow run.name") || `workflow ${run.workflow_id}`}`,
+      description: `workflow run ${run.id}, attempt=${run.run_attempt}, head=${headRefOid}`,
+      link: string(run.html_url, "workflow run.html_url"),
+      workflow: String(run.workflow_id),
+    };
+    let check: T.Check;
+    if (["queued", "in_progress", "waiting", "pending", "requested"].includes(status))
+      check = { ...details, kind: "pending", reportedState: status.toUpperCase() };
+    else if (status !== "completed")
+      throw new ChecksUnavailable(`état Actions inconnu pour ${headRefOid}: ${status}`);
+    else if (conclusion === "startup_failure")
+      throw new ChecksUnavailable(`CI indisponible: Actions startup_failure pour ${headRefOid}, run=${run.id}, ${details.link}`);
+    else if (conclusion === "success")
+      check = { ...details, kind: "passed", reportedState: "SUCCESS" };
+    else if (conclusion === "neutral" || conclusion === "skipped")
+      check = { ...details, kind: "skipped", reportedState: conclusion.toUpperCase() };
+    else if (conclusion !== null && ["failure", "timed_out", "cancelled", "action_required", "stale"].includes(conclusion))
+      check = { ...details, kind: "failed", reportedState: conclusion.toUpperCase() };
+    else
+      throw new ChecksUnavailable(`conclusion Actions inconnue pour ${headRefOid}: ${conclusion}`);
+    return check;
+  });
+}
+
+function codexReviewSignals(value: unknown, headRefOid: string): readonly T.Check[] {
+  const pages = list(value, "comments pages");
+  if (pages.length === 0) missing("comments pages");
+  let latest: { readonly updated: number; readonly checks: readonly T.Check[] } | null = null;
+  let expected = false;
+  for (const item of pages.flatMap((page) => list(page, "comments page"))) {
+    const comment = record(item, "issue comment");
+    if (comment.user === null) continue;
+    const user = record(comment.user, "issue comment.user");
+    if (string(user.login, "issue comment.user.login") !== "chatgpt-codex-connector[bot]") continue;
+    const body = string(comment.body, "issue comment.body");
+    if (!body.includes("<!-- codex-pull-request-review-summary -->")) continue;
+    expected = true;
+    const updated = Date.parse(string(comment.updated_at, "issue comment.updated_at"));
+    if (!Number.isFinite(updated)) missing("issue comment.updated_at", comment.updated_at);
+    const rows = body.split(/\r?\n/).filter((line) => /\|[^|]*\bCode Review\b[^|]*\|/.test(line));
+    if (rows.length === 0) throw new ChecksUnavailable("résumé Codex sans état Code Review lisible");
+    const checks: T.Check[] = [];
+    let current = false;
+    for (const row of rows) {
+      const cells = row.split("|").slice(1, -1);
+      const sha = cells[2]?.match(/`([0-9a-f]{7,40})`/i)?.[1]?.toLowerCase();
+      if (sha === undefined) throw new ChecksUnavailable("résumé Codex sans SHA vérifiable");
+      if (!headRefOid.toLowerCase().startsWith(sha)) continue;
+      current = true;
+      const state = cells[1]?.match(/\b(Running|Queued|Pending|Completed|Failed|Cancelled|Error)\b/i)?.[1]?.toLowerCase();
+      if (state === undefined) throw new ChecksUnavailable(`état de revue Codex inconnu pour ${headRefOid}`);
+      if (state === "completed") continue;
+      checks.push({
+        kind: ["running", "queued", "pending"].includes(state) ? "pending" : "failed",
+        name: "Codex Code Review",
+        reportedState: state.toUpperCase(),
+        description: `résumé Codex ${state}, head=${headRefOid}`,
+        link: string(comment.html_url, "issue comment.html_url"),
+        workflow: "",
+      });
+    }
+    if (current && (latest === null || updated >= latest.updated)) latest = { updated, checks };
+  }
+  if (latest !== null) return latest.checks;
+  if (!expected) return [];
+  return [{
+    kind: "pending",
+    name: "Codex Code Review",
+    reportedState: "AWAITING_CURRENT_HEAD",
+    description: `revue Codex attendue pour le head ${headRefOid}; seul un ancien résumé est disponible`,
+    link: "",
+    workflow: "",
+  }];
+}
+
 export class GhGitHubReader implements T.GitHubReader {
+  async headSignals(context: T.PrContext, headRefOid: string, headRefName: string, createdAt: string): Promise<readonly T.Check[]> {
+    const repository = `repos/${context.owner}/${context.repo}`;
+    const runs = await runJson([
+      "gh", "api", "--paginate", "--slurp",
+      `${repository}/actions/runs?head_sha=${encodeURIComponent(headRefOid)}&per_page=100`,
+    ]);
+    const comments = await runJson([
+      "gh", "api", "--paginate", "--slurp",
+      `${repository}/issues/${context.number}/comments?per_page=100`,
+    ]);
+    const targetRuns = await readTargetHistory(repository, createdAt);
+    const targets = [{ total_count: targetRuns.length, workflow_runs: targetRuns }];
+    return [
+      ...actionSignals(runs, context, headRefOid, headRefName, "head"),
+      ...actionSignals(targets, context, headRefOid, headRefName, "target"),
+      ...codexReviewSignals(comments, headRefOid),
+    ];
+  }
   async originRepo(): Promise<T.Repository | null> {
     const result = await run(["git", "remote", "get-url", "origin"]);
     return result.code === 0 ? parseRemote(result.stdout) : null;
@@ -608,7 +890,7 @@ export class GhGitHubReader implements T.GitHubReader {
         "--repo",
         `${context.owner}/${context.repo}`,
         "--json",
-        "mergeable,mergeStateStatus,reviewDecision,headRefOid,headRefName,baseRefName,state,mergedAt,isDraft",
+        "createdAt,mergeable,mergeStateStatus,reviewDecision,headRefOid,headRefName,baseRefName,state,mergedAt,isDraft",
       ]),
       context
     );
@@ -662,21 +944,29 @@ export class GhGitHubReader implements T.GitHubReader {
   }
   async checkRollupPage(
     context: T.PrContext,
-    after: string | null
+    after: string | null,
+    headRefOid: string
   ): Promise<T.RollupPage> {
-    const argv = graphqlArgs(PR_CHECK_ROLLUP_QUERY, context);
+    const argv: [string, ...string[]] = [
+      "gh",
+      "api",
+      "graphql",
+      "-f",
+      `query=${PR_CHECK_ROLLUP_QUERY}`,
+      "-f",
+      `owner=${context.owner}`,
+      "-f",
+      `repo=${context.repo}`,
+      "-f",
+      `head=${headRefOid}`,
+    ];
     if (after !== null) argv.push("-f", `after=${after}`);
     const value = await runJson(argv);
-    const commits = list(
-      at(value, ["data", "repository", "pullRequest", "commits", "nodes"]),
-      "commits.nodes"
-    );
-    if (commits.length === 0)
-      return { kind: "contexts", checks: [], endCursor: null };
-    const commit = record(
-      at(commits[commits.length - 1], ["commit"]),
-      "commit"
-    );
+    const commit = record(at(value, ["data", "repository", "object"]), "commit");
+    if (string(commit.oid, "commit.oid") !== headRefOid)
+      throw new ChecksUnavailable(
+        `le rollup ne correspond pas au head ${headRefOid}`
+      );
     if (commit.statusCheckRollup === null) return { kind: "no-rollup" };
     const contexts = record(
       at(commit, ["statusCheckRollup", "contexts"]),
@@ -733,17 +1023,14 @@ export class GhGitHubReader implements T.GitHubReader {
 
 export async function resolveChecks(
   reader: T.GitHubReader,
-  context: T.PrContext
+  context: T.PrContext,
+  headRefOid: string
 ): Promise<T.CheckRead> {
-  const fast = await reader.checksFastPath(context);
-  const direct = fast.kind === "checks" ? nonEmpty(fast.checks) : null;
-  if (direct !== null)
-    return { kind: "reported", source: "gh-pr-checks", checks: direct };
   const checks: T.Check[] = [];
   let after: string | null = null;
   let headHasRollup = true;
   do {
-    const page = await reader.checkRollupPage(context, after);
+    const page = await reader.checkRollupPage(context, after, headRefOid);
     if (page.kind === "no-rollup") {
       headHasRollup = false;
       break;
@@ -754,18 +1041,12 @@ export async function resolveChecks(
   const fallback = nonEmpty(checks);
   if (fallback !== null)
     return { kind: "reported", source: "graphql-rollup", checks: fallback };
-  // Les deux lectures doivent le dire. Un rollup nul à côté d'un chemin rapide en
-  // échec peut venir d'un identifiant qui ne voit pas les checks, et un rollup
-  // présent sans check lisible peut contenir un type de contexte inconnu de ce lecteur.
-  if (fast.kind === "none-reported" && !headHasRollup)
-    return { kind: "no-checks" };
-  const suffix =
-    fast.kind === "unusable"
-      ? `sortie fast path=${fast.exitCode}; le rollup GraphQL était vide${firstLine(fast.stderr) ? `; ${firstLine(fast.stderr)}` : ""}`
-      : fast.kind === "none-reported"
-        ? "le fast path n'a signalé aucun check ; le rollup GraphQL existe mais ne liste aucun check lisible"
-        : "fast path et rollup GraphQL étaient vides";
-  throw new ChecksUnavailable(`impossible de lire les checks de PR: ${suffix}`);
+  if (!headHasRollup) {
+    // Confirme l'absence depuis gh, puis readSnapshot revalide le head de la PR.
+    const fast = await reader.checksFastPath(context);
+    if (fast.kind === "none-reported") return { kind: "no-checks" };
+  }
+  throw new ChecksUnavailable(`impossible de lire les checks du head ${headRefOid}`);
 }
 export async function resolveContext(args: {
   readonly reader: T.GitHubReader;

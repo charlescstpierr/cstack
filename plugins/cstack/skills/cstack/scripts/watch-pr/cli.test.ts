@@ -132,6 +132,7 @@ describe("rendu", () => {
         context,
         facts: {
           context,
+          createdAt: "2026-07-26T00:00:00Z",
           mergeable: "MERGEABLE",
           mergeStateStatus: "CLEAN",
           reviewDecision: "APPROVED",
@@ -162,6 +163,47 @@ describe("rendu", () => {
 });
 
 describe("main", () => {
+  it("expose le SHA dans le JSON et le texte READY des modes single et stack", async () => {
+    for (const mode of [[], ["--stack"]]) {
+      const reader = () => fakeReader({ openPullRequests: [{
+        number: parsePrNumber(1), headRepository: { owner: "owner", repo: "repo" },
+        headRefName: "feature", baseRepository: { owner: "owner", repo: "repo" }, baseRefName: "main",
+      }] });
+      const argv = ["--owner", "owner", "--repo", "repo", "--pr", "1", ...mode];
+      const json = testRuntime(reader());
+      expect(await main(argv, json.runtime)).toBe(0);
+      const serialized = json.stdout.at(-1);
+      if (serialized === undefined) throw new Error("verdict READY attendu");
+      const verdict: unknown = JSON.parse(serialized);
+      expect(verdict).toMatchObject(mode.length === 0
+        ? { kind: "READY", scope: { kind: "single", pr: { headRefOid: "head" } } }
+        : { kind: "READY", scope: { kind: "stack", prs: [{ headRefOid: "head" }] } });
+      const pretty = testRuntime(reader());
+      expect(await main([...argv, "--pretty"], pretty.runtime)).toBe(0);
+      expect(pretty.stdout.at(-1)).toContain("#1 headRefOid=head");
+    }
+  });
+
+  it("émet un statut indisponible plutôt que READY après un push concurrent", async () => {
+    const base = fakeReader();
+    let reads = 0;
+    const reader: GitHubReader = {
+      ...base,
+      async pullRequest(request) {
+        const facts = await base.pullRequest(request);
+        return ++reads > 1 ? { ...facts, headRefOid: "new-head" } : facts;
+      },
+    };
+    const harness = testRuntime(reader);
+    expect(await main([
+      "--owner", "owner", "--repo", "repo", "--pr", "1", "--max-query-errors", "1",
+    ], harness.runtime)).toBe(7);
+    expect(harness.stdout).toHaveLength(1);
+    expect(JSON.parse(harness.stdout[0])).toMatchObject({
+      kind: "BLOCKER", blocker: { kind: "status-query" },
+    });
+  });
+
   it("renvoie EX_USAGE 64 et écrit les erreurs d’usage seulement sur stderr", async () => {
     const harness = testRuntime(fakeReader());
     expect(await main(["--interval", "0"], harness.runtime)).toBe(64);
@@ -249,7 +291,7 @@ describe("main", () => {
     const ready = noChecks();
     expect(await main(argv, ready.runtime)).toBe(0);
     expect(ready.stdout.join("")).toBe(
-      "READY: aucun conflit de fusion, aucun fil de revue non résolu, aucun check en échec ou en attente\nmergeStateStatus=CLEAN\nreviewDecision=null\nisDraft=false\nchecks=aucun signalé sur le commit head\n"
+      "READY: aucun conflit de fusion, aucun fil de revue non résolu, aucun check en échec ou en attente\n#1 headRefOid=head\nmergeStateStatus=CLEAN\nreviewDecision=null\nisDraft=false\nchecks=aucun signalé sur le commit head\n"
     );
   });
 
@@ -368,7 +410,7 @@ describe("main", () => {
       ["--owner", "owner", "--repo", "repo", "--pr", "2", "--stack"],
       harness.runtime
     );
-    expect(requested).toEqual([1, 2]);
+    expect(requested).toEqual([1, 1, 2, 2]);
     expect(code).toBe(2);
     expect(
       JSON.parse(harness.stdout[harness.stdout.length - 1]!)

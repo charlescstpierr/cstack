@@ -1,5 +1,8 @@
 # Préparer, prévisualiser et appliquer
 
+Après invocation dans T3, le [contrat T3](../../cstack/references/runtime/t3.md) prime pour catalogue, choix explicites et synchronisation. Le chemin T3 modèle seul utilise `models.py --host t3 --catalog ... --host-context ...`, sans conversion automatique ni CLI de repli.
+
+
 Référence de [setup-cstack](../SKILL.md) : suivi des étapes, flux de préparation, bloc `AGENTS.md`, agents natifs, tracker, `project.py` et configuration modèle seule.
 
 ## Suivi des étapes
@@ -59,7 +62,15 @@ Le helper existant reste disponible sans préparer les documents de projet :
 
 ```sh
 python3 <absolute-plugin>/skills/setup-cstack/scripts/models.py --workspace <workspace> --catalog <live-catalog.json> show
+python3 <absolute-plugin>/skills/setup-cstack/scripts/models.py --workspace <workspace> --catalog <live-catalog.json> preflight 'how explorer' 'judgment and prose'
 python3 <absolute-plugin>/skills/setup-cstack/scripts/models.py --workspace <workspace> --catalog <live-catalog.json> apply --choices <selected-role-map.json> --expected-sha256 <show.sha256>
 ```
 
-Sa sortie `show` fournit les choix exacts groupe-vers-rôle, les tailles de panel et `managed_agents`, les agents natifs gérés que `apply` alignera sur les nouveaux choix ; présente-les dans l'aperçu. La sortie d'`apply` donne `saved` et `agents` (`updated`, `removed`). Construis la carte de rôles sélectionnés seulement depuis les choix acceptés. Garde `.cstack/` non suivi sans remplacer les règles ignore existantes, puis relis et valide le résultat. Le modèle de la session parente reste inchange.
+Sa sortie `show` fournit les choix exacts groupe-vers-rôle, les tailles de panel et `managed_agents`, les agents natifs gérés que `apply` alignera sur les nouveaux choix ; présente-les dans l'aperçu. La sortie d'`apply` donne `saved` et `agents` (`updated`, `removed`). Construis la carte de rôles sélectionnés seulement depuis les choix acceptés. Garde `.cstack/` non suivi sans remplacer les règles ignore existantes, puis relis et valide le résultat. Le modèle de la session parente reste inchangé.
+
+
+## Désactivation des agents natifs et rôles T3
+
+`native_agents: false` retire les agents gérés pour les rôles Codex connus. Un agent correspondant à un rôle T3 sauvegardé reste intact ; `preserved_agents` dans le plan associe son chemin à `t3-role`. Ce signal ne le désactive pas dans Codex. Le préflight bloque le rôle T3 hors T3, même si cet agent périmé est encore visible. Les agents manuels ne sont jamais supprimés par ce réglage. Ils figurent dans `preserved_agents` avec `manual-agent` lorsque leur préservation vient de leur propriété manuelle plutôt que d’un choix T3 validé. Le signal reste présent même si aucun agent géré ne nécessite de charger les choix sauvegardés.
+
+Si des agents gérés existent et que `models.json` est invalide, la désactivation est bloquée avant toute écriture. Le helper ne peut pas déterminer quels rôles doivent être préservés. Réparer le fichier puis produire un nouveau plan. La configuration et les agents existants restent intacts pendant ce blocage.

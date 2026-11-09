@@ -139,6 +139,57 @@ JSON
     }
   });
 
+  it("vide le reçu run complet dans un pipe avec lecteur retardé", async () => {
+    const h = await harness();
+    const summary = "x".repeat(300000);
+    try {
+      await fake(h.bin, "codex", `
+if [[ "$1" == "--version" ]]; then echo "codex fake"; exit 0; fi
+if [[ "$1" == "exec" && "$2" == "--help" ]]; then echo "--config --cd --sandbox --json --output-schema --output-last-message --model --ignore-user-config --ignore-rules"; exit 0; fi
+last=""
+while [[ "$#" -gt 0 ]]; do
+  if [[ "$1" == "--output-last-message" ]]; then shift; last="$1"; fi
+  shift || true
+done
+cat >/dev/null
+cat > "$last" <<'REPORT'
+${JSON.stringify({ status: "PASS", summary, checks: [], findings: [] })}
+REPORT
+`);
+      await symlink("/bin/bash", join(h.bin, "bash"));
+      await symlink("/bin/cat", join(h.bin, "cat"));
+      const python = Bun.which("python3");
+      if (python === null) throw new Error("Python 3 requis pour le lecteur de pipe retardé");
+      const reader = `
+import subprocess,sys,time
+child=subprocess.Popen(sys.argv[1:],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+time.sleep(0.1)
+try:
+    output,errors=child.communicate(timeout=3)
+except subprocess.TimeoutExpired:
+    child.kill()
+    child.communicate()
+    raise SystemExit(124)
+sys.stdout.buffer.write(output)
+sys.stderr.buffer.write(errors)
+raise SystemExit(child.returncode)
+`;
+      const child = Bun.spawn([python, "-c", reader, process.execPath, join(import.meta.dir, "runtime.ts"), "run",
+        "--request", await request(h, "codex-cli")], {
+        env: { ...process.env, PATH: h.bin }, stdout: "pipe", stderr: "pipe",
+      });
+      const [output, errors, code] = await Promise.all([
+        new Response(child.stdout).text(),
+        new Response(child.stderr).text(), child.exited,
+      ]);
+      expect({ code, errors, execution: JSON.parse(output).execution }).toMatchObject({ code: 0, errors: "" });
+      expect(Buffer.byteLength(output)).toBeGreaterThan(65536);
+      expect(JSON.parse(output)).toMatchObject({ execution: { status: "COMPLETED", version: "codex fake" }, worker: { summary } });
+    } finally {
+      await rm(h.root, { recursive: true, force: true });
+    }
+  });
+
   it("transmet les références de skills explicites au bundle", async () => {
     const h = await harness();
     const capture = join(h.root, "prompt.txt");
@@ -347,8 +398,8 @@ printf '%s\\0' "$@" > "$CSTACK_RUNTIME_ARG_CAPTURE"
 printf '{"status":"PASS","summary":"cursor ok","checks":[],"findings":[]}'
 `);
       const code = await run(["run", "--request", await request(h, "cursor-agent")], h);
+      expect({ code, result: parsedStdout(h), stderr: h.stderr }).toMatchObject({ code: 0 });
       const args = (await readFile(capture, "utf8")).split("\0").slice(0, -1);
-      expect(code).toBe(0);
       expect(parsedStdout(h)).toMatchObject({
         provider_requested: "cursor",
         execution: { status: "COMPLETED" },
@@ -357,6 +408,33 @@ printf '{"status":"PASS","summary":"cursor ok","checks":[],"findings":[]}'
       expect(args).not.toContain("--force");
       expect(args).not.toContain("--yolo");
       expect(args.at(-1)).toContain("--force");
+    } finally {
+      await rm(h.root, { recursive: true, force: true });
+    }
+  });
+
+  it("bloque le prompt Cursor trop gros en octets UTF-8 avant lancement", async () => {
+    const h = await harness();
+    const capture = join(h.root, "cursor-launched");
+    process.env.CSTACK_RUNTIME_ARG_CAPTURE = capture;
+    try {
+      await writeFile(h.brief, "é".repeat(8000));
+      await fake(h.bin, "cursor-agent", `
+if [[ "$1" == "--version" ]]; then echo "cursor fake"; exit 0; fi
+if [[ "$1" == "--help" ]]; then echo "--print --output-format --mode --sandbox --workspace --model"; exit 0; fi
+touch "$CSTACK_RUNTIME_ARG_CAPTURE"
+printf '{"status":"PASS","summary":"unexpected launch","checks":[],"findings":[]}'
+`);
+      const code = await run(["run", "--request", await request(h, "cursor-agent")], h);
+      const prompt = await readFile(join(h.output, "worker-prompt.txt"), "utf8");
+      expect(prompt.length).toBeLessThan(131071);
+      expect(Buffer.byteLength(prompt)).toBeGreaterThan(131071);
+      expect(code).toBe(2);
+      expect(parsedStdout(h)).toMatchObject({
+        execution: { status: "UNSUPPORTED", message: expect.stringContaining("budget argv de 131071") },
+        worker: { status: "BLOCKED" },
+      });
+      expect(existsSync(capture)).toBe(false);
     } finally {
       await rm(h.root, { recursive: true, force: true });
     }

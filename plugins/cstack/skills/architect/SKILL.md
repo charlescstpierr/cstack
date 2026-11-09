@@ -5,7 +5,7 @@ description: "À utiliser pour $cstack:architect, « architecturer ceci », « c
 
 # Architecte
 
-Runtime : [règles communes](../cstack/references/runtime/base.md), [délégation](../cstack/references/runtime/delegation.md), [modèles](../cstack/references/runtime/modeles.md), [orchestration](../cstack/references/runtime/orchestration.md) · rôles : `architect runners`.
+Runtime : [règles communes](../cstack/references/runtime/base.md), [délégation](../cstack/references/runtime/delegation.md), [modèles](../cstack/references/runtime/modeles.md), [orchestration](../cstack/references/runtime/orchestration.md) · rôles : `architect runners`, `judgment and prose` pour le contrôle après synthèse.
 
 Conçois avant d'implémenter. Ébauche les types, signatures de fonctions, formes de classes et frontières de modules avec des corps `not implemented` et du pseudocode. Synthétise plusieurs perspectives de modèles, puis remplis le code selon l'ébauche choisie. Si l'implémentation prouve que l'ébauche est mauvaise, jette-la et reconçois.
 
@@ -15,7 +15,7 @@ Suis un élément par phase dans la tâche courante avant de commencer.
 
 1. Ancrer
 2. Ébaucher
-3. Valider
+3. Vérifier la préparation à la construction
 4. Implémenter
 5. Jeter
 
@@ -41,9 +41,15 @@ Compare les candidats viables selon la profondeur d'interface. Préfère la conc
 
 Arena retourne un dossier de conception synthétisé ; sa décision de synthèse remplit la section "Décision de synthèse" de la justification.
 
-## Phase C : Valider (sur demande)
+## Phase C : Vérifier la préparation à la construction
 
-Si la tâche autorise déjà l'implémentation, avance avec la conception synthétisée sans point de contrôle redondant. Une demande de conception seule ou le mode Codex Plan retourne la conception, sans implémentation ni commit.
+Après la synthèse d'une conception non triviale, confie une seule lecture bornée à un acteur qui n'a écrit ni les candidats ni la synthèse, avec le rôle `judgment and prose` et [ce prompt](references/builder-check-prompt.md). Transmets la conception, les contraintes, les décisions déjà prises et leurs références, y compris le registre Horizon s'il existe. Le lecteur cherche les décisions manquantes qui changeraient le produit ; il ne propose pas une autre architecture. Une modification mécanique dont la forme est fixée conserve `contrôle de construction n/a: <raison>`, sans nouveau panel. Si l'acteur indépendant manque, applique [Orchestration requise](../cstack/references/runtime/orchestration.md) avec `route: Review` avant la construction dépendante.
+
+Trie les questions reçues avec [Clarify](../clarify/SKILL.md) : retrouve les réponses dans le dépôt et la conversation ; règle et trace les détails techniques laissés au constructeur ; groupe les décisions produit matérielles encore ouvertes pour l'utilisateur. Une plateforme non choisie reste une décision produit même si une implémentation semble plus rapide. Conserve les choix explicites de plateforme, technologie et délégation. Bloque seulement les unités qui dépendent des réponses et continue les prérequis autorisés.
+
+Ajoute au dossier le résultat du lecteur, son identifiant, les réponses étayées, les choix techniques faits par l'agent et les unités encore bloquées. Le contrôle est terminé quand chaque constat a une résolution ou une dépendance bloquée nommée. Une révision qui change ces décisions revient au même lecteur sur le seul delta concerné. Ce contrôle ne remplace pas la revue de code finale.
+
+Si la tâche autorise déjà l'implémentation, avance sur les unités résolues sans point de contrôle redondant. Une demande de conception seule ou le mode Codex Plan retourne la conception et les questions restantes, sans implémentation ni commit.
 
 Active un point de contrôle seulement sur demande explicite ("$cstack:architect avec point de contrôle", "montre-moi avant d’implémenter" ou semblable) : présente la conception synthétisée et attends la validation.
 

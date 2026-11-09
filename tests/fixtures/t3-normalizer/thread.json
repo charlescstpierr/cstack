@@ -1,0 +1,19 @@
+{
+  "itemId": "public-thread-item",
+  "observedAt": "2026-11-05T00:36:23.734Z",
+  "toolName": "t3-code.t3_thread_read",
+  "input": {
+    "threadId": "public-thread"
+  },
+  "output": {
+    "thread": {
+      "threadId": "public-thread",
+      "projectId": "public-project",
+      "link": "<t3-thread://public-opaque-link>",
+      "providerInstanceId": "codex",
+      "model": "gpt-6.1-sol",
+      "runtimeMode": "full-access",
+      "interactionMode": "default"
+    }
+  }
+}

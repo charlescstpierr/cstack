@@ -58,9 +58,9 @@ $cstack:bro
 
 ## Un seul agent travaille
 
-Si cstack fait tout lui-même alors que la compétence annonce des exécutants parallèles, la cause est presque toujours la même : Codex exige que la demande de délégation figure dans **votre** tour, et cette règle d'outil prime sur le texte d'une compétence.
+Si cstack fait tout lui-même alors que la compétence annonce des exécutants parallèles, vérifiez d'abord la demande de délégation : Codex ne lance un sous-agent que sur demande explicite, venue de votre message, d'un `AGENTS.md` ou de la compétence.
 
-Sélectionnez la compétence depuis le sélecteur plutôt que de taper son nom : le prompt par défaut porte déjà la demande. En texte brut, ajoutez-la vous-même.
+Ajoutez-la à votre message. Dans T3 Code, ne comptez pas sur le prompt par défaut du sélecteur : il n'apparaît pas dans les messages observés.
 
 ```text
 $cstack:cstack Corrige ce bug. Délègue le travail indépendant à des sous-agents natifs en parallèle.

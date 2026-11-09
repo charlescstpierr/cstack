@@ -1,6 +1,6 @@
 # cstack
 
-**Des workflows d'ingénierie vérifiés pour Codex App et CLI.** cstack apprend à Codex à investiguer avant de coder, à concevoir avant d'implémenter, à faire relire par des sous-agents indépendants et à prouver le résultat avant de livrer.
+**Des workflows d'ingénierie pour Codex App et CLI, avec un parcours natif T3 Code.** cstack apprend au coordinateur à investiguer avant de coder, à concevoir avant d'implémenter, à faire relire par des sous-agents indépendants et à prouver le résultat avant de livrer.
 
 C'est le portage des processus de [pstack](https://github.com/cursor/plugins/tree/12d587dfb20741cafc376c42c696c5f6e2a64487/pstack) vers les outils natifs de Codex, sans moteur d'orchestration supplémentaire. Rien ne change dans vos projets tant que vous n'invoquez pas `$cstack:cstack`. [Installation en une commande](#installer).
 
@@ -13,6 +13,18 @@ C'est le portage des processus de [pstack](https://github.com/cursor/plugins/tre
 - **Une vérification exigée.** TDD rouge → vert pour les changements de comportement, revue indépendante, et des limites annoncées plutôt que des résultats simulés.
 - **Des nettoyages ciblés.** `deslop` pour le code, `unslop` pour la prose, `no-comments` pour les commentaires.
 - **Le respect de votre cadre.** Le mode Plan, les instructions du projet et les autorisations Codex restent prioritaires. Aucune compétence ne s'active seule.
+
+## Dans T3 Code
+
+Dans T3, le coordinateur utilise les outils natifs de l'hôte pour choisir les modèles et efforts, déléguer, isoler les checkouts et collecter les résultats. Les helpers cstack normalisent les captures, vérifient les sélections et préparent les briefs complets ; ils ne lancent aucun moteur d'orchestration ni CLI de repli T3.
+
+Le parcours observé utilise les sources du plugin dans un checkout. Dans une tâche T3 ouverte sur ce checkout, demander explicitement :
+
+```text
+Utilise cstack pour cette tâche dans T3 Code. Lis plugins/cstack/skills/cstack/SKILL.md et son contrat T3. Délègue le travail indépendant avec les outils natifs T3 et vérifie les résultats reçus.
+```
+
+Le [contrat T3](plugins/cstack/skills/cstack/references/runtime/t3.md) prime alors sur les consignes Codex autonome. Trois revues réelles, sur trois fournisseurs, ont suivi ce pipeline et renvoyé leurs findings au parent : [reçu et limites](docs/evidence/t3-council-transport-r5.json), [vérification T3](docs/T3-VERIFICATION.md). L'installation dans T3 App et l'activation d'une tâche ordinaire restent non vérifiées. L'installateur ci-dessous et son test de chargement installé concernent Codex.
 
 ## Installation
 
@@ -101,7 +113,7 @@ codex exec '$cstack:cstack Examine cette modification sans changer les fichiers.
 
 Le mode reste actif dans la tâche jusqu'à ce que vous demandiez de l'arrêter, par exemple « arrête cstack ». Les compétences spécialisées restent utilisables à la demande.
 
-Codex exige que la demande de délégation figure dans votre message : le texte d'une compétence ne suffit pas à lancer un sous-agent. Les prompts par défaut des compétences qui délèguent la contiennent, donc sélectionnez la compétence dans le sélecteur plutôt que de taper son nom. En texte brut, ajoutez-la vous-même : `$cstack:cstack Corrige ce bug. Délègue le travail indépendant à des sous-agents natifs en parallèle.` Voir [le dépannage](plugins/cstack/docs/guide/10-recipes-and-pitfalls.md#un-seul-agent-travaille) si un seul agent travaille.
+Codex ne lance un sous-agent que sur demande explicite, venue de votre message, d'un `AGENTS.md` ou d'une compétence. Si cstack travaille seul, ajoutez-la à votre message : `$cstack:cstack Corrige ce bug. Délègue le travail indépendant à des sous-agents natifs en parallèle.` Voir [le dépannage](plugins/cstack/docs/guide/10-recipes-and-pitfalls.md#un-seul-agent-travaille) si un seul agent travaille.
 
 ## Les compétences
 

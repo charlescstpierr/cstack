@@ -18,6 +18,7 @@ export interface FakeReaderOptions {
   readonly rollupPages?: readonly RollupPage[];
   readonly threads?: readonly ReviewThread[];
   readonly commitRollups?: readonly CommitRollup[];
+  readonly headSignals?: readonly Check[];
   readonly openPullRequests?: readonly OpenPullRequest[];
   readonly origin?: Repository | null;
   readonly current?: PrContext;
@@ -67,6 +68,7 @@ export function fakeReader(
   };
   const defaults: PullRequestFacts = {
     context,
+    createdAt: "2026-10-07T15:00:00Z",
     mergeable: "MERGEABLE",
     mergeStateStatus: "CLEAN",
     reviewDecision: "APPROVED",
@@ -104,12 +106,19 @@ export function fakeReader(
     },
     async checkRollupPage(_requested, after) {
       calls.push(`checkRollupPage:${after ?? "null"}`);
+      const fast = options.fastPath ?? {
+        kind: "checks",
+        checks: [passingCheck()],
+      };
       return (
-        options.rollupPages?.[page++] ?? {
-          kind: "contexts",
-          checks: [],
-          endCursor: null,
-        }
+        options.rollupPages?.[page++] ??
+        (fast.kind === "none-reported"
+          ? { kind: "no-rollup" }
+          : {
+              kind: "contexts",
+              checks: fast.kind === "checks" ? fast.checks : [],
+              endCursor: null,
+            })
       );
     },
     async reviewThreads() {
@@ -119,6 +128,10 @@ export function fakeReader(
     async commitRollups() {
       calls.push("commitRollups");
       return options.commitRollups ?? [{ oid: "head", state: "SUCCESS" }];
+    },
+    async headSignals() {
+      calls.push("headSignals");
+      return options.headSignals ?? [];
     },
   };
 }

@@ -128,7 +128,7 @@ def _unb64(value: Any) -> bytes | None:
 
 
 def _path(workspace: Path, relative: str, *, write: bool = False) -> Path:
-    allowed = TARGET_PATHS if write else ALLOWED_PATHS
+    allowed = (TARGET_PATHS if write else ALLOWED_PATHS) + (".cstack/.gitignore",)
     if relative not in allowed or Path(relative).is_absolute() or ".." in Path(relative).parts:
         raise ProjectError(f"le chemin est hors de la liste d’autorisation de configuration projet: {relative}")
     return workspace / relative
@@ -352,6 +352,10 @@ def _agent_changes(mode: bool | None, snapshots: dict[str, bytes | None], config
     changes: dict[str, bytes | None] = {}
     for name, relative in AGENT_PATHS.items():
         old = snapshots[relative]
+        role = NATIVE_AGENTS[name]["role"]
+        selected = models.selection(models.role_value(config or {}, role))
+        if selected.get("runtime") == "t3":
+            continue
         managed = _managed_agent(old)
         if old is not None and not managed:
             if mode:
@@ -361,9 +365,6 @@ def _agent_changes(mode: bool | None, snapshots: dict[str, bytes | None], config
             if managed:
                 changes[relative] = None
             continue
-        role = NATIVE_AGENTS[name]["role"]
-        # Même lecture que models.resolve ; un rôle confié à un CLI n’a pas d’agent natif.
-        selected = models.selection((config or {}).get(role, (config or {}).get(models.LEGACY_FALLBACKS.get(role), "inherit-parent")))
         if "runtime" in selected:
             if managed:
                 changes[relative] = None
@@ -376,20 +377,43 @@ def sync_agents(workspace: Path, config: dict[str, Any]) -> dict[str, list[str]]
     """Aligner les agents gérés existants sur models.json après une mise à jour des modèles seule."""
     workspace = _workspace(workspace)
     snapshots = {relative: _read(workspace, relative) for relative in AGENT_PATHS.values()}
-    result: dict[str, list[str]] = {"updated": [], "removed": []}
-    for relative, new in _agent_changes(None, snapshots, config, _models()).items():
-        target = _path(workspace, relative, write=True)
-        if new is None:
-            target.unlink()
-            result["removed"].append(relative)
-        elif new != snapshots[relative]:
-            temp = _temp(target.parent, new, stat.S_IMODE(target.stat().st_mode))
-            try:
-                os.replace(temp, target)
-            finally:
-                temp.unlink(missing_ok=True)
-            result["updated"].append(relative)
-    return result
+    entries = [_entry(relative, snapshots[relative], new)
+               for relative, new in _agent_changes(None, snapshots, config, _models()).items()]
+    result = _apply_changes(workspace, [entry for entry in entries if entry["action"] != "unchanged"])
+    _require_applied(result)
+    return _agent_result(entries, result["changed"])
+
+
+def _require_applied(result: dict[str, Any]) -> None:
+    if result["status"] not in {"applied", "noop"}:
+        raise ProjectError(f"{result['error']}; état: {result['status']}; conflits de restauration: {result['rollback_conflicts']}")
+
+
+def _agent_result(entries: list[dict[str, Any]], changed: list[str]) -> dict[str, list[str]]:
+    return {key: [entry["path"] for entry in entries if entry["path"] in AGENT_PATHS.values()
+                  and entry["path"] in changed and (entry["action"] == "delete") == deleting]
+            for key, deleting in (("updated", False), ("removed", True))}
+
+
+def apply_model_choices(workspace: Path, choices: dict[str, Any], expected_digest: str, catalog: dict[str, Any] | None, host: str = "codex", context: dict[str, Any] | None = None) -> dict[str, Any]:
+    """Préparer modèles et agents avant toute écriture, puis restaurer ensemble en cas d’échec."""
+    workspace = _workspace(workspace)
+    models = _models()
+    old = _read(workspace, ".cstack/models.json")
+    if _sha(old or b"") != expected_digest:
+        raise ProjectError("models.json a changé depuis la prévisualisation; le relire avant d’enregistrer")
+    models.validate(choices, catalog, check_available=True, host=host, context=context)
+    config = _models_config(old, choices, models)
+    snapshots = {relative: _read(workspace, relative) for relative in AGENT_PATHS.values()}
+    entries = [_entry(".cstack/models.json", old, (json.dumps(config, indent=2, ensure_ascii=False) + "\n").encode())]
+    ignore = _read(workspace, ".cstack/.gitignore")
+    if ignore is None:
+        entries.append(_entry(".cstack/.gitignore", None, b"*\n"))
+    entries.extend(_entry(relative, snapshots[relative], new)
+                   for relative, new in _agent_changes(None, snapshots, config, models).items())
+    result = _apply_changes(workspace, [entry for entry in entries if entry["action"] != "unchanged"])
+    _require_applied(result)
+    return {"saved": config, "agents": _agent_result(entries, result["changed"])}
 
 
 def managed_agents(workspace: Path) -> list[str]:
@@ -431,14 +455,26 @@ def _payload(options: dict[str, Any], snapshots: dict[str, bytes | None], models
         files.append(_entry("docs/agents/issue-tracker.md", tracker_old, tracker_old))
     old_models = snapshots[".cstack/models.json"]
     choices, mode = options["model_choices"], options["native_agents"]
-    # Sans choix ni agent à écrire, un models.json existant est repris tel quel, sans relecture.
-    writes_agents = mode or (mode is None and any(_managed_agent(snapshots[relative]) for relative in AGENT_PATHS.values()))
-    config = _models_config(old_models, choices, models) if choices or writes_agents else None
+    changes_agents = mode or any(_managed_agent(snapshots[relative]) for relative in AGENT_PATHS.values())
+    config = _models_config(old_models, choices, models) if choices or changes_agents else None
     if old_models is not None or choices:
         files.append(_entry(".cstack/models.json", old_models, _models_content(old_models, config, choices)))
     for relative, new in _agent_changes(mode, snapshots, config, models).items():
         files.append(_entry(relative, snapshots[relative], new))
-    return {"files": files, "observed": {path: _record(snapshots[path]) for path in OBSERVED_PATHS}}
+    payload = {"files": files, "observed": {path: _record(snapshots[path]) for path in OBSERVED_PATHS}}
+    preserved = {}
+    for name, relative in AGENT_PATHS.items():
+        old = snapshots[relative]
+        if old is None:
+            continue
+        chosen = models.selection(models.role_value(config or {}, NATIVE_AGENTS[name]["role"]))
+        if chosen.get("runtime") == "t3":
+            preserved[relative] = "t3-role"
+        elif not _managed_agent(old):
+            preserved[relative] = "manual-agent"
+    if preserved:
+        payload["preserved_agents"] = preserved
+    return payload
 
 
 def preview_plan(workspace: Path, raw_options: Any, catalog: dict[str, Any] | None) -> dict[str, Any]:
@@ -455,8 +491,13 @@ def preview_plan(workspace: Path, raw_options: Any, catalog: dict[str, Any] | No
 
 def _shape(plan: Any) -> dict[str, Any]:
     required = {"catalog_sha256", "files", "model_choices", "observed", "options", "plan_sha256", "status", "version", "workflows"}
-    if not isinstance(plan, dict) or set(plan) != required or plan["version"] != PLAN_VERSION or plan["status"] != "preview":
+    if not isinstance(plan, dict) or set(plan) - {"preserved_agents"} != required or plan["version"] != PLAN_VERSION or plan["status"] != "preview":
         raise ProjectError("le plan contient des champs inconnus ou manquants")
+    preserved = plan.get("preserved_agents", {})
+    if (not isinstance(preserved, dict) or ("preserved_agents" in plan and not preserved)
+            or any(path not in AGENT_PATHS.values() or not isinstance(reason, str) or reason not in {"t3-role", "manual-agent"}
+                   for path, reason in preserved.items())):
+        raise ProjectError("agents préservés du plan invalides")
     body = dict(plan)
     fingerprint = body.pop("plan_sha256")
     if not isinstance(fingerprint, str) or _sha(_canonical(body)) != fingerprint:
@@ -544,6 +585,8 @@ def _restore(path: Path, old: bytes | None, new_hash: str) -> bool:
         if path.is_symlink() or (path.exists() and not path.is_file()):
             return False
         current = path.read_bytes() if path.exists() else None
+        if current == old:
+            return True
         if (None if current is None else _sha(current)) != new_hash:
             return False
         if old is None:
@@ -589,8 +632,16 @@ def apply_plan(workspace: Path, supplied_plan: Any, raw_options: Any, catalog: d
         if current_hash != entry["current_sha256"]:
             raise ProjectError(f"fichier modifié avant la préparation: {entry['path']}")
         changes.append(entry)
+    result = _apply_changes(workspace, changes, resume_on_interrupt=True)
+    result["plan_sha256"] = plan["plan_sha256"]
+    if "preserved_agents" in plan:
+        result["preserved_agents"] = plan["preserved_agents"]
+    return result
+
+
+def _apply_changes(workspace: Path, changes: list[dict[str, Any]], *, resume_on_interrupt: bool = False) -> dict[str, Any]:
     if not changes:
-        return {"status": "noop", "changed": [], "plan_sha256": plan["plan_sha256"]}
+        return {"status": "noop", "changed": []}
     staged: list[tuple[dict[str, Any], Path | None, bytes | None]] = []
     replaced: list[tuple[dict[str, Any], bytes | None]] = []
     created_dirs: list[Path] = []
@@ -613,23 +664,25 @@ def apply_plan(workspace: Path, supplied_plan: Any, raw_options: Any, catalog: d
             if current_hash != entry["current_sha256"]:
                 raise ProjectError(f"fichier modifié pendant la préparation: {entry['path']}")
             target = _path(workspace, entry["path"], write=True)
+            # Couvrir aussi une interruption après l’effet de replace/unlink, avant son retour.
+            replaced.append((entry, old))
             if temp is None:
                 target.unlink()
             else:
                 os.replace(temp, target)
-            replaced.append((entry, old))
-        return {"status": "applied", "changed": [entry["path"] for entry, _ in replaced], "plan_sha256": plan["plan_sha256"]}
+        return {"status": "applied", "changed": [entry["path"] for entry, _ in replaced]}
     except InterruptedApply:
         raise
-    except KeyboardInterrupt as error:
-        done = [entry["path"] for entry, _ in replaced]
-        skipped = [entry["path"] for entry in changes if entry["path"] not in done]
-        raise InterruptedApply(done, skipped) from error
-    except Exception as error:
+    except (Exception, KeyboardInterrupt) as error:
+        if isinstance(error, KeyboardInterrupt) and resume_on_interrupt:
+            done = [entry["path"] for entry, _ in replaced
+                    if _read(workspace, entry["path"]) == (None if entry["action"] == "delete" else entry["new_content"].encode())]
+            skipped = [entry["path"] for entry in changes if entry["path"] not in done]
+            raise InterruptedApply(done, skipped) from error
         rolled_back, conflicts = [], []
         for entry, old in reversed(replaced):
             (rolled_back if _restore(_path(workspace, entry["path"], write=True), old, entry["new_sha256"]) else conflicts).append(entry["path"])
-        return {"status": "rolled_back" if not conflicts else "partial", "error": str(error), "rolled_back": rolled_back, "rollback_conflicts": conflicts, "plan_sha256": plan["plan_sha256"]}
+        return {"status": "rolled_back" if not conflicts else "partial", "error": str(error) or "application interrompue", "rolled_back": rolled_back, "rollback_conflicts": conflicts}
     finally:
         for _, temp, _ in staged:
             if temp is not None:

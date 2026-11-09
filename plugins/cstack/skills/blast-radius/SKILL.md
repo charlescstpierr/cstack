@@ -27,9 +27,9 @@ Pour chaque fait dont dépend la sécurité du changement, descends aussi bas qu
 4. Tu l'as exécute. Un script ou test appelle le vrai code et échoue clairement si tu te trompes.
 5. Tu l'as reproduit dans l'application en cours d'exécution.
 
-Tout fait de sécurité que tu ne peux pas amener à l'étape 4 doit être declare comme tel. Ne le présente pas comme établi. L'étape 4 est habituellement un petit script qui importe la même bibliothèque que celle livree par l'app et appelle exactement la fonction qui t'inquiete.
+Tout fait de sécurité que tu ne peux pas amener à l'étape 4 doit être déclaré comme tel. Ne le présente pas comme établi. L'étape 4 est habituellement un petit script qui importe la même bibliothèque que celle livrée par l'app et appelle exactement la fonction qui t'inquiète.
 
-## Etapes
+## Étapes
 
 1. Lis le changement. Le diff, les symboles qu'il ajoute, modifie et supprime, et ce qu'il fait maintenant différemment, y compris la partie que le diff n’explicite pas. Utilise l'étape 2 de `why` pour récupérer la PR et les commits.
 2. Trouve le fait unique qui le rend sûr. La plupart des changements qui ont l'air risqués sont sûrs grâce à un seul fait, par exemple "cet appel supprime seulement des entrées de cache déjà mortes et ne fait rien d'autre". Trouve ce fait. S'il tient, la plupart des cas risqués sont écartés d'un coup. Passe ton temps ici, pas sur une longue liste de peut-être.

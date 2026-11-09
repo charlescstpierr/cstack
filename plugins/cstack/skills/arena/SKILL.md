@@ -25,7 +25,7 @@ Suis un élément par phase dans la tâche courante avant de lancer quoi que ce 
 Les N candidats recevront le même prompt; le prompt est donc le contrat.
 
 1. Nomme l'artefact que chaque candidat doit produire.
-2. Derive la grille. Dis à quoi ressemble la réussite pour *cette* tâche, puis transforme-la en 3 à 6 critères concrets et notables. La grille est l'outil de sélection en phase D. Les candidats ne voient que la tâche.
+2. Dérive la grille. Dis à quoi ressemble la réussite pour *cette* tâche, puis transforme-la en 3 à 6 critères concrets et notables. La grille est l'outil de sélection en phase D. Les candidats ne voient que la tâche.
 3. Choisis les concurrents. Un panel explicite fourni par l'appelant a priorité, y compris celui résolu par Architect. Sinon, utilise `arena runners`. La taille du panel fixe N ; la capacité limite seulement les exécutions simultanées, jamais le nombre de candidats.
 4. Assigne les chemins de sortie. Chaque candidat écrit dans son propre emplacement (un worktree git quand c'est possible, sinon `/tmp/arena-<slug>/candidate-<n>/`), selon la référence de principe [séparer avant de sérialiser l'état partagé](../cstack/references/principles/separate-before-serializing-shared-state.md).
 

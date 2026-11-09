@@ -40,6 +40,7 @@ export type ReviewDecision =
   | null;
 export interface PullRequestFacts {
   readonly context: PrContext;
+  readonly createdAt: string;
   readonly mergeable: "MERGEABLE" | "CONFLICTING" | "UNKNOWN";
   readonly mergeStateStatus: MergeStateStatus;
   readonly reviewDecision: ReviewDecision;
@@ -90,7 +91,7 @@ export type FailedCheck = Extract<Check, { readonly kind: "failed" }>;
 export type PendingCheck = Extract<Check, { readonly kind: "pending" }>;
 export interface ReportedChecks {
   readonly kind: "reported";
-  readonly source: "gh-pr-checks" | "graphql-rollup";
+  readonly source: "gh-pr-checks" | "graphql-rollup" | "head-signals";
   readonly checks: NonEmpty<Check>;
 }
 /** `resolveChecks` owns what counts as `no-checks`. */
@@ -168,7 +169,7 @@ export type PrSnapshot =
   | {
       readonly kind: "open";
       readonly context: PrContext;
-      readonly facts: PullRequestFacts;
+      readonly facts: PullRequestFacts & { readonly headRefOid: string };
       readonly threads: readonly ReviewThread[];
       readonly ci: CiState;
       readonly reviewAutomationRunning: boolean;
@@ -176,6 +177,7 @@ export type PrSnapshot =
 export interface ReadyPr {
   readonly kind: "ready-pr";
   readonly context: PrContext;
+  readonly headRefOid: string;
   readonly proof: {
     readonly mergeability: "clear";
     readonly threads: readonly [];
@@ -440,10 +442,12 @@ export interface GitHubReader {
   checksFastPath(context: PrContext): Promise<ChecksFastPath>;
   checkRollupPage(
     context: PrContext,
-    after: string | null
+    after: string | null,
+    headRefOid: string
   ): Promise<RollupPage>;
   reviewThreads(context: PrContext): Promise<readonly ReviewThread[]>;
   commitRollups(context: PrContext): Promise<readonly CommitRollup[]>;
+  headSignals(context: PrContext, headRefOid: string, headRefName: string, createdAt: string): Promise<readonly Check[]>;
 }
 export interface PollingOptions {
   readonly interval: number;

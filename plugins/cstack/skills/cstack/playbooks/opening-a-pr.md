@@ -1,5 +1,8 @@
 ### Ouvrir une PR
 
+Dans une tâche cstack explicitement invoquée dans T3, le [contrat T3](../references/runtime/t3.md) prime sur les règles autonomes de ce document.
+
+
 Suivez [le contrat d’exécution Codex](../references/codex-runtime.md).
 
 Avant de déclarer une livraison prête, applique la barrière de preuve de [TDD](../../tdd/SKILL.md) : cycle rouge → vert ou parcours hors TDD justifié et vérifié. Sans preuve suffisante, bloque la livraison même si la CI est verte.

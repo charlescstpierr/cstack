@@ -1,5 +1,8 @@
 # Modèles, rôles et recommandations
 
+Après invocation dans T3, le [contrat T3](../../cstack/references/runtime/t3.md) prime pour catalogue, choix explicites et synchronisation. Le chemin T3 modèle seul utilise `models.py --host t3 --catalog ... --host-context ...`, sans conversion automatique ni CLI de repli.
+
+
 Référence de [setup-cstack](../SKILL.md). L'ordre de présentation (propositions avant configuration actuelle) est fixé dans le SKILL.
 
 ## Proposition `show`
@@ -21,23 +24,23 @@ Avant le tableau des propositions, demande un budget avec ces quatre choix, en n
 
 ## Recommandations
 
-Ces choix sont facultatifs et valides contre le catalogue live avant sélection :
+Ces choix sont facultatifs et validés contre le catalogue live avant sélection :
 
-| Travail | Modele | Effort de raisonnement | Justification |
+| Travail | Modèle | Effort de raisonnement | Justification |
 | --- | --- | --- | --- |
 | Exploration | `gpt-5.6-luna` | `max` | Recherches bornées et explications. |
 | Changements simples | `gpt-5.6-luna` | `max` | Petites éditions avec checks d'acceptation clairs. |
-| Developpement | `gpt-6-astra` | `low` | Implementation avec jugement de conception. |
-| Debogage difficile | `gpt-6-astra` | `medium` | Diagnostic de causes qui interagissent. |
+| Développement | `gpt-6-astra` | `low` | Implémentation avec jugement de conception. |
+| Débogage difficile | `gpt-6-astra` | `medium` | Diagnostic de causes qui interagissent. |
 | Revue de code | `gpt-6-astra` | `low` | Jugement sur la correction et le risque. |
 | Architecture complexe | `gpt-6-astra` | `xhigh` | Conception transversale et compromis. |
-| Documentation | `gpt-5.6-luna` | `max` | Prose focalisee à partir de faits établis. |
+| Documentation | `gpt-5.6-luna` | `max` | Prose focalisée à partir de faits établis. |
 
 Les valeurs de modèle doivent être des sélections vérifiées, pas des défauts inconditionnels.
 
 ## Rôles
 
-Roles simples :
+Rôles simples :
 
 - `simple edits`
 - `documentation`
@@ -55,7 +58,7 @@ Roles simples :
 - `reflect judgment, divergent, synthesizer`
 - `swarm workers`
 
-Roles de panel :
+Rôles de panel :
 
 - `arena runners`
 - `arena cross-judge pool`

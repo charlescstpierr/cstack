@@ -50,18 +50,18 @@ function reported(read: CheckRead): ReportedChecks {
   return read;
 }
 
-describe("chaîne de repli des vérifications", () => {
-  it("utilise un résultat du chemin rapide non vide sans requête rollup", async () => {
+describe("lecture des vérifications du commit immuable", () => {
+  it("lit le rollup du SHA demandé sans utiliser les checks du head mutable", async () => {
     const reader = fakeReader({
       fastPath: { kind: "checks", checks: [passingCheck("fast")] },
     });
-    const read = reported(await resolveChecks(reader, context));
-    expect(read.source).toBe("gh-pr-checks");
+    const read = reported(await resolveChecks(reader, context, "head"));
+    expect(read.source).toBe("graphql-rollup");
     expect(read.checks.map((check) => check.name)).toEqual(["fast"]);
-    expect(reader.calls).toEqual(["checksFastPath"]);
+    expect(reader.calls).toEqual(["checkRollupPage:null"]);
   });
 
-  it("pagine GraphQL quand le chemin rapide est inutilisable", async () => {
+  it("pagine GraphQL en conservant le même SHA", async () => {
     const reader = fakeReader({
       fastPath: { kind: "unusable", exitCode: 8, stderr: "" },
       rollupPages: [
@@ -73,17 +73,21 @@ describe("chaîne de repli des vérifications", () => {
         { kind: "contexts", checks: [failedCheck("second")], endCursor: null },
       ],
     });
-    const read = reported(await resolveChecks(reader, context));
+    const readPage = reader.checkRollupPage;
+    reader.checkRollupPage = async (request, after, headRefOid) => {
+      expect(headRefOid).toBe("head");
+      return readPage(request, after, headRefOid);
+    };
+    const read = reported(await resolveChecks(reader, context, "head"));
     expect(read.source).toBe("graphql-rollup");
     expect(read.checks.map((check) => check.name)).toEqual(["first", "second"]);
     expect(reader.calls).toEqual([
-      "checksFastPath",
       "checkRollupPage:null",
       "checkRollupPage:next",
     ]);
   });
 
-  it("bascule en repli quand le JSON du chemin rapide valide représente une liste vide", async () => {
+  it("lit les checks GraphQL même si le chemin gh pr checks est vide", async () => {
     const reader = fakeReader({
       fastPath: { kind: "checks", checks: [] },
       rollupPages: [
@@ -94,13 +98,13 @@ describe("chaîne de repli des vérifications", () => {
         },
       ],
     });
-    expect(reported(await resolveChecks(reader, context)).checks[0].name).toBe(
+    expect(reported(await resolveChecks(reader, context, "head")).checks[0].name).toBe(
       "repli"
     );
-    expect(reader.calls).toEqual(["checksFastPath", "checkRollupPage:null"]);
+    expect(reader.calls).toEqual(["checkRollupPage:null"]);
   });
 
-  it("échoue ferme quand les deux chemins sont vides", async () => {
+  it("échoue ferme quand le rollup n’a aucun contexte lisible", async () => {
     const reader = fakeReader({
       fastPath: {
         kind: "unusable",
@@ -108,10 +112,10 @@ describe("chaîne de repli des vérifications", () => {
         stderr: "credential cannot read checks",
       },
     });
-    await expect(resolveChecks(reader, context)).rejects.toBeInstanceOf(
+    await expect(resolveChecks(reader, context, "head")).rejects.toBeInstanceOf(
       ChecksUnavailable
     );
-    expect(reader.calls).toEqual(["checksFastPath", "checkRollupPage:null"]);
+    expect(reader.calls).toEqual(["checkRollupPage:null"]);
   });
 
   it("lit l’absence de checks quand gh n’en signale aucun et que le commit head n’a pas de rollup", async () => {
@@ -119,8 +123,8 @@ describe("chaîne de repli des vérifications", () => {
       fastPath: { kind: "none-reported" },
       rollupPages: [{ kind: "no-rollup" }],
     });
-    expect(await resolveChecks(reader, context)).toEqual({ kind: "no-checks" });
-    expect(reader.calls).toEqual(["checksFastPath", "checkRollupPage:null"]);
+    expect(await resolveChecks(reader, context, "head")).toEqual({ kind: "no-checks" });
+    expect(reader.calls).toEqual(["checkRollupPage:null", "checksFastPath"]);
   });
 
   it("échoue ferme quand une seule lecture dit qu’il n’y a pas de checks", async () => {
@@ -140,7 +144,7 @@ describe("chaîne de repli des vérifications", () => {
     ] as const;
     for (const options of oneSided)
       await expect(
-        resolveChecks(fakeReader(options), context)
+        resolveChecks(fakeReader(options), context, "head")
       ).rejects.toBeInstanceOf(ChecksUnavailable);
   });
 
@@ -155,7 +159,7 @@ describe("chaîne de repli des vérifications", () => {
     reader.checkRollupPage = async () => {
       throw failure;
     };
-    await expect(resolveChecks(reader, context)).rejects.toBe(failure);
+    await expect(resolveChecks(reader, context, "head")).rejects.toBe(failure);
   });
 });
 
@@ -221,6 +225,7 @@ describe("correspondance des nœuds rollup", () => {
 
 describe("analyse ferme des énumérations", () => {
   const rawPullRequest = {
+    createdAt: "2026-10-07T15:00:00Z",
     mergeable: "MERGEABLE",
     mergeStateStatus: "CLEAN",
     reviewDecision: "APPROVED",
@@ -700,7 +705,8 @@ describe("lecture gh d’une PR sans checks configurés", () => {
   // sort en 1 avec « no checks reported » et le rollup du commit head est nul.
   async function withFakeGh(
     checksStderr: string,
-    operation: (reader: GhGitHubReader) => Promise<void>
+    operation: (reader: GhGitHubReader) => Promise<void>,
+    responseOid = "head"
   ): Promise<void> {
     const directory = await mkdtemp(join(tmpdir(), "watch-no-ci-gh-"));
     const gh = join(directory, "gh");
@@ -713,7 +719,9 @@ if [ "$1" = "pr" ] && [ "$2" = "checks" ]; then
 fi
 case "$*" in
   *"query PrCheckRollup"*)
-    echo '{"data":{"repository":{"pullRequest":{"commits":{"nodes":[{"commit":{"statusCheckRollup":null}}]}}}}}'
+    case "$*" in *"head=head"*) ;; *) exit 2;; esac
+    case "$*" in *'object(expression: $head)'*) ;; *) exit 2;; esac
+    echo '${JSON.stringify({ data: { repository: { object: { oid: responseOid, statusCheckRollup: null } } } })}'
     exit 0;;
 esac
 echo "appel gh inattendu: $*" >&2
@@ -737,10 +745,10 @@ exit 2
       expect(await reader.checksFastPath(context)).toEqual({
         kind: "none-reported",
       });
-      expect(await reader.checkRollupPage(context, null)).toEqual({
+      expect(await reader.checkRollupPage(context, null, "head")).toEqual({
         kind: "no-rollup",
       });
-      expect(await resolveChecks(reader, context)).toEqual({
+      expect(await resolveChecks(reader, context, "head")).toEqual({
         kind: "no-checks",
       });
     });
@@ -754,10 +762,16 @@ exit 2
           kind: "unusable",
           exitCode: 1,
         });
-        await expect(resolveChecks(reader, context)).rejects.toBeInstanceOf(
+        await expect(resolveChecks(reader, context, "head")).rejects.toBeInstanceOf(
           ChecksUnavailable
         );
       }
     );
+  });
+
+  it("rejette un rollup portant un SHA différent de celui demandé", async () => {
+    await withFakeGh("no checks reported on the 'feature' branch", async (reader) => {
+      await expect(reader.checkRollupPage(context, null, "head")).rejects.toBeInstanceOf(ChecksUnavailable);
+    }, "other-head");
   });
 });

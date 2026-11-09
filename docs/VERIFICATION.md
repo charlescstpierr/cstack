@@ -1,6 +1,52 @@
 # Vérification de cstack
 
+Adaptation T3 : [preuves et procédure de smoke](T3-VERIFICATION.md), [notes pour council](T3-COUNCIL-NOTES.md). Les tests déterministes ne prouvent pas le chargement du plugin dans T3.
+
+
 Ce fichier distingue le catalogue courant des campagnes datées. Les nombres historiques restent ceux de leur campagne.
+
+## Verdicts indépendants des scénarios
+
+Le reçu garde `status` pour le tour natif et ajoute `verdicts.turn`, `verdicts.workflow` et `verdicts.outcome`. `completed` n’accorde pas un verdict de réussite aux deux autres dimensions.
+
+`--expectations` contrôle les contraintes observables déclarées : lectures de routes selon le traçage, nombre d’enfants et présence des artefacts. Les lectures non attribuées et le traçage absent restent `unverified`. Un artefact présent ne prouve pas sa correction, et les lectures ne prouvent pas que toutes les instructions du workflow ont été exécutées. Les contraintes non déclarées ne sont pas évaluées.
+
+`--verify-outcomes` autorise explicitement les commandes `outcome_checks` du fichier d’attentes de confiance. Chaque commande fournit `id`, `argv` sans shell et un `timeout` facultatif de 30 secondes, plafonné à 300. Le champ facultatif `expected_json` exige une sortie standard contenant un résultat JSON complet égal à cette attente, en plus du code de sortie nul. La comparaison utilise une représentation JSON canonique : l’ordre des clés ne compte pas, mais un booléen ne vaut pas un nombre. Le runner effectue la comparaison hors du processus candidat, sans assertion supprimable par Python `-O`. Les trois scénarios de correction bornée du générateur utilisent ce contrôle.
+
+Les attentes sont chargées avant le lancement et leur empreinte est rattachée au reçu. Les champs inconnus sont refusés. Lorsqu'elles sont fournies, `project_sha256` et les empreintes `source_sha256` du bundle et de la skill sont comparées aux fichiers avant lancement et avant chaque répétition. Le générateur fournit `skill_path`, relatif au bundle. Toute attente avec empreintes projet ou source exige aussi `case_sha256` ; les manifestes qui ne le contiennent pas doivent être régénérés. Une attente sans `skill_path` exige un chemin SKILL.md unique dans le prompt.
+
+Les attentes avec empreintes exigent `hash_algorithm: cstack-tree-sha256-v2`. Cette version sépare chaque fichier par son type effectif et ses permissions (`S_IFMT | S_IMODE`, 2 octets), une longueur de chemin, le chemin et un digest de contenu de taille fixe, avec un préfixe de version. Les anciens fichiers générés avec empreintes non versionnées sont refusés et doivent être régénérés ; les cas sans empreintes restent acceptés. Les dossiers `.git`, `__pycache__` et `node_modules` sont exclus. Les liens vers des fichiers réguliers sont mesurés par le contenu et les permissions de leur cible, comme leurs copies matérialisées. Chaque arbre haché refuse les liens vers des dossiers hors de ces exclusions, même sans répétition. Les entrées autres que les dossiers et les fichiers réguliers pris en charge, comme les FIFO, sockets et périphériques, sont refusées. Toute erreur de parcours ou de lecture interrompt le calcul : un dossier illisible ne peut pas être omis silencieusement. L’empreinte des fichiers ne certifie pas l’index Git, les propriétaires ni les droits des dossiers.
+
+`case_sha256` authentifie la configuration normalisée : `id`, chemins absolus résolus `cwd` et `bundle`, liste ordonnée `prompts`, `sandbox` (par défaut `workspace-write`) et `ephemeral` (par défaut `true`). Le SHA-256 porte sur un JSON UTF-8 aux clés triées, séparateurs compacts et caractères Unicode conservés, sans valeurs non finies. Chaque répétition revérifie le cas source et les fichiers de sa copie. Le reçu distingue le digest source vérifié de la configuration effective, dont `id` et `cwd` changent pour isoler les répétitions.
+
+Les options du lanceur (`--model`, `--effort`, `--turn-timeout`, traçage et commande app-server) sont choisies au lancement et ne sont pas authentifiées par les empreintes des scénarios. Le reçu enregistre `requested_runtime_config` et la commande app-server exécutée ; ces choix ne font pas partie de `case_sha256`.
+
+Place les vérificateurs hors du projet modifiable. Un test écrit ou affaibli par le candidat ne constitue pas une preuve indépendante. Sans `expected_json`, le code de sortie reste le contrat de la commande de vérification fournie.
+
+Une attente peut déclarer `requires_independent_review: true` quand la pertinence des décisions exige une revue indépendante que le runner ne sait pas authentifier. Ce booléen ajoute un contrôle de résultat `unverified`, même si les vérifications déterministes passent. Une vérification échouée reste prioritaire et donne `fail`. Aucun fichier de rapport ni champ fourni par le candidat ne satisfait ce contrôle : la revue indépendante se consigne séparément, hors du runner. Avec `--verify-outcomes`, un résultat encore `unverified` produit le code de sortie 2. Les scénarios de conception non mécaniques utilisent cette limite explicite.
+
+Un code de vérificateur non nul donne `fail`. Une commande inaccessible ou expirée reste `unverified`, sans empêcher les vérifications suivantes. Sans cette option, aucun vérificateur n’est exécuté et le résultat reste `unverified`. Les sorties conservées sont bornées à 4096 caractères par flux et nettoyées par le filtre de secrets du reçu.
+
+```sh
+python3 scripts/verify-behavior.py --cases <cases.json> --expectations <expectations.json> \
+  --verify-outcomes --output <résultats> [--trace-routes]
+```
+
+Avec des attentes demandées, une contrainte échouée rend le code 1 ; une preuve demandée mais non vérifiée rend le code 2. Le code 0 indique que les contrôles demandés passent. Une vérification limitée au résultat peut donc réussir pendant que le workflow non demandé reste `unverified` dans le reçu. Les commandes de résultat restent désactivées sans `--verify-outcomes`, même si le fichier en contient. Sans attentes, le comportement historique du code de sortie est conservé : la fin du tour n’atteste toujours pas le workflow ni le résultat.
+
+`--repeats` copie les fixtures avant chaque passage. Les répétitions refusent les dépôts Git liés avant tout lancement : copier leur fichier ou lien `.git` partagerait l’index et la branche de la fixture originale. Les sous-dossiers de dépôts sont aussi refusés, car leur copie pourrait découvrir un dépôt Git dans ses nouveaux ancêtres. Les liens symboliques vers des dossiers sont refusés pour empêcher de copier un dépôt lié externe. Une fixture placée à la racine d’un dépôt autonome reste prise en charge.
+
+Le dossier de résultats doit rester hors des projets et des bundles, sans chevauchement avec leurs ancêtres. Ce contrôle précède toute création de dossier ou de reçu pour préserver l’arbre source vérifié.
+
+Le traçage ne conserve pas le répertoire courant ni les descripteurs de dossier de chaque processus. Une ouverture relative reste donc ambiguë. Elle empêche de conclure à l’absence d’une lecture attendue ou interdite.
+
+## Scénarios natifs persistants
+
+`scripts/verify-behavior.py` conserve le booléen `ephemeral` de chaque scénario jusqu'à `thread/start`. Les valeurs autres que `true` ou `false` sont refusées ; un scénario fourni sans ce champ garde le défaut éphémère. Le générateur `scripts/behavior-scenarios.py` demande explicitement des fils persistants pour permettre la délégation native. Ces conversations restent dans l'historique du `CODEX_HOME` courant, et les fixtures ainsi que leurs preuves sont conservées dans les dossiers de sortie.
+
+Le reçu `native_child_thread_ids` exclut le fil parent, y compris lorsqu'un événement arrive avant la réponse de `thread/start`. Les dispatchs bruts restent conservés et les métadonnées d'un enfant fermé restent une lacune d'observation. Le statut `completed` décrit la fin du tour ; il ne prouve ni le résultat de la tâche ni la conformité du workflow. L’observation de routage reprend l’instrumentation de la PR #43, intégrée avec la conservation des fils persistants.
+
+Le [reçu du 6 octobre 2026](evidence/behavior-runner-2026-10-06.json) enregistre une sonde via l'interface CLI corrigée. Le parent est persistant, un enfant est confirmé par ses métadonnées et le parent est absent de la liste d'enfants. La correction du message et une assertion indépendante sur sa sortie passent. Le bundle source était chargé directement, sans observation des hooks installés. C'est un essai unique, pas une campagne comparative ni une preuve générale de conformité des workflows.
 
 ## État 0.8.0
 
@@ -262,6 +308,8 @@ Le scénario `readonly_explanation_*` conserve zéro enfant attendu. Son prompt 
 Une relecture des preuves de `docs/evidence/0.3.0.json` établit un fait qui n'avait pas été relevé. Sur les treize scénarios, les quatre qui ont lancé des enfants sont exactement les quatre dont la demande utilisateur réclamait la délégation : `interrogate` deux fois avec « Utilise le panel de réviseurs configuré », `horizon` avec « Affecte un sous-agent natif de recherche à chaque ticket de recherche prêt », et `audit-architecture` avec « Utilise au plus un explorateur borné ». Les neuf autres l'interdisaient explicitement ou n'en parlaient pas, et valent zéro enfant. Aucune mesure enregistrée ne montre le texte d'une compétence déclenchant seul une délégation.
 
 Cette corrélation est mesurée, pas inférée ; son mécanisme, lui, est inféré d'une consigne d'outil de l'hôte qui prime sur le texte de compétence. Les `default_prompt` des compétences qui délèguent portent désormais cette demande, et trois d'entre eux reprennent le noyau des formulations ci-dessus, en y ajoutant la nature native du délégué. L'effet de ce changement n'est pas mesuré : il faut un essai natif où la demande vient du prompt par défaut et non du corps de la consigne.
+
+Observation du 9 novembre 2026 (`docs/evidence/delegation-host-observations.json`) : quatre sessions réelles, sous Codex Desktop 0.157.1 et T3 Code 0.160.1, ont lancé de 9 à 18 enfants sans mot de délégation dans le message de l'utilisateur. Leur `AGENTS.md` demandait des sous-agents natifs, et la consigne `multi_agent_mode` de ces hôtes accepte une demande venue d'un `AGENTS.md` ou d'une compétence. La demande n'a donc pas à figurer dans le tour de l'utilisateur ; l'effet du texte d'une compétence seul reste non mesuré. Le `default_prompt` n'apparaît dans aucun des messages T3 observés.
 
 Le trou de couverture reste ouvert. Les deux seules exécutions de `how` enregistrées interdisent la délégation par construction, donc aucun scénario existant ne peut détecter une régression de ventilation de `how`.
 

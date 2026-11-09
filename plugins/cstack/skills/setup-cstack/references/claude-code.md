@@ -1,5 +1,8 @@
 # Ajouter ou mettre à jour Claude Code
 
+Après invocation dans T3, le [contrat T3](../../cstack/references/runtime/t3.md) prime pour catalogue, choix explicites et synchronisation. Le chemin T3 modèle seul utilise `models.py --host t3 --catalog ... --host-context ...`, sans conversion automatique ni CLI de repli.
+
+
 Référence de [setup-cstack](../SKILL.md). À suivre avant les recommandations natives quand la demande concerne Claude Code ou un autre CLI.
 
 Une demande de configuration après installation ou connexion de Claude Code réutilise ce setup. `claude -p` est le mode non interactif du binaire `claude`, pas un runtime nommé `claude-p`. Enregistre `runtime: "claude-code"` ; le runner construit les arguments.

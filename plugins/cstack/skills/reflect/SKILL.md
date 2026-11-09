@@ -1,6 +1,6 @@
 ---
 name: reflect
-description: "À utiliser pour $cstack:reflect ou quand l'utilisateur demande une réflexion. Lance trois subagents de revue parallèles sur l'historique de la tâche active, fait émerger les apprentissages durables et route chacun vers une modification concrète de skill ou une proposition locale."
+description: "À utiliser pour $cstack:reflect, une réflexion ou un diagnostic ciblé du parcours CStack. Explique les écarts depuis les preuves en lecture seule ; pour une réflexion, lance trois reviewers et propose des améliorations."
 ---
 
 # Reflect
@@ -13,7 +13,11 @@ Extrait de la tâche courante les apprentissages durables, puis route-les vers d
 
 Invoque pour `$cstack:reflect` ou quand l'utilisateur demande une réflexion. Saute les observations triviales, hors sujet et uniques. Saute les leçons déjà couvertes par une skill que le parent a correctement suivie.
 
-## Processus
+## Diagnostic ciblé du parcours
+
+Pour une explication seule sur un skill omis, une exploration répétée ou une délégation inattendue, lis [le diagnostic de session](references/session-diagnostic.md). Ce mode remplace Investigation, produit un rapport en lecture seule et se termine avant le processus de réflexion ci-dessous. Une demande de correction relève du playbook d’implémentation, même si elle décrit un écart de parcours. Il réutilise directement les preuves de la session ; il ne lance pas How, Why ni le panel Reflect pour une question bornée. Une absence de revue indépendante de ce rapport ne constitue pas un écart du parcours diagnostiqué.
+
+## Processus de réflexion
 
 ### 1. Charger l'enregistrement de tâche actif
 

@@ -45,3 +45,11 @@ N'approuve pas seulement parce que le comportement semble correct. Traite ces po
 ## Ton de revue
 
 Sois direct, sérieux et exigeant sur la qualité. Ne sois pas grossier, mais n'adoucis pas les gros problèmes de maintenabilité en suggestions légères. Si le code salit le codebase, dis-le. Si l'implémentation a manqué une simplification dramatique évidente, dis-le aussi. Ne te satisfais pas de "peut-être renommer ceci" quand le vrai problème est structurel.
+
+## Vérificateurs et mutations d’état
+
+Trace le contrat entier : paramètres et métadonnées, validation, action, reçu, puis code de sortie. Vérifie qu’un champ accepté participe au contrôle annoncé, et qu’un champ inconnu est refusé à la frontière. Pour des scénarios générés, compare les empreintes à la fixture et au bundle réellement exécutés.
+
+Examine les dimensions demandées séparément des dimensions non demandées et des preuves manquantes. Teste les variantes qui peuvent donner une réussite trompeuse : booléen à la place d’un nombre, sortie anticipée du candidat, attente périmée, chemin relatif ou symbolique, interruption juste après l’effet d’une mutation. Rapporte seulement les défauts étayés, avec leur reproduction et leur conséquence.
+
+Le rapport final nomme la base, le head et le périmètre effectivement revu. Revois tout le diff destiné à la PR, même si une passe précédente a déjà fermé les constats connus.

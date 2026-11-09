@@ -6,19 +6,24 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 import os
 from pathlib import Path
 import re
 import selectors
+import shlex
 import shutil
+import stat
 import subprocess
 import sys
+import tempfile
 import time
 
 
 DEFAULT_TURN_SECONDS = 300.0
 MAX_TURN_SECONDS = 900.0
 SKIP_DIRS = {".git", "__pycache__", "node_modules"}
+TREE_HASH_ALGORITHM = "cstack-tree-sha256-v2"
 SAFE_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
 # Key-name policy: a dict key or assignment/flag/header name is secret when
 # its normalized form contains a marker below or ends with "token". Markers
@@ -381,6 +386,8 @@ def update_state(message, state, parent_thread):
         if encoded not in state["token_usage_keys"]:
             state["token_usage_keys"].add(encoded)
             state["token_usage"].append(scrub(value))
+    if parent_thread is not None:
+        state["child_ids"][:] = [thread_id for thread_id in state["child_ids"] if thread_id != str(parent_thread)]
 
 
 def project_metadata(value):
@@ -393,28 +400,346 @@ def project_metadata(value):
 
 
 def tree_hash(root, excluded):
-    digest = hashlib.sha256()
+    def unreadable(error):
+        raise HarnessError(f"parcours d’empreinte incomplet: {error.filename}") from error
+
+    digest = hashlib.sha256((TREE_HASH_ALGORITHM + "\0").encode())
     files = 0
     total_bytes = 0
     root = root.resolve()
     excluded = excluded.resolve() if excluded else None
     if excluded and root not in excluded.parents:
         excluded = None
-    for directory, names, filenames in os.walk(root, topdown=True, followlinks=False):
+    for directory, names, filenames in os.walk(root, topdown=True, followlinks=False, onerror=unreadable):
         path = Path(directory)
         names[:] = sorted(name for name in names if name not in SKIP_DIRS and not (excluded and (path / name).resolve() == excluded))
+        for name in names:
+            if (path / name).is_symlink():
+                raise HarnessError(f"empreinte non prise en charge pour un dossier symbolique: {path / name}")
         for filename in sorted(filenames):
             item = path / filename
-            if item.is_symlink() or not item.is_file() or (excluded and (item == excluded or excluded in item.parents)):
+            if excluded and (item == excluded or excluded in item.parents):
                 continue
+            try:
+                mode = item.stat().st_mode
+            except OSError as error:
+                raise HarnessError(f"entrée non régulière ou inaccessible: {item}") from error
+            if not stat.S_ISREG(mode):
+                raise HarnessError(f"entrée non régulière non prise en charge: {item}")
             relative = item.relative_to(root).as_posix().encode()
-            digest.update(relative + b"\0")
+            effective_mode = stat.S_IFMT(mode) | stat.S_IMODE(mode)
+            digest.update(effective_mode.to_bytes(2, "big") + len(relative).to_bytes(8, "big") + relative)
+            content_digest = hashlib.sha256()
             with item.open("rb") as stream:
                 while chunk := stream.read(1024 * 1024):
-                    digest.update(chunk)
+                    content_digest.update(chunk)
                     total_bytes += len(chunk)
+            digest.update(content_digest.digest())
             files += 1
-    return {"sha256": digest.hexdigest(), "files": files, "bytes": total_bytes}
+    return {"sha256": digest.hexdigest(), "algorithm": TREE_HASH_ALGORITHM, "files": files, "bytes": total_bytes}
+
+
+def case_configuration(case):
+    return {"id": case["id"], "cwd": str(Path(case["cwd"]).expanduser().resolve()),
+            "bundle": str(Path(case["bundle"]).expanduser().resolve()) if case.get("bundle") else None,
+            "prompts": list(case["prompts"]) if "prompts" in case else [case["prompt"]],
+            "sandbox": case.get("sandbox", "workspace-write"), "ephemeral": case.get("ephemeral", True)}
+
+
+def case_hash(case):
+    canonical = json.dumps(case_configuration(case), sort_keys=True, separators=(",", ":"),
+                           ensure_ascii=False, allow_nan=False)
+    return hashlib.sha256(canonical.encode()).hexdigest()
+
+
+OPENED_PATH = re.compile(r'openat2?\([^\n]*?, "((?:[^"\\]|\\.)+)"[^\n]*?\)\s+=\s+(\d+)')
+
+
+def explicit_route_reads(commands, bundle, cwd):
+    """Accept only simple direct file reads; complex shell commands remain unclassified."""
+    direct = set()
+    for command in commands:
+        if any(operator in command for operator in ("|", ";", "&&", ">", "<", "$", "`")):
+            continue
+        try:
+            words = shlex.split(command)
+        except ValueError:
+            continue
+        if not words or Path(words[0]).name not in {"cat", "sed", "head", "tail"}:
+            continue
+        if Path(words[0]).name == "sed" and any(word == "-i" or word.startswith("--in-place")
+                                                  for word in words[1:]):
+            continue
+        for word in words[1:]:
+            if word.startswith("-"):
+                continue
+            path = Path(word)
+            if not path.is_absolute():
+                path = cwd / path
+            try:
+                relative = path.resolve().relative_to(bundle.resolve()).as_posix()
+            except ValueError:
+                continue
+            if relative.startswith("skills/") and (
+                relative.endswith("/SKILL.md") or "/playbooks/" in relative
+                or "/principles/" in relative
+            ):
+                direct.add(relative)
+    return direct
+
+
+def observed_routes(trace_prefix, bundle, commands=(), cwd=None):
+    """Record successful filesystem opens; an open alone does not prove semantic use."""
+    routes = set()
+    ambiguous = False
+    traces = sorted(trace_prefix.parent.glob(trace_prefix.name + ".*"))
+    for trace in traces:
+        for line in trace.read_text(errors="replace").splitlines():
+            match = OPENED_PATH.search(line)
+            if not match:
+                continue
+            try:
+                path = Path(json.loads('"' + match.group(1) + '"'))
+                # Relative opens use the traced process's cwd or dirfd, neither
+                # of which this trace records (a child may have called chdir).
+                if not path.is_absolute():
+                    ambiguous = True
+                    continue
+                path = path.resolve()
+            except (json.JSONDecodeError, OSError):
+                ambiguous = True
+                continue
+            try:
+                relative = path.relative_to(bundle.resolve()).as_posix()
+            except ValueError:
+                continue
+            if relative.startswith("skills/") and (
+                relative.endswith("/SKILL.md")
+                or "/playbooks/" in relative
+                or "/principles/" in relative
+            ):
+                routes.add(relative)
+    direct = routes & explicit_route_reads(commands, bundle, cwd or bundle)
+    return {"opened": sorted(routes), "direct_reads": sorted(direct),
+            "unattributed_opens": sorted(routes - direct),
+            "ambiguous_path": ambiguous, "trace_files": len(traces),
+            "evidence": "direct_reads require a simple read command and a successful filesystem open; other opens are unresolved"}
+
+
+def score_routes(observed, expectation):
+    gold = expectation.get("routing", {})
+    expected, forbidden = set(gold.get("expected", [])), set(gold.get("forbidden", []))
+    opened = set(observed["opened"])
+    direct = set(observed["direct_reads"])
+    incomplete = observed["ambiguous_path"]
+    return {"true_positive": sorted(expected & direct),
+            "false_negative": sorted(expected - opened) if not incomplete else [],
+            "unknown_expected": sorted((expected & opened) - direct | (expected - opened if incomplete else set())),
+            "false_positive": sorted(forbidden & direct),
+            "unknown_forbidden": sorted((forbidden & opened) - direct | (forbidden - opened if incomplete else set())),
+            "known_true_negative": sorted(forbidden - opened) if not incomplete else [],
+            "unlabelled_opened": sorted(opened - expected - forbidden)}
+
+
+def read_expectations(path):
+    payload = json.loads(path.read_text())
+    if (not isinstance(payload, dict) or type(payload.get("schema_version")) is not int
+            or payload["schema_version"] != 1 or not isinstance(payload.get("cases"), list)
+            or set(payload) - {"schema_version", "cases"}):
+        raise HarnessError("expectations.json doit contenir schema_version: 1 et un tableau cases")
+    expectations = {}
+    for row in payload["cases"]:
+        if not isinstance(row, dict) or not isinstance(row.get("id"), str) or not row["id"] or row["id"] in expectations:
+            raise HarnessError("identifiant d’attente absent ou dupliqué")
+        case_id = row["id"]
+        if set(row) - {"id", "expected_children", "min_children", "routing", "expected_artifacts",
+                       "outcome_checks", "requires_independent_review", "project_sha256", "source_sha256", "skill_path", "role_metadata", "hash_algorithm", "case_sha256"}:
+            raise HarnessError(f"{case_id}: champs d’attente inconnus")
+        if "requires_independent_review" in row and type(row["requires_independent_review"]) is not bool:
+            raise HarnessError(f"{case_id}: requires_independent_review doit être un booléen")
+        hashes = row.get("source_sha256", {})
+        if not isinstance(hashes, dict) or set(hashes) - {"bundle", "skill"}:
+            raise HarnessError(f"{case_id}: source_sha256 invalide")
+        if (row.get("hash_algorithm", TREE_HASH_ALGORITHM) != TREE_HASH_ALGORITHM
+                or (("project_sha256" in row or hashes) and "hash_algorithm" not in row)):
+            raise HarnessError(f"{case_id}: algorithme d’empreinte ancien ou absent ; régénérer les attentes")
+        if ("project_sha256" in row or hashes) and "case_sha256" not in row:
+            raise HarnessError(f"{case_id}: empreinte de configuration de cas absente ; régénérer les attentes")
+        for digest in list(hashes.values()) + [row[key] for key in ("project_sha256", "case_sha256") if key in row]:
+            if not isinstance(digest, str) or not re.fullmatch(r"[0-9a-f]{64}", digest):
+                raise HarnessError(f"{case_id}: empreinte SHA-256 invalide")
+        if "skill_path" in row:
+            relative = row["skill_path"]
+            if (not isinstance(relative, str) or len(Path(relative).parts) != 3
+                    or Path(relative).parts[0] != "skills" or Path(relative).parts[-1] != "SKILL.md"
+                    or Path(relative).is_absolute() or ".." in Path(relative).parts):
+                raise HarnessError(f"{case_id}: skill_path doit désigner skills/<skill>/SKILL.md")
+        roles = row.get("role_metadata", {})
+        if not isinstance(roles, dict):
+            raise HarnessError(f"{case_id}: role_metadata doit être un objet")
+        for role, entries in roles.items():
+            entries = entries if isinstance(entries, list) else [entries]
+            if (not role or not entries or any(
+                    not isinstance(entry, dict) or set(entry) != {"model", "reasoning_effort"}
+                    or any(not isinstance(value, str) or not value for value in entry.values())
+                    for entry in entries)):
+                raise HarnessError(f"{case_id}: métadonnées de modèle invalides")
+        for key in ("expected_children", "min_children"):
+            if key in row and (type(row[key]) is not int or row[key] < 0):
+                raise HarnessError(f"{case_id}: {key} doit être un entier positif ou nul")
+        if "expected_children" in row and "min_children" in row:
+            raise HarnessError(f"{case_id}: expected_children et min_children s’excluent")
+        routing = row.get("routing", {})
+        if not isinstance(routing, dict) or set(routing) - {"expected", "forbidden"}:
+            raise HarnessError(f"{case_id}: attentes de routage invalides")
+        for key in ("expected", "forbidden"):
+            values = routing.get(key, [])
+            if not isinstance(values, list) or any(not isinstance(p, str) or not p for p in values):
+                raise HarnessError(f"{case_id}: routes {key} invalides")
+        if set(routing.get("expected", [])) & set(routing.get("forbidden", [])):
+            raise HarnessError(f"{case_id}: route à la fois requise et interdite")
+        artifacts = row.get("expected_artifacts", [])
+        if not isinstance(artifacts, list) or any(
+                not isinstance(p, str) or not p or Path(p).is_absolute() or ".." in Path(p).parts
+                for p in artifacts):
+            raise HarnessError(f"{case_id}: les artefacts doivent rester dans le projet")
+        checks = row.get("outcome_checks", [])
+        if not isinstance(checks, list):
+            raise HarnessError(f"{case_id}: outcome_checks doit être un tableau")
+        ids = set()
+        for check in checks:
+            if (not isinstance(check, dict) or set(check) - {"id", "argv", "timeout", "expected_json"}
+                    or not isinstance(check.get("id"), str) or not check["id"] or check["id"] in ids
+                    or not isinstance(check.get("argv"), list) or not check["argv"]
+                    or any(not isinstance(arg, str) or "\0" in arg for arg in check["argv"])
+                    or not check["argv"][0]):
+                raise HarnessError(f"{case_id}: vérificateur de résultat invalide")
+            timeout = check.get("timeout", 30)
+            if type(timeout) not in (int, float) or not math.isfinite(timeout) or not 0 < timeout <= 300:
+                raise HarnessError(f"{case_id}: délai de vérification invalide, maximum 300 secondes")
+            ids.add(check["id"])
+        expectations[case_id] = row
+    return expectations
+
+
+def verify_provenance(case, expectation, execution_case=None):
+    """Check generator digests against the inputs before launching the native turn."""
+    def matches(label, actual, expected):
+        if actual != expected:
+            raise HarnessError(f"{case['id']}: empreinte {label} différente des attentes")
+
+    source = expectation.get("source_sha256", {})
+    if ("project_sha256" in expectation or source) and expectation.get("hash_algorithm") != TREE_HASH_ALGORITHM:
+        raise HarnessError(f"{case['id']}: algorithme d’empreinte ancien ou absent ; régénérer les attentes")
+    if ("project_sha256" in expectation or source) and "case_sha256" not in expectation:
+        raise HarnessError(f"{case['id']}: empreinte de configuration de cas absente ; régénérer les attentes")
+    if "case_sha256" in expectation:
+        matches("configuration de cas", case_hash(execution_case or case), expectation["case_sha256"])
+    try:
+        project_hash = tree_hash(case["cwd"], None)["sha256"]
+        if "project_sha256" in expectation:
+            matches("projet", project_hash, expectation["project_sha256"])
+        bundle = case.get("bundle")
+        if bundle is None and not source:
+            return
+        if bundle is None:
+            raise HarnessError(f"{case['id']}: empreintes source exigent un bundle explicite")
+        bundle_hash = tree_hash(bundle, None)["sha256"]
+        if "bundle" in source:
+            matches("bundle", bundle_hash, source["bundle"])
+        if "skill" in source:
+            relative = expectation.get("skill_path")
+            if relative is None:
+                # Older generated prompts name the source file explicitly.
+                paths = [path for path in bundle.glob("skills/*/SKILL.md")
+                         if any(str(path) in prompt for prompt in case["prompts"])]
+                if len(paths) != 1:
+                    raise HarnessError(f"{case['id']}: empreinte skill exige skill_path non ambigu")
+                skill = paths[0]
+            else:
+                skill = bundle / relative
+            if not skill.resolve().is_relative_to(bundle.resolve()):
+                raise HarnessError(f"{case['id']}: skill_path sort du bundle")
+            matches("skill", hashlib.sha256(skill.read_bytes()).hexdigest(), source["skill"])
+    except OSError as error:
+        raise HarnessError(f"{case['id']}: impossible de vérifier les empreintes source/projet") from error
+
+
+def check_verdict(checks):
+    states = {check["status"] for check in checks}
+    return {"status": "fail" if "fail" in states else "pass" if states == {"pass"} else "unverified",
+            "checks": checks}
+
+
+def evaluate_case(result, expectation, verify_outcomes=False):
+    workflow, outcome = [], []
+    if result["status"] != "completed":
+        return {"turn": result["status"], "workflow": check_verdict([]), "outcome": check_verdict([])}
+    if "routing" in expectation:
+        score = result.get("route_score")
+        if score is None:
+            status = "unverified"
+        elif score["false_negative"] or score["false_positive"]:
+            status = "fail"
+        else:
+            status = "unverified" if score["unknown_expected"] or score["unknown_forbidden"] else "pass"
+        workflow.append({"id": "routing", "status": status})
+    if "expected_children" in expectation or "min_children" in expectation:
+        children = result.get("native_child_thread_ids")
+        if children is None:
+            status = "unverified"
+        else:
+            count = len(set(children))
+            matches = (count == expectation["expected_children"] if "expected_children" in expectation
+                       else count >= expectation["min_children"])
+            status = "pass" if matches else "fail"
+        workflow.append({"id": "delegation", "status": status})
+    for pattern in expectation.get("expected_artifacts", []):
+        exists = any(p.is_file() for p in Path(result["cwd"]).glob(pattern))
+        workflow.append({"id": "artifact:" + pattern, "status": "pass" if exists else "fail"})
+    if expectation.get("requires_independent_review"):
+        outcome.append({"id": "independent-review", "status": "unverified",
+                        "reason": "Décisions à vérifier par un acteur indépendant hors du runner."})
+    if verify_outcomes:
+        for check in expectation.get("outcome_checks", []):
+            record = {"id": check["id"]}
+            try:
+                process = subprocess.run(check["argv"], cwd=result["cwd"], stdin=subprocess.DEVNULL,
+                                         capture_output=True, text=True, errors="replace",
+                                         timeout=check.get("timeout", 30), check=False)
+                passed = process.returncode == 0
+                if "expected_json" in check:
+                    try:
+                        # Canonical JSON preserves scalar types: Python equality
+                        # would accept true in place of 1, even inside objects.
+                        passed = passed and (
+                            json.dumps(json.loads(process.stdout), sort_keys=True, allow_nan=False)
+                            == json.dumps(check["expected_json"], sort_keys=True, allow_nan=False))
+                    except (ValueError, RecursionError):
+                        passed = False
+                record.update(status="pass" if passed else "fail", returncode=process.returncode,
+                              stdout=scrub_text(process.stdout)[-4096:], stderr=scrub_text(process.stderr)[-4096:])
+            except (OSError, subprocess.TimeoutExpired) as error:
+                record.update(status="unverified", error=scrub_text(str(error)))
+            outcome.append(record)
+    return {"turn": result["status"], "workflow": check_verdict(workflow), "outcome": check_verdict(outcome)}
+
+
+def require_route_trace():
+    if not shutil.which("strace"):
+        raise HarnessError("--trace-routes exige strace sous Linux")
+    options = subprocess.run(["strace", "--help"], capture_output=True, text=True,
+                             timeout=10, check=False)
+    if "--kill-on-exit" not in options.stdout:
+        raise HarnessError("--trace-routes exige strace avec --kill-on-exit")
+    with tempfile.TemporaryDirectory() as directory:
+        result = subprocess.run(
+            ["strace", "-o", str(Path(directory) / "probe"), sys.executable, "-c", "pass"],
+            capture_output=True, text=True, timeout=10, check=False,
+        )
+    if result.returncode:
+        raise HarnessError("--trace-routes exige l'autorisation ptrace de l'hôte: "
+                           + result.stderr.strip()[:300])
 
 
 def config_path():
@@ -494,6 +819,8 @@ def read_cases(path):
         if not isinstance(row, dict) or not isinstance(row.get("id"), str) or not SAFE_ID.fullmatch(row["id"]):
             raise HarnessError("chaque scénario nécessite un identifiant textuel sûr")
         case_id = row["id"]
+        if set(row) - {"id", "cwd", "prompt", "prompts", "sandbox", "bundle", "ephemeral"}:
+            raise HarnessError(f"{case_id}: champs de scénario inconnus")
         if case_id in ids:
             raise HarnessError(f"identifiant de scénario dupliqué: {case_id}")
         ids.add(case_id)
@@ -510,11 +837,18 @@ def read_cases(path):
         sandbox = row.get("sandbox", "workspace-write")
         if not isinstance(sandbox, str) or not sandbox:
             raise HarnessError(f"{case_id}: sandbox doit être une chaîne")
-        cases.append({"id": case_id, "cwd": cwd, "prompts": prompts, "sandbox": sandbox})
+        ephemeral = row.get("ephemeral", True)
+        if not isinstance(ephemeral, bool):
+            raise HarnessError(f"{case_id}: ephemeral doit être un booléen")
+        bundle = Path(row["bundle"]).expanduser().resolve() if row.get("bundle") else None
+        if bundle is not None and not (bundle / "skills" / "cstack" / "SKILL.md").is_file():
+            raise HarnessError(f"{case_id}: bundle de skills introuvable: {bundle}")
+        cases.append({"id": case_id, "cwd": cwd, "prompts": prompts, "sandbox": sandbox,
+                      "bundle": bundle, "ephemeral": ephemeral})
     return cases
 
 
-def run_case(case, output, command, model, effort, timeout):
+def run_case(case, output, command, model, effort, timeout, trace_routes=False):
     case_dir = output / case["id"]
     case_dir.mkdir(parents=True, exist_ok=True)
     raw_path = case_dir / "raw.jsonl"
@@ -532,8 +866,11 @@ def run_case(case, output, command, model, effort, timeout):
     status = "completed"
     error = None
     parent_thread = None
+    trace_prefix = case_dir / "route-open"
+    actual_command = (["strace", "-ff", "--kill-on-exit", "-e", "trace=openat,openat2", "-s", "4096",
+                       "-o", str(trace_prefix), *command] if trace_routes else command)
     try:
-        server = AppServer(command, case["cwd"], raw_path, stderr_path)
+        server = AppServer(actual_command, case["cwd"], raw_path, stderr_path)
         server.request("initialize", {"clientInfo": {"name": "cstack-behavior-runner", "version": "0.1.0"}}, timeout, lambda message: update_state(message, state, parent_thread))
         server.notify("initialized")
         thread_params = {
@@ -546,6 +883,7 @@ def run_case(case, output, command, model, effort, timeout):
         parent_thread = first(thread_result, ("threadId", "thread_id")) or first(first(thread_result, ("thread",)) or {}, ("id",))
         if not parent_thread:
             raise HarnessError("thread/start n’a renvoyé aucun identifiant de conversation")
+        state["child_ids"][:] = [thread_id for thread_id in state["child_ids"] if thread_id != str(parent_thread)]
         for index, prompt in enumerate(case["prompts"]):
             state["current_turn"] = {"index": index, "prompt": prompt, "messages": [], "status": None}
             state["messages"] = []
@@ -595,14 +933,14 @@ def run_case(case, output, command, model, effort, timeout):
         if server is not None:
             server.close()
     after = tree_hash(case["cwd"], output)
-    return {
+    result = {
         "id": case["id"], "cwd": str(case["cwd"]), "sandbox": case["sandbox"],
         "input_prompts": case["prompts"], "status": status,
         "wall_seconds": round(time.monotonic() - started, 3),
         "before_project_hash": before, "after_project_hash": after,
         "project_hash_changed": before["sha256"] != after["sha256"],
         "hash_policy": {"excluded_directories": sorted(SKIP_DIRS), "included_cstack": True},
-        "actual_commands": state["actual_commands"], "app_server_command": command,
+        "actual_commands": state["actual_commands"], "app_server_command": actual_command,
         "questions": state["questions"], "native_child_thread_ids": state["child_ids"],
         "dispatch_metadata": state["dispatch_metadata"], "child_metadata": state.get("child_metadata", []),
         "metadata_gaps": state["metadata_gaps"],
@@ -610,6 +948,11 @@ def run_case(case, output, command, model, effort, timeout):
         "turns": state["turns"], "error": error,
         "raw_stream": str(raw_path.resolve()), "stderr": str(stderr_path.resolve()),
     }
+    if trace_routes:
+        result["route_observation"] = observed_routes(
+            trace_prefix, case["bundle"], state["actual_commands"], case["cwd"]
+        )
+    return result
 
 
 def write_summary(output, results, selected_case_ids):
@@ -629,39 +972,113 @@ def main(argv=None):
     parser.add_argument("--case-id", action="append", dest="case_ids", help="exécute uniquement ce scénario ; option répétable")
     parser.add_argument("--model", help="modèle natif de remplacement facultatif")
     parser.add_argument("--effort", help="effort de raisonnement natif facultatif")
+    parser.add_argument("--trace-routes", action="store_true", help="trace les ouvertures des skills avec strace Linux")
+    parser.add_argument("--expectations", type=Path, help="expectations.json généré avec les scénarios")
+    parser.add_argument("--verify-outcomes", action="store_true",
+                        help="autorise les commandes outcome_checks du fichier d’attentes de confiance")
+    parser.add_argument("--repeats", type=int, default=1, help="nombre de passages indépendants par cas (1 à 10)")
     parser.add_argument("--turn-timeout", type=float, default=DEFAULT_TURN_SECONDS, help="délai maximal par tour en secondes, maximum 900")
     args = parser.parse_args(argv)
     if args.turn_timeout <= 0 or args.turn_timeout > MAX_TURN_SECONDS:
         parser.error("--turn-timeout doit être supérieur à 0 et inférieur ou égal à 900 secondes")
+    if not 1 <= args.repeats <= 10:
+        parser.error("--repeats doit être compris entre 1 et 10")
+    if args.trace_routes:
+        require_route_trace()
     cases = read_cases(args.cases)
+    if args.trace_routes and any(case["bundle"] is None for case in cases):
+        raise HarnessError("--trace-routes exige des scénarios générés avec bundle explicite")
+    if args.verify_outcomes and not args.expectations:
+        raise HarnessError("--verify-outcomes exige --expectations")
+    expectations = {}
+    if args.expectations:
+        expectations = read_expectations(args.expectations)
     if args.case_ids:
         wanted = set(args.case_ids)
         unknown = wanted - {case["id"] for case in cases}
         if unknown:
             raise HarnessError(f"identifiant de scénario inconnu: {', '.join(sorted(unknown))}")
         cases = [case for case in cases if case["id"] in wanted]
+    if args.expectations:
+        missing = {case["id"] for case in cases} - set(expectations)
+        if missing:
+            raise HarnessError(f"attentes absentes pour: {', '.join(sorted(missing))}")
     output = args.output.expanduser().resolve()
     for case in cases:
-        if output == case["cwd"] or case["cwd"] in output.parents or output in case["cwd"].parents:
-            raise HarnessError(f"la sortie doit être située hors du cwd du scénario: {case['id']}")
+        for label, source_root in (("cwd", case["cwd"]), ("bundle", case["bundle"])):
+            if source_root is not None and (
+                    output == source_root or source_root in output.parents or output in source_root.parents):
+                raise HarnessError(f"la sortie doit être située hors du {label} du scénario: {case['id']}")
+        verify_provenance(case, expectations.get(case["id"], {}))
+        if args.repeats > 1:
+            if not (case["cwd"] / ".git").exists():
+                for parent in case["cwd"].parents:
+                    git_path = parent / ".git"
+                    if git_path.is_file() or git_path.is_symlink() or (git_path / "HEAD").is_file():
+                        raise HarnessError(f"répétitions non prises en charge pour un sous-dossier de dépôt Git: {case['cwd']}")
+            for directory, names, files in os.walk(case["cwd"]):
+                git_path = Path(directory) / ".git"
+                if ".git" in files or git_path.is_symlink():
+                    raise HarnessError(f"répétitions non prises en charge pour un dépôt Git lié: {git_path}")
+                for name in names:
+                    if (Path(directory) / name).is_symlink():
+                        raise HarnessError(f"répétitions non prises en charge pour un dossier symbolique: {Path(directory) / name}")
+                names[:] = [name for name in names if name != ".git"]
     if output.exists() and any(output.iterdir()):
         raise HarnessError("le dossier de sortie doit être absent ou vide ; refus d’écraser les preuves")
     output.mkdir(parents=True, exist_ok=True)
     command = build_command()
     results = []
+    unverified_requested = False
     selected_case_ids = [case["id"] for case in cases]
     for case in cases:
-        print(f"[{case['id']}] démarrage", flush=True)
-        try:
-            result = run_case(case, output, command, args.model, args.effort, args.turn_timeout)
-        except Exception as error:
-            result = {"id": case["id"], "cwd": str(case["cwd"]), "status": "infra_error", "error": str(error)}
-        results.append(result)
-        print(f"[{case['id']}] {result['status']} ({result.get('wall_seconds', 0)}s)", flush=True)
-        write_summary(output, results, selected_case_ids)
+        expectation = expectations.get(case["id"], {})
+        workflow_requested = any(key in expectation for key in
+                                 ("routing", "expected_children", "min_children", "expected_artifacts"))
+        for repeat in range(1, args.repeats + 1):
+            run = dict(case)
+            if args.repeats > 1:
+                run["id"] = f"{case['id']}__run_{repeat:02d}"
+                run["cwd"] = output / "isolated-projects" / run["id"]
+                shutil.copytree(case["cwd"], run["cwd"])
+            verify_provenance(run, expectation, execution_case=case)
+            source_case_digest = case_hash(case)
+            effective_config = case_configuration(run)
+            effective_case_digest = case_hash(effective_config)
+            print(f"[{run['id']}] démarrage", flush=True)
+            try:
+                result = run_case(run, output, command, args.model, args.effort,
+                                  args.turn_timeout, args.trace_routes)
+                if (result["status"] == "completed" and args.trace_routes
+                        and result["route_observation"]["trace_files"] and case["id"] in expectations):
+                    result["route_score"] = score_routes(result["route_observation"], expectations[case["id"]])
+            except Exception as error:
+                result = {"id": run["id"], "cwd": str(run["cwd"]), "status": "infra_error", "error": str(error)}
+            result.update(source_case_id=case["id"], case_sha256=source_case_digest,
+                          case_hash_verified="case_sha256" in expectation,
+                          effective_case_sha256=effective_case_digest, effective_case=effective_config,
+                          requested_runtime_config={"model": args.model, "effort": args.effort,
+                                                    "turn_timeout": args.turn_timeout, "trace_routes": args.trace_routes})
+            result["verdicts"] = evaluate_case(result, expectation, args.verify_outcomes)
+            if ((workflow_requested and result["verdicts"]["workflow"]["status"] == "unverified")
+                    or (args.verify_outcomes and result["verdicts"]["outcome"]["status"] == "unverified")):
+                unverified_requested = True
+            if expectation:
+                result["expectation_sha256"] = hashlib.sha256(
+                    json.dumps(expectation, sort_keys=True, ensure_ascii=False).encode()).hexdigest()
+            results.append(result)
+            verdicts = result["verdicts"]
+            print(f"[{run['id']}] tour={verdicts['turn']} workflow={verdicts['workflow']['status']} "
+                  f"résultat={verdicts['outcome']['status']} ({result.get('wall_seconds', 0)}s)", flush=True)
+            write_summary(output, results, selected_case_ids)
     write_summary(output, results, selected_case_ids)
     if any(result["status"] != "completed" for result in results):
         return 2 if any(result["status"] == "needs_input" for result in results) else 1
+    if any(result["verdicts"][stage]["status"] == "fail"
+           for result in results for stage in ("workflow", "outcome")):
+        return 1
+    if unverified_requested:
+        return 2
     print(f"résumé : {output / 'summary.json'}", flush=True)
     return 0
 

@@ -21,7 +21,7 @@ Pour une implémentation multi-phase, le prompt proposé par le sélecteur cstac
 $cstack:cstack ajoute cette fonctionnalité. Je demande un Goal natif global jusqu'à une PR testée et revue. Utilise les agents configurés.
 ```
 
-Le coordinateur conserve le même objectif pendant l'exploration, l'implémentation, les tests, la revue et l'ouverture de PR. Il annonce les playbooks, les skills et les appels d'agents avec leur runtime, modèle et effort, puis actualise la todo. Une exploration déléguée utilise au moins deux explorateurs, normalement trois angles distincts, en vagues si nécessaire.
+Le coordinateur conserve le même objectif pendant l'exploration, l'implémentation, les tests, la revue et l'ouverture de PR. Il annonce les playbooks, les skills et chaque vague de délégués, avec runtime, modèle et effort quand ils sont choisis explicitement, puis actualise la todo. Une exploration déléguée utilise au moins deux explorateurs, normalement trois angles distincts, en vagues si nécessaire.
 
 La PR prête pour revue est la fin par défaut. Une demande « local seulement » arrête plus tôt ; merge, installation et déploiement exigent une autorisation explicite. Les questions et petites modifications mécaniques suivent le parcours ordinaire. Sans outils Goal, cstack signale la limite et poursuit au premier plan sans annoncer un Goal actif.
 
