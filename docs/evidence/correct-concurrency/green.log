@@ -1,0 +1,10 @@
+bun test v1.4.0 (34cbb9a40)
+
+tests/store-lock.test.ts:
+(pass) écrivains concurrents : la reprise périmée ne chevauche jamais un successeur [189.70ms]
+(pass) huit écrivains conservent toutes les unités après la mort du propriétaire [141.31ms]
+
+ 2 pass
+ 0 fail
+ 6 expect() calls
+Ran 2 tests across 1 file. [350.00ms]

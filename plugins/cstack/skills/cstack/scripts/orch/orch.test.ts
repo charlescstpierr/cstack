@@ -196,8 +196,8 @@ describe("Magasin", () => {
     expect(await readFile(join(directory, "ledger.tsv"), "utf8")).toBe(
       firstLedger
     );
-    expect((await readdir(directory)).sort()).toEqual([
-      ".orch.lock",
+    expect((await readdir(directory)).filter(name => !name.endsWith("-journal")).sort()).toEqual([
+      ".orch-lock.sqlite",
       "frontier.json",
       "gates.md",
       "inbox",
@@ -448,51 +448,14 @@ describe("Magasin", () => {
     }, 20000);
   }
 
-  it("un ancien détenteur ne libère pas le verrou de son remplaçant dans le même processus", async () => {
+  it("ne vole jamais un écrivain actif, même avec force", async () => {
     const { directory, store } = await initializedStore();
-    const replacement = useStore(directory, { force: true });
-    await replacement.units.add({ id: "remplacement", track: "build" });
+    const contender = useStore(directory, { force: true });
+    await expect(contender.units.add({ id: "refusée", track: "build" })).rejects.toThrow("verrou");
     await store.close();
-    const contender = useStore(directory);
-    await expect(contender.units.add({ id: "concurrent", track: "build" })).rejects.toThrow("verrou");
-    await replacement.close();
-    await expect(contender.units.add({ id: "après-libération", track: "build" })).resolves.toMatchObject({ id: "après-libération" });
-  });
-
-  it("refuse les nouvelles mutations verrouillées d’un handle dépossédé", async () => {
-    const { directory, store } = await initializedStore();
-    await store.units.add({ id: "initiale", track: "build" });
-    await store.inbox.push({ agent: "agent", unit: "initiale", status: "done" });
-    const replacement = useStore(directory, { force: true });
-    await replacement.units.add({ id: "remplacement", track: "build" });
-    const files = ["units.tsv", "ledger.tsv", "gates.md", "preferences.md", "frontier.json"];
-    const before = await Promise.all(files.map(file => readFile(join(directory, file), "utf8")));
-    const mutations = [
-      () => store.units.add({ id: "interdite", track: "build" }),
-      () => store.units.set({ id: "initiale", state: "done" }),
-      () => store.ledger.record({ pr: 1, sha: "abc", verdict: "unit-test-verified", evidence: "test.log" }),
-      () => store.inbox.drain(),
-      () => store.gates.park({ id: "interdite", question: "Q", options: "A", defaultAnswer: "A" }),
-      () => store.gates.resolve({ id: "absente", answer: "A" }),
-      () => store.frontier.set({ repo: directory }),
-      () => store.standing.add({ line: "interdite" }),
-      () => store.status.render(),
-      () => store.init(),
-    ];
-    for (const mutate of mutations) {
-      await expect(mutate()).rejects.toThrow("verrou de magasin perdu");
-    }
-    expect(await Promise.all(files.map(file => readFile(join(directory, file), "utf8")))).toEqual(before);
-    expect(existsSync(join(directory, "status.md"))).toBe(false);
-    expect(await store.inbox.count()).toBe(1);
-    await store.inbox.push({ agent: "agent", unit: "initiale", status: "done" });
-    expect(await replacement.inbox.count()).toBe(2);
-    await replacement.close();
-    await expect(store.units.add({ id: "encore-interdite", track: "build" })).rejects.toThrow("verrou de magasin perdu");
-    const fresh = useStore(directory);
-    await fresh.units.add({ id: "nouveau-handle", track: "build" });
+    await expect(contender.units.add({ id: "acceptée", track: "build" })).resolves.toMatchObject({ id: "acceptée" });
     await store.close();
-    expect((await fresh.units.list()).map(unit => unit.id)).toEqual(["initiale", "remplacement", "nouveau-handle"]);
+    await expect(useStore(directory).units.add({ id: "refusée", track: "build" })).rejects.toThrow("verrou");
   });
 
   it("remplace un verrou périmé dont le pid détenteur est mort", async () => {
@@ -544,115 +507,14 @@ describe("Magasin", () => {
     expect((await readdir(directory)).filter((name) => name.includes(".tmp."))).toEqual([]);
   });
 
-  for (const phase of ["lstat", "readdir", "rmdir", "publication", "migration", "permission"] as const) {
-    it(`gère le diagnostic du verrou pendant ${phase} et permet une nouvelle tentative`, async () => {
-      const directory = await makeDirectory();
-      const worker = join(directory, "diagnostic-worker.ts");
-      await writeFile(worker, `
-import assert from "node:assert/strict";
-import { mock } from "bun:test";
-import { join } from "node:path";
-const fs = { ...await import("node:fs/promises") };
-const directory = ${JSON.stringify(directory)};
-const phase = ${JSON.stringify(phase)};
-const lock = join(directory, ".orch.lock");
-let armed = false;
-let prepared = false;
-let holder;
-let successor;
-mock.module("node:fs/promises", () => ({
-  ...fs,
-  rename: async (source, destination) => {
-    if (armed && phase === "publication" && destination === lock) {
-      armed = false;
-      await successor.units.add({ id: "successeur", track: "build" });
-    }
-    try { return await fs.rename(source, destination); }
-    catch (error) {
-      if (armed && destination === lock && (phase === "lstat" || phase === "readdir")) {
-        armed = false;
-        await holder.close();
-      } else if (!prepared && destination === lock && (phase === "rmdir" || phase === "publication")) {
-        prepared = true;
-        await holder.close();
-        await fs.mkdir(lock);
-        armed = true;
-      }
-      throw error;
-    }
-  },
-  lstat: async (path) => {
-    if (armed && path === lock && phase === "permission") {
-      armed = false;
-      throw Object.assign(new Error("permission refusée"), { code: "EACCES" });
-    }
-    if (armed && path === lock && phase === "migration") {
-      armed = false;
-      const info = await fs.lstat(path);
-      await fs.unlink(path);
-      return info;
-    }
-    if (path === lock && phase === "readdir") {
-      await fs.mkdir(lock);
-      const info = await fs.lstat(path);
-      await fs.rmdir(lock);
-      return info;
-    }
-    return fs.lstat(path);
-  },
-  rmdir: async (path) => {
-    if (armed && path === lock && phase === "rmdir") {
-      armed = false;
-      await successor.units.add({ id: "successeur", track: "build" });
-    }
-    return fs.rmdir(path);
-  },
-}));
-const { openStore, UserError } = await import(${JSON.stringify(join(import.meta.dir, "store.ts"))});
-holder = openStore(directory);
-const contender = openStore(directory);
-successor = openStore(directory);
-try {
-  await holder.init();
-  if (phase === "migration") {
-    await holder.close();
-    await fs.writeFile(lock, String(process.pid));
-  }
-  armed = !["rmdir", "publication"].includes(phase);
-  await assert.rejects(contender.units.add({ id: "refusée", track: "build" }), error =>
-    phase === "permission"
-      ? !(error instanceof UserError) && error.code === "EACCES"
-      : error instanceof UserError && error.message === "verrou de magasin modifié par un autre processus; réessayez");
-  await holder.close();
-  if (phase === "rmdir" || phase === "publication") {
-    await assert.rejects(contender.units.add({ id: "toujours-refusée", track: "build" }), UserError);
-  }
-  await successor.close();
-  await contender.units.add({ id: "nouvelle-tentative", track: "build" });
-  assert.equal((await contender.units.list()).some(unit => unit.id === "refusée"), false);
-} finally {
-  await holder.close();
-  await successor.close();
-  await contender.close();
-}
-`);
-      const child = Bun.spawn([process.execPath, worker], { stdout: "pipe", stderr: "pipe" });
-      const errors = await new Response(child.stderr).text();
-      expect({ code: await child.exited, errors }).toEqual({ code: 0, errors: "" });
-    });
-  }
-
   it("récupère un répertoire de verrou vide après interruption", async () => {
     const { directory, store } = await initializedStore();
     await store.close();
     await mkdir(join(directory, ".orch.lock"));
     const recovered = useStore(directory);
     await recovered.units.add({ id: "récupérée", track: "build" });
-    const markers = await readdir(join(directory, ".orch.lock"));
-    expect(markers).toHaveLength(1);
-    expect(markers[0]).toMatch(new RegExp(`^owner\\.${process.pid}\\.`));
     await recovered.close();
-    expect((await readdir(directory)).filter((name) => name.startsWith(".orch.lock"))).toEqual([]);
+    expect((await readdir(directory)).filter(name => name.startsWith(".orch.lock"))).toEqual([]);
   });
 
   it("préserve les verrous mal formés et refuse les liens symboliques même avec force", async () => {
@@ -672,27 +534,14 @@ try {
     expect(await readFile(join(outside, marker), "utf8")).toBe("à conserver");
   });
 
-  it("bloque un rédacteur et ne vole le verrou pid qu’avec force", async () => {
+  it("préserve un ancien verrou PID actif, même avec force", async () => {
     const { directory, store } = await initializedStore();
     await store.close();
     await writeFile(join(directory, ".orch.lock"), `${process.pid}\n`);
-
-    const blocked = useStore(directory);
-    await expect(
-      blocked.units.add({ id: "u1", track: "build" })
-    ).rejects.toThrow(`verrou de magasin detenu par le pid ${process.pid}`);
-
-    const stolen: string[] = [];
-    const forced = useStore(directory, {
-      force: true,
-      onLockStolen: (holder) => stolen.push(holder),
-    });
-    expect(
-      await forced.units.add({ id: "u1", track: "build" })
-    ).toMatchObject({ id: "u1" });
-    expect(stolen).toEqual([String(process.pid)]);
-    await forced.close();
-    expect(await readdir(directory)).not.toContain(".orch.lock");
+    for (const force of [false, true]) {
+      await expect(useStore(directory, { force }).units.add({ id: "refusée", track: "build" })).rejects.toThrow("verrou");
+    }
+    expect(await readFile(join(directory, ".orch.lock"), "utf8")).toBe(`${process.pid}\n`);
   });
 
   it("met les barrières en attente, stocke les consignes permanentes et rend le statut", async () => {

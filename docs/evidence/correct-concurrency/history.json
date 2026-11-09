@@ -1,0 +1,120 @@
+{
+  "collected": "2026-11-09",
+  "base": "48f8d04a6fa90596f4dd40e47ffadafe0cc9fdc2",
+  "catalogue_pr": 114,
+  "catalogue_ref": "8bc2eb1c58350170c203415fa2a0c8b05670c407",
+  "catalogue_findings": 199,
+  "api_bot_findings": 199,
+  "class_findings": 8,
+  "class_prs": [
+    6,
+    9,
+    10,
+    11,
+    83,
+    84,
+    108
+  ],
+  "lock_recurrences": 3,
+  "comments": [
+    {
+      "pr": 6,
+      "priority": "P2",
+      "file": "worktree-cleanup-scenarios.py",
+      "title": "Preserve and verify worktree lock metadata",
+      "class": "concurrence",
+      "comment_id": 3985821630,
+      "url": "https://github.com/charlescstpierr/cstack/pull/6#discussion_r3985821630",
+      "reviewed_commit": "5814b38bf6490c7518b787644b3f741480226850",
+      "body": "**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  Preserve and verify worktree lock metadata**\n\nIn the fixture's locked `echo` case, running `git worktree unlock` and then performing the expected removals still makes this checker return `ok`, because `listed_worktrees()` discards every porcelain field except the path. This allows the trial to pass after silently removing the lock that protects an active worktree, contrary to the cleanup safety behavior being evaluated; record the expected lock state/reason and compare it during `check()`.\n\nAGENTS.md reference: [AGENTS.md:L21-L21](https://github.com/charlescstpierr/cstack/blob/5814b38bf6490c7518b787644b3f741480226850/AGENTS.md#L21-L21)\n\nUseful? React with 👍 / 👎."
+    },
+    {
+      "pr": 9,
+      "priority": "P1",
+      "file": "store.ts",
+      "title": "Prevent stale-lock takeover from replacing a new owner",
+      "class": "concurrence",
+      "comment_id": 3998043591,
+      "url": "https://github.com/charlescstpierr/cstack/pull/9#discussion_r3998043591",
+      "reviewed_commit": "f00f7a04063fbcaca4035be0dbdc722ca2c3ad49",
+      "body": "**<sub><sub>![P1 Badge](https://img.shields.io/badge/P1-orange?style=flat)</sub></sub>  Prevent stale-lock takeover from replacing a new owner**\n\nOn POSIX, `rename(claim, path)` replaces an existing destination. Because the preceding rename temporarily removes `.orch.lock`, another process can successfully acquire it with `open(path, \"wx\")` during that gap; this rename then silently overwrites the new process's lock, and both processes proceed believing they have exclusive access to the TSV store. Install the claim with a non-replacing operation or revalidate ownership so a writer that acquires during the takeover wins exclusively.\n\nUseful? React with 👍 / 👎."
+    },
+    {
+      "pr": 10,
+      "priority": "P1",
+      "file": "store.ts",
+      "title": "Close the third-writer gap in lock takeover",
+      "class": "concurrence",
+      "comment_id": 3998337695,
+      "url": "https://github.com/charlescstpierr/cstack/pull/10#discussion_r3998337695",
+      "reviewed_commit": "7863ebf4fe2fa738cad177fbea6ba8aadf252c12",
+      "body": "**<sub><sub>![P1 Badge](https://img.shields.io/badge/P1-orange?style=flat)</sub></sub>  Close the third-writer gap in lock takeover**\n\nWhen three processes contend for a stale lock, contender A can install its claim, B can rename A's lock while detecting an identity mismatch, and C can create a new lock during that gap. This catch then preserves C and removes A's moved lock, but A has already succeeded and never rechecks ownership, leaving A and C able to write the store concurrently. The takeover needs serialization or another mechanism that cannot expose an unlocked gap while displacing a successful owner.\n\nUseful? React with 👍 / 👎."
+    },
+    {
+      "pr": 11,
+      "priority": "P1",
+      "file": "store.ts",
+      "title": "Avoid replacing a successor lock during takeover",
+      "class": "concurrence",
+      "comment_id": 3998680920,
+      "url": "https://github.com/charlescstpierr/cstack/pull/11#discussion_r3998680920",
+      "reviewed_commit": "535848d668c64fa42785477702ff8a2602984553",
+      "body": "**<sub><sub>![P1 Badge](https://img.shields.io/badge/P1-orange?style=flat)</sub></sub>  Avoid replacing a successor lock during takeover**\n\nDuring a forced takeover, a live holder can release the observed lock after the inode check, allowing a normal writer to create a successor before this replacing `rename`. The rename then silently overwrites that successor while it remains in its critical section, and the force caller also proceeds, breaking store mutual exclusion and risking corrupted state. Use a takeover protocol that preserves the identity check through the replacement operation.\n\nUseful? React with 👍 / 👎."
+    },
+    {
+      "pr": 83,
+      "priority": "P2",
+      "file": "bug-bash.md",
+      "title": "Do not retry terminal blocker codes unconditionally",
+      "class": "concurrence",
+      "comment_id": 4161865440,
+      "url": "https://github.com/charlescstpierr/cstack/pull/83#discussion_r4161865440",
+      "reviewed_commit": "177e73d999e89c36792e71e376b91098c19ab2ba",
+      "body": "**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  Do not retry terminal blocker codes unconditionally**\n\nThis requires correcting and relaunching every blocked charter, including `budget` and `non pris en charge`, even though those codes commonly have no in-session remedy; it also conflicts with the shared runtime rule in `runtime/suivi.md`, which retries only an identifiable temporary transport or availability failure and treats permission or capacity refusal as immediately blocked. Separate recoverable blockers from terminal ones and retain the latter in the final coverage gaps instead of creating an unbounded or impossible retry.\n\nUseful? React with 👍 / 👎."
+    },
+    {
+      "pr": 84,
+      "priority": "P2",
+      "file": "models.md",
+      "title": "Keep lower recommendations below the selected budget cap",
+      "class": "concurrence",
+      "comment_id": 4162227689,
+      "url": "https://github.com/charlescstpierr/cstack/pull/84#discussion_r4162227689",
+      "reviewed_commit": "b69d08443b1a5662920671780e50abc3a15e633c",
+      "body": "**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  Keep lower recommendations below the selected budget cap**\n\nWhen the user selects `réduit` and accepts the Development or Code review recommendation, this rule replaces the recommended `low` effort with `medium`, even though the scale immediately defines `medium > low`; consequently the reduced budget consumes more reasoning than `illimité`, which preserves the original `low` recommendation. Apply the selected effort as a ceiling—retain an existing lower recommendation rather than always fixing every explicit selection to the target.\n\nUseful? React with 👍 / 👎."
+    },
+    {
+      "pr": 84,
+      "priority": "P2",
+      "file": "SKILL.md",
+      "title": "Serialize start-marker checks with concurrent writers",
+      "class": "concurrence",
+      "comment_id": 4162227709,
+      "url": "https://github.com/charlescstpierr/cstack/pull/84#discussion_r4162227709",
+      "reviewed_commit": "b69d08443b1a5662920671780e50abc3a15e633c",
+      "body": "**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  Serialize start-marker checks with concurrent writers**\n\nWhen two executions append concurrently, one can inspect the tail, see no intervening writer, and then append a normal row after the other execution has inserted its `start` row. It has followed this read-before-write instruction, but the segmentation rule below now attributes its row to the other execution, corrupting the per-execution audit boundary. The tail check and append need an atomic lock/CAS protocol, or each row must carry its execution identity so ownership does not depend on race-prone ordering.\n\nUseful? React with 👍 / 👎."
+    },
+    {
+      "pr": 108,
+      "priority": "P1",
+      "file": "store.ts",
+      "title": "Prevent new loop IDs from resetting a target's budget",
+      "class": "concurrence",
+      "comment_id": 4331029396,
+      "url": "https://github.com/charlescstpierr/cstack/pull/108#discussion_r4331029396",
+      "reviewed_commit": "0176568ea8afb34c5755d49f25dcb8b6a0dc482b",
+      "body": "**<sub><sub>![P1 Badge](https://img.shields.io/badge/P1-orange?style=flat)</sub></sub>  Prevent new loop IDs from resetting a target's budget**\n\nWhen a loop has consumed an attempt without progress, the caller can open another loop with a different ID but the same target and findings because collision detection considers only `next.id`. The second loop then accepts the same strategy content and starts with a fresh limit, allowing repeated correction dispatches that the first loop would reject; the original loop can later use its remaining attempt to complete, so checking all loops at delivery does not preserve the intended dispatch bound. Reject or explicitly link overlapping active loops for the same correction target so their attempt and strategy history cannot be reset by renaming the loop.\n\nUseful? React with 👍 / 👎.\n\n<!-- codex-code-review-finding:v1 -->"
+    }
+  ],
+  "named_reverts": [],
+  "path_history": [
+    "2dab19da953ec3cdd0e422d37085790aab20654e fix(cstack): isoler l'install des helpers et vérifier l'identité du verrou (#10)",
+    "6519357c87435a9a9cc9fd56e79a18c9c4bf0406 fix: corriger les références de PR et les défauts confirmés par audit",
+    "0c2d1671baa2067899723d482d84a448dca05c49 fix: corriger les diagnostics des verrous et des commandes françaises",
+    "3b1ff4fb85a77afc1f6bca30f612626fb0df1bca fix: rendre les reprises de verrou d’orchestration exclusives",
+    "4a81df645a27b2ae05b23dd4bcfedeea824b5f9f feat(i18n): traduire cstack et ses compétences en français",
+    "b87be69596032473d2897acd01ff8876e585851d feat(cstack): parité pstack pour Codex, avec un deslop natif (#9)",
+    "416053e797727dcc5a3a2016ab014157af758877 feat: port pstack workflows to native Codex",
+    "6600fc46a00cc9a2d26e2d8b1a24d37d86aba892 chore: import pstack 0.15.0 for the Codex port"
+  ]
+}

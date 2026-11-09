@@ -1,6 +1,7 @@
+import { Database, SQLiteError } from "bun:sqlite";
 import { execFileSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
-import type { Dirent, Stats } from "node:fs";
+import type { Dirent } from "node:fs";
 import {
   access,
   lstat,
@@ -18,7 +19,7 @@ import { basename, dirname, join, resolve } from "node:path";
 const UNIT_HEADER = "id\ttrack\tstate\tbranch\tpr\tsha\tbrief";
 const LEDGER_HEADER = "pr\tsha\tverdict\tevidence\tverifier\tts";
 const LOCK_FILE = ".orch.lock";
-const LOCK_CONFLICT_CODES = new Set(["EEXIST", "ENOTEMPTY", "ENOTDIR", "EISDIR", "EPERM"]);
+const KERNEL_LOCK_FILE = ".orch-lock.sqlite";
 
 export type Verdict =
   | "live-ui-verified"
@@ -179,8 +180,7 @@ export interface AddStandingParams {
 
 export interface OpenStoreOptions {
   readonly force?: boolean;
-  // Les rappels signalent une tentative de reprise, pas une acquisition réussie.
-  readonly onLockStolen?: (holder: string) => void;
+  // --force reste accepté, mais ne dépossède jamais un écrivain actif.
   readonly onStaleLock?: (holder: string) => void;
 }
 
@@ -403,123 +403,60 @@ function holderIsDead(holder: string): boolean {
   }
 }
 
-function throwLockError(error: unknown): never {
-  if (["ENOENT", "ENOTEMPTY", "EEXIST"].includes(errorCode(error) ?? "")) {
-    throw new UserError("verrou de magasin modifié par un autre processus; réessayez");
-  }
-  throw error;
-}
-
-async function acquireDirectoryLock(
-  path: string,
-  options: OpenStoreOptions
-) {
-  const pid = String(process.pid);
-  const generation = randomUUID();
-  const marker = `owner.${pid}.${generation}`;
-  const ownMarker = join(path, marker);
-  const candidate = `${path}.tmp.${pid}.${generation}`;
-  await mkdir(candidate);
+// SQLite owns the OS lock for the entire handle lifetime. This file is never
+// renamed or removed: a crashed process releases its transaction in the kernel.
+async function acquireLock(store: string, options: OpenStoreOptions) {
+  const path = join(store, KERNEL_LOCK_FILE);
   try {
-    await writeFile(join(candidate, marker), "", { flag: "wx" });
-    try {
-      // Le répertoire publié contient déjà son propriétaire ; un verrou actif
-      // non vide ne peut pas être remplacé par ce renommage.
-      await rename(candidate, path);
-    } catch (error) {
-      if (!LOCK_CONFLICT_CODES.has(errorCode(error) ?? "")) {
+    const info = await lstat(path);
+    if (!info.isFile() || info.isSymbolicLink()) {
+      throw new UserError("verrou de magasin invalide : fichier régulier requis, lien symbolique interdit");
+    }
+  } catch (error) {
+    if (errorCode(error) !== "ENOENT") throw error;
+  }
+  const database = new Database(path, { create: true });
+  try {
+    database.exec("PRAGMA busy_timeout = 0; BEGIN IMMEDIATE");
+    // Stop old-version writers before migrating, even with --force.
+    for (const legacy of [join(store, LOCK_FILE), join(store, `${LOCK_FILE}.migration`)]) {
+      let info;
+      try { info = await lstat(legacy); }
+      catch (error) {
+        if (errorCode(error) === "ENOENT") continue;
         throw error;
       }
-      const info = await lstat(path).catch(throwLockError);
-      if (info.isSymbolicLink()) {
-        throw new UserError("verrou de magasin invalide : lien symbolique interdit");
+      if (info.isSymbolicLink()) throw new UserError("verrou de magasin invalide : lien symbolique interdit");
+      let holder: string | undefined;
+      if (info.isFile()) {
+        holder = (await readFile(legacy, "utf8")).trim();
+      } else if (info.isDirectory()) {
+        const entries = await readdir(legacy, { withFileTypes: true });
+        if (entries.length === 0) { await rmdir(legacy); continue; }
+        const owner = entries[0];
+        const match = owner && /^owner\.([1-9]\d*)\.[0-9a-f-]{36}$/.exec(owner.name);
+        if (entries.length === 1 && owner?.isFile() && match) holder = match[1];
       }
-      if (!info.isDirectory()) throw error;
-      const entries = await readdir(path, { withFileTypes: true }).catch(throwLockError);
-      const owner = entries[0];
-      const match = owner && /^owner\.([1-9]\d*)\.[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.exec(owner.name);
-      if (entries.length === 0) {
-        await rmdir(path).catch(throwLockError);
-        await rename(candidate, path).catch(throwLockError);
-      } else if (entries.length !== 1 || !owner?.isFile() || !match || !Number.isSafeInteger(Number(match[1]))) {
+      if (!holder || !/^[1-9]\d*$/.test(holder) || !Number.isSafeInteger(Number(holder))) {
         throw new UserError("verrou de magasin invalide : propriétaire indéterminé");
-      } else {
-        const holder = match[1];
-        if (holderIsDead(holder)) options.onStaleLock?.(holder);
-        else if (options.force) options.onLockStolen?.(holder);
-        else throw new UserError(`verrou de magasin detenu par le pid ${holder}`);
-        await rm(candidate, { recursive: true });
-        // Seule la génération observée est remplacée : un repreneur retardé
-        // ne peut pas déplacer le marqueur d'un nouveau propriétaire.
-        await rename(join(path, owner.name), ownMarker).catch(throwLockError);
       }
+      if (!holderIsDead(holder)) throw new UserError(`verrou de magasin detenu par le pid ${holder}`);
+      options.onStaleLock?.(holder);
+      await rm(legacy, { recursive: info.isDirectory() });
     }
-  } finally {
-    await rm(candidate, { recursive: true, force: true });
+  } catch (error) {
+    database.close();
+    if (error instanceof SQLiteError && error.code === "SQLITE_BUSY") {
+      throw new UserError("verrou de magasin détenu par un autre écrivain; réessayez après sa fermeture");
+    }
+    throw error;
   }
-
   return {
     assertOwned: async (): Promise<void> => {
-      try {
-        if ((await lstat(ownMarker)).isFile()) return;
-      } catch (error) {
-        if (!["ENOENT", "ENOTDIR"].includes(errorCode(error) ?? "")) throw error;
-      }
-      throw new UserError("verrou de magasin perdu; ouvrir un nouveau handle avant de modifier le magasin");
+      if (!database.inTransaction) throw new UserError("verrou de magasin perdu");
     },
-    release: async (): Promise<void> => {
-      try {
-        await unlink(ownMarker);
-      } catch (error) {
-        if (errorCode(error) === "ENOENT") return;
-        throw error;
-      }
-      try {
-        await rmdir(path);
-      } catch (error) {
-        // Un successeur peut publier son répertoire après le retrait du marqueur.
-        if (!["ENOENT", "ENOTEMPTY", "EEXIST"].includes(errorCode(error) ?? "")) {
-          throw error;
-        }
-      }
-    },
+    release: async (): Promise<void> => { database.close(); },
   };
-}
-
-async function acquireLock(
-  store: string,
-  options: OpenStoreOptions
-): ReturnType<typeof acquireDirectoryLock> {
-  const path = join(store, LOCK_FILE);
-  try {
-    return await acquireDirectoryLock(path, options);
-  } catch (error) {
-    if (!LOCK_CONFLICT_CODES.has(errorCode(error) ?? "") || !(await lstat(path).catch(throwLockError)).isFile()) {
-      throw error;
-    }
-  }
-
-  // Les anciens fichiers PID sont migrés sous le même protocole de verrouillage,
-  // y compris lorsque le processus de migration précédent est mort.
-  const migrationLock = await acquireDirectoryLock(`${path}.migration`, {});
-  try {
-    let info: Stats | undefined;
-    try {
-      info = await lstat(path);
-    } catch (error) {
-      if (errorCode(error) !== "ENOENT") throw error;
-    }
-    if (info?.isFile()) {
-      const holder = (await readFile(path, "utf8")).trim() || "unknown";
-      if (holderIsDead(holder)) options.onStaleLock?.(holder);
-      else if (options.force) options.onLockStolen?.(holder);
-      else throw new UserError(`verrou de magasin detenu par le pid ${holder}`);
-      await unlink(path);
-    }
-    return await acquireDirectoryLock(path, options);
-  } finally {
-    await migrationLock.release();
-  }
 }
 
 async function readTsv(

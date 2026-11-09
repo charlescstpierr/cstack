@@ -226,8 +226,6 @@ async function runStore<T>(
   const options = program.opts<GlobalOptions>();
   const store = openStore(storeDirectory(program), {
     force: options.force,
-    onLockStolen: (holder) =>
-      io.stderr(`vol du verrou de magasin detenu par le pid ${holder}\n`),
     onStaleLock: (holder) =>
       io.stderr(`remplacement du verrou de magasin perime (pid ${holder} mort)\n`),
   });
@@ -266,7 +264,7 @@ function createProgram(io: Io): Command {
       )
     )
     .option("--json", "afficher les lignes complètes en JSON", false)
-    .option("--force", "voler un verrou de magasin existant", false);
+    .option("--force", "compatibilité : ne vole jamais un verrou actif", false);
 
   leaf(program, "init", "initialiser le magasin").action(() =>
     runStore(

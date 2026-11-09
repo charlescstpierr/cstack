@@ -1,0 +1,81 @@
+bun test v1.4.0 (34cbb9a40)
+
+tests/store-lock.test.ts:
+79 |     }
+80 |     await writeFile(join(dir, "finish"), "");
+81 |     const results = await Promise.all(children.map(async child => ({
+82 |       code: await child.exited, stderr: await new Response(child.stderr).text(),
+83 |     })));
+84 |     expect(results).toEqual(results.map(() => ({ code: 0, stderr: "" })));
+                         ^
+error: expect(received).toEqual(expected)
+
+  [
+    {
+      "code": 0,
+      "stderr": "",
+    },
+    {
+      "code": 0,
+      "stderr": "",
+    },
+    {
+-     "code": 0,
+-     "stderr": "",
++     "code": 1,
++     "stderr":
++ "27 |       throw error;
++ 28 |     }
++ 29 |     try { await fs.mkdir(join(dir, "critical")); }
++ 30 |     catch {
++ 31 |       await fs.writeFile(join(dir, "result-" + id), "overlap");
++ 32 |       throw new Error("OVERLAP: two writers own the store");
++                      ^
++ error: OVERLAP: two writers own the store
++       at /tmp/cstack-lock-race-xSd97r/writer.ts:32:17
++
++ Bun v1.4.0 (Linux x64)
++ "
++ ,
+    },
+    {
+-     "code": 0,
+-     "stderr": "",
++     "code": 1,
++     "stderr":
++ "389 |     await handle.writeFile(`${pid}\n`);
++ 390 |     await handle.close();
++ 391 |   };
++ 392 |
++ 393 |   const takeOver = async (): Promise<void> => {
++ 394 |     await unlink(path);
++                 ^
++ ENOENT: no such file or directory, unlink '/tmp/cstack-lock-race-xSd97r/store/.orch.lock'
++     path: "/tmp/cstack-lock-race-xSd97r/store/.orch.lock",
++  syscall: "unlink",
++    errno: -2,
++     code: "ENOENT"
++
++       at async <anonymous> (/home/ubuntu/cstack/.cstack/correct-20261109/concurrency/old-store.ts:394:11)
++       at async acquireLock (/home/ubuntu/cstack/.cstack/correct-20261109/concurrency/old-store.ts:421:13)
++       at async <anonymous> (/home/ubuntu/cstack/.cstack/correct-20261109/concurrency/old-store.ts:1256:13)
++       at async <anonymous> (/home/ubuntu/cstack/.cstack/correct-20261109/concurrency/old-store.ts:1270:11)
++       at async <anonymous> (/home/ubuntu/cstack/.cstack/correct-20261109/concurrency/old-store.ts:1276:15)
++
++ Bun v1.4.0 (Linux x64)
++ "
++ ,
+    },
+  ]
+
+- Expected  - 4
++ Received  + 39
+
+      at <anonymous> (/home/ubuntu/cstack/.cstack/worktrees/correct-concurrency-1109/tests/store-lock.test.ts:84:21)
+(fail) écrivains concurrents : la reprise périmée ne chevauche jamais un successeur [228.78ms]
+(pass) huit écrivains conservent toutes les unités après la mort du propriétaire [123.81ms]
+
+ 1 pass
+ 1 fail
+ 5 expect() calls
+Ran 2 tests across 1 file. [375.00ms]
