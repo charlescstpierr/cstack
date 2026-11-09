@@ -173,7 +173,7 @@ Quand tu retires un `as` du code existant, identifie pourquoi TypeScript ne peut
 
 - Discriminant manquant : ajoute-en un, passe à une union discriminee.
 - Type source trop large (par exemple `Record<string, unknown>`) : narrow-le.
-- Frontiere non typée : ajoute une fonction parse ou un schéma.
+- Frontière non typée : ajoute une fonction parse ou un schéma.
 - Vraiment inexprimable : utilise un type marqué ou `satisfies`.
 
 ## Hiérarchie de narrowing
