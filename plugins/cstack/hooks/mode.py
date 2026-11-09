@@ -30,6 +30,19 @@ def _stop_requested(prompt: str) -> bool:
     return len(words) == 2 and words[0] in STOP_VERBS and words[1] == "cstack"
 
 
+def _instruction_text(text: str) -> str:
+    import re
+
+    # Quoted examples are content, not instructions to activate or refuse the hook.
+    text = re.sub(r"```.*?(?:```|\Z)|~~~.*?(?:~~~|\Z)", " ", text, flags=re.DOTALL)
+    text = re.sub(r"(?m)^[ \t]{0,3}>[^\n]*(?:\n(?!\s*\n)[^\n]*)*", " ", text)
+    return re.sub(
+        r'`[^`\n]*`|«[^»]*»|“[^”]*”|"(?:\\.|[^"\\])*"'
+        r"|(?<!\w)'(?:\\.|[^'\\\n])*'(?!\w)",
+        " ", text,
+    )
+
+
 def _activation_requested(prompt: str) -> bool:
     import re
 
@@ -45,13 +58,18 @@ def _activation_requested(prompt: str) -> bool:
     path = invocation.group("path")
     if path and not path.strip("<>").endswith("/skills/cstack/SKILL.md"):
         return False
-    # Un refus qui cible cstack reste prioritaire, même plus loin dans le message.
+    # Keep a closed set of cstack targets: a refusal about debug/network is unrelated.
+    french_target = (
+        r"(?:cstack|\$cstack:cstack|(?:cette|la)\s+(?:compétence|competence)"
+        r"|(?:ce|le)\s+skill(?:\s+cstack)?)\b"
+    )
     refusal = re.search(
         r"\b(?:ne\s+l['’](?:activ|utilis|appliqu)\w*\s+pas\b"
-        r"|(?:ne\s+|n['’])activ\w*\s+pas\s+(?:cstack|\$cstack:cstack)\b"
+        r"|(?:ne\s+|n['’])(?:activ|utilis|appliqu)\w*\s+pas\s+" + french_target +
+        r"|ne\s+pas\s+(?:activer|utiliser|appliquer)\s+" + french_target +
         r"|(?:do\s+not|don['’]t)\s+(?:activate|use|invoke)\s+"
         r"(?:it|cstack|\$cstack:cstack|(?:this|the)\s+(?:cstack\s+)?skill)\b)",
-        prompt[invocation.end():],
+        _instruction_text(prompt[invocation.end():]),
         re.IGNORECASE,
     )
     return refusal is None

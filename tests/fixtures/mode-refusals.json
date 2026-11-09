@@ -1,0 +1,233 @@
+[
+  {
+    "id": "negated-stop-fr",
+    "comment_id": 4113802959,
+    "prompt": "N'arrête pas cstack",
+    "initially_active": true,
+    "expected_active": true
+  },
+  {
+    "id": "negated-stop-en",
+    "comment_id": 4113802959,
+    "prompt": "don't stop cstack",
+    "initially_active": true,
+    "expected_active": true
+  },
+  {
+    "id": "stop-fr",
+    "comment_id": 4113802959,
+    "prompt": "Arrête cstack.",
+    "initially_active": true,
+    "expected_active": false
+  },
+  {
+    "id": "stop-en",
+    "comment_id": 4113802959,
+    "prompt": "Stop cstack!",
+    "initially_active": true,
+    "expected_active": false
+  },
+  {
+    "id": "other-target-en",
+    "comment_id": 4208736383,
+    "prompt": "$cstack:cstack fix this, but do not activate debug mode",
+    "initially_active": false,
+    "expected_active": true
+  },
+  {
+    "id": "other-target-fr",
+    "comment_id": 4208736383,
+    "prompt": "$cstack:cstack Corrige ceci. N'active pas le réseau.",
+    "initially_active": false,
+    "expected_active": true
+  },
+  {
+    "id": "refusal-en-this skill",
+    "comment_id": 4210984706,
+    "prompt": "$cstack:cstack Explain it, but do not activate this skill",
+    "initially_active": false,
+    "expected_active": false
+  },
+  {
+    "id": "refusal-en-this cstack skill",
+    "comment_id": 4210984706,
+    "prompt": "$cstack:cstack Explain it, but do not activate this cstack skill",
+    "initially_active": false,
+    "expected_active": false
+  },
+  {
+    "id": "refusal-en-the cstack skill",
+    "comment_id": 4210984706,
+    "prompt": "$cstack:cstack Explain it, but do not activate the cstack skill",
+    "initially_active": false,
+    "expected_active": false
+  },
+  {
+    "id": "refusal-en-it",
+    "comment_id": 4210984706,
+    "prompt": "$cstack:cstack Explain it, but do not activate it",
+    "initially_active": false,
+    "expected_active": false
+  },
+  {
+    "id": "refusal-en-cstack",
+    "comment_id": 4210984706,
+    "prompt": "$cstack:cstack Explain it, but do not activate cstack",
+    "initially_active": false,
+    "expected_active": false
+  },
+  {
+    "id": "refusal-en-$cstack:cstack",
+    "comment_id": 4210984706,
+    "prompt": "$cstack:cstack Explain it, but do not activate $cstack:cstack",
+    "initially_active": false,
+    "expected_active": false
+  },
+  {
+    "id": "refusal-fr-ne pas activer cstack",
+    "comment_id": 4211983060,
+    "prompt": "$cstack:cstack Explique la compétence, mais ne pas activer cstack",
+    "initially_active": false,
+    "expected_active": false
+  },
+  {
+    "id": "refusal-fr-ne pas utiliser cstack",
+    "comment_id": 4211983060,
+    "prompt": "$cstack:cstack Explique la compétence, mais ne pas utiliser cstack",
+    "initially_active": false,
+    "expected_active": false
+  },
+  {
+    "id": "refusal-fr-ne pas appliquer cstack",
+    "comment_id": 4211983060,
+    "prompt": "$cstack:cstack Explique la compétence, mais ne pas appliquer cstack",
+    "initially_active": false,
+    "expected_active": false
+  },
+  {
+    "id": "refusal-fr-n’active pas cstack",
+    "comment_id": 4211983060,
+    "prompt": "$cstack:cstack Explique la compétence, mais n’active pas cstack",
+    "initially_active": false,
+    "expected_active": false
+  },
+  {
+    "id": "refusal-fr-ne l'utilise pas",
+    "comment_id": 4211983060,
+    "prompt": "$cstack:cstack Explique la compétence, mais ne l'utilise pas",
+    "initially_active": false,
+    "expected_active": false
+  },
+  {
+    "id": "refusal-fr-ne pas activer cette compétence",
+    "comment_id": 4211983060,
+    "prompt": "$cstack:cstack Explique la compétence, mais ne pas activer cette compétence",
+    "initially_active": false,
+    "expected_active": false
+  },
+  {
+    "id": "refusal-fr-ne pas utiliser le skill cstack",
+    "comment_id": 4211983060,
+    "prompt": "$cstack:cstack Explique la compétence, mais ne pas utiliser le skill cstack",
+    "initially_active": false,
+    "expected_active": false
+  },
+  {
+    "id": "quoted-19",
+    "comment_id": 4212451947,
+    "prompt": "$cstack:cstack Ajoute au README la phrase « ne pas utiliser cstack »",
+    "initially_active": false,
+    "expected_active": true
+  },
+  {
+    "id": "quoted-20",
+    "comment_id": 4212451947,
+    "prompt": "$cstack:cstack Ajoute au README la phrase \"do not activate cstack\"",
+    "initially_active": false,
+    "expected_active": true
+  },
+  {
+    "id": "quoted-21",
+    "comment_id": 4212451947,
+    "prompt": "$cstack:cstack Ajoute au README la phrase 'do not activate cstack'",
+    "initially_active": false,
+    "expected_active": true
+  },
+  {
+    "id": "quoted-22",
+    "comment_id": 4212451947,
+    "prompt": "$cstack:cstack Ajoute au README la phrase “do not activate cstack”",
+    "initially_active": false,
+    "expected_active": true
+  },
+  {
+    "id": "quoted-23",
+    "comment_id": 4212451947,
+    "prompt": "$cstack:cstack Ajoute au README la phrase `do not activate cstack`",
+    "initially_active": false,
+    "expected_active": true
+  },
+  {
+    "id": "quoted-24",
+    "comment_id": 4212451947,
+    "prompt": "$cstack:cstack Ajoute au README la phrase ```\ndo not activate cstack\n```",
+    "initially_active": false,
+    "expected_active": true
+  },
+  {
+    "id": "quoted-25",
+    "comment_id": 4212451947,
+    "prompt": "$cstack:cstack Ajoute au README la phrase ~~~text\ndo not activate cstack\n~~~",
+    "initially_active": false,
+    "expected_active": true
+  },
+  {
+    "id": "blockquote-26",
+    "comment_id": 4212756301,
+    "prompt": "$cstack:cstack Explain this example:\n> Do not activate cstack",
+    "initially_active": false,
+    "expected_active": true
+  },
+  {
+    "id": "blockquote-27",
+    "comment_id": 4212756301,
+    "prompt": "$cstack:cstack Explain this example:\n  > ne pas utiliser cstack",
+    "initially_active": false,
+    "expected_active": true
+  },
+  {
+    "id": "blockquote-28",
+    "comment_id": 4212756301,
+    "prompt": "$cstack:cstack Explain this example:\n> Do not activate cstack\n> ne pas utiliser cstack",
+    "initially_active": false,
+    "expected_active": true
+  },
+  {
+    "id": "refusal-after-quote",
+    "comment_id": 4212451947,
+    "prompt": "$cstack:cstack Cite « activer cstack », mais ne pas utiliser cstack.",
+    "initially_active": false,
+    "expected_active": false
+  },
+  {
+    "id": "refusal-after-blockquote",
+    "comment_id": 4212756301,
+    "prompt": "$cstack:cstack Explain:\n> do not activate cstack\n\nDo not activate this skill.",
+    "initially_active": false,
+    "expected_active": false
+  },
+  {
+    "id": "quoted-invocation",
+    "comment_id": 4212451947,
+    "prompt": "« $cstack:cstack »",
+    "initially_active": false,
+    "expected_active": false
+  },
+  {
+    "id": "code-invocation",
+    "comment_id": 4212451947,
+    "prompt": "`$cstack:cstack`",
+    "initially_active": false,
+    "expected_active": false
+  }
+]

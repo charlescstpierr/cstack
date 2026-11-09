@@ -1,0 +1,36 @@
+FFF
+======================================================================
+FAIL: test_historical_refusals_and_session_lifecycle (test_mode_corpus.ModeCorpusTests.test_historical_refusals_and_session_lifecycle) (case='blockquote-26', finding=4212756301)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-mode-1109/tests/test_mode_corpus.py", line 32, in test_historical_refusals_and_session_lifecycle
+    self.assertEqual(submit(case["prompt"]), case["expected_active"], case["prompt"])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False != True : $cstack:cstack Explain this example:
+> Do not activate cstack
+
+======================================================================
+FAIL: test_historical_refusals_and_session_lifecycle (test_mode_corpus.ModeCorpusTests.test_historical_refusals_and_session_lifecycle) (case='blockquote-27', finding=4212756301)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-mode-1109/tests/test_mode_corpus.py", line 32, in test_historical_refusals_and_session_lifecycle
+    self.assertEqual(submit(case["prompt"]), case["expected_active"], case["prompt"])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False != True : $cstack:cstack Explain this example:
+  > ne pas utiliser cstack
+
+======================================================================
+FAIL: test_historical_refusals_and_session_lifecycle (test_mode_corpus.ModeCorpusTests.test_historical_refusals_and_session_lifecycle) (case='blockquote-28', finding=4212756301)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-mode-1109/tests/test_mode_corpus.py", line 32, in test_historical_refusals_and_session_lifecycle
+    self.assertEqual(submit(case["prompt"]), case["expected_active"], case["prompt"])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False != True : $cstack:cstack Explain this example:
+> Do not activate cstack
+> ne pas utiliser cstack
+
+----------------------------------------------------------------------
+Ran 1 test in 0.227s
+
+FAILED (failures=3)
