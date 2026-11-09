@@ -89,7 +89,7 @@ Les identifiants de fournisseur, de modèle et d'option sont ceux que votre T3 C
 bash install-cstack.sh update
 ```
 
-Ouvrez ensuite un nouveau fil. Un fil déjà ouvert garde l'ancienne version.
+Si vous avez installé avec une variable `CODEX_HOME`, lancez cette commande avec la même variable. Ouvrez ensuite un nouveau fil. Un fil déjà ouvert garde l'ancienne version.
 
 ## Dépannage
 
@@ -105,7 +105,7 @@ Ouvrez ensuite un nouveau fil. Un fil déjà ouvert garde l'ancienne version.
 
 - Le plugin installé se charge dans un fil Codex de T3 Code, et le rappel du mode s'affiche. Le reçu est `docs/evidence/t3-installed-plugin-2026-11-09.json`, à la racine du dépôt.
 - L'installateur fonctionne dans un dossier Codex isolé, avec `install --local` puis `doctor`.
-- Le setup T3 accepte les vraies réponses de T3 Code et résout un panel sur deux fournisseurs. Le reçu est `docs/evidence/setup-observations-2026-11-09.json`.
+- Les helpers du setup T3 acceptent les vraies réponses de T3 Code et résolvent un panel sur deux fournisseurs. Le reçu est `docs/evidence/setup-observations-2026-11-09.json`. Un setup complet mené par un coordinateur Codex dans T3 Code n'est pas observé.
 
 Ces observations viennent d'un seul serveur Linux. L'application de bureau T3 Code sur macOS et sur Windows n'est pas observée. L'approbation des hooks depuis T3 Code non plus. Le refus d'écrire hors worktree vient du contrat T3 et n'a pas été observé.
 
