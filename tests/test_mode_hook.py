@@ -183,6 +183,10 @@ class ModeHookTests(unittest.TestCase):
         # Une ligne `>` située dans une citation déjà ouverte ne doit pas avaler sa fermeture.
         nested = "$cstack:cstack Lis «\n> exemple »\nNe pas utiliser cstack. Réponds « OK »."
         self.assertEqual(self.prompt(nested, session="quote-3"), "")
+        # Un retour chariot seul termine la ligne citée ; `>` au milieu d'une ligne est du texte.
+        self.assertEqual(self.prompt("$cstack:cstack Lis :\n> exemple\r\rNe l'active pas.", session="quote-4"), "")
+        self.assertEqual(self.prompt("$cstack:cstack > Ne l'active pas.", session="quote-5"), "")
+        self.assertIn("Mode cstack actif", self.prompt("$cstack:cstack Recopie :\r\n> ne pas utiliser cstack\r\nMerci.", session="quote-6"))
 
     def test_stop_request_ends_the_reminder(self):
         self.prompt("$cstack:cstack Refactorise ce module.")

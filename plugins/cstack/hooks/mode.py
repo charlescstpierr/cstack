@@ -38,7 +38,7 @@ def _instruction_text(text: str) -> str:
     target = re.compile(r"(?:it|cstack|\$cstack:cstack|(?:this|the)\s+(?:cstack\s+)?skill)", re.IGNORECASE)
     word = re.compile(r"\w")
     double = re.compile(r'"[^"\n]*"')
-    quote_line = re.compile(r"[ \t]{0,3}>[^\n]*")
+    quote_line = re.compile(r" {0,3}>[^\r\n]*")
     closing = {"«": re.compile("»"), "“": re.compile("”"), "‘": re.compile(r"’(?!\w)"), "'": re.compile(r"'(?!\w)")}
     absent = set()  # une fermeture introuvable depuis une position l'est aussi depuis les suivantes
 
@@ -84,8 +84,10 @@ def _instruction_text(text: str) -> str:
     while i < len(text):
         char = text[i]
         end = -1
-        if (not i or text[i - 1] == "\n") and quote_line.match(text, i):
-            end = quote_line.match(text, i).end()  # ligne de citation Markdown hors de toute autre citation
+        # Ligne de citation Markdown, hors de toute autre citation. Le texte commence juste après
+        # l'invocation, au milieu d'une ligne : seul un saut de ligne ouvre une ligne citée.
+        if i and text[i - 1] in "\r\n" and quote_line.match(text, i):
+            end = quote_line.match(text, i).end()
         elif char in "`~":
             end = fenced(char, i)
         elif char == '"':
