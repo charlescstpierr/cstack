@@ -5,7 +5,8 @@
   "hook": {
     "off": "aucune sortie au début d'une session, quelle que soit la source",
     "on": "au début d'une session (startup, clear, compact, resume), un message qui nomme le chemin absolu du SKILL.md de cstack ; aucun rappel par message sans invocation",
-    "switch": "`mode.py auto on|off|status` écrit ou retire `$XDG_CONFIG_HOME/cstack/auto-start` ; un chemin XDG relatif est ignoré"
+    "switch": "`mode.py auto on|off|status` écrit ou retire `$XDG_CONFIG_HOME/cstack/auto-start` ; un chemin relatif est ignoré, un lien symbolique ou un dossier à la place du réglage est refusé sans trace Python",
+    "stop": "« arrête cstack » tient jusqu'à la fin de la conversation, résumés compris, par un marqueur haché de la session"
   },
   "pressureTest": {
     "base": {
@@ -25,5 +26,15 @@
     ],
     "limits": "Exercice sur papier, un essai par bras. Une session Codex ou Claude de T3 Code qui reçoit ce message du hook installé et démarre cstack n'est pas observée. La cohabitation avec le démarrage automatique de pstack n'est pas testée."
   },
-  "inspiration": "pstack (cursor/plugins, MIT) et chhoumann/t3-pstack (MIT) : un hook de début de session dit quand entrer dans le mode, avec un interrupteur. Idée reprise, aucun texte ni code copié."
+  "inspiration": "pstack (cursor/plugins, MIT) et chhoumann/t3-pstack (MIT) : un hook de début de session dit quand entrer dans le mode, avec un interrupteur. Idée reprise, aucun texte ni code copié.",
+  "review": {
+    "reviewer": "claude-opus-5-5, effort high, sans l'historique de l'auteur ; même famille que l'auteur",
+    "why": "la revue GPT-6 Astra prévue a échoué au lancement : limite d'utilisation du compte Codex atteinte, annoncée jusqu'au 13 novembre 2026",
+    "commit": "a475993",
+    "findings": 8,
+    "fixed": "arrêt qui ne tenait pas après un résumé, reprise d'une session démarrée automatiquement, réglage anormal, chemin contenant un accent grave ou un retour à la ligne, et trois phrases contradictoires dans le setup, le README et le routeur",
+    "notFixed": "le démarrage automatique reste silencieux sans `PLUGIN_DATA` ni `session_id`, comme le reste du hook",
+    "hotPath": "mesuré par le reviewer : 5,8 µs par appel sur main, 5,8 µs réglage éteint, 6,1 µs réglage activé ; environ 20 ms par processus dans les trois cas",
+    "limits": "les corrections ne sont pas relues par un tiers"
+  }
 }

@@ -36,13 +36,20 @@ AUTO_START = (
     "avec un test évident, travaille directement, sans cstack. Les instructions de l'utilisateur et du projet "
     "priment, et « arrête cstack » l'éteint pour cette conversation."
 )
+AUTO_RESUME = " Si une tâche cstack était en cours avant ce résumé, relis aussi son point de reprise sous `.cstack/`."
 
 
 def _auto_start_marker() -> str:
     base = os.environ.get("XDG_CONFIG_HOME", "")
     if not os.path.isabs(base):
         base = os.path.join(os.path.expanduser("~"), ".config")
-    return os.path.join(base, "cstack", "auto-start")
+    # Un dossier relatif changerait de réglage avec le dossier courant : sans chemin absolu, pas de réglage.
+    return os.path.join(base, "cstack", "auto-start") if os.path.isabs(base) else ""
+
+
+def _auto_start() -> bool:
+    path = _auto_start_marker()
+    return bool(path) and os.path.isfile(path)
 
 
 def _stop_requested(prompt: str) -> bool:
@@ -80,8 +87,9 @@ def _activation_requested(prompt: str) -> bool:
 def reminder(raw: str, data: str) -> str:
     sessions = os.path.join(data, "sessions")
     # Chemin chaud : hors cstack, sortir avant tout import ou accès disque coûteux.
-    starting = "SessionStart" in raw and os.path.exists(_auto_start_marker())
-    if (not starting and ACTIVATE not in raw and CLAUDE_ACTIVATE not in raw and "[$cstack]" not in raw
+    # Le réglage n'est lu que pour un début de session ou un message qui nomme cstack.
+    auto = ("SessionStart" in raw or "cstack" in raw) and _auto_start()
+    if (not auto and ACTIVATE not in raw and CLAUDE_ACTIVATE not in raw and "[$cstack]" not in raw
             and not os.path.isdir(sessions)):
         return ""
     import hashlib
@@ -93,41 +101,56 @@ def reminder(raw: str, data: str) -> str:
         return ""
     # L'identifiant est haché : aucun chemin ne dépend d'une valeur externe.
     marker = os.path.join(sessions, hashlib.sha256(session_id.encode()).hexdigest())
+    # « arrête cstack » doit tenir jusqu'à la fin de la conversation, résumés compris.
+    stopped = marker + ".off"
     if event.get("hook_event_name") == "SessionStart":
-        if event.get("source") not in ("startup", "clear") and os.path.exists(marker):
+        resumed = event.get("source") not in ("startup", "clear")
+        if resumed and os.path.exists(marker):
             return AFTER_SUMMARY
-        if not os.path.exists(_auto_start_marker()):
+        skill = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "skills", "cstack", "SKILL.md")
+        # Le chemin entre dans le contexte du modèle : un nom de dossier ne doit pas y écrire de consigne.
+        if not auto or os.path.exists(stopped) or any(character in skill for character in "`\r\n"):
             return ""
-        plugin = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        return AUTO_START.format(skill=os.path.join(plugin, "skills", "cstack", "SKILL.md"))
+        return AUTO_START.format(skill=skill) + (AUTO_RESUME if resumed else "")
     prompt = event.get("prompt") or ""
     if _stop_requested(prompt):
         try:
             os.remove(marker)
         except FileNotFoundError:
             pass
+        if auto:
+            os.makedirs(sessions, exist_ok=True)
+            open(stopped, "a").close()
         return ""
     if _activation_requested(prompt):
         os.makedirs(sessions, exist_ok=True)
         open(marker, "a").close()
+        try:
+            os.remove(stopped)
+        except FileNotFoundError:
+            pass
     return REMINDER if os.path.exists(marker) else ""
 
 
 def _switch(arguments: list) -> int:
-    path = _auto_start_marker()
-    if arguments == ["auto", "on"]:
-        os.makedirs(os.path.dirname(path), exist_ok=True)
-        open(path, "a").close()
-    elif arguments == ["auto", "off"]:
-        try:
-            os.remove(path)
-        except FileNotFoundError:
-            pass
-    elif arguments != ["auto", "status"]:
+    if arguments not in (["auto", "on"], ["auto", "off"], ["auto", "status"]):
         sys.stderr.write("utilisation: mode.py auto on|off|status\n")
         return 2
-    state = "activé" if os.path.exists(path) else "éteint"
-    sys.stdout.write(f"démarrage automatique de cstack : {state} ({path})\n")
+    path = _auto_start_marker()
+    try:
+        if not path:
+            raise OSError("aucun dossier de configuration absolu")
+        if arguments[1] == "on":
+            if os.path.islink(path):
+                raise OSError("le réglage est un lien symbolique")
+            os.makedirs(os.path.dirname(path), exist_ok=True)
+            open(path, "a").close()
+        elif arguments[1] == "off" and os.path.lexists(path):
+            os.remove(path)
+    except OSError as error:
+        sys.stderr.write(f"démarrage automatique de cstack : réglage inchangé ({error})\n")
+        return 1
+    sys.stdout.write(f"démarrage automatique de cstack : {'activé' if _auto_start() else 'éteint'} ({path})\n")
     return 0
 
 

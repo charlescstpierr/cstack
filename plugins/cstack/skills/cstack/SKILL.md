@@ -8,7 +8,7 @@ Après invocation, T3 utilise le [contrat prioritaire](references/runtime/t3.md)
 
 # cstack
 
-Applique cstack à la tâche qui a explicitement invoqué `$cstack:cstack` jusqu’à ce que la tâche soit terminée ou que l’utilisateur arrête cstack. Ne fais pas persister ces instructions dans du travail non lié, ni un mode actif dans l’`AGENTS.md` global ou la config. Cette compétence coordonne la préparation, l’exécution, la revue et la vérification ; sélectionne toi-même les compétences nécessaires, sans faire approuver chaque transition de phase.
+Applique cstack à la tâche qui a invoqué `$cstack:cstack`, ou que le démarrage automatique désigne, jusqu’à sa fin ou l’arrêt par l’utilisateur. Ne fais pas persister ces instructions dans du travail non lié, ni un mode actif dans l’`AGENTS.md` global ou la config. Cette compétence coordonne la préparation, l’exécution, la revue et la vérification ; sélectionne toi-même les compétences nécessaires, sans faire approuver chaque transition de phase.
 
 Le [contrat d’exécution Codex](references/codex-runtime.md) est un index court : ne le lis pas d’avance. Ouvre seulement la partie qu’un déclencheur ci-dessous nomme, au moment où il se présente. Résous les chemins relativement à ce fichier et utilise les outils natifs exposés par la session ; ne suppose pas qu’un agent nommé, un planificateur, un navigateur, un modèle ou une intégration externe existe.
 

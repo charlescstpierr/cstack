@@ -69,6 +69,43 @@ class ModeHookTests(unittest.TestCase):
         self.assertIn("contexte résumé", self.start("compact"))
         self.assertIn("vaut invocation explicite", self.start("startup", session="s2"))
 
+    def test_stop_holds_through_a_summary_when_automatic_start_is_on(self):
+        self.switch("auto", "on")
+        self.prompt("$cstack:cstack Corrige ce bug.")
+        self.assertEqual(self.prompt("arrête cstack"), "")
+        for source in ("compact", "resume"):
+            self.assertEqual(self.start(source), "", source)
+        self.assertEqual(self.prompt("arrête cstack", session="jamais-invoquée"), "")
+        self.assertEqual(self.start("compact", session="jamais-invoquée"), "")
+        self.assertIn("vaut invocation explicite", self.start("compact", session="autre"))
+        self.assertIn("Mode cstack actif", self.prompt("$cstack:cstack Reprends."))
+        self.assertIn("contexte résumé", self.start("compact"))
+
+    def test_a_summary_of_an_automatic_session_points_back_to_its_checkpoint(self):
+        self.switch("auto", "on")
+        self.assertNotIn("point de reprise", self.start("startup"))
+        self.assertIn("point de reprise", self.start("compact"))
+
+    def test_an_abnormal_setting_never_crashes_the_switch_or_the_hook(self):
+        setting = self.data / "config/cstack/auto-start"
+        setting.mkdir(parents=True)
+        for arguments in (("auto", "on"), ("auto", "off")):
+            result = self.switch(*arguments)
+            self.assertEqual(result.returncode, 1, arguments)
+            self.assertNotIn("Traceback", result.stderr)
+        self.assertIn("éteint", self.switch("auto", "status").stdout)
+        self.assertEqual(self.start("startup"), "")
+        setting.rmdir()
+        target = self.data / "elsewhere"
+        setting.symlink_to(target)
+        self.assertEqual(self.switch("auto", "on").returncode, 1)
+        self.assertFalse(target.exists())
+        self.assertEqual(self.switch("auto", "off").returncode, 0)
+        self.assertFalse(setting.is_symlink())
+        result = self.switch("auto", "on", config="relative-config", home="relative-home")
+        self.assertEqual(result.returncode, 1)
+        self.assertFalse((self.data / "relative-home").exists())
+
     def test_the_switch_rejects_other_commands_and_ignores_a_relative_config_home(self):
         for arguments in (("auto",), ("auto", "maybe"), ("on",)):
             result = self.switch(*arguments)

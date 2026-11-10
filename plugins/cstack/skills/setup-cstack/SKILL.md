@@ -8,7 +8,7 @@ Après invocation explicite dans T3, lire d’abord le [contrat T3](../cstack/re
 
 # Configurer cstack
 
-L'usage de base de cstack n'exige aucune configuration. La configuration prépare seulement le projet courant; elle n'active jamais un flux de travail et ne change jamais la configuration globale de Codex ou de Claude Code. Dans T3, les choix de modèles acceptés vont dans la feuille cstack de la machine (`$XDG_CONFIG_HOME/cstack/models.json`, par défaut `~/.config/cstack/models.json`), que tous les projets et worktrees lisent.
+L'usage de base de cstack n'exige aucune configuration. La configuration prépare seulement le projet courant; elle n'active un flux de travail que par le [démarrage automatique](#démarrage-automatique), sur demande de l'utilisateur, et ne change jamais la configuration globale de Codex ou de Claude Code. Dans T3, les choix de modèles acceptés vont dans la feuille cstack de la machine (`$XDG_CONFIG_HOME/cstack/models.json`, par défaut `~/.config/cstack/models.json`), que tous les projets et worktrees lisent.
 
 Runtime : [règles communes](../cstack/references/runtime/base.md), [exploration](../cstack/references/runtime/exploration.md), [modèles](../cstack/references/runtime/modeles.md).
 
