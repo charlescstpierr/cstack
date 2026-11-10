@@ -6,6 +6,8 @@ import json
 import re
 
 LIMIT = 1024 * 1024
+DIRECT = 'cstack.t3-direct/1'
+PROVIDER_LIMITS = ('enabled', 'canRunChildTask', 'canRunCrossProviderChildTask', 'constraints', 'runtimeModes')
 SCOPE_KEYS = ('threadId', 'projectId', 'link', 'providerInstanceId', 'model', 'runtimeMode', 'interactionMode', 'options')
 
 
@@ -67,7 +69,7 @@ def options(rows):
     return result
 
 
-def envelope(raw, tool):
+def parse(raw):
     if not isinstance(raw, bytes) or len(raw) > LIMIT:
         fail('capture trop grande: maximum 1 MiB')
     def pairs(items):
@@ -77,7 +79,11 @@ def envelope(raw, tool):
                 fail('doublon JSON: ' + key)
             result[key] = value
         return result
-    data = json.loads(raw, object_pairs_hook=pairs)
+    return json.loads(raw, object_pairs_hook=pairs)
+
+
+def envelope(raw, tool):
+    data = parse(raw)
     if (not isinstance(data, dict) or data.get('toolName') != tool
             or not identifier(data.get('itemId')) or not isinstance(data.get('input'), dict)
             or not isinstance(data.get('output'), dict)):
@@ -97,16 +103,31 @@ def normalize(capabilities_raw, thread_raw):
     scope = {key: identity.get(key) for key in SCOPE_KEYS if key != 'options'}
     if not all(identifier(value) for value in scope.values()):
         fail('identité coordinator complète requise')
-    expected = {'threadId': caps.get('parentThreadId'), 'providerInstanceId': caps.get('inheritedProviderInstanceId'),
-                'model': caps.get('inheritedModel'), 'runtimeMode': caps.get('runtimeMode'),
-                'interactionMode': caps.get('interactionMode')}
     if (thread['input'].get('threadId') != scope['threadId']
-            or any(scope[key] != value for key, value in expected.items())):
+            or any(scope[key] != value for key, value in inherited_scope(caps).items())):
         fail('captures thread/provider/model/modes incohérentes')
-    inherited = unique(caps.get('inheritedOptions'), 'id')
-    scope['options'] = {key: row.get('value') for key, row in inherited.items()}
-    if any(type(value) not in (str, bool) for value in scope['options'].values()):
+    scope['options'] = inherited_options(caps)
+    providers = catalog(caps)
+    check_coordinator(scope, providers)
+    body = {'schema': 'cstack.t3-snapshot/2', 'host': 't3', 'coordinator': scope,
+            'sources': {'capabilities': cap_source, 'thread': thread_source}, 'providers': providers}
+    return {**body, 'sha256': digest(body)}
+
+
+def inherited_scope(caps):
+    return {'threadId': caps.get('parentThreadId'), 'providerInstanceId': caps.get('inheritedProviderInstanceId'),
+            'model': caps.get('inheritedModel'), 'runtimeMode': caps.get('runtimeMode'),
+            'interactionMode': caps.get('interactionMode')}
+
+
+def inherited_options(caps):
+    result = {key: row.get('value') for key, row in unique(caps.get('inheritedOptions'), 'id').items()}
+    if any(type(value) not in (str, bool) for value in result.values()):
         fail('inheritedOptions malformed')
+    return result
+
+
+def catalog(caps):
     providers = {}
     for name, provider in unique(caps.get('providers'), 'providerInstanceId').items():
         models = {}
@@ -136,6 +157,10 @@ def normalize(capabilities_raw, thread_raw):
                 fail('runtimeModes incohérents')
             normalized['runtimeModes'] = provider['runtimeModes']
         providers[name] = normalized
+    return providers
+
+
+def check_coordinator(scope, providers):
     coordinator_provider = providers.get(scope['providerInstanceId'])
     if not coordinator_provider:
         fail('fournisseur coordinator absent du catalogue')
@@ -145,8 +170,49 @@ def normalize(capabilities_raw, thread_raw):
             declaration = coordinator_model['options'].get(key)
             if declaration is None or not any(type(value) is type(v) and value == v for v in declaration['values']):
                 fail('inheritedOptions incohérentes avec catalogue')
-    body = {'schema': 'cstack.t3-snapshot/2', 'host': 't3', 'coordinator': scope,
-            'sources': {'capabilities': cap_source, 'thread': thread_source}, 'providers': providers}
+
+
+def capabilities(raw):
+    """Lire la sortie de orchestrator_capabilities : brute, dans une enveloppe `output`, ou en texte dans un résultat MCP."""
+    data = parse(raw)
+    if isinstance(data, dict) and isinstance(data.get('output'), dict):
+        data = data['output']
+    elif isinstance(data, dict) and isinstance(data.get('content'), list):
+        texts = [row.get('text') for row in data['content'] if isinstance(row, dict) and row.get('type') == 'text']
+        if len(texts) != 1 or not isinstance(texts[0], str):
+            fail('résultat MCP sans texte JSON unique')
+        data = parse(texts[0].encode())
+    if not isinstance(data, dict) or not isinstance(data.get('providers'), list):
+        fail('sortie orchestrator_capabilities attendue')
+    return data
+
+
+def direct(raws):
+    """Catalogue du chemin direct. Les captures suivantes, issues de `search`, ajoutent leurs modèles à la première."""
+    scope, providers = None, {}
+    for raw in raws:
+        caps = capabilities(raw)
+        current = inherited_scope(caps)
+        if not all(identifier(value) for value in current.values()):
+            fail('identité du fil absente de orchestrator_capabilities')
+        current['options'] = inherited_options(caps)
+        if scope not in (None, current):
+            fail('captures de fils ou de réglages différents')
+        scope = current
+        for name, provider in catalog(caps).items():
+            known = providers.get(name)
+            if known is not None:
+                if any(known.get(key) != provider.get(key) for key in PROVIDER_LIMITS):
+                    fail('captures contradictoires pour le fournisseur ' + name)
+                provider['models'] = {**known['models'], **provider['models']}
+                provider['modelsComplete'] = known['modelsComplete'] and provider['modelsComplete']
+                if known.get('omittedModels') != provider.get('omittedModels'):
+                    provider.pop('omittedModels', None)
+            providers[name] = provider
+    if scope is None:
+        fail('capture orchestrator_capabilities requise')
+    check_coordinator(scope, providers)
+    body = {'schema': DIRECT, 'host': 't3', 'coordinator': scope, 'providers': providers}
     return {**body, 'sha256': digest(body)}
 
 

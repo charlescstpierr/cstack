@@ -2,6 +2,18 @@
 
 Cette tranche rend le catalogue observé utilisable par setup, preflight et prepare. Le contrat normatif unique est [runtime/t3.md](../plugins/cstack/skills/cstack/references/runtime/t3.md). Codex natif et les CLI conservent leurs branches existantes. Aucune conclusion qualitative sur cinq approches ni score cstack >= 9.5 ne découle de ces tests.
 
+## Chemin direct
+
+Le chemin direct est le défaut depuis le 9 novembre 2026. Il lit la sortie de `orchestrator_capabilities` et rend la cible de chaque position, sans trace du fil ni contexte.
+
+```sh
+python3 plugins/cstack/skills/setup-cstack/scripts/models.py \
+  --host t3 --capabilities <sortie de orchestrator_capabilities.json> \
+  preflight 'interrogate reviewers' 'judgment and prose'
+```
+
+Le reçu `docs/evidence/t3-direct-path-2026-11-09.json` compare les étapes prévues par GPT-6.1 Sol avec les règles de `main` et avec celles du chemin direct. Le reste de cette page décrit le chemin audité, qui reste facultatif.
+
 ## Reproduire
 
 Depuis la racine du worktree de tâche, normaliser les captures réelles disponibles localement.
