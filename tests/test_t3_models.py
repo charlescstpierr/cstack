@@ -725,6 +725,18 @@ class T3DirectTests(unittest.TestCase):
             self.assertEqual(result.returncode, 2, result.stdout)
             self.assertIn('--capabilities', result.stderr)
 
+    def test_a_relative_config_home_never_moves_the_machine_sheet(self):
+        path = self.root / 'capabilities.json'
+        path.write_text(json.dumps(self.caps))
+        home = self.root / 'home'
+        for value in ('relative-config', ''):
+            with self.subTest(value=value):
+                result = subprocess.run([sys.executable, str(self.script), '--host', 't3', '--capabilities', str(path),
+                                         '--workspace', str(self.root), 'show'], capture_output=True, text=True, check=False,
+                                        cwd=self.root, env={**os.environ, 'XDG_CONFIG_HOME': value, 'HOME': str(home)})
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertEqual(json.loads(result.stdout)['machine']['path'], str(home / '.config/cstack/models.json'))
+
     def test_direct_and_audited_inputs_do_not_mix(self):
         path = self.root / 'capabilities.json'
         path.write_text(json.dumps(self.caps))

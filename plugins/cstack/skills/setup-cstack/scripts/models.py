@@ -185,7 +185,9 @@ def t3_catalog_helper():
 
 def machine_sheet():
     """Feuille de la machine : lue dans T3 par tous les projets et worktrees, sous les rôles du projet."""
-    return Path(os.environ.get("XDG_CONFIG_HOME") or Path.home() / ".config") / "cstack" / "models.json"
+    base = os.environ.get("XDG_CONFIG_HOME", "")
+    # Un chemin XDG relatif changerait de feuille avec le dossier courant : la spécification XDG demande de l’ignorer.
+    return (Path(base) if os.path.isabs(base) else Path.home() / ".config") / "cstack" / "models.json"
 
 
 def t3_direct(catalog):

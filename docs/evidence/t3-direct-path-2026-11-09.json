@@ -64,7 +64,14 @@
     "commit": "0e6dcbf",
     "findings": 9,
     "blocking": 2,
-    "fixed": "les neuf, chacun avec un test : fusion de captures contradictoires refusée, catalogue direct refusé par --catalog, lecture unique exigée pour --tier, effort limité aux options d'effort, effort vide refusé, modèle malformé sans trace Python, complétude après fusion"
+    "fixed": "les neuf, chacun avec un test : fusion de captures contradictoires refusée, catalogue direct refusé par --catalog, lecture unique exigée pour --tier, effort limité aux options d'effort, effort vide refusé, modèle malformé sans trace Python, complétude après fusion",
+    "second": {
+      "reviewer": "gpt-6-astra, effort high",
+      "commit": "115f84d",
+      "firstFindings": "les neuf reproduits sur 0e6dcbf puis constatés corrigés",
+      "newFindings": 3,
+      "fixed": "chemin XDG relatif ignoré avec un test, replis de `simple edits` et `documentation` nommés dans la règle, pool de juge croisé exclu de « lancer chaque position » ; ces trois corrections ne sont pas relues par un tiers"
+    }
   },
   "inspiration": "chhoumann/t3-pstack (MIT), commit f344cb6 lu le 9 novembre 2026 : feuille de modèles par machine et lancement direct depuis l'entrée de la feuille. Idées reprises, aucun texte ni code copié."
 }
