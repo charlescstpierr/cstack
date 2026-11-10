@@ -22,6 +22,8 @@ class ModeHookTests(unittest.TestCase):
 
     def run_hook(self, event, *, data=True, raw=None, data_variable="PLUGIN_DATA"):
         env = {key: value for key, value in os.environ.items() if key not in ("PLUGIN_DATA", "CLAUDE_PLUGIN_DATA")}
+        # Le réglage de la machine du développeur ne doit jamais entrer dans ces tests.
+        env["XDG_CONFIG_HOME"] = str(self.data / "config")
         if data:
             env[data_variable] = str(self.data)
         result = subprocess.run([sys.executable, "-S", str(HOOK)], input=raw if raw is not None else json.dumps(event),
@@ -35,6 +37,47 @@ class ModeHookTests(unittest.TestCase):
     def test_silent_outside_cstack(self):
         self.assertEqual(self.prompt("Corrige ce bug."), "")
         self.assertEqual(self.run_hook({"hook_event_name": "SessionStart", "session_id": "s1", "source": "compact"}), "")
+
+    def switch(self, *arguments, config=None, home=None):
+        env = {**os.environ, "XDG_CONFIG_HOME": str(self.data / "config") if config is None else config}
+        if home:
+            env["HOME"] = home
+        return subprocess.run([sys.executable, "-S", str(HOOK), *arguments], capture_output=True, text=True,
+                              env=env, check=False, cwd=self.data)
+
+    def start(self, source, session="s1"):
+        return self.run_hook({"hook_event_name": "SessionStart", "session_id": session, "source": source})
+
+    def test_automatic_start_is_off_until_the_user_turns_it_on(self):
+        for source in ("startup", "clear", "compact", "resume"):
+            self.assertEqual(self.start(source), "", source)
+        self.assertEqual(self.switch("auto", "status").stdout.split(" (")[0], "démarrage automatique de cstack : éteint")
+        self.assertEqual(self.switch("auto", "on").returncode, 0)
+        self.assertTrue((self.data / "config/cstack/auto-start").is_file())
+        for source in ("startup", "clear", "compact", "resume"):
+            text = self.start(source)
+            self.assertIn("vaut invocation explicite", text, source)
+            self.assertIn(str(ROOT / "plugins/cstack/skills/cstack/SKILL.md"), text)
+        self.assertEqual(self.prompt("Corrige ce bug."), "", "aucun rappel par message sans invocation")
+        self.assertEqual(self.switch("auto", "off").returncode, 0)
+        self.assertEqual(self.switch("auto", "off").returncode, 0, "éteindre deux fois reste sans erreur")
+        self.assertEqual(self.start("startup"), "")
+
+    def test_automatic_start_keeps_the_resume_reminder_of_an_invoked_session(self):
+        self.switch("auto", "on")
+        self.prompt("$cstack:cstack Corrige ce bug.")
+        self.assertIn("contexte résumé", self.start("compact"))
+        self.assertIn("vaut invocation explicite", self.start("startup", session="s2"))
+
+    def test_the_switch_rejects_other_commands_and_ignores_a_relative_config_home(self):
+        for arguments in (("auto",), ("auto", "maybe"), ("on",)):
+            result = self.switch(*arguments)
+            self.assertEqual((result.returncode, result.stdout), (2, ""), arguments)
+        home = self.data / "home"
+        result = self.switch("auto", "on", config="relative-config", home=str(home))
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertTrue((home / ".config/cstack/auto-start").is_file())
+        self.assertFalse((self.data / "relative-config").exists())
 
     def test_reminder_after_activation_on_every_turn_of_that_session_only(self):
         first = self.prompt("$cstack:cstack Corrige ce bug.")

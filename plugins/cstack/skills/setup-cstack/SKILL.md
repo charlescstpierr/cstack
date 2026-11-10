@@ -34,6 +34,10 @@ Avant la première inspection, affiche une todo courte adaptée au périmètre :
 - Applique la proposition `mixed review panels` et une cible GitHub seulement après leur sélection. Préserve les rôles non sélectionnés et les sélections sauvegardées devenues indisponibles tant qu'aucun remplacement n'est demandé.
 - Construis options et choix seulement depuis les réglages acceptés ; les valeurs de modèle sont des sélections vérifiées, pas des défauts inconditionnels.
 
+## Démarrage automatique
+
+Sur demande de l'utilisateur seulement, `python3 <absolute-plugin>/hooks/mode.py auto on` fait démarrer cstack de lui-même au début de chaque session de cette machine, pour les tâches qui touchent plusieurs fichiers, demandent un choix de conception ou portent sur un bug de cause inconnue. `auto off` l'éteint et `auto status` dit l'état. Le réglage est le fichier `$XDG_CONFIG_HOME/cstack/auto-start`, par défaut `~/.config/cstack/auto-start`. Ne l'active jamais de ta propre initiative. Dis à l'utilisateur qu'il vaut pour les nouvelles sessions, Codex et Claude, et qu'il dépend du hook cstack : Codex redemande son approbation (`/hooks`) après une mise à jour qui le change.
+
 ## Jamais
 
 - Lire les identifiants secrets, chercher dans les credentials, sessions privées ou variables secrètes, ou copier un credential.

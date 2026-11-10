@@ -1,0 +1,29 @@
+{
+  "kind": "observed-automatic-start",
+  "observedAt": "2026-11-10",
+  "method": "Le hook est exécuté réellement avec le réglage activé dans un dossier de configuration jetable : son message de début de session est celui des essais. Scénario sur papier donné à trois enfants : chacun reçoit un contexte de démarrage, puis décrit ses premiers gestes pour trois demandes indépendantes (un bug de cause inconnue, un renommage d'une ligne, une question). Aucun contenu de conversation n'est conservé ici.",
+  "hook": {
+    "off": "aucune sortie au début d'une session, quelle que soit la source",
+    "on": "au début d'une session (startup, clear, compact, resume), un message qui nomme le chemin absolu du SKILL.md de cstack ; aucun rappel par message sans invocation",
+    "switch": "`mode.py auto on|off|status` écrit ou retire `$XDG_CONFIG_HOME/cstack/auto-start` ; un chemin XDG relatif est ignoré"
+  },
+  "pressureTest": {
+    "base": {
+      "model": "gpt-6.1-sol, effort medium",
+      "context": "compétence listée, sans message de démarrage",
+      "result": "cstack n'est appliqué à aucune des trois demandes"
+    },
+    "rule": [
+      {
+        "model": "gpt-6.1-sol, effort medium",
+        "result": "ouvre le SKILL.md et applique cstack pour le bug ; travaille directement pour le renommage et pour la question"
+      },
+      {
+        "model": "claude-sonnet-5-5, effort high",
+        "result": "ouvre le SKILL.md et applique cstack pour le bug ; travaille directement pour le renommage et pour la question"
+      }
+    ],
+    "limits": "Exercice sur papier, un essai par bras. Une session Codex ou Claude de T3 Code qui reçoit ce message du hook installé et démarre cstack n'est pas observée. La cohabitation avec le démarrage automatique de pstack n'est pas testée."
+  },
+  "inspiration": "pstack (cursor/plugins, MIT) et chhoumann/t3-pstack (MIT) : un hook de début de session dit quand entrer dans le mode, avec un interrupteur. Idée reprise, aucun texte ni code copié."
+}

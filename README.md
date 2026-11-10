@@ -122,7 +122,9 @@ cstack s'installe sur la machine qui exécute vos agents T3, puis s'invoque dans
 2. Ouvrez un nouveau fil dans T3 Code. Un fil ouvert avant l'installation ne voit pas le plugin.
 3. Commencez votre message par `$cstack:cstack` dans un fil Codex, ou par `/cstack:cstack` dans un fil Claude, puis écrivez la demande.
 
-Le guide [Installer cstack dans T3 Code](plugins/cstack/docs/guide/12-t3-code.md) détaille les worktrees, le choix des modèles, la mise à jour et le dépannage.
+Pour vous passer de la commande, activez le démarrage automatique, éteint par défaut : cstack s'applique alors de lui-même aux tâches qui touchent plusieurs fichiers, demandent un choix de conception ou portent sur un bug de cause inconnue.
+
+Le guide [Installer cstack dans T3 Code](plugins/cstack/docs/guide/12-t3-code.md) détaille le démarrage automatique, les worktrees, le choix des modèles, la mise à jour et le dépannage.
 
 Dans T3 Code, le coordinateur utilise les outils de l'hôte pour choisir les modèles et les efforts, déléguer, isoler les checkouts et collecter les résultats. Le [contrat T3](plugins/cstack/skills/cstack/references/runtime/t3.md) prime alors sur les consignes Codex autonome. Les helpers cstack vérifient les sélections et préparent les briefs. Ils ne lancent ni moteur d'orchestration ni CLI de repli.
 
