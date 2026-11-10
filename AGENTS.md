@@ -10,7 +10,7 @@ Gardez le portage petit. Réutilisez les assistants amont et leurs dépendances 
 
 Carte du dépôt : `plugins/cstack/` est le livrable ; `scripts/` et `tests/` valident le paquet et le comportement natif ; `UPSTREAM.json` et `PORTING.json` suivent la provenance source. Les artefacts de travail appartiennent aux répertoires `.cstack/` ignorés. Les essais natifs sont distincts des contrôles déterministes et doivent rapporter les résultats réels des tâches ainsi que les lacunes de capacité.
 
-Python 3.9 ou plus récent exécute les assistants et toute la suite de tests. L'analyse du `config.toml` de Codex dans `scripts/verify-behavior.py` nécessite Python 3.11 ou plus récent.
+Python 3.9 ou plus récent exécute les assistants et toute la suite de tests. L'analyse du `config.toml` de Codex dans `scripts/verify-behavior.py` et `scripts/check-installed-loader.py` nécessite Python 3.11 ou plus récent.
 
 La commande complète de validation locale et CI est :
 
@@ -38,3 +38,9 @@ Voir `docs/agents/triage-labels.md`.
 
 Organisation single-context : `CONTEXT.md` et `docs/adr/` à la racine.
 Voir `docs/agents/domain.md`.
+
+## Erreurs répétées : règle et mécanisme
+
+| Règle | Mécanisme exécuté par `scripts/check.sh` |
+|---|---|
+| Installer et mettre à jour passent par une transaction par hôte ; le rollback restaure le code capturé et l’état installé ou absent, jamais un clone source qui a avancé. | `replace_marketplace` dans `install.sh` : instantané du catalogue et du cache installé, validation isolée, application, trap de restauration et vérification de l’état. `tests/test_install_transactions.py` injecte les erreurs de validation, retrait, ajout, installation finale, SIGTERM et rollback ; états désactivés/illisibles ou cache manquant refusés avant mutation. `scripts/probe-install-rollback.py` reproduit le rollback via les CLI réelles ; le cas Codex tourne aussi en CI. Après rollback la source devient la copie locale conservée, voir `INSTALL-AGENT.md`. |

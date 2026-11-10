@@ -5,7 +5,9 @@ on:
       - '.github/workflows/installed-loader.yml'
       - 'ci/installed-loader/**'
       - 'scripts/check-installed-loader.py'
+      - 'scripts/probe-install-rollback.py'
       - 'tests/test_installed_loader.py'
+      - 'tests/test_install_transactions.py'
       - 'plugins/cstack/**'
       - 'install.sh'
   workflow_dispatch:
@@ -40,9 +42,14 @@ jobs:
           --repo "$GITHUB_WORKSPACE"
           --codex "$RUNNER_TEMP/cstack-loader-cli/node_modules/.bin/codex"
           --output "$RUNNER_TEMP/cstack-loader-evidence"
+      - name: Restore the installed snapshot after a failed local replacement
+        run: |
+          PATH="$RUNNER_TEMP/cstack-loader-cli/node_modules/.bin:$PATH" python3 -B scripts/probe-install-rollback.py --host codex --output "$RUNNER_TEMP/cstack-rollback-evidence"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
           name: installed-loader-evidence
-          path: ${{ runner.temp }}/cstack-loader-evidence/receipt.json
+          path: |
+            ${{ runner.temp }}/cstack-loader-evidence/receipt.json
+            ${{ runner.temp }}/cstack-rollback-evidence
           if-no-files-found: warn

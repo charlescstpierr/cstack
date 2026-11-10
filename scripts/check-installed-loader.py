@@ -24,6 +24,20 @@ def digest(path):
     return hashlib.sha256(path.read_bytes()).hexdigest() if path.is_file() else None
 
 
+def config_state(path):
+    try:
+        import tomllib
+    except ImportError:
+        raise Blocked('TOML configuration checks require Python 3.11 or newer') from None
+    def canonical(value):
+        if isinstance(value, dict):
+            return tuple((key, canonical(item)) for key, item in sorted(value.items()))
+        if isinstance(value, list):
+            return ('array', tuple(canonical(item) for item in value))
+        return (type(value).__name__, repr(value))
+    return canonical(tomllib.loads(path.read_text())) if path.is_file() else None
+
+
 def within(path, root):
     try:
         path.resolve().relative_to(root.resolve())
@@ -141,13 +155,28 @@ def execute(repo, codex, output):
     evidence = {'status': 'unverified', 'phase': 'cli-version', 'modelTurnsRequested': 0, 'codexVersion': VERSION,
                 'limits': ['Codex CLI installed discovery only; no T3 installation claim',
                            'No model turn or ordinary-task activation behavior tested']}
+    preflight = output / 'preflight-profiles'
+    preflight.mkdir(mode=0o700)
+    evidence['preflightProfilePolicy'] = 'private direct children; local marketplace add and cstack plugin add only'
     wrapper = output / 'codex-with-unchanged-profile'
-    wrapper.write_text('#!' + sys.executable + '\nimport os,sys\n'
-        + 'if "CODEX_HOME" in os.environ or os.environ.get("HOME") != ' + repr(str(registered_home)) + ':\n'
-        + '    raise SystemExit("BLOCKED: installer attempted a profile override")\n'
+    wrapper.write_text('#!' + sys.executable + '\nimport os,sys\nfrom pathlib import Path\n'
+        + 'if os.environ.get("HOME") != ' + repr(str(registered_home)) + ':\n'
+        + '    raise SystemExit("BLOCKED: installer changed the account home")\n'
+        + 'if "CODEX_HOME" in os.environ:\n'
+        + '    raw = os.environ["CODEX_HOME"]\n'
+        + '    profile = Path(raw)\n'
+        + '    if (not raw or not profile.is_absolute() or profile.is_symlink() or not profile.is_dir()\n'
+        + '            or profile.resolve().parent != Path(' + repr(str(preflight)) + ').resolve()):\n'
+        + '        raise SystemExit("BLOCKED: installer attempted an external profile override")\n'
+        + '    info = profile.stat()\n'
+        + '    if info.st_uid != os.getuid() or info.st_mode & 0o077:\n'
+        + '        raise SystemExit("BLOCKED: preflight profile is not private and owned")\n'
+        + '    if tuple(sys.argv[1:]) not in ' + repr((('plugin', 'marketplace', 'add', str(repo)), ('plugin', 'add', PLUGIN))) + ':\n'
+        + '        raise SystemExit("BLOCKED: unsupported preflight operation")\n'
         + 'os.execv(' + repr(str(codex)) + ', [' + repr(str(codex)) + ', *sys.argv[1:]])\n')
     wrapper.chmod(0o755)
-    env = dict(os.environ, CSTACK_CODEX=str(wrapper))
+    env = dict(os.environ, CSTACK_CODEX=str(wrapper), CSTACK_CLAUDE=str(output / 'absent-claude'),
+               TMPDIR=str(preflight), XDG_STATE_HOME=str(output / 'installer-state'))
     installer = ['bash', str(repo / 'install.sh')]
     installed = False
     try:
@@ -176,14 +205,14 @@ def execute(repo, codex, output):
             evidence['phase'] = 'installed-discovery'
             plugins, skills = snapshot(repo, codex, workspace, output)
             evidence['installed'] = installed_evidence(plugins, skills, repo, profile)
-            config_sha = digest(profile / 'config.toml')
+            config_before = config_state(profile / 'config.toml')
             evidence['phase'] = 'reapply-and-update'
             command(installer + ['install', '--local'], repo, env)
             command(installer + ['update'], repo, env)
             command(installer + ['doctor'], repo, env)
             plugins, skills = snapshot(repo, codex, workspace, output)
             repeated = installed_evidence(plugins, skills, repo, profile)
-            if (repeated != evidence['installed'] or digest(profile / 'config.toml') != config_sha
+            if (repeated != evidence['installed'] or config_state(profile / 'config.toml') != config_before
                     or digest(sentinel) != sentinel_sha):
                 raise Blocked('reapply changed configured state, skill bytes or the sentinel')
             evidence['reapplyPreservedState'] = True
