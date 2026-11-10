@@ -1,0 +1,32 @@
+FFF
+======================================================================
+FAIL: test_4211983045_git_head_index_and_refs (test_provenance.ProvenanceTests.test_4211983045_git_head_index_and_refs) (mutation='head')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-provenance-1109/tests/test_provenance.py", line 137, in test_4211983045_git_head_index_and_refs
+    self.assertNotEqual(before, self.fingerprints(root))
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: '3a37d355317935f190eaa37f87132386e2bed4849b1f1979dd9ece2dcc612ae1' == '3a37d355317935f190eaa37f87132386e2bed4849b1f1979dd9ece2dcc612ae1'
+
+======================================================================
+FAIL: test_4211983045_git_head_index_and_refs (test_provenance.ProvenanceTests.test_4211983045_git_head_index_and_refs) (mutation='index')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-provenance-1109/tests/test_provenance.py", line 137, in test_4211983045_git_head_index_and_refs
+    self.assertNotEqual(before, self.fingerprints(root))
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'fa2680cf9f962ab38aeacce526827560e9c209127c729891ec4678eafdcc326c' == 'fa2680cf9f962ab38aeacce526827560e9c209127c729891ec4678eafdcc326c'
+
+======================================================================
+FAIL: test_4211983045_git_head_index_and_refs (test_provenance.ProvenanceTests.test_4211983045_git_head_index_and_refs) (mutation='refs')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-provenance-1109/tests/test_provenance.py", line 137, in test_4211983045_git_head_index_and_refs
+    self.assertNotEqual(before, self.fingerprints(root))
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: '3a37d355317935f190eaa37f87132386e2bed4849b1f1979dd9ece2dcc612ae1' == '3a37d355317935f190eaa37f87132386e2bed4849b1f1979dd9ece2dcc612ae1'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.092s
+
+FAILED (failures=3)

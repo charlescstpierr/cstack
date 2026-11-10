@@ -13,7 +13,7 @@ import re
 import selectors
 import shlex
 import shutil
-import stat
+import runpy
 import subprocess
 import sys
 import tempfile
@@ -22,8 +22,9 @@ import time
 
 DEFAULT_TURN_SECONDS = 300.0
 MAX_TURN_SECONDS = 900.0
-SKIP_DIRS = {".git", "__pycache__", "node_modules"}
-TREE_HASH_ALGORITHM = "cstack-tree-sha256-v2"
+_PROVENANCE = runpy.run_path(str(Path(__file__).with_name("provenance.py")))
+TREE_HASH_ALGORITHM = _PROVENANCE["TREE_HASH_ALGORITHM"]
+SKIP_DIRS = _PROVENANCE["IGNORED_DIRS"]
 SAFE_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
 # Key-name policy: a dict key or assignment/flag/header name is secret when
 # its normalized form contains a marker below or ends with "token". Markers
@@ -400,56 +401,14 @@ def project_metadata(value):
 
 
 def tree_hash(root, excluded):
-    def unreadable(error):
-        raise HarnessError(f"parcours d’empreinte incomplet: {error.filename}") from error
-
-    digest = hashlib.sha256((TREE_HASH_ALGORITHM + "\0").encode())
-    files = 0
-    total_bytes = 0
-    root = root.resolve()
-    excluded = excluded.resolve() if excluded else None
-    if excluded and root not in excluded.parents:
-        excluded = None
-    for directory, names, filenames in os.walk(root, topdown=True, followlinks=False, onerror=unreadable):
-        path = Path(directory)
-        names[:] = sorted(name for name in names if name not in SKIP_DIRS and not (excluded and (path / name).resolve() == excluded))
-        for name in names:
-            if (path / name).is_symlink():
-                raise HarnessError(f"empreinte non prise en charge pour un dossier symbolique: {path / name}")
-        for filename in sorted(filenames):
-            item = path / filename
-            if excluded and (item == excluded or excluded in item.parents):
-                continue
-            try:
-                mode = item.stat().st_mode
-            except OSError as error:
-                raise HarnessError(f"entrée non régulière ou inaccessible: {item}") from error
-            if not stat.S_ISREG(mode):
-                raise HarnessError(f"entrée non régulière non prise en charge: {item}")
-            relative = item.relative_to(root).as_posix().encode()
-            effective_mode = stat.S_IFMT(mode) | stat.S_IMODE(mode)
-            digest.update(effective_mode.to_bytes(2, "big") + len(relative).to_bytes(8, "big") + relative)
-            content_digest = hashlib.sha256()
-            with item.open("rb") as stream:
-                while chunk := stream.read(1024 * 1024):
-                    content_digest.update(chunk)
-                    total_bytes += len(chunk)
-            digest.update(content_digest.digest())
-            files += 1
-    return {"sha256": digest.hexdigest(), "algorithm": TREE_HASH_ALGORITHM, "files": files, "bytes": total_bytes}
+    try:
+        return _PROVENANCE["tree_hash"](root, excluded)
+    except ValueError as error:
+        raise HarnessError(str(error)) from error
 
 
-def case_configuration(case):
-    return {"id": case["id"], "cwd": str(Path(case["cwd"]).expanduser().resolve()),
-            "bundle": str(Path(case["bundle"]).expanduser().resolve()) if case.get("bundle") else None,
-            "prompts": list(case["prompts"]) if "prompts" in case else [case["prompt"]],
-            "sandbox": case.get("sandbox", "workspace-write"), "ephemeral": case.get("ephemeral", True)}
-
-
-def case_hash(case):
-    canonical = json.dumps(case_configuration(case), sort_keys=True, separators=(",", ":"),
-                           ensure_ascii=False, allow_nan=False)
-    return hashlib.sha256(canonical.encode()).hexdigest()
+case_configuration = _PROVENANCE["case_configuration"]
+case_hash = _PROVENANCE["case_hash"]
 
 
 OPENED_PATH = re.compile(r'openat2?\([^\n]*?, "((?:[^"\\]|\\.)+)"[^\n]*?\)\s+=\s+(\d+)')
@@ -675,6 +634,9 @@ def evaluate_case(result, expectation, verify_outcomes=False):
     workflow, outcome = [], []
     if result["status"] != "completed":
         return {"turn": result["status"], "workflow": check_verdict([]), "outcome": check_verdict([])}
+    if result.get("project_hash_error"):
+        gap = {"id": "project-provenance", "status": "unverified", "reason": result["project_hash_error"]}
+        return {"turn": result["status"], "workflow": check_verdict([gap]), "outcome": check_verdict([gap])}
     if "routing" in expectation:
         score = result.get("route_score")
         if score is None:
@@ -932,13 +894,19 @@ def run_case(case, output, command, model, effort, timeout, trace_routes=False):
     finally:
         if server is not None:
             server.close()
-    after = tree_hash(case["cwd"], output)
+    hash_error = None
+    try:
+        after = tree_hash(case["cwd"], output)
+    except (HarnessError, OSError) as exc:
+        after = None
+        hash_error = str(exc)
     result = {
         "id": case["id"], "cwd": str(case["cwd"]), "sandbox": case["sandbox"],
         "input_prompts": case["prompts"], "status": status,
         "wall_seconds": round(time.monotonic() - started, 3),
         "before_project_hash": before, "after_project_hash": after,
-        "project_hash_changed": before["sha256"] != after["sha256"],
+        "project_hash_changed": before["sha256"] != after["sha256"] if after else None,
+        "project_hash_error": hash_error,
         "hash_policy": {"excluded_directories": sorted(SKIP_DIRS), "included_cstack": True},
         "actual_commands": state["actual_commands"], "app_server_command": actual_command,
         "questions": state["questions"], "native_child_thread_ids": state["child_ids"],
@@ -1040,7 +1008,7 @@ def main(argv=None):
             if args.repeats > 1:
                 run["id"] = f"{case['id']}__run_{repeat:02d}"
                 run["cwd"] = output / "isolated-projects" / run["id"]
-                shutil.copytree(case["cwd"], run["cwd"])
+                shutil.copytree(case["cwd"], run["cwd"], symlinks=True)
             verify_provenance(run, expectation, execution_case=case)
             source_case_digest = case_hash(case)
             effective_config = case_configuration(run)
@@ -1060,7 +1028,8 @@ def main(argv=None):
                           requested_runtime_config={"model": args.model, "effort": args.effort,
                                                     "turn_timeout": args.turn_timeout, "trace_routes": args.trace_routes})
             result["verdicts"] = evaluate_case(result, expectation, args.verify_outcomes)
-            if ((workflow_requested and result["verdicts"]["workflow"]["status"] == "unverified")
+            if (result.get("project_hash_error")
+                    or (workflow_requested and result["verdicts"]["workflow"]["status"] == "unverified")
                     or (args.verify_outcomes and result["verdicts"]["outcome"]["status"] == "unverified")):
                 unverified_requested = True
             if expectation:

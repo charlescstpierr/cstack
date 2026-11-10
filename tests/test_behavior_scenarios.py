@@ -282,7 +282,7 @@ class BehaviorScenarioGeneratorTests(unittest.TestCase):
                     (project / "alias.sh").symlink_to("tool.sh")
                 subprocess.run([str(script)], check=True)
                 digest = behavior_scenarios.tree_hash(hashed)
-                expectation = {"id": "one", "hash_algorithm": "cstack-tree-sha256-v2"}
+                expectation = {"id": "one", "hash_algorithm": behavior_scenarios.TREE_HASH_ALGORITHM}
                 if scope == "bundle":
                     expectation["source_sha256"] = {"bundle": digest}
                 else:
@@ -311,7 +311,7 @@ class BehaviorScenarioGeneratorTests(unittest.TestCase):
                 external.mkdir()
                 (external / "file.txt").write_text("external code")
                 case = {"id": "one", "cwd": project, "bundle": bundle, "prompts": ["Read."]}
-                expectation = {"id": "one", "hash_algorithm": "cstack-tree-sha256-v2"}
+                expectation = {"id": "one", "hash_algorithm": behavior_scenarios.TREE_HASH_ALGORITHM}
                 expectation["case_sha256"] = behavior_scenarios.case_hash(case)
                 hashed = project if scope == "project" else bundle
                 digest = behavior_scenarios.tree_hash(hashed)
@@ -333,7 +333,7 @@ class BehaviorScenarioGeneratorTests(unittest.TestCase):
             external.mkdir()
             (project / "file.txt").write_text("code")
             before = behavior_scenarios.tree_hash(project)
-            for name in (".git", "node_modules", "__pycache__"):
+            for name in ("node_modules", "__pycache__"):
                 (project / name).symlink_to(external, target_is_directory=True)
             self.assertEqual(behavior_scenarios.tree_hash(project), before)
             self.assertEqual(verify_behavior.tree_hash(project, None)["sha256"], before)
@@ -345,7 +345,7 @@ class BehaviorScenarioGeneratorTests(unittest.TestCase):
             (root / "b.bin").write_bytes(b"y")
             expected = behavior_scenarios.tree_hash(root)
             case = {"id": "one", "cwd": root, "bundle": None, "prompts": ["Read."]}
-            expectation = {"id": "one", "project_sha256": expected, "hash_algorithm": "cstack-tree-sha256-v2"}
+            expectation = {"id": "one", "project_sha256": expected, "hash_algorithm": behavior_scenarios.TREE_HASH_ALGORITHM}
             expectation["case_sha256"] = behavior_scenarios.case_hash(case)
             verify_behavior.verify_provenance(case, expectation)
             (root / "a.bin").write_bytes(b"xb.bin\0y")
@@ -355,7 +355,7 @@ class BehaviorScenarioGeneratorTests(unittest.TestCase):
             self.assertNotEqual(behavior_scenarios.tree_hash(root), expected)
             self.assertEqual(behavior_scenarios.tree_hash(root), verify_behavior.tree_hash(root, None)["sha256"])
 
-    def test_file_links_are_hashed_as_materialized_copies_and_repeats_stay_isolated(self):
+    def test_file_links_preserve_targets_and_repeats_stay_isolated(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             project = behavior_scenarios.create_project(root, "alder", {"a.bin": "original"}, [])
@@ -375,12 +375,12 @@ class BehaviorScenarioGeneratorTests(unittest.TestCase):
 
             def modify_copy(case, *args):
                 copied = case["cwd"] / "alias.bin"
-                self.assertFalse(copied.is_symlink())
+                self.assertTrue(copied.is_symlink())
                 self.assertEqual(copied.stat().st_mode & 0o7777, 0o755)
                 self.assertEqual((case["cwd"] / "a.bin").stat().st_mode & 0o7777, 0o755)
                 self.assertEqual(verify_behavior.tree_hash(case["cwd"], None)["sha256"], expectations[0]["project_sha256"])
                 copied.write_text("changed")
-                self.assertEqual((case["cwd"] / "a.bin").read_text(), "original")
+                self.assertEqual((case["cwd"] / "a.bin").read_text(), "changed")
                 return {"id": case["id"], "cwd": str(case["cwd"]), "status": "completed", "native_child_thread_ids": []}
 
             with patch.object(verify_behavior, "build_command", return_value=["fake"]), \

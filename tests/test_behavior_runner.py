@@ -244,7 +244,7 @@ class BehaviorRunnerTests(unittest.TestCase):
     def test_unversioned_or_old_tree_hashes_require_regeneration(self):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "expectations.json"
-            for version in (None, "cstack-tree-sha256-v1"):
+            for version in (None, "cstack-tree-sha256-v1", "cstack-tree-sha256-v2"):
                 with self.subTest(version=version):
                     row = {"id": "one", "project_sha256": "a" * 64}
                     if version is not None:

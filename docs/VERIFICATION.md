@@ -375,3 +375,7 @@ python3 scripts/verify-goal.py --scenario no-consent --output /tmp/cstack-goal-n
 ```
 
 Ces commandes lancent un modèle réel. `--model` et `--effort` permettent une sélection explicite compatible avec l’hôte. Chaque dossier de sortie doit être vide. Le premier cas exige deux tours, le même objectif actif puis complet, aucun budget, l’absence du fichier de phase 2 après le premier tour et les deux fichiers attendus à la fin. Le second lit aussi le YAML contenant la demande de Goal, mais exige un état natif nul faute de demande utilisateur. Les traces et le résultat sont conservés dans le dossier de sortie.
+
+### Empreintes des scénarios
+
+Le format `cstack-tree-sha256-v3` est calculé par `scripts/provenance.py`, commun au générateur et au runner. Il inclut les dossiers, leurs permissions, les cibles des liens de fichiers internes et les valeurs Git de HEAD, des refs, de l’index et de la configuration locale. Les opérations Git en cours, dépôts imbriqués, liens de dossiers et entrées non régulières sont refusés avant lancement. Régénérez les scénarios et attentes des formats précédents ; les reçus historiques restent des preuves de leur version. Un hachage impossible après le tour conserve le reçu et rend ses verdicts `unverified`. Les exclusions déclarées `node_modules` et `__pycache__` restent hors périmètre.

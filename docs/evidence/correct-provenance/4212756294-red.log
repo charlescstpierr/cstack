@@ -1,0 +1,17 @@
+F
+======================================================================
+FAIL: test_4212756294_nested_git_repository (test_provenance.ProvenanceTests.test_4212756294_nested_git_repository)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-provenance-1109/tests/test_provenance.py", line 166, in test_4212756294_nested_git_repository
+    self.rejected(root)
+    ~~~~~~~~~~~~~^^^^^^
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-provenance-1109/tests/test_provenance.py", line 36, in rejected
+    with self.assertRaises(ValueError):
+         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+----------------------------------------------------------------------
+Ran 1 test in 0.047s
+
+FAILED (failures=1)
