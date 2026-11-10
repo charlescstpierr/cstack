@@ -1,0 +1,11 @@
+Changement de source : /tmp/cstack-native-codex-ju88veqo/requested
+WARNING: proceeding, even though we could not create PATH aliases: Refusing to create helper binaries under temporary dir "/tmp" (codex_home: AbsolutePathBuf("/tmp/cstack-native-codex-ju88veqo/profile"))
+Added marketplace `cstack` from /tmp/cstack-native-codex-ju88veqo/requested.
+Installed marketplace root: /tmp/cstack-native-codex-ju88veqo/requested
+WARNING: proceeding, even though we could not create PATH aliases: Refusing to create helper binaries under temporary dir "/tmp" (codex_home: AbsolutePathBuf("/tmp/cstack-native-codex-ju88veqo/profile"))
+Added plugin `cstack` from marketplace `cstack`.
+Installed plugin root: /tmp/cstack-native-codex-ju88veqo/profile/plugins/cache/cstack/cstack/0.8.0
+injected failure AFTER the real plugin install
+cstack : installation du plugin impossible dans codex.
+cstack : échec ; l'ancienne installation est restaurée dans codex.
+Source de reprise conservée : /tmp/cstack-native-codex-ju88veqo/state/cstack/install-rollback.xPMq49ct/source ; source initiale : /tmp/cstack-native-codex-ju88veqo/previous

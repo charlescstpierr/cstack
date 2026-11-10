@@ -1,0 +1,7 @@
+
+[plugins."cstack@cstack"]
+enabled = true
+
+[marketplaces.cstack]
+source_type = "local"
+source = "/home/ubuntu/cstack/.cstack/worktrees/correct-install-1110"

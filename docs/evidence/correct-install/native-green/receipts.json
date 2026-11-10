@@ -1,0 +1,46 @@
+[
+  {
+    "host": "codex",
+    "cli_version": "codex-cli 0.166.0",
+    "plugin_state_before": {
+      "installed": true,
+      "enabled": true,
+      "version": "0.8.0"
+    },
+    "plugin_state_after": {
+      "installed": true,
+      "enabled": true,
+      "version": "0.8.0"
+    },
+    "workspace": "/tmp/cstack-native-codex-ju88veqo",
+    "cli": "/home/ubuntu/cstack/.cstack/correct-20261109/install/codex-ci/node_modules/.bin/codex",
+    "before": "OLD",
+    "after": "OLD",
+    "mutable_source": "NEW",
+    "returncode": 1,
+    "injected": true,
+    "installer_sha256": "104e4dc235eb86dfad646d0490ef14f0fb5ec44396c4a27abb3368ca95a80305"
+  },
+  {
+    "host": "claude",
+    "cli_version": "2.1.321 (Claude Code)",
+    "plugin_state_before": {
+      "installed": true,
+      "enabled": true,
+      "version": "0.8.0"
+    },
+    "plugin_state_after": {
+      "installed": true,
+      "enabled": true,
+      "version": "0.8.0"
+    },
+    "workspace": "/tmp/cstack-native-claude-ttdl4jhi",
+    "cli": "/home/ubuntu/.local/bin/claude",
+    "before": "OLD",
+    "after": "OLD",
+    "mutable_source": "NEW",
+    "returncode": 1,
+    "injected": true,
+    "installer_sha256": "104e4dc235eb86dfad646d0490ef14f0fb5ec44396c4a27abb3368ca95a80305"
+  }
+]

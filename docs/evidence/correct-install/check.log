@@ -1,0 +1,622 @@
+faits générés et faits documentaires courants : OK
+29 skills et 158 références amont vérifiées contre les inventaires.
+....[one] démarrage
+[one] tour=completed workflow=pass résultat=fail (0s)
+[one] démarrage
+[one] tour=completed workflow=pass résultat=pass (0s)
+résumé : /tmp/tmp_1urkcu9/correct/summary.json
+[one] démarrage
+[one] tour=completed workflow=pass résultat=unverified (0s)
+résumé : /tmp/tmp_1urkcu9/workflow-only/summary.json
+[one] démarrage
+[one] tour=completed workflow=unverified résultat=unverified (0s)
+..[missing-review] démarrage
+[missing-review] tour=completed workflow=fail résultat=unverified (0s)
+.....[one] démarrage
+[one] tour=completed workflow=unverified résultat=pass (0s)
+résumé : /tmp/tmpxr2rtanm/results/summary.json
+[one] démarrage
+[one] tour=completed workflow=unverified résultat=unverified (0s)
+........[one] démarrage
+[one] tour=completed workflow=unverified résultat=pass (0s)
+résumé : /tmp/tmpfdcck59s/results/summary.json
+...s..[one__run_01] démarrage
+[one__run_01] tour=completed workflow=unverified résultat=unverified (0s)
+[one__run_02] démarrage
+[one__run_02] tour=completed workflow=unverified résultat=unverified (0s)
+résumé : /tmp/tmpdi28e1bv/results/summary.json
+.[one__run_01] démarrage
+[one__run_01] tour=completed workflow=unverified résultat=unverified (0s)
+[one__run_02] démarrage
+[one__run_02] tour=completed workflow=unverified résultat=unverified (0s)
+[one__run_03] démarrage
+[one__run_03] tour=completed workflow=unverified résultat=unverified (0s)
+résumé : /tmp/tmpiuumog7d/results/summary.json
+....................[one__run_01] démarrage
+[one__run_01] tour=completed workflow=pass résultat=unverified (0s)
+[one__run_02] démarrage
+[one__run_02] tour=completed workflow=pass résultat=unverified (0s)
+résumé : /tmp/tmpc9x8_wfb/results/summary.json
+.....[one__run_01] démarrage
+[one__run_01] tour=completed workflow=pass résultat=unverified (0s)
+[one__run_02] démarrage
+[one__run_02] tour=completed workflow=pass résultat=unverified (0s)
+résumé : /tmp/tmp4gyuifxc/results/summary.json
+[one__run_01] démarrage
+[one__run_01] tour=completed workflow=pass résultat=unverified (0s)
+.....................................{"output": "/tmp/tmp2gcl8tha/cases", "cases": 53, "expectations": 53}
+........................................................................................................................................./tmp/tmpqgij4pa9/campaign
+[calc-add] validation
+[calc-add] valide
+[calc-add--cstack--r1] démarrage
+[calc-add--cstack--r1] completed résolu=False
+[calc-add--vanilla--r1] démarrage
+[calc-add--vanilla--r1] completed résolu=False
+résumé : /tmp/tmpw3ojnbfa/net/summary.json
+..........outcome-bench: campagne incomplète, 1 run(s) manquant(s)
+.outcome-bench: campagne incomplète, 3 run(s) manquant(s)
+outcome-bench: campagne incomplète, 3 run(s) manquant(s)
+...usage: python3 -m unittest [-h] {validate,fetch-pstack,run,report} ...
+python3 -m unittest: error: --arms exige au moins deux bras de noms distincts
+usage: python3 -m unittest [-h] {validate,fetch-pstack,run,report} ...
+python3 -m unittest: error: --arms exige au moins deux bras de noms distincts
+usage: python3 -m unittest [-h] {validate,fetch-pstack,run,report} ...
+python3 -m unittest: error: bras invalide: 'claude' ; base parmi vanilla, cstack, pstack
+................................................................................................
+----------------------------------------------------------------------
+Ran 335 tests in 149.495s
+
+OK (skipped=1)
+{
+  "complete": false,
+  "missing_runs": [
+    "t0--cstack--r2"
+  ],
+  "arms": {
+    "cstack": {
+      "runs": 1,
+      "resolved": 1,
+      "resolved_rate": 1.0,
+      "tasks": 1,
+      "complete_tasks": 0,
+      "incomplete_tasks": [
+        "t0"
+      ],
+      "pass_all": 0,
+      "pass_all_rate": null,
+      "unstable_tasks": [],
+      "infra_errors": 0,
+      "possible_leaks": 0,
+      "settings_mismatches": 0,
+      "settings_unobserved": 1,
+      "needs_input": 0,
+      "median_tokens": null,
+      "tokens_known": 0,
+      "tokens_per_resolved": null,
+      "median_wall_seconds": null,
+      "mean_children": 0,
+      "questions": 0,
+      "median_lines_changed": 0,
+      "runs_touching_hidden_paths": 0
+    }
+  },
+  "per_task": {
+    "t0": {
+      "cstack": 1.0
+    }
+  },
+  "paired": {},
+  "limits": [
+    "Échantillon petit : l’écart doit être large et cohérent entre tâches pour être interprété.",
+    "infra_error, possible_leak et settings_mismatch sont exclus des dénominateurs et comptés à part.",
+    "Les tokens viennent des métadonnées natives ; tokens_known indique leur couverture.",
+    "pass_all_rate est la part des tâches résolues à toutes les répétitions, calculée sur les seules tâches dont toutes les répétitions comptent ; incomplete_tasks liste les autres, unstable_tasks celles dont les répétitions divergent.",
+    "ci95 est un intervalle bootstrap percentile, initialisé par la graine du manifeste, sur l’écart moyen de taux de résolution par tâche ; un intervalle qui contient 0 ne montre pas d’écart."
+  ]
+}
+{
+  "complete": false,
+  "missing_runs": [
+    "calc-add--cstack--r1",
+    "calc-add--cstack--r2",
+    "calc-add--vanilla--r2"
+  ],
+  "arms": {
+    "vanilla": {
+      "runs": 1,
+      "resolved": 1,
+      "resolved_rate": 1.0,
+      "tasks": 1,
+      "complete_tasks": 0,
+      "incomplete_tasks": [
+        "calc-add"
+      ],
+      "pass_all": 0,
+      "pass_all_rate": null,
+      "unstable_tasks": [],
+      "infra_errors": 0,
+      "possible_leaks": 0,
+      "settings_mismatches": 0,
+      "settings_unobserved": 1,
+      "needs_input": 0,
+      "median_tokens": null,
+      "tokens_known": 0,
+      "tokens_per_resolved": null,
+      "median_wall_seconds": null,
+      "mean_children": 0,
+      "questions": 0,
+      "median_lines_changed": 0,
+      "runs_touching_hidden_paths": 0
+    }
+  },
+  "per_task": {
+    "calc-add": {
+      "vanilla": 1.0
+    }
+  },
+  "paired": {},
+  "limits": [
+    "Échantillon petit : l’écart doit être large et cohérent entre tâches pour être interprété.",
+    "infra_error, possible_leak et settings_mismatch sont exclus des dénominateurs et comptés à part.",
+    "Les tokens viennent des métadonnées natives ; tokens_known indique leur couverture.",
+    "pass_all_rate est la part des tâches résolues à toutes les répétitions, calculée sur les seules tâches dont toutes les répétitions comptent ; incomplete_tasks liste les autres, unstable_tasks celles dont les répétitions divergent.",
+    "ci95 est un intervalle bootstrap percentile, initialisé par la graine du manifeste, sur l’écart moyen de taux de résolution par tâche ; un intervalle qui contient 0 ne montre pas d’écart."
+  ]
+}
+{
+  "complete": false,
+  "missing_runs": [
+    "calc-add--cstack--r1",
+    "calc-add--cstack--r2",
+    "calc-add--vanilla--r2"
+  ],
+  "arms": {
+    "vanilla": {
+      "runs": 1,
+      "resolved": 1,
+      "resolved_rate": 1.0,
+      "tasks": 1,
+      "complete_tasks": 0,
+      "incomplete_tasks": [
+        "calc-add"
+      ],
+      "pass_all": 0,
+      "pass_all_rate": null,
+      "unstable_tasks": [],
+      "infra_errors": 0,
+      "possible_leaks": 0,
+      "settings_mismatches": 0,
+      "settings_unobserved": 1,
+      "needs_input": 0,
+      "median_tokens": null,
+      "tokens_known": 0,
+      "tokens_per_resolved": null,
+      "median_wall_seconds": null,
+      "mean_children": 0,
+      "questions": 0,
+      "median_lines_changed": 0,
+      "runs_touching_hidden_paths": 0
+    }
+  },
+  "per_task": {
+    "calc-add": {
+      "vanilla": 1.0
+    }
+  },
+  "paired": {},
+  "limits": [
+    "Échantillon petit : l’écart doit être large et cohérent entre tâches pour être interprété.",
+    "infra_error, possible_leak et settings_mismatch sont exclus des dénominateurs et comptés à part.",
+    "Les tokens viennent des métadonnées natives ; tokens_known indique leur couverture.",
+    "pass_all_rate est la part des tâches résolues à toutes les répétitions, calculée sur les seules tâches dont toutes les répétitions comptent ; incomplete_tasks liste les autres, unstable_tasks celles dont les répétitions divergent.",
+    "ci95 est un intervalle bootstrap percentile, initialisé par la graine du manifeste, sur l’écart moyen de taux de résolution par tâche ; un intervalle qui contient 0 ne montre pas d’écart."
+  ]
+}
+{
+  "complete": true,
+  "missing_runs": [],
+  "arms": {
+    "vanilla": {
+      "runs": 2,
+      "resolved": 1,
+      "resolved_rate": 0.5,
+      "tasks": 2,
+      "complete_tasks": 2,
+      "incomplete_tasks": [],
+      "pass_all": 1,
+      "pass_all_rate": 0.5,
+      "unstable_tasks": [],
+      "infra_errors": 0,
+      "possible_leaks": 0,
+      "settings_mismatches": 0,
+      "settings_unobserved": 2,
+      "needs_input": 0,
+      "median_tokens": null,
+      "tokens_known": 0,
+      "tokens_per_resolved": null,
+      "median_wall_seconds": null,
+      "mean_children": 0,
+      "questions": 0,
+      "median_lines_changed": 0.0,
+      "runs_touching_hidden_paths": 0
+    },
+    "cstack": {
+      "runs": 2,
+      "resolved": 2,
+      "resolved_rate": 1.0,
+      "tasks": 2,
+      "complete_tasks": 2,
+      "incomplete_tasks": [],
+      "pass_all": 2,
+      "pass_all_rate": 1.0,
+      "unstable_tasks": [],
+      "infra_errors": 0,
+      "possible_leaks": 0,
+      "settings_mismatches": 0,
+      "settings_unobserved": 2,
+      "needs_input": 0,
+      "median_tokens": null,
+      "tokens_known": 0,
+      "tokens_per_resolved": null,
+      "median_wall_seconds": null,
+      "mean_children": 0,
+      "questions": 0,
+      "median_lines_changed": 0.0,
+      "runs_touching_hidden_paths": 0
+    }
+  },
+  "per_task": {
+    "t0": {
+      "vanilla": 0.0,
+      "cstack": 1.0
+    },
+    "t1": {
+      "vanilla": 1.0,
+      "cstack": 1.0
+    }
+  },
+  "paired": {
+    "cstack_vs_vanilla": {
+      "tasks": 2,
+      "cstack_better": 1,
+      "vanilla_better": 0,
+      "ties": 1,
+      "mean_rate_difference": 0.5,
+      "ci95": [
+        0.0,
+        1.0
+      ],
+      "bootstrap_resamples": 2000
+    }
+  },
+  "limits": [
+    "Échantillon petit : l’écart doit être large et cohérent entre tâches pour être interprété.",
+    "infra_error, possible_leak et settings_mismatch sont exclus des dénominateurs et comptés à part.",
+    "Les tokens viennent des métadonnées natives ; tokens_known indique leur couverture.",
+    "pass_all_rate est la part des tâches résolues à toutes les répétitions, calculée sur les seules tâches dont toutes les répétitions comptent ; incomplete_tasks liste les autres, unstable_tasks celles dont les répétitions divergent.",
+    "ci95 est un intervalle bootstrap percentile, initialisé par la graine du manifeste, sur l’écart moyen de taux de résolution par tâche ; un intervalle qui contient 0 ne montre pas d’écart."
+  ]
+}
+bun test v1.4.0 (34cbb9a40)
+
+tests/shipping-git.test.ts:
+(pass) après un squash parent, rejoue seulement les commits enfant [123.84ms]
+(pass) un lease explicite refuse le travail concurrent après un fetch [198.61ms]
+
+tests/check_plan.test.ts:
+(pass) le vérificateur accepte le plan français, ses preuves et les exclusions justifiées [76.78ms]
+(pass) le vérificateur refuse les preuves manquantes dans le plan français [156.49ms]
+(pass) les diagnostics du plan français nomment seulement le repère manquant [67.31ms]
+(pass) le vérificateur accepte le plan anglais existant, ses preuves et les exclusions justifiées [76.93ms]
+(pass) le vérificateur refuse les preuves manquantes dans le plan anglais existant [164.16ms]
+(pass) les diagnostics du plan anglais existant nomment seulement le repère manquant [65.23ms]
+
+tests/documentation-facts.test.ts:
+(pass) les faits générés couvrent le pin, l’arbre et les statuts de portage [57.44ms]
+(pass) --check refuse un artefact périmé sans modifier le fichier [92.60ms]
+(pass) --check vérifie les faits courants du pin et du guide [87.52ms]
+(pass) le validateur partagé refuse un compte documentaire faux et accepte l’apostrophe courbe [547.27ms]
+(pass) la génération dérive les statuts du portage au lieu de les figer dans le test [94.13ms]
+(pass) le contrôle des faits refuse une provenance NOTICE périmée : Source [104.19ms]
+(pass) le contrôle des faits refuse une provenance NOTICE périmée : Upstream commit [76.96ms]
+(pass) le contrôle des faits refuse une provenance NOTICE périmée : Upstream manifest version [88.86ms]
+
+tests/validate.test.ts:
+(pass) le paquet charge 29 skills et rejette les distributions dangereuses ou incomplètes [2087.87ms]
+
+tests/sync-upstream.test.ts:
+(pass) preview réel décrit les changements sans toucher les octets ni les pins [154.64ms]
+(pass) apply exige des résolutions bornées puis avance pin et couverture ensemble [279.37ms]
+(pass) keep sans cible finale refuse l’apply, puis map/write crée une cible valide [356.59ms]
+(pass) une nouvelle source ne peut pas écraser la cible retained d’un groupe inchangé [278.44ms]
+(pass) une résolution ne peut pas déclarer une source inchangée hors de son union [221.27ms]
+(pass) un changement de mode Git retained est planifié et appliqué [201.75ms]
+(pass) une nouvelle source exécutable reçoit le mode source [183.36ms]
+(pass) un bit exécutable local divergent invalide un retained [112.51ms]
+(pass) un conflit Git réel refuse apply et ne bouge ni cible ni pin [302.51ms]
+(pass) résolution périmée et source Git mismatch sont refusées [372.39ms]
+(pass) un retained local modifié est refusé avant tout plan d’écriture [166.35ms]
+(pass) un échec de manifeste restaure la cible déjà écrite et nettoie les temporaires [307.44ms]
+
+ 29 pass
+ 0 fail
+ 260 expect() calls
+Ran 29 tests across 5 files. [7.18s]
+bun install v1.4.0 (34cbb9a40)
+
+Checked 6 installs across 26 packages (no changes) [3.00ms]
+$ bun test orch watch-pr worker-context.test.ts worker-skills.test.ts runtime bootstrap.test.ts
+bun test v1.4.0 (34cbb9a40)
+
+bootstrap.test.ts:
+(pass) installation du helper bootstrap > conserve les drapeaux Bun et les arguments après le premier redémarrage [128.47ms]
+(pass) installation du helper bootstrap > installe seulement les dépendances de production [56.77ms]
+(pass) installation du helper bootstrap > n'exécute aucun script lifecycle du workspace et ne lit pas son env [96.44ms]
+
+worker-context.test.ts:
+(pass) un contexte partagé figé transporte les résultats des pairs sans lire leurs sessions [11.69ms]
+(pass) le contexte refuse les sorties de tâche, liens externes, entrées invalides et tailles excessives [10.93ms]
+
+worker-skills.test.ts:
+(pass) worker skill bundles > charge les mêmes sources textuelles dans un bundle stable [22.55ms]
+(pass) worker skill bundles > inclut seulement les references markdown directes quand aucun lien n'est nommé [3.63ms]
+(pass) worker skill bundles > charge une référence explicite de skill sans récursion globale [3.26ms]
+(pass) worker skill bundles > refuse traversal, doublons, listes trop longues et liens sortants [4.76ms]
+(pass) worker skill bundles > refuse les références explicites hors périmètre, non markdown, URLs et doublons [5.71ms]
+(pass) worker skill bundles > ne masque pas les erreurs de permissions du dossier references [3.27ms]
+(pass) worker skill bundles > borne la taille cumulée du bundle [5.46ms]
+(pass) worker skill bundles > inclut les références partagées du vrai skill architect [52.09ms]
+(pass) ne charge pas les liens d'exemple à l'intérieur des blocs de code Markdown [6.22ms]
+(pass) construit un bundle exploitable pour chaque skill livré, dont les templates Horizon [1184.40ms]
+(pass) T3 bundles retain selected task sources and replace Codex runtime traversal [24.78ms]
+(pass) conserve les mêmes principes communs dans les bundles CLI et T3 [126.93ms]
+
+orch/orch.test.ts:
+(pass) Magasin > initialise un magasin de fichiers idempotent et libère son verrou [5.90ms]
+(pass) Magasin > compose ajout, mise à jour, lecture, liste et comptes d’unité [8.92ms]
+(pass) Magasin > enregistre, remplace, vérifie et résume les verdicts types du registre [6.78ms]
+(pass) Magasin > ajoute, consulte et vide atomiquement les pointeurs de boîte de réception [7.57ms]
+(pass) Magasin > ajoute des pointeurs de boîte de réception sans prendre le verrou du magasin [3.98ms]
+(pass) Magasin > refuse de vider un répertoire non initialisé [0.97ms]
+(pass) Magasin > vide seulement les pointeurs de boîte de réception parsés et laisse les autres entrées [3.69ms]
+(pass) Magasin > laisse un seul processus reprendre un verrou périmé (fichier PID) [63.57ms]
+(pass) Magasin > laisse un seul processus reprendre un verrou périmé (répertoire) [68.45ms]
+(pass) Magasin > un ancien détenteur ne libère pas le verrou de son remplaçant dans le même processus [8.11ms]
+(pass) Magasin > refuse les nouvelles mutations verrouillées d’un handle dépossédé [11.90ms]
+(pass) Magasin > remplace un verrou périmé dont le pid détenteur est mort [6.38ms]
+(pass) Magasin > reprend une migration abandonnée sans laisser de verrou temporaire [7.14ms]
+(pass) Magasin > ne force pas une migration encore active [6.85ms]
+(pass) Magasin > gère le diagnostic du verrou pendant lstat et permet une nouvelle tentative [65.55ms]
+(pass) Magasin > gère le diagnostic du verrou pendant readdir et permet une nouvelle tentative [64.00ms]
+(pass) Magasin > gère le diagnostic du verrou pendant rmdir et permet une nouvelle tentative [72.32ms]
+(pass) Magasin > gère le diagnostic du verrou pendant publication et permet une nouvelle tentative [67.06ms]
+(pass) Magasin > gère le diagnostic du verrou pendant migration et permet une nouvelle tentative [63.61ms]
+(pass) Magasin > gère le diagnostic du verrou pendant permission et permet une nouvelle tentative [59.57ms]
+(pass) Magasin > récupère un répertoire de verrou vide après interruption [5.18ms]
+(pass) Magasin > préserve les verrous mal formés et refuse les liens symboliques même avec force [3.94ms]
+(pass) Magasin > bloque un rédacteur et ne vole le verrou pid qu’avec force [5.91ms]
+(pass) Magasin > met les barrières en attente, stocke les consignes permanentes et rend le statut [10.64ms]
+(pass) Magasin > résout la frontière GitHub ordonnée et valide un pin facultatif [179.81ms]
+(pass) Magasin > rejette les piles GitHub ambiguës, cycliques et incomplètes [326.52ms]
+(pass) Magasin > conserve un worktree quand sa sonde d’état sale échoue [219.26ms]
+(pass) Magasin > s’analyse avec bash -n [2.88ms]
+(pass) Magasin > rejette les données TSV, verdict, frontière et inbox mal formés [5.43ms]
+(pass) Magasin > rejette les opérations après fermeture [2.37ms]
+(pass) CLI orch > affiche l’aide de commande et rejette l’analyse invalide avec le code 1 [182.12ms]
+(pass) CLI orch > accepte ORCH_STORE et émet du JSON complet [150.65ms]
+(pass) CLI orch > mappe les résultats utilisateur et introuvables vers les codes de sortie préservés [295.74ms]
+
+runtime/prepare.test.ts:
+(pass) preparation preserves target and exact snapshot without process launch or output writes [47.55ms]
+(pass) CLI runner refuses T3 before any process or request dependent filesystem operation [3.62ms]
+(pass) T3 preparation refuses CLI and legacy keys [0.25ms]
+(pass) shared T3 selection contract agrees with Python parser [0.83ms]
+(pass) Python preflight binding passes through preparation and rejects a changed target [123.79ms]
+(pass) prepare CLI drains a large JSON response through a pipe before exiting [107.58ms]
+
+runtime/runtime.test.ts:
+(pass) runtime helper > documente resume_from dans l'aide [3.32ms]
+(pass) runtime helper > probe ne lance pas de login et accepte auth inconnue [1.79ms]
+(pass) runtime helper > lance codex via argv, stdin et fichier final schema [99.17ms]
+(pass) runtime helper > vide le reçu run complet dans un pipe avec lecteur retardé [208.39ms]
+(pass) runtime helper > transmet les références de skills explicites au bundle [88.34ms]
+(pass) runtime helper > ne passe pas par un shell avec le brief [55.97ms]
+(pass) runtime helper > classe auth manquante sans PASS [57.80ms]
+(pass) runtime helper > classe auth manquante même si le worker quitte avant de lire un long brief [377.32ms]
+(pass) runtime helper > rejette une sortie JSON malformée [64.50ms]
+(pass) runtime helper > échoue fermé si un flag requis manque [49.45ms]
+(pass) runtime helper > tue le groupe de processus au timeout [1515.18ms]
+(pass) runtime helper > applique le profil Claude workspace-write sans Bash ni MCP implicite [54.83ms]
+(pass) runtime helper > lance Cursor seulement en read-only ask sandboxé [55.21ms]
+(pass) runtime helper > bloque le prompt Cursor trop gros en octets UTF-8 avant lancement [48.09ms]
+(pass) runtime helper > refuse Cursor workspace-write sans contrôle d'outils [40.92ms]
+(pass) normalise Claude : structured output [66.50ms]
+(pass) normalise Claude : text envelope [67.07ms]
+(pass) normalise Claude : error envelope [66.79ms]
+(pass) normalise Claude : error subtype [63.87ms]
+(pass) normalise Claude : extra report property [79.19ms]
+(pass) normalise Claude : extra structured property [70.80ms]
+(pass) normalise Claude : extra check property [80.09ms]
+(pass) préserve le handoff BLOCKED documenté après une exécution réussie [67.75ms]
+(pass) un refus de découverte bloque la génération même si l'aide contient les bons flags [48.16ms]
+(pass) une sortie tronquée ne devient pas PASS et le reçu existant n'est jamais écrasé [69.95ms]
+(pass) l'annulation attend la fin des descendants même quand le leader ferme ses flux [978.52ms]
+(pass) préserve le français quand un caractère UTF-8 traverse deux chunks [105.98ms]
+(pass) refuse de placer les reçus sous les outils d'un worker rédacteur [2.79ms]
+(pass) résout le PATH relatif avant de changer vers le worktree [70.65ms]
+(pass) reprend Claude avec --resume et un prompt sans texte de skills [136.44ms]
+(pass) refuse la reprise sur les runtimes non Claude [52.07ms]
+(pass) refuse une reprise Claude si le contrat change [108.37ms]
+(pass) refuse une reprise depuis un reçu périmé [170.32ms]
+(pass) bloque deux reprises simultanées de la même session [733.75ms]
+(pass) rend la lignée non reprenable après timeout de reprise [720.35ms]
+(pass) refuse une reprise avec session_id missing id [153.49ms]
+(pass) refuse une reprise avec session_id changed id [130.23ms]
+(pass) classe le message Claude réel de session introuvable comme RESUME_FAILED [111.69ms]
+(pass) classe une session reprise introuvable sans masquer l'auth réelle [180.29ms]
+(pass) refuse les changements de contrat sans génération et garde la tête reprenable [461.65ms]
+(pass) refuse reçus et états de reprise non fiables sans empoisonner la tête [212.76ms]
+(pass) un --help sans --resume ne prend pas le verrou et permet de réessayer [199.10ms]
+(pass) garde AUTH_REQUIRED prioritaire sur une erreur de session expirée [135.57ms]
+(pass) classe un reçu resume_from manquant comme RESUME_FAILED [53.97ms]
+(pass) libère le verrou si la finalisation du reçu échoue [171.39ms]
+(pass) épingle l'acceptance exacte tout en laissant le contexte évoluer [268.87ms]
+(pass) refuse l'ajout et la suppression de l'acceptance sans empoisonner la tête [315.63ms]
+(pass) valide les limites UTF-8 et les reçus acceptance malformés [151.18ms]
+
+watch-pr/shipping-cli.test.ts:
+(pass) inspecte, sauvegarde, annule et relit les deux mécanismes dans des processus séparés [288.74ms]
+(pass) refuse une base changée sans annuler quoi que ce soit [148.81ms]
+(pass) traite un champ queue manquant comme unavailable [72.07ms]
+
+watch-pr/github.test.ts:
+(pass) lecture des vérifications du commit immuable > lit le rollup du SHA demandé sans utiliser les checks du head mutable [0.77ms]
+(pass) lecture des vérifications du commit immuable > pagine GraphQL en conservant le même SHA [0.36ms]
+(pass) lecture des vérifications du commit immuable > lit les checks GraphQL même si le chemin gh pr checks est vide [0.20ms]
+(pass) lecture des vérifications du commit immuable > échoue ferme quand le rollup n’a aucun contexte lisible [0.27ms]
+(pass) lecture des vérifications du commit immuable > lit l’absence de checks quand gh n’en signale aucun et que le commit head n’a pas de rollup [0.17ms]
+(pass) lecture des vérifications du commit immuable > échoue ferme quand une seule lecture dit qu’il n’y a pas de checks [0.23ms]
+(pass) lecture des vérifications du commit immuable > propage une requête rollup en échec au lieu de la lire comme une absence de checks [0.16ms]
+(pass) correspondance des nœuds rollup > associe les états CheckRun terminaux et non terminaux en échec ferme [0.43ms]
+(pass) correspondance des nœuds rollup > classe un Code Review Gate en cours depuis le rollup comme barrière [0.06ms]
+(pass) correspondance des nœuds rollup > associe les états StatusContext et ignore les typenames inconnus [0.09ms]
+(pass) analyse ferme des énumérations > accepte mergeStateStatus CONFLICTING [0.24ms]
+(pass) analyse ferme des énumérations > lit reviewDecision vide de gh comme absence de décision plutôt qu’échec d’analyse [0.04ms]
+(pass) analyse ferme des énumérations > rejette encore un reviewDecision inconnu [0.14ms]
+(pass) analyse ferme des énumérations > rejette les valeurs enum inconnues comme erreurs réessayables portant la valeur brute [0.13ms]
+(pass) annote les fils Bugbot avec des comptes distincts de passes de revue [1.13ms]
+(pass) découverte du contexte et de la pile > renvoie un contexte entièrement explicite sans appel au lecteur [0.28ms]
+(pass) découverte du contexte et de la pile > utilise l’origine locale avant currentPr pour un numéro explicite [0.18ms]
+(pass) découverte du contexte et de la pile > ordonne la pile connectée de bas en haut [0.66ms]
+(pass) découverte du contexte et de la pile > conserve les descendants bifurqués de la PR sélectionnée [0.15ms]
+(pass) découverte du contexte et de la pile > n’inclut pas les frères quand la PR sélectionnée est un enfant [0.14ms]
+(pass) découverte du contexte et de la pile > ne confond pas un fork homonyme avec le parent réel [0.15ms]
+(pass) découverte du contexte et de la pile > ne dépend pas de l’ordre d’une PR de fork homonyme [0.11ms]
+(pass) découverte du contexte et de la pile > ne crée ni cycle ni enfants entre fork main et dépôt cible main [0.10ms]
+(pass) découverte du contexte et de la pile > accepte une PR sélectionnée depuis un fork [0.10ms]
+(pass) découverte du contexte et de la pile > compare owner/repo sans casse mais garde la casse des branches [0.13ms]
+(pass) découverte du contexte et de la pile > échoue ferme sur un cycle de base-ref [0.23ms]
+(pass) découverte du contexte et de la pile > échoue ferme quand deux parents ont la même identité source [0.23ms]
+(pass) pagination des fils de revue > échoue ferme quand la page reviewThreads a plus de résultats [0.51ms]
+(pass) pagination des fils de revue > accepte une page pleine quand GraphQL signale aucune page suivante [0.87ms]
+(pass) troncature de la liste des PR ouvertes > échoue ferme quand gh pr list atteint la limite de découverte [0.61ms]
+(pass) troncature de la liste des PR ouvertes > analyse une liste juste sous la limite de découverte [1.47ms]
+(pass) troncature de la liste des PR ouvertes > analyse strictement l’identité source des PR ouvertes [0.12ms]
+(pass) troncature de la liste des PR ouvertes > échoue ferme quand l’identité source d’une PR ouverte manque [0.11ms]
+(pass) échecs de lancement de gh > enveloppe un binaire gh manquant comme erreur de requête non réessayable [2.47ms]
+(pass) échecs de lancement de gh > classe les échecs d’authentification gh comme non réessayables [3.95ms]
+(pass) lecture gh d’une PR sans checks configurés > lit « no checks reported » et un rollup nul comme une absence de checks [10.29ms]
+(pass) lecture gh d’une PR sans checks configurés > échoue ferme quand gh pr checks sort en 1 pour une autre raison [8.98ms]
+(pass) lecture gh d’une PR sans checks configurés > rejette un rollup portant un SHA différent de celui demandé [3.10ms]
+
+watch-pr/cli.test.ts:
+(pass) parseArgs > utilise les défauts spécifiés [3.65ms]
+(pass) parseArgs > analyse une pile en file gelée de bas en haut [1.21ms]
+(pass) parseArgs > rejette chaque mode et forme numérique invalide comme usage [5.48ms]
+(pass) rendu > émet par défaut du JSON compact valide [0.16ms]
+(pass) rendu > rend le tableau Markdown seulement depuis le même verdict [0.43ms]
+(pass) main > expose le SHA dans le JSON et le texte READY des modes single et stack [5.02ms]
+(pass) main > émet un statut indisponible plutôt que READY après un push concurrent [0.97ms]
+(pass) main > renvoie EX_USAGE 64 et écrit les erreurs d’usage seulement sur stderr [0.47ms]
+(pass) main > contourne la machine de file pour queued-stack status-only [0.61ms]
+(pass) main > renvoie la sortie 4 pour un refus CI caché côté GitHub [0.64ms]
+(pass) main > nomme l’absence de checks dans le tableau d’état et le verdict READY [1.03ms]
+(pass) main > affiche l’aide sans toucher au lecteur [3.92ms]
+(pass) main > renvoie BLOCKER avec sortie 7 quand gh manque [1.70ms]
+(pass) main > renvoie immédiatement la sortie 7 pour un échec auth non réessayable [0.64ms]
+(pass) main > ne déclare pas READY quand un fork homonyme masquerait le parent réel en conflit [0.93ms]
+
+watch-pr/wrapper.test.ts:
+(pass) watch-pr --help fonctionne depuis un autre répertoire [55.92ms]
+(pass) ship-pr --help fonctionne depuis un autre répertoire [55.76ms]
+
+watch-pr/policy.test.ts:
+(pass) table de vérité de l’état prêt > couvre chaque ligne spécifiée et chaque valeur rollup UNKNOWN [0.13ms]
+(pass) table de vérité de l’état prêt > transforme une liste visible propre plus un refus GitHub en bloqueur CI explicite [0.41ms]
+(pass) planification des requêtes de snapshot > garde un échec GraphQL indépendant comme bloqueur pendant une relance REST [0.46ms]
+(pass) planification des requêtes de snapshot > attend la revue Codex annoncée Running même sans check GitHub [0.53ms]
+(pass) planification des requêtes de snapshot > bloque les échecs Actions du SHA même si aucun check n’a été créé [0.47ms]
+(pass) planification des requêtes de snapshot > ne produit aucun verdict si les signaux du head sont indisponibles [0.38ms]
+(pass) planification des requêtes de snapshot > refuse un head remplacé après les checks verts de l’ancien commit [0.99ms]
+(pass) planification des requêtes de snapshot > inclut le SHA observé dans la preuve READY [0.54ms]
+(pass) planification des requêtes de snapshot > refuse un snapshot ouvert dont le SHA est absent [0.26ms]
+(pass) planification des requêtes de snapshot > ne demande pas les rollups de commit pendant que les vérifications en file sont pending [0.26ms]
+(pass) planification des requêtes de snapshot > demande les rollups pour les listes réglées et échouées [0.40ms]
+(pass) planification des requêtes de snapshot > court-circuite les lignes fusionnées avant fils et vérifications [0.35ms]
+(pass) scanne les piles par tier-major afin qu’un conflit upstack prime sur la CI de frontière [0.44ms]
+(pass) attribue une attente de pile à la PR dont les vérifications sont pending, pas au bas [0.52ms]
+(pass) attend sur un brouillon pendant que les vérifications sont pending, puis rapporte la barrière de brouillon [0.66ms]
+(pass) cadence queued-stack > retire une tête de sweep seulement après le succès de son snapshot [1.92ms]
+(pass) cadence queued-stack > reprend le sweep à la PR dont la lecture a échoué [3.15ms]
+(pass) cadence queued-stack > émet un sweep terminé seulement après son dernier snapshot réussi [0.67ms]
+(pass) cadence queued-stack > ADVANCE continue directement vers la nouvelle frontière sans sleep [1.28ms]
+(pass) cadence queued-stack > dédoublonne les attentes identiques et planifie le prochain sweep suivant [0.39ms]
+(pass) utilise le plancher et le plafond de réessai spécifiés [0.04ms]
+(pass) barrière de revue > bloque sur une revue requise au lieu de déclarer prête une PR bloquée [0.21ms]
+(pass) barrière de revue > bloque quand une protection de branche retient une PR approuvée à la CI propre [0.21ms]
+(pass) barrière de revue > attend les checks en cours avant de signaler la barrière de revue [0.20ms]
+(pass) barrière de revue > signale toujours les changements demandés comme barrière de fusion [0.29ms]
+(pass) une PR sans checks configurés > est prête quand GitHub la déclare fusionnable [0.24ms]
+(pass) une PR sans checks configurés > s’arrête toujours sur les conflits, les fils de revue et les barrières de fusion [0.57ms]
+(pass) une PR sans checks configurés > échoue ferme tant que le head n’a peut-être pas encore rapporté [0.32ms]
+
+watch-pr/shipping.test.ts:
+(pass) cancellation des fusions en attente > retire {"autoMerge":false,"queueEntryId":null} et relit un état ouvert stable [1.27ms]
+(pass) cancellation des fusions en attente > retire {"autoMerge":true,"queueEntryId":null} et relit un état ouvert stable [0.21ms]
+(pass) cancellation des fusions en attente > retire {"autoMerge":false,"queueEntryId":"queue-id"} et relit un état ouvert stable [0.14ms]
+(pass) cancellation des fusions en attente > retire {"autoMerge":true,"queueEntryId":"queue-id"} et relit un état ouvert stable [0.05ms]
+(pass) cancellation des fusions en attente > ne déqueue pas si désactiver auto-merge retire aussi la file [0.31ms]
+(pass) cancellation des fusions en attente > refuse un pending différent du reçu avant la première mutation: {"autoMerge":false,"queueEntryId":"q1"} [0.16ms]
+(pass) cancellation des fusions en attente > refuse un pending différent du reçu avant la première mutation: {"autoMerge":true,"queueEntryId":"q2"} [0.09ms]
+(pass) cancellation des fusions en attente > refuse une nouvelle entrée de queue avant dequeue sans la supprimer [0.33ms]
+(pass) cancellation des fusions en attente > refuse un enregistrement périmé avant mutation: {"revision":{"context":{"owner":"owner","repo":"repo","number":1},"headRefOid":"changed","baseRefName":"main","baseRefOid":"base"}} [0.22ms]
+(pass) cancellation des fusions en attente > refuse un enregistrement périmé avant mutation: {"revision":{"context":{"owner":"owner","repo":"repo","number":1},"headRefOid":"head","baseRefName":"release","baseRefOid":"base"}} [0.03ms]
+(pass) cancellation des fusions en attente > refuse un enregistrement périmé avant mutation: {"revision":{"context":{"owner":"owner","repo":"repo","number":1},"headRefOid":"head","baseRefName":"main","baseRefOid":"advanced"}} [0.02ms]
+(pass) cancellation des fusions en attente > refuse un enregistrement périmé avant mutation: {"pullRequestId":"different-pr"} [0.01ms]
+(pass) cancellation des fusions en attente > s'arrête si la base avance pendant l'annulation [0.39ms]
+(pass) cancellation des fusions en attente > rapporte une fusion concurrente au lieu d'autoriser une réécriture [0.25ms]
+(pass) cancellation des fusions en attente > refuse un état pending réarmé après readback [0.26ms]
+(pass) cancellation des fusions en attente > retourne unavailable si le readback échoue et ne continue pas [0.53ms]
+(pass) frontière GitHub de livraison > parse une révision complète et distingue la file seule [0.69ms]
+(pass) frontière GitHub de livraison > traite le champ baseRefOid absent comme unavailable [0.39ms]
+(pass) frontière GitHub de livraison > traite le champ autoMergeRequest absent comme unavailable [0.05ms]
+(pass) frontière GitHub de livraison > traite le champ mergeQueueEntry absent comme unavailable [0.02ms]
+(pass) frontière GitHub de livraison > traite le champ mergeCommit absent comme unavailable [0.03ms]
+(pass) frontière GitHub de livraison > refuse une réponse GraphQL partielle avec erreurs [0.19ms]
+(pass) frontière GitHub de livraison > utilise deux mutations et relit les deux mécanismes [0.92ms]
+(pass) frontière GitHub de livraison > refuse un contexte sauvegardé invalide avant de sélectionner la PR [0.33ms]
+
+watch-pr/head-signals.test.ts:
+(pass) signaux du head lus via gh > borne l’historique target à la naissance de la PR sans perdre un ancien ID encore actif [88.54ms]
+(pass) signaux du head lus via gh > partitionne plus de 1000 target runs après la naissance de la PR et retrouve le plus ancien actif [514.07ms]
+(pass) signaux du head lus via gh > refuse une seconde target de plus de 1000 runs plutôt que prétendre la recherche complète [145.04ms]
+(pass) signaux du head lus via gh > ignore un auteur supprimé [55.25ms]
+(pass) signaux du head lus via gh > accepte le nom nullable d’un workflow [49.90ms]
+(pass) signaux du head lus via gh > arrondit la naissance de la PR vers le bas sans perdre les runs de sa seconde [50.90ms]
+(pass) signaux du head lus via gh > découvre pull_request_target dont le run SHA est celui de la branche de base [95.64ms]
+(pass) signaux du head lus via gh > rattache target à notre association courante sans compter les autres PR ni les anciens heads [141.84ms]
+(pass) signaux du head lus via gh > compte target une seule fois quand base et head ont le même SHA [49.56ms]
+(pass) signaux du head lus via gh > attend la nouvelle tentative active plutôt que de terminer sur l’ancien échec [55.88ms]
+(pass) signaux du head lus via gh > réessaie quand l’ordre entre la relance active et l’ancien échec est inconnu [114.68ms]
+(pass) signaux du head lus via gh > attend le résumé du nouveau SHA après un push tant que seul un ancien résumé existe [110.58ms]
+(pass) signaux du head lus via gh > ne remplace pas notre échec par le succès d’une autre PR au même SHA [51.99ms]
+(pass) signaux du head lus via gh > garde startup_failure de notre PR et ignore les échecs des autres PR [105.87ms]
+(pass) signaux du head lus via gh > lie push et workflow_dispatch non associés à la branche exacte de notre PR [262.46ms]
+(pass) signaux du head lus via gh > accepte un résumé courant Completed même si un ancien commentaire obsolète est plus récent [48.18ms]
+(pass) signaux du head lus via gh > conserve chaque run actif même si un ID plus grand est déjà vert [301.16ms]
+(pass) signaux du head lus via gh > conserve les résultats contradictoires quand leur chronologie est identique [47.76ms]
+(pass) signaux du head lus via gh > ordonne les résultats terminés par tentative récente, pas par ID [100.60ms]
+(pass) signaux du head lus via gh > attend le commentaire Codex Running rattaché au SHA abrégé actuel [50.02ms]
+(pass) signaux du head lus via gh > bloque le startup_failure Actions sans check reporté [49.89ms]
+(pass) signaux du head lus via gh > attend Actions en cours et conserve les vrais échecs comme bloqueurs CI [95.95ms]
+(pass) signaux du head lus via gh > laisse prête une PR dont les deux sources ne rapportent aucun signal [50.94ms]
+(pass) signaux du head lus via gh > ignore les actions d’un autre SHA et les marqueurs copiés par un humain [46.33ms]
+(pass) signaux du head lus via gh > remplace une ancienne exécution échouée et un ancien résumé Running par leurs résultats récents [47.37ms]
+(pass) signaux du head lus via gh > lit toutes les pages Actions et commentaires [48.07ms]
+(pass) signaux du head lus via gh > échoue fermé sur les sources indisponibles, tronquées ou inconnues [1209.42ms]
+
+ 241 pass
+ 0 fail
+ 946 expect() calls
+Ran 241 tests across 13 files. [17.82s]
+$ tsc --project watch-pr/tsconfig.json --noEmit --strict && tsc --project runtime/tsconfig.json --noEmit --strict

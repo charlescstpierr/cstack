@@ -1,0 +1,5 @@
+Adding marketplace…✔ Successfully added marketplace: cstack (declared in user settings)
+Installing plugin "cstack@cstack"...✔ Successfully installed plugin: cstack@cstack (scope: user)
+
+cstack est prêt. Ouvrez une nouvelle tâche, dans T3 Code, Codex ou Claude Code, puis tapez :
+  /cstack:cstack   (Claude)

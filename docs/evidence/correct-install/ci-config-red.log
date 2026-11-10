@@ -1,0 +1,14 @@
+.......F.
+======================================================================
+FAIL: test_reapply_preserves_values_when_the_cli_reorders_toml_tables (test_installed_loader.InstalledLoaderTests.test_reapply_preserves_values_when_the_cli_reorders_toml_tables)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-install-1110/.cstack/correct/old-loader/tests/test_installed_loader.py", line 127, in test_reapply_preserves_values_when_the_cli_reorders_toml_tables
+    self.assertTrue(result, receipt)
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+AssertionError: False is not true : {'status': 'blocked', 'phase': 'reapply-and-update', 'modelTurnsRequested': 0, 'codexVersion': '0.166.0', 'limits': ['Codex CLI installed discovery only; no T3 installation claim', 'No model turn or ordinary-task activation behavior tested'], 'preflightProfilePolicy': 'private direct children; local marketplace add and cstack plugin add only', 'sourceHead': 'fixture', 'sourceTree': 'fixture', 'cliLockSha256': None, 'nodeVersion': 'codex-cli 0.166.0', 'installed': {'fixture': 'installed'}, 'error': 'Blocked: reapply changed configured state, skill bytes or the sentinel', 'cleanup': 'uninstalled'}
+
+----------------------------------------------------------------------
+Ran 9 tests in 0.501s
+
+FAILED (failures=1)
