@@ -42,13 +42,15 @@ CODEX_NATIVE = "codex-native"
 # Pour changer de modèle, modifier une ligne ici ou passer `show --tier palier=[fournisseur/]modèle[@effort]`.
 T3_TIERS = {"work": "gpt-6.1-sol", "judgment": "claude-opus-5-5", "hard": "gpt-6-astra"}
 T3_EFFORT = "medium"
+# Options d’hôte qui règlent l’effort de raisonnement. Une autre option qui offre la même valeur n’est jamais touchée.
+T3_EFFORT_OPTIONS = ("reasoningEffort", "effort", "variant")
 T3_PANEL = ["work@high", "judgment@high", "hard@high"]
 T3_GROUPS = {
     "everyday work": {role: "work" for role in (
-        "feature, refactoring", "bug-fix", "perf-issue", "hillclimb", "how explorer", "how explainer",
-        "why investigators", "reflect tooling", "swarm workers")},
+        "feature, refactoring", "bug-fix", "perf-issue", "hillclimb", "simple edits", "how explorer",
+        "how explainer", "why investigators", "reflect tooling", "swarm workers")},
     "judgment": {role: "judgment" for role in (
-        "judgment and prose", "reflect judgment, divergent, synthesizer")},
+        "judgment and prose", "documentation", "reflect judgment, divergent, synthesizer")},
     "hard decisions": {"hardest tasks": "hard@high", "why synthesizer": "hard"},
     "mixed panels": {**{role: T3_PANEL for role in MIXED_PANEL_ROLES}, "arena cross-judge pool": T3_PANEL[1:]},
 }
@@ -181,6 +183,11 @@ def t3_catalog_helper():
     return module
 
 
+def machine_sheet():
+    """Feuille de la machine : lue dans T3 par tous les projets et worktrees, sous les rôles du projet."""
+    return Path(os.environ.get("XDG_CONFIG_HOME") or Path.home() / ".config") / "cstack" / "models.json"
+
+
 def t3_direct(catalog):
     return isinstance(catalog, dict) and catalog.get("schema") == "cstack.t3-direct/1"
 
@@ -194,7 +201,7 @@ def _t3_providers(catalog, host, context):
 
 
 def _t3_options(model):
-    declared = model.get("options")
+    declared = model.get("options") if isinstance(model, dict) else None
     if not isinstance(declared, dict):
         raise ValueError("BLOCKED: options du modèle non vérifiées")
     types = {"string": str, "boolean": bool}
@@ -261,23 +268,26 @@ def t3_position(chosen, catalog, context):
             "binding": {"coordinatorScope": catalog["coordinator"], "catalogSha256": catalog["sha256"], "target": target}}
 
 
-def _t3_tier(spec, providers, coordinator):
-    """Trouver `[fournisseur/]modèle[@effort]` dans le catalogue vivant. Rien n’est substitué."""
-    def listed(name):
-        models = providers[name].get("models") if isinstance(providers.get(name), dict) else None
-        return models if isinstance(models, dict) else {}
+def _t3_tier(spec, providers):
+    """Lire `[fournisseur/]modèle[@effort]` sur le catalogue observé. Une seule lecture doit exister."""
+    def lists(provider, model):
+        entry = providers.get(provider)
+        models = entry.get("models") if isinstance(entry, dict) else None
+        return isinstance(models, dict) and model in models
     head, _, tail = spec.rpartition("@")
-    for name, effort in ((spec, None), (head, tail)):
-        found = [provider for provider in providers if name in listed(provider)]
-        if coordinator["providerInstanceId"] in found:
-            found = [coordinator["providerInstanceId"]]
-        if len(found) > 1:
-            raise ValueError(f"{spec}: modèle listé par {', '.join(found)}; écrire fournisseur/modèle")
-        if found:
-            return found[0], name, effort
+    readings = set()
+    for name, effort in ((spec, None), (head, tail)) if head and tail else ((spec, None),):
+        readings.update((provider, name, effort) for provider in providers if lists(provider, name))
         provider, _, model = name.partition("/")
-        if model in listed(provider):
-            return provider, model, effort
+        if lists(provider, model):
+            readings.add((provider, model, effort))
+    if len(readings) == 1:
+        return readings.pop()
+    if readings:
+        found = "; ".join(sorted(f"{provider}/{model}" + (f" en effort {effort}" if effort else "")
+                                 for provider, model, effort in readings))
+        raise ValueError(f"{spec}: plusieurs lectures possibles ({found}); écrire fournisseur/modèle, "
+                         "ou la sélection complète avec ses options")
     raise ValueError(f"{spec}: modèle absent du catalogue T3 observé; le chercher avec orchestrator_capabilities "
                      "et son paramètre search, puis ajouter cette capture par un second --capabilities")
 
@@ -289,9 +299,11 @@ def _t3_choice(row, tiers, providers):
     provider, model, effort = tiers[name]
     declared = _t3_options(providers[provider]["models"][model])
     level = effort or level or T3_EFFORT
-    keys = [key for key, option in declared.items() if option["type"] == "string" and level in option["values"]]
+    keys = [key for key in T3_EFFORT_OPTIONS
+            if key in declared and declared[key]["type"] == "string" and level in declared[key]["values"]]
     if len(keys) > 1 or (effort and not keys):
-        raise ValueError(f"{provider}/{model}: {len(keys)} options offrent le niveau {level}; écrire la sélection avec ses options")
+        raise ValueError(f"{provider}/{model}: effort {level} offert par {len(keys)} option parmi "
+                         f"{', '.join(T3_EFFORT_OPTIONS)}; écrire la sélection complète avec ses options")
     return {"runtime": "t3", "providerInstanceId": provider, "model": model,
             "options": {keys[0]: level} if keys else {}}
 
@@ -304,7 +316,7 @@ def t3_recommendations(catalog, providers, context, overrides):
     tiers = {}
     for name, spec in {**T3_TIERS, **overrides}.items():
         try:
-            tiers[name] = _t3_tier(spec, providers, catalog["coordinator"])
+            tiers[name] = _t3_tier(spec, providers)
         except ValueError as error:
             tiers[name] = error
     groups = {}
@@ -378,6 +390,8 @@ def read_catalog(path):
     data = read_bounded_json(path, "catalogue")
     if path is None:
         return None
+    if t3_direct(data):
+        raise ValueError("le catalogue direct vient seulement de --capabilities, jamais de --catalog")
     if isinstance(data, dict) and data.get("host") == "t3":
         return data
     # Accepter la sortie codex debug models ou un mapping transcrit depuis le schéma actuel.
@@ -580,6 +594,8 @@ def main():
     writer.add_argument("-h", "--help", action="help", help="afficher ce message d’aide et quitter")
     writer.add_argument("--choices", type=Path, required=True)
     writer.add_argument("--expected-sha256", required=True)
+    writer.add_argument("--machine", action="store_true",
+                        help="T3 : enregistrer dans la feuille de la machine, lue par tous les projets et worktrees")
     normalizer = commands.add_parser("normalize")
     normalizer.add_argument("--capabilities-trace", type=Path, required=True)
     normalizer.add_argument("--thread-trace", type=Path, required=True)
@@ -610,15 +626,26 @@ def main():
             catalog = read_catalog(args.catalog)
         context = read_bounded_json(args.host_context, "contexte")
         config, digest = read_config(path)
+        machine, machine_digest = read_config(machine_sheet()) if args.host == "t3" else ({}, None)
+        effective = {**machine, **config}
         if args.command == "show":
             tiers = dict(item.partition("=")[::2] for item in args.tier)
-            result = preview(config, digest, catalog, args.claude_ready, args.host, context, tiers)
+            result = preview(effective, digest, catalog, args.claude_ready, args.host, context, tiers)
+            if args.host == "t3":
+                result["saved"] = config
+                result["machine"] = {"path": str(machine_sheet()), "saved": machine, "sha256": machine_digest}
             # Les agents natifs gérés suivent models.json : l’aperçu dit lesquels seront alignés.
             result["managed_agents"] = project_helper().managed_agents(args.workspace) if has_agents else []
         elif args.command == "resolve":
-            result = resolve(config, args.role, catalog, args.host, context)
+            result = resolve(effective, args.role, catalog, args.host, context)
         elif args.command == "preflight":
-            result = preflight(config, args.roles, catalog, args.host, context)
+            result = preflight(effective, args.roles, catalog, args.host, context)
+        elif args.machine:
+            if args.host != "t3":
+                raise ValueError("--machine exige --host t3")
+            saved = apply_choices(machine_sheet(), json.loads(args.choices.read_text()),
+                                  args.expected_sha256, catalog, args.host, context)
+            result = {"saved": saved, "path": str(machine_sheet())}
         else:
             result = project_helper().apply_model_choices(args.workspace, json.loads(args.choices.read_text()),
                                                           args.expected_sha256, catalog, args.host, context)

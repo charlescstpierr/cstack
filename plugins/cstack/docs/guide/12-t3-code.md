@@ -62,7 +62,7 @@ Pour une tâche qui modifie du code, créez le fil dans un worktree T3 Code. Le 
 
 ## 5. Choisir les modèles des délégués
 
-Cette étape est facultative. Sans configuration, chaque délégué reprend le fournisseur, le modèle et les options de votre fil.
+Faites cette étape une fois par machine. Sans elle, chaque délégué reprend le fournisseur, le modèle et les options de votre fil : si votre fil tourne sur un modèle coûteux, ses délégués aussi.
 
 Pour choisir, lancez le setup dans un fil T3 Code, avec `$cstack:setup-cstack` dans un fil Codex ou `/cstack:setup-cstack` dans un fil Claude :
 
@@ -78,7 +78,7 @@ Le setup propose une feuille en trois paliers, vérifiée sur les modèles que v
 | `judgment` | `claude-opus-5-5` | Jugement et prose. |
 | `hard` | `gpt-6-astra` | Tâches les plus dures. |
 
-Les panels de candidats et de reviewers prennent une position par palier, donc deux familles de modèles quand Codex et Claude sont connectés. Si un modèle proposé manque chez vous, le setup le dit et ne le remplace pas à votre place. Rien n'est écrit avant votre accord. Les choix acceptés vont dans `.cstack/models.json`, et un rôle enregistré avec `runtime: "t3"` reste bloqué hors de T3 Code.
+Les panels de candidats et de reviewers prennent une position par palier, donc deux familles de modèles quand Codex et Claude sont connectés. Si un modèle proposé manque chez vous, le setup le dit et ne le remplace pas à votre place. Rien n'est écrit avant votre accord. Les choix acceptés vont dans la feuille de la machine, `~/.config/cstack/models.json`. Tous vos projets et worktrees la lisent dans T3 Code. Un `.cstack/models.json` dans un projet prime, rôle par rôle, pour un choix propre à ce projet.
 
 Pour utiliser un autre modèle, y compris un modèle que T3 Code vient d'ajouter, nommez-le avec son palier :
 
@@ -112,7 +112,7 @@ Si vous avez installé avec une variable `CODEX_HOME`, lancez cette commande ave
 - L'installateur fonctionne dans des dossiers Codex et Claude Code isolés, avec `install --local` puis `doctor`, et depuis GitHub avec `install --ref`.
 - Claude Code 2.1.321 charge le plugin installé, ses 29 compétences et son hook ; `/cstack:cstack` active le rappel du mode. Un fil Claude de T3 Code qui charge cstack n'est pas observé.
 - Les helpers du setup T3 acceptent les vraies réponses de T3 Code et résolvent un panel sur deux fournisseurs. Le reçu est `docs/evidence/setup-observations-2026-11-09.json`. Un setup complet mené par un coordinateur Codex dans T3 Code n'est pas observé.
-- Avec les règles du chemin direct, GPT-6.1 Sol prévoit 8 à 10 étapes avant de lancer un reviewer Claude, contre 15 à 16 avec les règles précédentes, sur deux essais par version. Le reçu est `docs/evidence/t3-direct-path-2026-11-09.json`. C'est un exercice sur papier : un coordinateur Codex qui exécute ce chemin dans T3 Code n'est pas observé.
+- Avec les règles du chemin direct, GPT-6.1 Sol prévoit 7 à 8 étapes avant de lancer un reviewer Claude, contre 15 à 16 avec les règles précédentes, sur deux essais par version. Dans un worktree sans `.cstack/`, il lit la feuille de la machine et lance chaque délégué sur le modèle de son rôle. Le reçu est `docs/evidence/t3-direct-path-2026-11-09.json`. Ce sont des exercices sur papier : un coordinateur Codex qui exécute ce chemin dans T3 Code n'est pas observé.
 
 Ces observations viennent d'un seul serveur Linux. L'application de bureau T3 Code sur macOS et sur Windows n'est pas observée. L'approbation des hooks depuis T3 Code non plus. Le refus d'écrire hors worktree vient du contrat T3 et n'a pas été observé.
 

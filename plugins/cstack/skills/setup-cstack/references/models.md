@@ -48,20 +48,22 @@ Les valeurs de modèle doivent être des sélections vérifiées, pas des défau
 | `judgment` | `claude-opus-5-5` | Jugement, prose, synthèse de `reflect`. | `medium` |
 | `hard` | `gpt-6-astra` | Tâches les plus dures en `high`, synthèse de `why` en `medium`. | |
 
-Les panels `arena runners`, `architect runners` et `interrogate reviewers` reçoivent une position par palier, en effort `high`. `arena cross-judge pool` reçoit `judgment` puis `hard`. `simple edits` et `documentation` gardent leurs replis.
+Les panels `arena runners`, `architect runners` et `interrogate reviewers` reçoivent une position par palier, en effort `high`. `arena cross-judge pool` reçoit `judgment` puis `hard`. La feuille couvre tous les rôles : un rôle sans entrée reprendrait le modèle du fil, donc son coût.
 
 ```sh
 python3 <absolute-plugin>/skills/setup-cstack/scripts/models.py --workspace <workspace> --host t3 --capabilities <capture.json> show
-python3 <absolute-plugin>/skills/setup-cstack/scripts/models.py --workspace <workspace> --host t3 --capabilities <capture.json> apply --choices <choix-acceptés.json> --expected-sha256 <show.sha256>
+python3 <absolute-plugin>/skills/setup-cstack/scripts/models.py --workspace <workspace> --host t3 --capabilities <capture.json> apply --machine --choices <choix-acceptés.json> --expected-sha256 <show.machine.sha256>
 ```
+
+`apply --machine` écrit la feuille de la machine, `$XDG_CONFIG_HOME/cstack/models.json`, par défaut `~/.config/cstack/models.json`. Tous les projets et worktrees de la machine la lisent dans T3. Sans `--machine`, `apply` écrit `.cstack/models.json` du projet avec l'empreinte `show.sha256` : un rôle du projet prime sur le même rôle de la feuille. `show` rend les deux contenus, `saved` et `machine.saved`.
 
 Pour utiliser un autre modèle, nouveau ou non :
 
-1. Si `supported` le liste, relance `show --tier <palier>=<modèle>`. Ajoute `@<effort>` pour fixer l'effort de ce palier partout, et `<fournisseur>/` quand deux fournisseurs listent le même modèle.
+1. Si `supported` le liste, relance `show --tier <palier>=<modèle>`. Ajoute `@<effort>` pour fixer l'effort de ce palier partout, et `<fournisseur>/` quand deux fournisseurs listent le même modèle. Une valeur qui se lit de deux façons est refusée, avec les lectures trouvées.
 2. Sinon, appelle `orchestrator_capabilities` avec `search`, enregistre cette sortie et ajoute-la par un second `--capabilities`.
 3. Présente la feuille obtenue, puis applique les groupes acceptés.
 
-Un effort n'est posé que si une seule option du modèle l'offre. Un effort demandé par `--tier` qu'aucune option n'offre rend le groupe `unavailable`. Un effort de la feuille qu'aucune option n'offre est omis, et le modèle garde son défaut.
+Un effort n'est posé que sur l'option d'effort du modèle, `reasoningEffort`, `effort` ou `variant`. Un effort demandé par `--tier` que cette option n'offre pas rend le groupe `unavailable`. Un effort de la feuille qu'elle n'offre pas est omis, et le modèle garde son défaut. Pour toute autre option, écris la sélection complète dans les choix.
 
 ## Rôles
 

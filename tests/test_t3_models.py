@@ -1,12 +1,29 @@
 import copy
 import hashlib
 import json
+import os
 from pathlib import Path
 import tempfile
 import unittest
 import subprocess
 import sys
 from test_models import models, CATALOG
+
+
+def setUpModule():
+    # La feuille de la machine du développeur ne doit jamais entrer dans ces tests.
+    global _CONFIG_HOME, _PREVIOUS_CONFIG_HOME
+    _CONFIG_HOME = tempfile.TemporaryDirectory()
+    _PREVIOUS_CONFIG_HOME = os.environ.get('XDG_CONFIG_HOME')
+    os.environ['XDG_CONFIG_HOME'] = _CONFIG_HOME.name
+
+
+def tearDownModule():
+    if _PREVIOUS_CONFIG_HOME is None:
+        os.environ.pop('XDG_CONFIG_HOME', None)
+    else:
+        os.environ['XDG_CONFIG_HOME'] = _PREVIOUS_CONFIG_HOME
+    _CONFIG_HOME.cleanup()
 
 
 def seal(catalog):
@@ -227,6 +244,14 @@ class T3ModelsTests(unittest.TestCase):
             result = project.apply_model_choices(root, {'how explorer': self.selected}, digest, self.catalog, 't3', self.context)
             self.assertEqual(result['saved']['how explorer'], self.selected)
             self.assertFalse((root / '.codex/agents/cstack-explorer.toml').exists())
+
+    def test_a_malformed_model_makes_its_group_unavailable_without_a_crash(self):
+        self.catalog['providers']['fixture-provider']['models']['gpt-6-astra'] = None
+        seal(self.catalog)
+        self.context['snapshotSha256'] = self.catalog['sha256']
+        preview = models.preview({}, 'digest', self.catalog, host='t3', context=self.context)
+        self.assertEqual(preview['recommendations']['hard decisions']['choices'], {})
+        self.assertIn('non vérifiées', preview['recommendations']['hard decisions']['unavailable'])
 
     def test_ready_preflight_matches_resolve(self):
         config = {'how explorer': self.selected}
@@ -454,12 +479,20 @@ class T3DirectTests(unittest.TestCase):
     def tearDown(self):
         self.tmp.cleanup()
 
-    def run_cli(self, *args, caps=None, raw=None):
+    def run_cli(self, *args, caps=None, raw=None, workspace=None, host=('--host', 't3')):
         path = self.root / 'capabilities.json'
         path.write_text(raw if raw is not None else json.dumps(self.caps if caps is None else caps))
-        result = subprocess.run([sys.executable, str(self.script), '--host', 't3', '--capabilities', str(path),
-                                 '--workspace', str(self.root), *args], capture_output=True, text=True, check=False)
+        source = ['--capabilities', str(path)] if host else []
+        result = subprocess.run([sys.executable, str(self.script), *host, *source,
+                                 '--workspace', str(workspace or self.root), *args], capture_output=True, text=True,
+                                check=False, env={**os.environ, 'XDG_CONFIG_HOME': str(self.root / 'config')})
         return result.returncode, (json.loads(result.stdout) if result.stdout.strip() else None), result.stderr
+
+    def apply_machine(self, choices):
+        _, shown, _ = self.run_cli('show')
+        path = self.root / 'choices.json'
+        path.write_text(json.dumps(choices))
+        return self.run_cli('apply', '--machine', '--choices', str(path), '--expected-sha256', shown['machine']['sha256'])
 
     def apply(self, choices, **kwargs):
         _, shown, _ = self.run_cli('show', **kwargs)
@@ -489,6 +522,7 @@ class T3DirectTests(unittest.TestCase):
         choices = {}
         for group in shown['recommendations'].values():
             choices.update(group['choices'])
+        self.assertEqual(set(choices), models.ROLES, 'un rôle sans entrée hérite du modèle du fil')
         code, applied, error = self.apply(choices)
         self.assertEqual(code, 0, error)
         self.assertEqual(applied['saved']['hardest tasks']['model'], 'gpt-6-astra')
@@ -593,6 +627,103 @@ class T3DirectTests(unittest.TestCase):
             text = (plugin / page).read_text()
             for tier, model in models.T3_TIERS.items():
                 self.assertIn(f'| `{tier}` | `{model}` |', text, page)
+
+    def test_the_machine_sheet_applies_in_a_workspace_that_has_no_project_file(self):
+        opus = {'runtime': 't3', 'providerInstanceId': 'claudeAgent', 'model': 'claude-opus-5-5', 'options': {'effort': 'high'}}
+        sol = {'runtime': 't3', 'providerInstanceId': 'codex', 'model': 'gpt-6.1-sol', 'options': {'reasoningEffort': 'medium'}}
+        code, applied, error = self.apply_machine({'judgment and prose': opus, 'bug-fix': sol})
+        self.assertEqual(code, 0, error)
+        sheet = self.root / 'config/cstack/models.json'
+        self.assertEqual(Path(applied['path']), sheet)
+        self.assertEqual(json.loads(sheet.read_text()), {'judgment and prose': opus, 'bug-fix': sol})
+        self.assertFalse((self.root / '.cstack').exists())
+        worktree = self.root / 'another-checkout'
+        worktree.mkdir()
+        code, report, error = self.run_cli('preflight', 'judgment and prose', 'bug-fix', workspace=worktree)
+        self.assertEqual(code, 0, error)
+        self.assertEqual(report['resolved']['judgment and prose'][0]['target']['model'], 'claude-opus-5-5')
+        self.assertEqual(report['resolved']['bug-fix'][0]['target']['model'], 'gpt-6.1-sol')
+
+    def test_a_project_entry_overrides_the_machine_sheet_role_by_role(self):
+        opus = {'runtime': 't3', 'providerInstanceId': 'claudeAgent', 'model': 'claude-opus-5-5', 'options': {'effort': 'high'}}
+        sonnet = {'runtime': 't3', 'providerInstanceId': 'claudeAgent', 'model': 'claude-sonnet-5-5', 'options': {'effort': 'high'}}
+        sol = {'runtime': 't3', 'providerInstanceId': 'codex', 'model': 'gpt-6.1-sol', 'options': {'reasoningEffort': 'medium'}}
+        self.assertEqual(self.apply_machine({'judgment and prose': opus, 'bug-fix': sol})[0], 0)
+        self.assertEqual(self.apply({'judgment and prose': sonnet})[0], 0)
+        _, shown, _ = self.run_cli('show')
+        self.assertEqual(shown['saved'], {'judgment and prose': sonnet})
+        self.assertEqual(shown['machine']['saved'], {'judgment and prose': opus, 'bug-fix': sol})
+        _, report, _ = self.run_cli('preflight', 'judgment and prose', 'bug-fix')
+        self.assertEqual(report['resolved']['judgment and prose'][0]['target']['model'], 'claude-sonnet-5-5')
+        self.assertEqual(report['resolved']['bug-fix'][0]['target']['model'], 'gpt-6.1-sol')
+
+    def test_the_machine_sheet_is_read_and_written_only_in_t3(self):
+        sol = {'runtime': 't3', 'providerInstanceId': 'codex', 'model': 'gpt-6.1-sol', 'options': {'reasoningEffort': 'medium'}}
+        self.assertEqual(self.apply_machine({'bug-fix': sol})[0], 0)
+        code, resolved, error = self.run_cli('resolve', 'bug-fix', host=())
+        self.assertEqual((code, resolved), (0, [{}]), error)
+        code, shown, _ = self.run_cli('show', host=())
+        self.assertEqual((shown['saved'], 'machine' in shown), ({}, False))
+        path = self.root / 'choices.json'
+        path.write_text(json.dumps({'bug-fix': 'inherit-parent'}))
+        code, _, error = self.run_cli('apply', '--machine', '--choices', str(path), '--expected-sha256', shown['sha256'], host=())
+        self.assertEqual(code, 2)
+        self.assertIn('--machine', error)
+
+    def test_a_tier_with_two_possible_readings_is_refused(self):
+        caps = copy.deepcopy(self.caps)
+        codex = next(row for row in caps['providers'] if row['providerInstanceId'] == 'codex')
+        opencode = next(row for row in caps['providers'] if row['providerInstanceId'] == 'opencode')
+        opencode['models'].append(copy.deepcopy(next(row for row in codex['models'] if row['id'] == 'gpt-6.1-sol')))
+        codex['models'].append({'id': 'claudeAgent/claude-opus-5-5', 'options': []})
+        codex['models'].append({'id': 'gpt-6.1-terra@high', 'options': []})
+        for tier, named in (('work=gpt-6.1-sol', 'opencode/gpt-6.1-sol'),
+                            ('work=claudeAgent/claude-opus-5-5@high', 'codex/claudeAgent/claude-opus-5-5 en effort high'),
+                            ('work=codex/gpt-6.1-terra@high', 'codex/gpt-6.1-terra en effort high')):
+            with self.subTest(tier=tier):
+                _, shown, _ = self.run_cli('show', '--tier', tier, caps=caps)
+                group = shown['recommendations']['everyday work']
+                self.assertEqual(group['choices'], {})
+                self.assertIn('plusieurs lectures', group['unavailable'])
+                self.assertIn(named, group['unavailable'])
+        _, shown, _ = self.run_cli('show', '--tier', 'work=opencode/gpt-6.1-sol', caps=caps)
+        self.assertEqual(shown['recommendations']['everyday work']['choices']['bug-fix']['providerInstanceId'], 'opencode')
+
+    def test_an_effort_never_sets_another_option_and_an_empty_one_is_refused(self):
+        for tier in ('work=gpt-6.1-sol@default', 'work=gpt-6.1-sol@priority', 'work=gpt-6.1-sol@'):
+            with self.subTest(tier=tier):
+                _, shown, _ = self.run_cli('show', '--tier', tier)
+                group = shown['recommendations']['everyday work']
+                self.assertEqual(group['choices'], {})
+                self.assertIsNotNone(group['unavailable'])
+
+    def test_captures_that_disagree_on_a_provider_are_refused(self):
+        helper = models.t3_catalog_helper()
+        first = copy.deepcopy(self.caps)
+        claude = next(row for row in first['providers'] if row['providerInstanceId'] == 'claudeAgent')
+        for key, value in (('enabled', False), ('canRunCrossProviderChildTask', False), ('runtimeModes', ['approval-required'])):
+            with self.subTest(key=key):
+                limited = copy.deepcopy(first)
+                next(row for row in limited['providers'] if row['providerInstanceId'] == 'claudeAgent')[key] = value
+                with self.assertRaisesRegex(ValueError, 'contradictoires'):
+                    helper.direct([json.dumps(limited).encode(), json.dumps(first).encode()])
+        claude['omittedModels'] = 0
+        partial = copy.deepcopy(first)
+        next(row for row in partial['providers'] if row['providerInstanceId'] == 'claudeAgent')['omittedModels'] = 9
+        merged = helper.direct([json.dumps(first).encode(), json.dumps(partial).encode()])['providers']['claudeAgent']
+        self.assertEqual((merged['modelsComplete'], 'omittedModels' in merged), (False, False))
+
+    def test_a_direct_catalog_cannot_enter_through_the_audited_inputs(self):
+        direct = models.t3_catalog_helper().direct([json.dumps(self.caps).encode()])
+        catalog, context = self.root / 'direct.json', self.root / 'context.json'
+        catalog.write_text(json.dumps(direct))
+        context.write_text('null')
+        for extra in ([], ['--host-context', str(context)]):
+            result = subprocess.run([sys.executable, str(self.script), '--host', 't3', '--catalog', str(catalog), *extra,
+                                     '--workspace', str(self.root), 'preflight', 'bug-fix'],
+                                    capture_output=True, text=True, check=False)
+            self.assertEqual(result.returncode, 2, result.stdout)
+            self.assertIn('--capabilities', result.stderr)
 
     def test_direct_and_audited_inputs_do_not_mix(self):
         path = self.root / 'capabilities.json'

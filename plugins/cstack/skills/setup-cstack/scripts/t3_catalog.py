@@ -7,6 +7,7 @@ import re
 
 LIMIT = 1024 * 1024
 DIRECT = 'cstack.t3-direct/1'
+PROVIDER_LIMITS = ('enabled', 'canRunChildTask', 'canRunCrossProviderChildTask', 'constraints', 'runtimeModes')
 SCOPE_KEYS = ('threadId', 'projectId', 'link', 'providerInstanceId', 'model', 'runtimeMode', 'interactionMode', 'options')
 
 
@@ -199,9 +200,14 @@ def direct(raws):
             fail('captures de fils ou de réglages différents')
         scope = current
         for name, provider in catalog(caps).items():
-            known = providers.get(name, {})
-            provider['models'] = {**known.get('models', {}), **provider['models']}
-            provider['modelsComplete'] = provider['modelsComplete'] or known.get('modelsComplete', False)
+            known = providers.get(name)
+            if known is not None:
+                if any(known.get(key) != provider.get(key) for key in PROVIDER_LIMITS):
+                    fail('captures contradictoires pour le fournisseur ' + name)
+                provider['models'] = {**known['models'], **provider['models']}
+                provider['modelsComplete'] = known['modelsComplete'] and provider['modelsComplete']
+                if known.get('omittedModels') != provider.get('omittedModels'):
+                    provider.pop('omittedModels', None)
             providers[name] = provider
     if scope is None:
         fail('capture orchestrator_capabilities requise')
