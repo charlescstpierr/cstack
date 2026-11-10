@@ -122,7 +122,9 @@ cstack s'installe sur la machine qui exécute vos agents T3, puis s'invoque dans
 2. Ouvrez un nouveau fil dans T3 Code. Un fil ouvert avant l'installation ne voit pas le plugin.
 3. Commencez votre message par `$cstack:cstack` dans un fil Codex, ou par `/cstack:cstack` dans un fil Claude, puis écrivez la demande.
 
-Le guide [Installer cstack dans T3 Code](plugins/cstack/docs/guide/12-t3-code.md) détaille les worktrees, le choix des modèles, la mise à jour et le dépannage.
+Pour vous passer de la commande, activez le démarrage automatique, éteint par défaut : cstack s'applique alors de lui-même aux tâches qui touchent plusieurs fichiers, demandent un choix de conception ou portent sur un bug de cause inconnue.
+
+Le guide [Installer cstack dans T3 Code](plugins/cstack/docs/guide/12-t3-code.md) détaille le démarrage automatique, les worktrees, le choix des modèles, la mise à jour et le dépannage.
 
 Dans T3 Code, le coordinateur utilise les outils de l'hôte pour choisir les modèles et les efforts, déléguer, isoler les checkouts et collecter les résultats. Le [contrat T3](plugins/cstack/skills/cstack/references/runtime/t3.md) prime alors sur les consignes Codex autonome. Les helpers cstack vérifient les sélections et préparent les briefs. Ils ne lancent ni moteur d'orchestration ni CLI de repli.
 
@@ -175,7 +177,7 @@ Les 23 principes sont des [références internes](plugins/cstack/docs/guide/08-p
 
 `$cstack:setup-cstack` demande d'abord un budget de raisonnement (illimité, large, moyen ou réduit), puis affiche sept recommandations vérifiées de modèle et d'effort pour tous les rôles et positions de panel. Il affiche ensuite la configuration actuelle et l'héritage éventuel. Vous pouvez accepter, personnaliser, conserver, choisir l'héritage pour certains rôles ou annuler. Les choix sont vérifiés dans le catalogue courant et enregistrés dans `.cstack/models.json`, sans modifier la session principale ni la configuration globale. Voir le [tableau de recommandations](plugins/cstack/docs/guide/01-setup.md#configurer-cstack).
 
-La configuration peut aussi préparer les conventions du projet : un bloc cstack dans `AGENTS.md`, un guide local et le suivi de tickets choisi. Elle montre les changements avant de les appliquer et conserve les instructions extérieures au bloc. Elle ne modifie pas `CLAUDE.md`, n'active pas cstack automatiquement et ne crée aucun ticket distant.
+La configuration peut aussi préparer les conventions du projet : un bloc cstack dans `AGENTS.md`, un guide local et le suivi de tickets choisi. Elle montre les changements avant de les appliquer et conserve les instructions extérieures au bloc. Elle ne modifie pas `CLAUDE.md`, n'active le démarrage automatique que si vous le demandez et ne crée aucun ticket distant.
 
 ## Codex et Claude ensemble
 

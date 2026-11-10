@@ -56,6 +56,18 @@ Cette étape est facultative et se fait une seule fois. Dans un terminal de la m
 
 Le coordinateur peut être un fil Codex ou un fil Claude. Les deux fournisseurs peuvent aussi intervenir comme délégués.
 
+### Démarrer cstack sans commande
+
+Ce réglage est éteint par défaut. Pour l'activer, demandez-le une fois dans un fil :
+
+```text
+$cstack:setup-cstack Active le démarrage automatique.
+```
+
+Dans chaque nouvelle session de cette machine, cstack s'applique alors de lui-même aux tâches qui touchent plusieurs fichiers, demandent un choix de conception ou portent sur un bug de cause inconnue. Une question ou une petite édition reste hors cstack. « arrête cstack » l'éteint pour une conversation. Pour l'éteindre sur la machine, demandez au setup de désactiver le démarrage automatique.
+
+Le réglage dépend du hook de l'étape 2. Dans Codex, il ne s'applique pas tant que ce hook n'est pas approuvé. Si un autre plugin démarre aussi de lui-même sur les mêmes tâches, comme pstack, éteignez l'un des deux : sinon chaque session reçoit deux consignes concurrentes.
+
 ## 4. Écrire du code depuis un worktree
 
 Pour une tâche qui modifie du code, créez le fil dans un worktree T3 Code. Le [contrat T3](../../skills/cstack/references/runtime/t3.md) interdit au coordinateur d'écrire à la racine du projet. Un fil créé sans worktree peut explorer et relire. Il confie alors chaque écriture à un délégué que T3 isole dans son propre worktree.
@@ -113,6 +125,7 @@ Si vous avez installé avec une variable `CODEX_HOME`, lancez cette commande ave
 - Claude Code 2.1.321 charge le plugin installé, ses 29 compétences et son hook ; `/cstack:cstack` active le rappel du mode. Un fil Claude de T3 Code qui charge cstack n'est pas observé.
 - Les helpers du setup T3 acceptent les vraies réponses de T3 Code et résolvent un panel sur deux fournisseurs. Le reçu est `docs/evidence/setup-observations-2026-11-09.json`. Un setup complet mené par un coordinateur Codex dans T3 Code n'est pas observé.
 - Avec les règles du chemin direct, GPT-6.1 Sol prévoit 7 à 8 étapes avant de lancer un reviewer Claude, contre 15 à 16 avec les règles précédentes, sur deux essais par version. Dans un worktree sans `.cstack/`, il lit la feuille de la machine et lance chaque délégué sur le modèle de son rôle. Le reçu est `docs/evidence/t3-direct-path-2026-11-09.json`. Ce sont des exercices sur papier : un coordinateur Codex qui exécute ce chemin dans T3 Code n'est pas observé.
+- Avec le démarrage automatique activé, GPT-6.1 Sol et Claude Sonnet appliquent cstack à un bug de cause inconnue et travaillent directement pour un renommage d'une ligne et pour une question. Sans le réglage, GPT-6.1 Sol n'applique cstack à aucune des trois demandes. Le reçu est `docs/evidence/automatic-start-2026-11-10.json`. C'est un exercice sur papier : une session de T3 Code qui démarre cstack par le hook installé n'est pas observée.
 
 Ces observations viennent d'un seul serveur Linux. L'application de bureau T3 Code sur macOS et sur Windows n'est pas observée. L'approbation des hooks depuis T3 Code non plus. Le refus d'écrire hors worktree vient du contrat T3 et n'a pas été observé.
 

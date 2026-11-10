@@ -8,7 +8,7 @@ Après invocation explicite dans T3, lire d’abord le [contrat T3](../cstack/re
 
 # Configurer cstack
 
-L'usage de base de cstack n'exige aucune configuration. La configuration prépare seulement le projet courant; elle n'active jamais un flux de travail et ne change jamais la configuration globale de Codex ou de Claude Code. Dans T3, les choix de modèles acceptés vont dans la feuille cstack de la machine (`$XDG_CONFIG_HOME/cstack/models.json`, par défaut `~/.config/cstack/models.json`), que tous les projets et worktrees lisent.
+L'usage de base de cstack n'exige aucune configuration. La configuration prépare seulement le projet courant; elle n'active un flux de travail que par le [démarrage automatique](#démarrage-automatique), sur demande de l'utilisateur, et ne change jamais la configuration globale de Codex ou de Claude Code. Dans T3, les choix de modèles acceptés vont dans la feuille cstack de la machine (`$XDG_CONFIG_HOME/cstack/models.json`, par défaut `~/.config/cstack/models.json`), que tous les projets et worktrees lisent.
 
 Runtime : [règles communes](../cstack/references/runtime/base.md), [exploration](../cstack/references/runtime/exploration.md), [modèles](../cstack/references/runtime/modeles.md).
 
@@ -33,6 +33,10 @@ Avant la première inspection, affiche une todo courte adaptée au périmètre :
 - Quand l'utilisateur a déjà approuvé ces changements exacts, procède sans autre relais de permission ; une demande précise ne nécessite pas une seconde confirmation.
 - Applique la proposition `mixed review panels` et une cible GitHub seulement après leur sélection. Préserve les rôles non sélectionnés et les sélections sauvegardées devenues indisponibles tant qu'aucun remplacement n'est demandé.
 - Construis options et choix seulement depuis les réglages acceptés ; les valeurs de modèle sont des sélections vérifiées, pas des défauts inconditionnels.
+
+## Démarrage automatique
+
+Sur demande de l'utilisateur seulement, `python3 <absolute-plugin>/hooks/mode.py auto on` fait démarrer cstack de lui-même au début de chaque session de cette machine, pour les tâches qui touchent plusieurs fichiers, demandent un choix de conception ou portent sur un bug de cause inconnue. `auto off` l'éteint et `auto status` dit l'état. Le réglage est le fichier `$XDG_CONFIG_HOME/cstack/auto-start`, par défaut `~/.config/cstack/auto-start`. Ne l'active jamais de ta propre initiative. Dis à l'utilisateur qu'il vaut pour les nouvelles sessions, Codex et Claude, et qu'il dépend du hook cstack : Codex redemande son approbation (`/hooks`) après une mise à jour qui le change.
 
 ## Jamais
 

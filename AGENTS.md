@@ -4,7 +4,7 @@ Pour **installer** cstack plutôt que le développer, ne suivez pas ce fichier :
 
 cstack est un plugin autonome pour Codex App et CLI. Le coordinateur utilise les outils natifs de Codex. Les workers héritent du runtime natif, sauf sélection explicite d’un CLI officiel dans `.cstack/models.json`. N'ajoutez pas de moteur d'orchestration séparé et ne figez pas de noms de modèles pour l'exécution. Les recommandations optionnelles de la configuration peuvent nommer des modèles seulement après validation dans le catalogue vivant des modèles et des efforts de raisonnement, avant sélection.
 
-Préservez la licence MIT amont et enregistrez la provenance. Les compétences sont invoquées explicitement ; l'installation du plugin ne doit pas activer ses instructions dans des tâches sans rapport. Respectez le périmètre de l'utilisateur, les instructions du projet, le mode Plan de Codex et les permissions.
+Préservez la licence MIT amont et enregistrez la provenance. Les compétences sont invoquées explicitement ; l'installation du plugin ne doit pas activer ses instructions dans des tâches sans rapport. Le démarrage automatique est un réglage de la machine, éteint par défaut, que seul l'utilisateur active. Respectez le périmètre de l'utilisateur, les instructions du projet, le mode Plan de Codex et les permissions.
 
 Gardez le portage petit. Réutilisez les assistants amont et leurs dépendances verrouillées. Exécutez le validateur du dépôt, les tests Bun et la vérification de types avant de déclarer le travail terminé. Ne modifiez jamais le cache de plugin installé d'un utilisateur, ses instructions globales ou sa configuration de modèles comme effet de bord de la configuration.
 

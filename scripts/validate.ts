@@ -484,7 +484,7 @@ export function validate(root: string): { skills: number; sourceFiles: number } 
   // Les hooks du plugin se limitent au rappel du mode cstack : une seule forme permise.
   // Claude Code fournit CLAUDE_PLUGIN_ROOT ; Codex remplace ${PLUGIN_ROOT}. Une seule commande sert les deux hôtes.
   const reminderHook = { type: "command", command: 'python3 -S "${CLAUDE_PLUGIN_ROOT:-${PLUGIN_ROOT}}/hooks/mode.py"', timeout: 5 };
-  const expectedHooks = { hooks: { UserPromptSubmit: [{ hooks: [reminderHook] }], SessionStart: [{ matcher: "compact|resume", hooks: [reminderHook] }] } };
+  const expectedHooks = { hooks: { UserPromptSubmit: [{ hooks: [reminderHook] }], SessionStart: [{ matcher: "startup|clear|compact|resume", hooks: [reminderHook] }] } };
   requireValue(JSON.stringify(json(join(plugin, "hooks/hooks.json"))) === JSON.stringify(expectedHooks), "hooks: hooks.json diffère du seul rappel de mode permis");
   for (const rel of EXECUTABLES) {
     const path = join(plugin, rel);
