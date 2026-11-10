@@ -1,0 +1,14 @@
+F
+======================================================================
+FAIL: test_4211983053_directory_entries (test_provenance.ProvenanceTests.test_4211983053_directory_entries)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-provenance-1109/tests/test_provenance.py", line 72, in test_4211983053_directory_entries
+    self.assertNotEqual(before, self.fingerprints(root))
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'a88284058c67c5bc5d7c399b23b9a010600724c3f43663bca6c2112e8d8f74c2' == 'a88284058c67c5bc5d7c399b23b9a010600724c3f43663bca6c2112e8d8f74c2'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.002s
+
+FAILED (failures=1)

@@ -1,0 +1,41 @@
+FFF
+======================================================================
+FAIL: test_4211485693_special_entries (test_provenance.ProvenanceTests.test_4211485693_special_entries) (kind='fifo')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-provenance-1109/tests/test_provenance.py", line 118, in test_4211485693_special_entries
+    self.rejected(root)
+    ~~~~~~~~~~~~~^^^^^^
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-provenance-1109/tests/test_provenance.py", line 36, in rejected
+    with self.assertRaises(ValueError):
+         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_4211485693_special_entries (test_provenance.ProvenanceTests.test_4211485693_special_entries) (kind='socket')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-provenance-1109/tests/test_provenance.py", line 118, in test_4211485693_special_entries
+    self.rejected(root)
+    ~~~~~~~~~~~~~^^^^^^
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-provenance-1109/tests/test_provenance.py", line 36, in rejected
+    with self.assertRaises(ValueError):
+         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_4211485693_special_entries (test_provenance.ProvenanceTests.test_4211485693_special_entries) (kind='device-link')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-provenance-1109/tests/test_provenance.py", line 118, in test_4211485693_special_entries
+    self.rejected(root)
+    ~~~~~~~~~~~~~^^^^^^
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-provenance-1109/tests/test_provenance.py", line 36, in rejected
+    with self.assertRaises(ValueError):
+         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+----------------------------------------------------------------------
+Ran 1 test in 0.004s
+
+FAILED (failures=3)

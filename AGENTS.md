@@ -38,3 +38,9 @@ Voir `docs/agents/triage-labels.md`.
 
 Organisation single-context : `CONTEXT.md` et `docs/adr/` à la racine.
 Voir `docs/agents/domain.md`.
+
+## Erreurs répétées : règle et mécanisme
+
+| Règle | Mécanisme exécuté par `scripts/check.sh` |
+|---|---|
+| Génération et vérification partagent la même empreinte ; un objet omis ne peut pas recevoir une provenance valide. Conserver les reçus si le hachage après tour échoue. | `scripts/provenance.py` fournit le format v3 : fichiers, modes, dossiers, cibles de liens internes et état Git logique. Les opérations Git en cours, dépôts imbriqués et entrées non régulières sont refusés. `tests/test_provenance.py` rejoue les types d’entrée et vérifie le reçu `unverified` après erreur. Les anciens formats exigent une régénération. |

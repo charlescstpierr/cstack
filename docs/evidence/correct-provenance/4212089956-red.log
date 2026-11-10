@@ -1,0 +1,17 @@
+E
+======================================================================
+ERROR: test_4212089956_postrun_hash_error_keeps_receipt (test_provenance.ProvenanceTests.test_4212089956_postrun_hash_error_keeps_receipt)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-provenance-1109/tests/test_provenance.py", line 209, in test_4212089956_postrun_hash_error_keeps_receipt
+    result = runner.run_case(case, output, ["fake"], None, None, 1)
+  File "/home/ubuntu/cstack/.cstack/correct-20261109/provenance/4212089956/verify-behavior.py", line 930, in run_case
+    after = tree_hash(case["cwd"], output)
+  File "/home/ubuntu/cstack/.cstack/correct-20261109/provenance/4212089956/verify-behavior.py", line 428, in tree_hash
+    raise HarnessError(f"entrée non régulière non prise en charge: {item}")
+verify-behavior.HarnessError: entrée non régulière non prise en charge: /tmp/tmp5kylx8b9/project/created-fifo
+
+----------------------------------------------------------------------
+Ran 1 test in 0.004s
+
+FAILED (errors=1)

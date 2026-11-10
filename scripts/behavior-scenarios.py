@@ -10,15 +10,16 @@ import os
 from pathlib import Path
 import re
 import shutil
-import stat
+import runpy
 import subprocess
 import sys
 from typing import Any
 
 
 MODEL = {"model": "gpt-5.6-luna", "reasoning_effort": "max"}
-IGNORED_DIRS = {".git", "__pycache__", "node_modules"}
-TREE_HASH_ALGORITHM = "cstack-tree-sha256-v2"
+_PROVENANCE = runpy.run_path(str(Path(__file__).with_name("provenance.py")))
+TREE_HASH_ALGORITHM = _PROVENANCE["TREE_HASH_ALGORITHM"]
+IGNORED_DIRS = _PROVENANCE["IGNORED_DIRS"]
 FORBIDDEN_PROMPT_LABELS = re.compile(r"\b(?:eval|test|judge|candidate|benchmark)\b", re.IGNORECASE)
 PANEL_LENGTHS = {"interrogate reviewers": 3, "arena runners": 3, "arena cross-judge pool": 1}
 GIT_NAME = "scénario cstack"
@@ -40,43 +41,11 @@ def write_text(root: Path, relative: str, content: str) -> None:
 
 
 def tree_hash(root: Path) -> str:
-    def unreadable(error: OSError) -> None:
-        raise ValueError(f"parcours d’empreinte incomplet: {error.filename}") from error
-
-    digest = hashlib.sha256((TREE_HASH_ALGORITHM + "\0").encode())
-    for directory, names, filenames in os.walk(root, topdown=True, onerror=unreadable):
-        path = Path(directory)
-        names[:] = sorted(name for name in names if name not in IGNORED_DIRS)
-        for name in names:
-            if (path / name).is_symlink():
-                raise ValueError(f"empreinte non prise en charge pour un dossier symbolique: {path / name}")
-        for filename in sorted(filenames):
-            item = path / filename
-            try:
-                mode = item.stat().st_mode
-            except OSError as error:
-                raise ValueError(f"entrée non régulière ou inaccessible: {item}") from error
-            if not stat.S_ISREG(mode):
-                raise ValueError(f"entrée non régulière non prise en charge: {item}")
-            # File links have the same representation as their materialized copies.
-            relative = item.relative_to(root).as_posix().encode()
-            effective_mode = stat.S_IFMT(mode) | stat.S_IMODE(mode)
-            digest.update(effective_mode.to_bytes(2, "big") + len(relative).to_bytes(8, "big") + relative)
-            digest.update(hashlib.sha256(item.read_bytes()).digest())
-    return digest.hexdigest()
+    return _PROVENANCE["tree_hash"](root)["sha256"]
 
 
-def case_configuration(case: dict[str, Any]) -> dict[str, Any]:
-    return {"id": case["id"], "cwd": str(Path(case["cwd"]).expanduser().resolve()),
-            "bundle": str(Path(case["bundle"]).expanduser().resolve()) if case.get("bundle") else None,
-            "prompts": list(case["prompts"]) if "prompts" in case else [case["prompt"]],
-            "sandbox": case.get("sandbox", "workspace-write"), "ephemeral": case.get("ephemeral", True)}
-
-
-def case_hash(case: dict[str, Any]) -> str:
-    canonical = json.dumps(case_configuration(case), sort_keys=True, separators=(",", ":"),
-                           ensure_ascii=False, allow_nan=False)
-    return hashlib.sha256(canonical.encode()).hexdigest()
+case_configuration = _PROVENANCE["case_configuration"]
+case_hash = _PROVENANCE["case_hash"]
 
 
 def copy_bundle(source: Path, output: Path, label: str) -> Path:
@@ -84,7 +53,7 @@ def copy_bundle(source: Path, output: Path, label: str) -> Path:
     if not source.is_dir() or not (source / "skills").is_dir():
         raise ValueError(f"la racine du plugin doit contenir un dossier skills: {source}")
     destination = output / "resources" / label
-    shutil.copytree(source, destination, ignore=lambda _, names: set(names) & IGNORED_DIRS)
+    shutil.copytree(source, destination, symlinks=True, ignore=lambda _, names: set(names) & IGNORED_DIRS)
     return destination
 
 
