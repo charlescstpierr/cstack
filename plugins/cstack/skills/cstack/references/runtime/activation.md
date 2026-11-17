@@ -1,6 +1,6 @@
 # Activation et routage
 
-Dans une tâche cstack explicitement invoquée dans T3, le [contrat T3](t3.md) prime sur les règles autonomes de ce document.
+Dans une tâche cstack activée explicitement ou par démarrage automatique dans T3, le [contrat T3](t3.md) prime sur les règles autonomes de ce document.
 
 
 Codex enregistre les compétences de plugin sous la forme `cstack:<skill-name>`. Le texte littéral d’un prompt doit utiliser l’identifiant complet, par exemple `$cstack:cstack` ou `$cstack:architect`. Dans un sélecteur interactif de compétences, taper `$cstack` et sélectionner la compétence **cstack** affichée fournit une sélection structurée avec son vrai nom et chemin. Un raccourci non sélectionné dans du texte brut n’est pas équivalent à cette sélection.

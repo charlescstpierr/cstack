@@ -1,6 +1,6 @@
 ### Expédition
 
-Dans une tâche cstack explicitement invoquée dans T3, le [contrat T3](../references/runtime/t3.md) prime sur les règles autonomes de ce document.
+Dans une tâche cstack activée explicitement ou par démarrage automatique dans T3, le [contrat T3](../references/runtime/t3.md) prime sur les règles autonomes de ce document.
 
 
 Suivez [le contrat d’exécution Codex](../references/codex-runtime.md) et

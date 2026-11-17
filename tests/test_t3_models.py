@@ -674,7 +674,7 @@ class T3DirectTests(unittest.TestCase):
         sonnet = dict(opus, model='claude-sonnet-5-5')
         fable = dict(opus, model='claude-fable-5-1')
         self.assertEqual(self.apply_machine({'judgment and prose': opus})[0], 0)
-        primary, linked = self.root / 'primary', self.root / 'linked'
+        primary, linked = self.root / 'primary\nline', self.root / 'linked'
         primary.mkdir()
         git('init', '-q', cwd=primary)
         git('commit', '-q', '--allow-empty', '-m', 'init', cwd=primary)
@@ -691,6 +691,12 @@ class T3DirectTests(unittest.TestCase):
         self.assertIn('modèles cstack', error)
         write(primary, {'judgment and prose': sonnet})
         self.assertEqual(model(linked)['target']['model'], 'claude-sonnet-5-5')
+        primary_before = (primary / '.cstack/models.json').read_bytes()
+        code, _, error = self.apply({'bug-fix': fable}, workspace=linked)
+        self.assertEqual(code, 2, 'apply ne doit pas masquer une feuille principale héritée')
+        self.assertIn('checkout principal', error)
+        self.assertFalse((linked / '.cstack/models.json').exists())
+        self.assertEqual((primary / '.cstack/models.json').read_bytes(), primary_before)
         write(linked, {'judgment and prose': fable})
         self.assertEqual(model(linked)['target']['model'], 'claude-fable-5-1', 'la feuille du worktree lié prime')
         (linked / '.cstack/models.json').unlink()
@@ -814,6 +820,22 @@ class T3DirectTests(unittest.TestCase):
                     self.assertEqual(ready(helper.direct(captures))[0]['status'], 'ready')
                 self.assertEqual(helper.direct([base, other])['providers']['claudeAgent']['models']['claude-opus-5-5'],
                                  alone['claude-opus-5-5'], 'la première capture garde son ordre')
+
+    def test_direct_inheritance_rejects_present_invalid_models_without_synthesizing_a_target(self):
+        helper = models.t3_catalog_helper()
+        changed = copy.deepcopy(self.caps)
+        provider = next(p for p in changed['providers']
+                        if p['providerInstanceId'] == changed['inheritedProviderInstanceId'])
+        current = next(m for m in provider['models'] if m['id'] == changed['inheritedModel'])
+        current['options'].append({'id': 'extra', 'values': [True, False]})
+        for captures in ([self.caps, changed], [changed, self.caps]):
+            with self.subTest(order=captures[0] is changed):
+                catalog = helper.direct([json.dumps(cap).encode() for cap in captures])
+                result = models.preflight({}, ['bug-fix'], catalog, 't3')
+                row = result['positions']['bug-fix'][0]
+                self.assertEqual(row['status'], 'blocked')
+                self.assertIn('contradictoires', row['error'])
+                self.assertNotIn('target', row)
 
     def test_direct_inheritance_omits_target_but_keeps_coordinator_restrictions(self):
         helper = models.t3_catalog_helper()

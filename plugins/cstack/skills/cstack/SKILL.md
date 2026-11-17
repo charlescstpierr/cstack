@@ -1,9 +1,9 @@
 ---
 name: cstack
-description: "À utiliser pour $cstack:cstack, seulement sur invocation explicite de l'utilisateur. Route le travail vers une prose concise, des sous-agents Codex natifs délibérés, du code simple et du travail vérifié."
+description: "À utiliser pour $cstack:cstack ou les tâches désignées par le démarrage automatique activé par l'utilisateur. Route le travail vers les workflows cstack."
 ---
 
-Après invocation, T3 utilise le [contrat prioritaire](references/runtime/t3.md).
+Dans T3, utilise le [contrat prioritaire](references/runtime/t3.md).
 
 
 # cstack

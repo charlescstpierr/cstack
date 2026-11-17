@@ -1,6 +1,6 @@
 # Modèles
 
-Dans une tâche cstack explicitement invoquée dans T3, le [contrat T3](t3.md) prime sur les règles autonomes de ce document.
+Dans une tâche cstack activée explicitement ou par démarrage automatique dans T3, le [contrat T3](t3.md) prime sur les règles autonomes de ce document.
 
 
 La session parent garde son propre modèle. Les délégués natifs héritent du modèle et de l’effort sauf si l’utilisateur sélectionne une surcharge de projet. Un worker CLI sans modèle explicite utilise le défaut de son propre CLI, jamais le modèle du parent. Le setup offre des recommandations optionnelles, jamais des noms de modèles, fournisseurs, plans, clés API ou rôles custom globaux obligatoires.

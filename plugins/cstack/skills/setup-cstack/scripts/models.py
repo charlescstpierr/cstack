@@ -201,16 +201,17 @@ def project_sheet(workspace):
         return local
     env = {key: value for key, value in os.environ.items() if not key.startswith("GIT_")}
     def git(*args):
-        return subprocess.run(["git", "-C", str(workspace), *args], capture_output=True, text=True,
+        return subprocess.run(["git", "-C", str(workspace), *args], capture_output=True,
                               check=True, env=env).stdout
     try:
-        git_dir, common = (Path(workspace, line).resolve() for line in git("rev-parse", "--git-dir", "--git-common-dir").splitlines())
-        first = git("worktree", "list", "--porcelain").split("\n\n")[0].splitlines()
+        git_dir = Path(os.fsdecode(git("rev-parse", "--absolute-git-dir").removesuffix(b"\n"))).resolve()
+        common = Path(workspace, os.fsdecode(git("rev-parse", "--git-common-dir").removesuffix(b"\n"))).resolve()
+        first = git("worktree", "list", "--porcelain", "-z").split(b"\0\0")[0].split(b"\0")
     except (OSError, ValueError, subprocess.CalledProcessError):
         return local
-    if git_dir == common or not first or "bare" in first or not first[0].startswith("worktree "):
+    if git_dir == common or not first or b"bare" in first or not first[0].startswith(b"worktree "):
         return local
-    return Path(first[0][len("worktree "):]) / ".cstack" / "models.json"
+    return Path(os.fsdecode(first[0][len(b"worktree "):])) / ".cstack" / "models.json"
 
 
 def t3_direct(catalog):
@@ -290,8 +291,11 @@ def t3_position(chosen, catalog, context):
         raise ValueError("BLOCKED: sélection native explicite non exprimable; aperçu de migration T3 requis")
     providers = _t3_providers(catalog, "t3", context)
     if not chosen and t3_direct(catalog):
-        # Sans target, T3 reprend le fournisseur, le modèle et les options du fil, même absents d'une liste courte.
-        _t3_can_launch(providers, catalog["coordinator"]["providerInstanceId"], catalog["coordinator"])
+        coordinator = catalog["coordinator"]
+        _t3_can_launch(providers, coordinator["providerInstanceId"], coordinator)
+        model = providers[coordinator["providerInstanceId"]]["models"].get(coordinator["model"])
+        if model is not None:
+            _t3_options(model)
         return {"dispatch": "delegate_task", "inherit": True}
     if not chosen:
         scope = catalog["coordinator"]
@@ -684,6 +688,9 @@ def main():
                                   args.expected_sha256, catalog, args.host, context)
             result = {"saved": saved, "path": str(machine_sheet())}
         else:
+            if args.host == "t3" and project != path and project.exists():
+                raise ValueError("feuille héritée du checkout principal : applique les choix depuis ce checkout "
+                                 "ou sélectionne explicitement --machine; aucune feuille locale n’a été créée")
             result = project_helper().apply_model_choices(args.workspace, json.loads(args.choices.read_text()),
                                                           args.expected_sha256, catalog, args.host, context)
     except (OSError, ValueError, KeyError, TypeError) as error:

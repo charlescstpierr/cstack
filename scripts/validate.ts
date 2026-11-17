@@ -307,6 +307,7 @@ export function validate(root: string): { skills: number; sourceFiles: number } 
     requireValue(text.includes(`Utilise \`${role}\` quand aucun rôle n’a été sélectionné`), `${role}: le playbook ne prend pas son propre rôle par défaut`);
   }
   const t3Contract = readFileSync(join(plugin, "skills/cstack/references/runtime/t3.md"), "utf8");
+  requireValue(t3Contract.includes("activées explicitement ou par démarrage automatique"), "t3: contrat exclut le démarrage automatique");
   requireValue(t3Contract.includes("le contrôle préalable du helper est la seule source des cibles"), "t3: cible recopiée depuis la feuille au lieu du contrôle préalable");
   requireValue(t3Contract.includes("Ces restrictions valent pour le chemin direct et le chemin audité"), "t3: restrictions de fournisseur limitées au chemin audité");
   requireValue(t3Contract.includes("dans le worktree de l'enfant qui a terminé") && t3Contract.includes("jamais à la racine"), "t3: petit finding bloqué au coordinateur racine");
