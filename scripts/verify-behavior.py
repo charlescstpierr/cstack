@@ -416,6 +416,10 @@ def tree_hash(root, excluded):
         for name in names:
             if (path / name).is_symlink():
                 raise HarnessError(f"empreinte non prise en charge pour un dossier symbolique: {path / name}")
+        relative = path.relative_to(root).as_posix().encode()
+        mode = path.stat().st_mode
+        digest.update((stat.S_IFMT(mode) | stat.S_IMODE(mode)).to_bytes(2, "big")
+                      + len(relative).to_bytes(8, "big") + relative)
         for filename in sorted(filenames):
             item = path / filename
             if excluded and (item == excluded or excluded in item.parents):
@@ -450,6 +454,57 @@ def case_hash(case):
     canonical = json.dumps(case_configuration(case), sort_keys=True, separators=(",", ":"),
                            ensure_ascii=False, allow_nan=False)
     return hashlib.sha256(canonical.encode()).hexdigest()
+
+
+def git_hash(project):
+    command = ["git", "--no-optional-locks", "-c", "core.fsmonitor=false", "-C", str(project)]
+
+    def read(args, allowed=(0,)):
+        result = subprocess.run(command + args, capture_output=True, stdin=subprocess.DEVNULL, timeout=10)
+        if result.returncode not in allowed:
+            raise HarnessError(f"état Git inaccessible: {project}")
+        return result.returncode, result.stdout
+
+    try:
+        code, discovered = read(["rev-parse", "--show-toplevel"], (0, 128))
+        snapshot = None
+        if code:
+            if (project / ".git").exists():
+                raise HarnessError(f"état Git inaccessible: {project}")
+        else:
+            if Path(os.fsdecode(discovered).rstrip("\n")).resolve() != project.resolve():
+                raise HarnessError(f"la racine Git doit être celle de la fixture: {project}")
+            markers = ("MERGE_HEAD", "CHERRY_PICK_HEAD", "REVERT_HEAD", "rebase-merge", "rebase-apply",
+                       "sequencer", "BISECT_LOG", "BISECT_START")
+            _, paths = read(["rev-parse", *[arg for marker in markers for arg in ("--git-path", marker)]])
+            paths = paths.splitlines()
+            if len(paths) != len(markers):
+                raise HarnessError(f"état Git inaccessible: {project}")
+            if any((project / os.fsdecode(path)).exists() or (project / os.fsdecode(path)).is_symlink() for path in paths):
+                raise HarnessError(f"opération Git en cours non prise en charge: {project}")
+            ref_code, head_ref = read(["symbolic-ref", "-q", "HEAD"], (0, 1))
+            head_code, head = read(["rev-parse", "--verify", "HEAD^{commit}"], (0, 128))
+            if head_code:
+                ref = os.fsdecode(head_ref).rstrip("\n")
+                if ref_code or not ref.startswith("refs/heads/"):
+                    raise HarnessError(f"état Git inaccessible: {project}")
+                read(["check-ref-format", ref])
+                exists, _ = read(["show-ref", "--verify", "--quiet", ref], (0, 1))
+                if exists == 0:
+                    raise HarnessError(f"état Git inaccessible: {project}")
+            snapshot = {"head": head.hex() if head_code == 0 else None,
+                        "head_ref": head_ref.hex() if ref_code == 0 else None}
+            for key, args, allowed in (
+                ("refs", ["for-each-ref", "--format=%(refname)%00%(objectname)%00%(symref)"], (0,)),
+                ("index", ["ls-files", "--stage", "-v", "-z"], (0,)),
+                ("staged_diff", ["diff", "--cached", "--raw", "-z", "--no-abbrev", "--no-renames", "--no-ext-diff", "--no-textconv"], (0,)),
+            ):
+                code, value = read(args, allowed)
+                snapshot[key] = value.hex() if code == 0 else None
+        canonical = json.dumps(snapshot, sort_keys=True, separators=(",", ":"))
+        return hashlib.sha256(canonical.encode()).hexdigest()
+    except (OSError, subprocess.SubprocessError) as error:
+        raise HarnessError(f"état Git inaccessible: {project}") from error
 
 
 OPENED_PATH = re.compile(r'openat2?\([^\n]*?, "((?:[^"\\]|\\.)+)"[^\n]*?\)\s+=\s+(\d+)')
@@ -553,7 +608,7 @@ def read_expectations(path):
             raise HarnessError("identifiant d’attente absent ou dupliqué")
         case_id = row["id"]
         if set(row) - {"id", "expected_children", "min_children", "routing", "expected_artifacts",
-                       "outcome_checks", "requires_independent_review", "project_sha256", "source_sha256", "skill_path", "role_metadata", "hash_algorithm", "case_sha256"}:
+                       "outcome_checks", "requires_independent_review", "project_sha256", "source_sha256", "skill_path", "role_metadata", "hash_algorithm", "case_sha256", "git_sha256"}:
             raise HarnessError(f"{case_id}: champs d’attente inconnus")
         if "requires_independent_review" in row and type(row["requires_independent_review"]) is not bool:
             raise HarnessError(f"{case_id}: requires_independent_review doit être un booléen")
@@ -565,7 +620,9 @@ def read_expectations(path):
             raise HarnessError(f"{case_id}: algorithme d’empreinte ancien ou absent ; régénérer les attentes")
         if ("project_sha256" in row or hashes) and "case_sha256" not in row:
             raise HarnessError(f"{case_id}: empreinte de configuration de cas absente ; régénérer les attentes")
-        for digest in list(hashes.values()) + [row[key] for key in ("project_sha256", "case_sha256") if key in row]:
+        if ("project_sha256" in row or hashes) and "git_sha256" not in row:
+            raise HarnessError(f"{case_id}: empreinte Git absente ; régénérer les attentes")
+        for digest in list(hashes.values()) + [row[key] for key in ("project_sha256", "case_sha256", "git_sha256") if key in row]:
             if not isinstance(digest, str) or not re.fullmatch(r"[0-9a-f]{64}", digest):
                 raise HarnessError(f"{case_id}: empreinte SHA-256 invalide")
         if "skill_path" in row:
@@ -633,15 +690,20 @@ def verify_provenance(case, expectation, execution_case=None):
         raise HarnessError(f"{case['id']}: algorithme d’empreinte ancien ou absent ; régénérer les attentes")
     if ("project_sha256" in expectation or source) and "case_sha256" not in expectation:
         raise HarnessError(f"{case['id']}: empreinte de configuration de cas absente ; régénérer les attentes")
+    if ("project_sha256" in expectation or source) and "git_sha256" not in expectation:
+        raise HarnessError(f"{case['id']}: empreinte Git absente ; régénérer les attentes")
     if "case_sha256" in expectation:
         matches("configuration de cas", case_hash(execution_case or case), expectation["case_sha256"])
     try:
         project_hash = tree_hash(case["cwd"], None)["sha256"]
         if "project_sha256" in expectation:
             matches("projet", project_hash, expectation["project_sha256"])
+        git_digest = git_hash(case["cwd"]) if "git_sha256" in expectation else None
+        if git_digest is not None:
+            matches("état Git", git_digest, expectation["git_sha256"])
         bundle = case.get("bundle")
         if bundle is None and not source:
-            return
+            return git_digest
         if bundle is None:
             raise HarnessError(f"{case['id']}: empreintes source exigent un bundle explicite")
         bundle_hash = tree_hash(bundle, None)["sha256"]
@@ -661,6 +723,7 @@ def verify_provenance(case, expectation, execution_case=None):
             if not skill.resolve().is_relative_to(bundle.resolve()):
                 raise HarnessError(f"{case['id']}: skill_path sort du bundle")
             matches("skill", hashlib.sha256(skill.read_bytes()).hexdigest(), source["skill"])
+        return git_digest
     except OSError as error:
         raise HarnessError(f"{case['id']}: impossible de vérifier les empreintes source/projet") from error
 
@@ -1041,7 +1104,7 @@ def main(argv=None):
                 run["id"] = f"{case['id']}__run_{repeat:02d}"
                 run["cwd"] = output / "isolated-projects" / run["id"]
                 shutil.copytree(case["cwd"], run["cwd"])
-            verify_provenance(run, expectation, execution_case=case)
+            verified_git_digest = verify_provenance(run, expectation, execution_case=case)
             source_case_digest = case_hash(case)
             effective_config = case_configuration(run)
             effective_case_digest = case_hash(effective_config)
@@ -1057,6 +1120,7 @@ def main(argv=None):
             result.update(source_case_id=case["id"], case_sha256=source_case_digest,
                           case_hash_verified="case_sha256" in expectation,
                           effective_case_sha256=effective_case_digest, effective_case=effective_config,
+                          git_sha256=verified_git_digest, git_hash_verified="git_sha256" in expectation,
                           requested_runtime_config={"model": args.model, "effort": args.effort,
                                                     "turn_timeout": args.turn_timeout, "trace_routes": args.trace_routes})
             result["verdicts"] = evaluate_case(result, expectation, args.verify_outcomes)
