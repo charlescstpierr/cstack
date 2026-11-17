@@ -310,6 +310,7 @@ export function validate(root: string): { skills: number; sourceFiles: number } 
   requireValue(t3Contract.includes("activées explicitement ou par démarrage automatique"), "t3: contrat exclut le démarrage automatique");
   requireValue(t3Contract.includes("Le démarrage automatique n’accorde ni push ni PR"), "t3: le contrat prioritaire ne borne pas la livraison automatique");
   requireValue(t3Contract.includes("le contrôle préalable du helper est la seule source des cibles"), "t3: cible recopiée depuis la feuille au lieu du contrôle préalable");
+  requireValue(t3Contract.includes("Même sans feuille, lance le contrôle préalable"), "t3: absence de feuille décidée sans contrôle préalable");
   requireValue(t3Contract.includes("Ces restrictions valent pour le chemin direct et le chemin audité"), "t3: restrictions de fournisseur limitées au chemin audité");
   requireValue(t3Contract.includes("dans le worktree de l'enfant qui a terminé") && t3Contract.includes("jamais à la racine"), "t3: petit finding bloqué au coordinateur racine");
   const workerPrompt = readFileSync(join(plugin, "skills/cstack/references/agents/cstack-agent.md"), "utf8");

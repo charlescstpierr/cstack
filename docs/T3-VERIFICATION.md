@@ -4,7 +4,7 @@ Cette tranche rend le catalogue observé utilisable par setup, preflight et prep
 
 ## Chemin direct
 
-Le chemin direct est le défaut depuis le 9 novembre 2026. Il lit la sortie de `orchestrator_capabilities` et rend la cible de chaque position, sans trace du fil ni contexte.
+Le chemin direct est le défaut depuis le 9 novembre 2026. Son contrôle préalable lit la sortie de `orchestrator_capabilities` et rend la cible de chaque position, sans trace du fil ni contexte. Il résout les feuilles avant le dispatch, même sans configuration sauvegardée ; une absence vérifiée rend `inherit: true` sans `target`.
 
 ```sh
 python3 plugins/cstack/skills/setup-cstack/scripts/models.py \
