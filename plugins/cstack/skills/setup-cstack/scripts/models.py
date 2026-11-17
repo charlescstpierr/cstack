@@ -223,7 +223,14 @@ def project_sheet(workspace):
     checkout = t3_checkout(workspace)
     workspace = checkout or workspace
     local = workspace / ".cstack" / "models.json"
-    if local.exists() or _broken_config_link(local):
+    try:
+        local.stat()
+    except FileNotFoundError:
+        if _broken_config_link(local):
+            return local
+    except OSError:
+        return local
+    else:
         return local
     if checkout is None:
         return local
@@ -484,9 +491,9 @@ def read_catalog(path):
 def read_config(path):
     try:
         raw = path.read_bytes()
-    except FileNotFoundError:
+    except FileNotFoundError as error:
         if _broken_config_link(path):
-            raise
+            raise ValueError("BLOCKED: feuille en lien cassé: " + str(path)) from error
         raw, config = b"", {}
     else:
         config = json.loads(raw)

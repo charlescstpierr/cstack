@@ -768,11 +768,16 @@ class T3DirectTests(unittest.TestCase):
                 if index == 0:
                     with self.subTest(folder=folder, command='project_sheet'):
                         self.assertEqual(models.project_sheet(linked), linked / '.cstack/models.json')
-                for args in (('show',), ('preflight', 'judgment and prose'),
-                             ('apply', '--choices', str(choices), '--expected-sha256', hashlib.sha256(b'').hexdigest())):
+                commands = [('show',), ('preflight', 'judgment and prose'),
+                            ('apply', '--choices', str(choices), '--expected-sha256', hashlib.sha256(b'').hexdigest())]
+                if index >= 2:
+                    commands.append(('apply', '--machine', '--choices', str(choices),
+                                     '--expected-sha256', hashlib.sha256(b'').hexdigest()))
+                for args in commands:
                     with self.subTest(folder=folder, command=args[0]):
                         code, _, error = self.run_cli(*args, workspace=linked)
                         self.assertEqual(code, 2, error)
+                        self.assertIn('feuille en lien cassé', error)
             finally:
                 folder.unlink()
                 backup.rename(folder)
@@ -805,6 +810,25 @@ class T3DirectTests(unittest.TestCase):
         (linked / '.cstack/models.json').unlink()
         self.assertEqual(self.apply({'judgment and prose': sonnet}, workspace=linked / 'sub')[0], 2)
         self.assertFalse((linked / '.cstack/models.json').exists())
+        local_dir = linked / '.cstack'
+        for kind in ('not-directory', 'unreadable'):
+            if kind == 'unreadable' and hasattr(os, 'geteuid') and os.geteuid() == 0:
+                continue
+            if kind == 'not-directory':
+                backup = linked / '.cstack-backup'
+                local_dir.rename(backup)
+                local_dir.write_text('not a directory')
+            else:
+                local_dir.chmod(0)
+            try:
+                with self.subTest(local=kind):
+                    self.assertEqual(models.project_sheet(linked), linked / '.cstack/models.json')
+            finally:
+                if kind == 'not-directory':
+                    local_dir.unlink()
+                    backup.rename(local_dir)
+                else:
+                    local_dir.chmod(0o755)
 
     def test_t3_git_failure_blocks_in_a_repository_but_not_outside(self):
         primary = self.root / 'primary'
