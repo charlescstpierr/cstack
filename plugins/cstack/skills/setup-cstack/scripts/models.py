@@ -191,25 +191,46 @@ def machine_sheet():
     return (Path(base) if os.path.isabs(base) else Path.home() / ".config") / "cstack" / "models.json"
 
 
+def _project_git(workspace, *args):
+    env = {key: value for key, value in os.environ.items() if not key.startswith("GIT_")}
+    try:
+        return subprocess.run(["git", "-C", str(workspace), *args], capture_output=True,
+                              check=True, env=env, timeout=10).stdout
+    except (OSError, subprocess.SubprocessError) as error:
+        raise ValueError("BLOCKED: métadonnées Git illisibles; aucune feuille de repli sélectionnée") from error
+
+
+def t3_checkout(workspace):
+    workspace = workspace.resolve()
+    if not any((parent / ".git").exists() or (parent / ".git").is_symlink()
+               for parent in (workspace, *workspace.parents)):
+        return None
+    root = _project_git(workspace, "rev-parse", "--show-toplevel").removesuffix(b"\n")
+    if not root or not Path(os.fsdecode(root)).is_absolute():
+        raise ValueError("BLOCKED: racine du checkout Git non vérifiée")
+    return Path(os.fsdecode(root)).resolve()
+
+
 def project_sheet(workspace):
     """Feuille projet T3 : celle du checkout, sinon celle du checkout principal quand c’est un worktree lié du même dépôt.
 
     `.cstack/` est ignoré par Git, donc un worktree lié ne voit pas la feuille du checkout principal sans ce relais.
     """
+    checkout = t3_checkout(workspace)
+    workspace = checkout or workspace
     local = workspace / ".cstack" / "models.json"
     if local.exists() or local.is_symlink():
         return local
-    env = {key: value for key, value in os.environ.items() if not key.startswith("GIT_")}
-    def git(*args):
-        return subprocess.run(["git", "-C", str(workspace), *args], capture_output=True,
-                              check=True, env=env).stdout
-    try:
-        git_dir = Path(os.fsdecode(git("rev-parse", "--absolute-git-dir").removesuffix(b"\n"))).resolve()
-        common = Path(workspace, os.fsdecode(git("rev-parse", "--git-common-dir").removesuffix(b"\n"))).resolve()
-        first = git("worktree", "list", "--porcelain", "-z").split(b"\0\0")[0].split(b"\0")
-    except (OSError, ValueError, subprocess.CalledProcessError):
+    if checkout is None:
         return local
-    if git_dir == common or not first or b"bare" in first or not first[0].startswith(b"worktree "):
+    git_dir = Path(os.fsdecode(_project_git(workspace, "rev-parse", "--absolute-git-dir").removesuffix(b"\n"))).resolve()
+    common = Path(workspace, os.fsdecode(_project_git(workspace, "rev-parse", "--git-common-dir").removesuffix(b"\n"))).resolve()
+    if git_dir == common:
+        return local
+    first = _project_git(workspace, "worktree", "list", "--porcelain", "-z").split(b"\0\0")[0].split(b"\0")
+    if not first or not first[0].startswith(b"worktree "):
+        raise ValueError("BLOCKED: checkout principal Git non vérifié")
+    if b"bare" in first:
         return local
     return Path(os.fsdecode(first[0][len(b"worktree "):])) / ".cstack" / "models.json"
 
@@ -650,9 +671,11 @@ def main():
             parser.exit(2, f"modèles cstack: {error}\n")
         print(json.dumps(result, indent=2, ensure_ascii=False))
         return 0
-    path = args.workspace / ".cstack" / "models.json"
-    has_agents = (args.workspace / ".codex" / "agents").is_dir()
     try:
+        if args.host == "t3":
+            args.workspace = t3_checkout(args.workspace) or args.workspace
+        path = args.workspace / ".cstack" / "models.json"
+        has_agents = (args.workspace / ".codex" / "agents").is_dir()
         if args.capabilities:
             if args.host != "t3" or args.catalog or args.host_context:
                 raise ValueError("--capabilities exige --host t3, sans --catalog ni --host-context")

@@ -7,6 +7,7 @@ import tempfile
 import unittest
 import subprocess
 import sys
+from unittest.mock import patch
 from test_models import models, CATALOG
 
 
@@ -710,6 +711,55 @@ class T3DirectTests(unittest.TestCase):
         write(primary, {'judgment and prose': 'gpt-native-model'})
         code, report, error = model(linked, host=())
         self.assertEqual((code, report['resolved']['judgment and prose']), (0, [{}]), 'hors T3, aucun effet')
+
+    def test_t3_subdirectories_use_the_checkout_sheet(self):
+        primary, linked = self.root / 'primary', self.root / 'linked'
+        primary.mkdir()
+        env = {k: v for k, v in os.environ.items() if not k.startswith('GIT_')}
+        for args in (['init', '-q'], ['-c', 'user.name=cstack', '-c', 'user.email=cstack@example.invalid',
+                                     'commit', '-q', '--allow-empty', '-m', 'init'],
+                     ['worktree', 'add', '-q', str(linked)]):
+            subprocess.run(['git', *args], cwd=primary, env=env, check=True, capture_output=True)
+        opus = {'runtime': 't3', 'providerInstanceId': 'claudeAgent', 'model': 'claude-opus-5-5', 'options': {'effort': 'high'}}
+        sonnet = dict(opus, model='claude-sonnet-5-5')
+        for checkout, chosen in ((primary, opus), (linked, sonnet)):
+            (checkout / '.cstack').mkdir()
+            (checkout / '.cstack/models.json').write_text(json.dumps({'judgment and prose': chosen}))
+            sub = checkout / 'sub'
+            sub.mkdir()
+            code, report, error = self.run_cli('preflight', 'judgment and prose', workspace=sub)
+            self.assertEqual(code, 0, error)
+            self.assertEqual(report['resolved']['judgment and prose'][0].get('target', {}).get('model'), chosen['model'])
+            self.assertEqual(self.run_cli('show', workspace=sub)[1]['project'], str(checkout / '.cstack/models.json'))
+        self.assertEqual(self.apply({'judgment and prose': opus}, workspace=linked / 'sub')[0], 0)
+        self.assertEqual(json.loads((linked / '.cstack/models.json').read_text())['judgment and prose'], opus)
+        self.assertFalse((linked / 'sub/.cstack').exists())
+        (linked / '.cstack/models.json').unlink()
+        self.assertEqual(self.apply({'judgment and prose': sonnet}, workspace=linked / 'sub')[0], 2)
+        self.assertFalse((linked / '.cstack/models.json').exists())
+
+    def test_t3_git_failure_blocks_in_a_repository_but_not_outside(self):
+        primary = self.root / 'primary'
+        primary.mkdir()
+        subprocess.run(['git', 'init', '-q'], cwd=primary, check=True, capture_output=True,
+                       env={k: v for k, v in os.environ.items() if not k.startswith('GIT_')})
+        workspace = primary / 'sub'
+        workspace.mkdir()
+        fake_bin = self.root / 'bin'
+        fake_bin.mkdir()
+        fake_git = fake_bin / 'git'
+        fake_git.write_text('#!/bin/sh\nexit 1\n')
+        fake_git.chmod(0o755)
+        choices = self.root / 'choices.json'
+        choices.write_text(json.dumps({'judgment and prose': 'inherit-parent'}))
+        with patch.dict(os.environ, {'PATH': str(fake_bin) + os.pathsep + os.environ['PATH']}):
+            for args in (('show',), ('preflight', 'judgment and prose'),
+                         ('apply', '--choices', str(choices), '--expected-sha256', 'unused')):
+                code, report, error = self.run_cli(*args, workspace=workspace)
+                self.assertEqual(code, 2, (args, error))
+                self.assertIn('Git', error)
+            code, _, error = self.run_cli('show', workspace=self.root)
+            self.assertEqual(code, 0, error)
 
     def test_the_machine_sheet_is_read_and_written_only_in_t3(self):
         sol = {'runtime': 't3', 'providerInstanceId': 'codex', 'model': 'gpt-6.1-sol', 'options': {'reasoningEffort': 'medium'}}
