@@ -1,6 +1,6 @@
 # Chemin audité T3
 
-Ce document ne sert qu'au chemin audité du [contrat T3](t3.md), quand l'utilisateur demande une trace recoupée de l'hôte ou un bundle empreinté pour l'enfant. Le chemin direct ne le lit pas. Les [restrictions de fournisseur](t3.md#restrictions-de-fournisseur), le dispatch, le cycle de vie, la propriété des checkouts et les PR du contrat valent aussi ici.
+Ce document ne sert qu'au chemin audité du [contrat T3](t3.md), quand l'utilisateur demande une trace recoupée de l'hôte ou un bundle empreinté pour l'enfant. Le chemin direct ne le lit pas. Les [options demandées et rapportées](t3.md#options-demandées-et-options-rapportées), les [restrictions de fournisseur](t3.md#restrictions-de-fournisseur), le dispatch, le cycle de vie, la propriété des checkouts et les PR du contrat valent aussi ici.
 
 ## Captures et snapshot
 

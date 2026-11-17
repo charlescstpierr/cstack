@@ -8,8 +8,8 @@ la machine (`mode.py auto on`). Ailleurs, il n'écrit rien. Il ne lit jamais le 
 que des identifiants de session hachés sous `PLUGIN_DATA`. Toute erreur donne une sortie vide : le hook
 ne bloque jamais un message.
 
-Les rappels visent le coordinateur. Une session enfant signalée par Claude est muette ; sans signal
-enfant reconnu, la portée reste une consigne dans le texte, pas une détection technique de rôle.
+Les rappels visent le coordinateur. Le hook ne détermine pas le rôle de la session ;
+la portée reste une consigne dans le texte, pas un filtrage technique des enfants.
 """
 
 import os
@@ -22,9 +22,9 @@ CLAUDE_ACTIVATE = "/cstack:cstack"
 # reste au jugement du modèle, que le rappel invite déjà à ne pas appliquer cstack sur demande d'arrêt.
 STOP_VERBS = ("arrête", "arrete", "stop", "stoppe", "désactive", "desactive", "quitte")
 # Un pointeur vers les règles, pas une copie : `references/runtime/base.md` reste la source.
-REMINDER = "Mode cstack actif, session coordinatrice seulement : tâche nouvelle ou en cours → applique `$cstack:cstack` ; tour anodin ou arrêt demandé → non."
+REMINDER = "Mode cstack actif : si tu coordonnes une tâche → applique `$cstack:cstack` ; brief délégué, tour anodin ou arrêt demandé → non."
 AFTER_SUMMARY = (
-    "Session coordinatrice seulement. Mode cstack actif et contexte résumé : relis `references/runtime/base.md` de `$cstack:cstack` "
+    "Mode cstack actif et contexte résumé : si tu reçois un brief délégué, suis-le sans charger le routeur. Sinon, relis `references/runtime/base.md` de `$cstack:cstack` "
     "et le point de reprise de la tâche active dont le résumé nomme le chemin sous `.cstack/` "
     "(voir `references/runtime/etat.md`) avant de continuer."
 )
@@ -92,8 +92,6 @@ def _activation_requested(prompt: str) -> bool:
 
 
 def reminder(raw: str, data: str) -> str:
-    if os.environ.get("CLAUDE_CODE_CHILD_SESSION") == "1":
-        return ""
     sessions = os.path.join(data, "sessions")
     # Chemin chaud : hors cstack, sortir avant tout import ou accès disque coûteux.
     # Le réglage n'est lu que pour un début de session ou un message qui nomme cstack.
