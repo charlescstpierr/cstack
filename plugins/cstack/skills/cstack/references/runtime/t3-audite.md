@@ -1,6 +1,6 @@
 # Chemin audité T3
 
-Ce document ne sert qu'au chemin audité du [contrat T3](t3.md), quand l'utilisateur demande une trace recoupée de l'hôte ou un bundle empreinté pour l'enfant. Le chemin direct ne le lit pas. Les [restrictions de fournisseur](t3.md#restrictions-de-fournisseur), le dispatch, le cycle de vie, la propriété des checkouts et les PR du contrat valent aussi ici.
+Ce document ne sert qu'au chemin audité du [contrat T3](t3.md), quand l'utilisateur demande une trace recoupée de l'hôte ou un bundle empreinté pour l'enfant. Le chemin direct ne le lit pas. Les [options demandées et rapportées](t3.md#options-demandées-et-options-rapportées), les [restrictions de fournisseur](t3.md#restrictions-de-fournisseur), le dispatch, le cycle de vie, la propriété des checkouts et les PR du contrat valent aussi ici.
 
 ## Captures et snapshot
 
@@ -45,4 +45,4 @@ Le bundle réutilise worker-context et worker-skills. Pour T3, les liens vers le
 
 Avant delegate_task, le coordinateur compare `coordinatorScope` à son scope courant établi séparément, `catalogSha256` au préflight courant et `target` à la cible effective. Le binding est un lien de cohérence, pas un autorisateur cryptographique. Le helper ne prouve ni hôte ni disponibilité.
 
-Pour une review indépendante, utiliser le commit autorisé de la branche de tâche ou préparer un snapshot borné fichiers+SHA sans commit si l'autorité manque. Vérifier sa reconstitution exacte dans le checkout enfant avant verdict. Les changements non committés ne se transfèrent pas implicitement. Sans état exact accessible après ces préparations, BLOCKED.
+L’[état exact des revues](t3.md#état-exact-des-revues) est une exigence commune au chemin direct et au chemin audité. Le binding du bundle ne prouve pas que le checkout du reviewer contient cet état.
