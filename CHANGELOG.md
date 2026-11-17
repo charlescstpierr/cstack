@@ -4,6 +4,10 @@ Les versions suivent SemVer. Le format suit [Keep a Changelog](https://keepachan
 
 ## [Unreleased]
 
+- Les options demandées sont distinguées des options rapportées par T3 : une surcharge partielle complète l’héritage, et un objet vide l’efface. Les sondes de cette version vérifient ce comportement sur Codex, sans attester le backend ni l’efficacité.
+
+- Les rappels du mode visent seulement le coordinateur. Le hook est muet quand Claude signale une session enfant ; sans signal reconnu, le texte exclut le brief délégué sans prétendre détecter techniquement son rôle. L’état exact d’une revue est désormais requis dans les deux chemins T3 : un worktree de reviewer n’embarque ni les modifications non committées ni le commit d’un autre enfant automatiquement.
+
 - Installation pour T3 Code, Codex et Claude Code : `install.sh` installe cstack dans chaque hôte présent (`codex plugin`, `claude plugin`) et `doctor` vérifie les deux. Le dépôt publie un manifeste et un catalogue Claude Code, tenus par le validateur au même nom, à la même version et à la même licence que le manifeste Codex. Le README ouvre sur l'installation en une commande.
 - Le hook du mode trouve son dossier dans les deux hôtes (`${CLAUDE_PLUGIN_ROOT:-${PLUGIN_ROOT}}`, `PLUGIN_DATA` ou `CLAUDE_PLUGIN_DATA`) et reconnaît `/cstack:cstack`. Sous Claude Code, l'ancienne commande échouait avec le code 2 à chaque message. La commande ayant changé, Codex redemande une fois l'approbation du hook (`/hooks`).
 - Le contrat T3 s'applique aussi à un coordinateur Claude dans T3.

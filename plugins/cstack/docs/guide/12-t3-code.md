@@ -72,6 +72,8 @@ Le réglage dépend du hook de l'étape 2. Dans Codex, il ne s'applique pas tant
 
 Pour une tâche qui modifie du code, créez le fil dans un worktree T3 Code. Le [contrat T3](../../skills/cstack/references/runtime/t3.md) interdit au coordinateur d'écrire à la racine du projet. Un fil créé sans worktree peut explorer et relire. Il confie alors chaque écriture à un délégué que T3 isole dans son propre worktree.
 
+Le rappel est réservé au coordinateur. Une session enfant Claude portant `CLAUDE_CODE_CHILD_SESSION=1` n’en reçoit aucun. Aucun indicateur enfant explicite n’a été observé dans la sonde Codex du 17 novembre 2026 ; sous Codex, cette limite est une consigne de portée dans le rappel, pas un filtrage technique prouvé.
+
 ## 5. Choisir les modèles des délégués
 
 Faites cette étape une fois par machine. Sans elle, chaque délégué reprend le fournisseur, le modèle et les options de votre fil : si votre fil tourne sur un modèle coûteux, ses délégués aussi.
@@ -98,7 +100,7 @@ Pour utiliser un autre modèle, y compris un modèle que T3 Code vient d'ajouter
 $cstack:setup-cstack Mets gpt-6.1-terra pour le travail courant.
 ```
 
-Le setup accepte tout modèle que votre T3 Code expose. Les noms de cette page datent du 9 novembre 2026.
+Le setup accepte tout modèle que votre T3 Code expose. Les noms de cette page datent du 9 novembre 2026. Les options d’une sélection sont des surcharges : un objet partiel complète les options héritées du fil ; un objet vide les efface. Le [contrat T3](../../skills/cstack/references/runtime/t3.md#options-demandées-et-options-rapportées) distingue les options demandées des métadonnées rapportées par l’hôte.
 
 ## 6. Mettre à jour
 

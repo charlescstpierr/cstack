@@ -20,8 +20,10 @@ class ModeHookTests(unittest.TestCase):
     def tearDown(self):
         self.tmp.cleanup()
 
-    def run_hook(self, event, *, data=True, raw=None, data_variable="PLUGIN_DATA"):
-        env = {key: value for key, value in os.environ.items() if key not in ("PLUGIN_DATA", "CLAUDE_PLUGIN_DATA")}
+    def run_hook(self, event, *, data=True, raw=None, data_variable="PLUGIN_DATA", environment=None):
+        env = {key: value for key, value in os.environ.items()
+               if key not in ("PLUGIN_DATA", "CLAUDE_PLUGIN_DATA", "CLAUDE_CODE_CHILD_SESSION")}
+        env.update(environment or {})
         # Le réglage de la machine du développeur ne doit jamais entrer dans ces tests.
         env["XDG_CONFIG_HOME"] = str(self.data / "config")
         if data:
@@ -70,6 +72,28 @@ class ModeHookTests(unittest.TestCase):
             self.assertNotIn("invocation explicite de `$cstack:cstack`", text.split("push et PR")[0], source)
             self.assertIn("livraison locale vérifiée", text, source)
             self.assertIn("push et PR exigent", text, source)
+            self.assertIn("seulement à la session coordinatrice", text, source)
+
+    def test_claude_child_sessions_receive_no_mode_instructions_or_state_changes(self):
+        self.switch("auto", "on")
+        child = {"CLAUDE_CODE_CHILD_SESSION": "1"}
+        events = [{"hook_event_name": "SessionStart", "session_id": "child", "source": source}
+                  for source in ("startup", "clear", "compact", "resume")]
+        events.append({"hook_event_name": "UserPromptSubmit", "session_id": "child",
+                       "prompt": "$cstack:cstack Corrige ce bug."})
+        for event in events:
+            self.assertEqual(self.run_hook(event, environment=child), "", event)
+        self.assertFalse((self.data / "sessions").exists())
+        parent = self.prompt("$cstack:cstack Corrige ce bug.")
+        self.assertIn("Mode cstack actif", parent)
+        self.assertEqual(self.run_hook({"hook_event_name": "SessionStart", "session_id": "s1", "source": "compact"},
+                                      environment=child), "")
+        self.assertEqual(self.run_hook({"hook_event_name": "UserPromptSubmit", "session_id": "s1", "prompt": "arrête cstack"},
+                                      environment=child), "")
+        self.assertEqual(self.prompt("Continue."), parent)
+        self.assertIn("Démarrage automatique de cstack", self.start("startup", session="parent2"))
+        self.assertIn("Démarrage automatique de cstack", self.run_hook(events[0],
+                      environment={"CLAUDE_CODE_CHILD_SESSION": "0"}))
 
     def test_automatic_start_keeps_the_resume_reminder_of_an_invoked_session(self):
         self.switch("auto", "on")
