@@ -100,7 +100,7 @@ Pour utiliser un autre modèle, y compris un modèle que T3 Code vient d'ajouter
 $cstack:setup-cstack Mets gpt-6.1-terra pour le travail courant.
 ```
 
-Le setup accepte tout modèle que votre T3 Code expose. Les noms de cette page datent du 9 novembre 2026. Les options d’une sélection sont des surcharges : un objet partiel complète les options héritées du fil ; un objet vide les efface. Le [contrat T3](../../skills/cstack/references/runtime/t3.md#options-demandées-et-options-rapportées) distingue les options demandées des métadonnées rapportées par l’hôte.
+Le setup accepte tout modèle que votre T3 Code expose. Les noms de cette page datent du 9 novembre 2026. Selon le schéma T3 observé le 17 novembre 2026, un objet d’options partiel surcharge les options héritées du fil ; un objet vide les efface. Les deux sondes Codex ont rapporté des options supplémentaires et une liste vide, sans capturer les options du coordinateur dans leur reçu. Le [contrat T3](../../skills/cstack/references/runtime/t3.md#options-demandées-et-options-rapportées) distingue la sémantique annoncée par l’hôte, les options demandées et les métadonnées observées.
 
 ## 6. Mettre à jour
 

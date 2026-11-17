@@ -4,7 +4,7 @@ Les versions suivent SemVer. Le format suit [Keep a Changelog](https://keepachan
 
 ## [Unreleased]
 
-- Les options demandées sont distinguées des options rapportées par T3 : une surcharge partielle complète l’héritage, et un objet vide l’efface. Les sondes de cette version vérifient ce comportement sur Codex, sans attester le backend ni l’efficacité.
+- Les options demandées sont distinguées des options rapportées par T3. Son schéma décrit les options partielles comme des surcharges et les options vides comme une remise à zéro. Deux sondes Codex ont rapporté des options supplémentaires avec un objet partiel et une liste vide avec `{}` ; leur origine héritée est inférée, les options du coordinateur n’ayant pas été conservées dans ce reçu. Aucun backend ni gain d’efficacité n’est attesté.
 
 - Les rappels du mode demandent aux sessions qui reçoivent un brief délégué de suivre seulement ce brief, sans charger le routeur. Le hook ne prétend pas détecter techniquement le rôle et ne se fonde pas sur `CLAUDE_CODE_CHILD_SESSION`. L’état exact d’une revue est désormais requis dans les deux chemins T3 : un worktree de reviewer n’embarque ni les modifications non committées ni le commit d’un autre enfant automatiquement.
 
