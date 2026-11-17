@@ -1,6 +1,6 @@
 # Outils et délégation
 
-Dans une tâche cstack explicitement invoquée dans T3, le [contrat T3](t3.md) prime sur les règles autonomes de ce document.
+Dans une tâche cstack activée explicitement ou par démarrage automatique dans T3, le [contrat T3](t3.md) prime sur les règles autonomes de ce document.
 
 
 Utilise les vrais outils exposés dans la session courante. Les noms d’outils natifs diffèrent entre App et CLI ; inspecte le schéma disponible au lieu de construire un appel Cursor Task ou d’inventer un outil.

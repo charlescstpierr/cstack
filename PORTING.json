@@ -1344,7 +1344,11 @@
     },
     {
       "path": "plugins/cstack/skills/cstack/references/runtime/t3.md",
-      "reason": "Contrat T3 original consolidé V5, activé seulement sur invocation explicite."
+      "reason": "Contrat T3 original consolidé V5, applicable aux tâches activées explicitement ou par démarrage automatique ; permissions de livraison distinctes."
+    },
+    {
+      "path": "plugins/cstack/skills/cstack/references/runtime/t3-audite.md",
+      "reason": "Détail original du chemin audité T3, extrait du contrat T3 et lu seulement pour ce chemin."
     },
     {
       "path": "plugins/cstack/skills/cstack/scripts/runtime/prepare.ts",

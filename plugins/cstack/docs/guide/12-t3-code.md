@@ -64,13 +64,15 @@ Ce réglage est éteint par défaut. Pour l'activer, demandez-le une fois dans u
 $cstack:setup-cstack Active le démarrage automatique.
 ```
 
-Dans chaque nouvelle session de cette machine, cstack s'applique alors de lui-même aux tâches qui touchent plusieurs fichiers, demandent un choix de conception ou portent sur un bug de cause inconnue. Une question ou une petite édition reste hors cstack. « arrête cstack » l'éteint pour une conversation. Pour l'éteindre sur la machine, demandez au setup de désactiver le démarrage automatique.
+Dans chaque nouvelle session de cette machine, cstack s'applique alors de lui-même aux tâches qui touchent plusieurs fichiers, demandent un choix de conception ou portent sur un bug de cause inconnue. Une question ou une petite édition reste hors cstack. Ces tâches s'arrêtent aux commits locaux vérifiés : pour un push ou une PR, demandez-le dans le fil, ou commencez le message par `$cstack:cstack`. « arrête cstack » l'éteint pour une conversation. Pour l'éteindre sur la machine, demandez au setup de désactiver le démarrage automatique.
 
 Le réglage dépend du hook de l'étape 2. Dans Codex, il ne s'applique pas tant que ce hook n'est pas approuvé. Si un autre plugin démarre aussi de lui-même sur les mêmes tâches, comme pstack, éteignez l'un des deux : sinon chaque session reçoit deux consignes concurrentes.
 
 ## 4. Écrire du code depuis un worktree
 
 Pour une tâche qui modifie du code, créez le fil dans un worktree T3 Code. Le [contrat T3](../../skills/cstack/references/runtime/t3.md) interdit au coordinateur d'écrire à la racine du projet. Un fil créé sans worktree peut explorer et relire. Il confie alors chaque écriture à un délégué que T3 isole dans son propre worktree.
+
+Le rappel demande aux sessions qui reçoivent un brief délégué de suivre ce brief sans charger le routeur. Le hook ne dispose pas d’un signal vérifié qui distingue un coordinateur d’un enfant. Cette portée reste une consigne au modèle, sans filtrage technique revendiqué. `CLAUDE_CODE_CHILD_SESSION` n’est pas utilisé comme indicateur de rôle.
 
 ## 5. Choisir les modèles des délégués
 
@@ -90,7 +92,7 @@ Le setup propose une feuille en trois paliers, vérifiée sur les modèles que v
 | `judgment` | `claude-opus-5-5` | Jugement et prose. |
 | `hard` | `gpt-6-astra` | Tâches les plus dures. |
 
-Les panels de candidats et de reviewers prennent une position par palier, donc deux familles de modèles quand Codex et Claude sont connectés. Si un modèle proposé manque chez vous, le setup le dit et ne le remplace pas à votre place. Rien n'est écrit avant votre accord. Les choix acceptés vont dans la feuille de la machine, `~/.config/cstack/models.json`. Tous vos projets et worktrees la lisent dans T3 Code. Un `.cstack/models.json` dans un projet prime, rôle par rôle, pour un choix propre à ce projet.
+Les panels de candidats et de reviewers prennent une position par palier, donc deux familles de modèles quand Codex et Claude sont connectés. Si un modèle proposé manque chez vous, le setup le dit et ne le remplace pas à votre place. Rien n'est écrit avant votre accord. Les choix acceptés vont dans la feuille de la machine, `~/.config/cstack/models.json`. Tous vos projets et worktrees la lisent dans T3 Code. Un `.cstack/models.json` dans un projet prime, rôle par rôle, pour un choix propre à ce projet. Un worktree T3 qui n'a pas le sien lit celui du checkout principal du même dépôt.
 
 Pour utiliser un autre modèle, y compris un modèle que T3 Code vient d'ajouter, nommez-le avec son palier :
 
@@ -98,7 +100,7 @@ Pour utiliser un autre modèle, y compris un modèle que T3 Code vient d'ajouter
 $cstack:setup-cstack Mets gpt-6.1-terra pour le travail courant.
 ```
 
-Le setup accepte tout modèle que votre T3 Code expose. Les noms de cette page datent du 9 novembre 2026.
+Le setup accepte tout modèle que votre T3 Code expose. Les noms de cette page datent du 9 novembre 2026. Selon le schéma T3 observé le 17 novembre 2026, un objet d’options partiel surcharge les options héritées du fil ; un objet vide les efface. Les deux sondes Codex ont rapporté des options supplémentaires et une liste vide, sans capturer les options du coordinateur dans leur reçu. Le [contrat T3](../../skills/cstack/references/runtime/t3.md#options-demandées-et-options-rapportées) distingue la sémantique annoncée par l’hôte, les options demandées et les métadonnées observées.
 
 ## 6. Mettre à jour
 

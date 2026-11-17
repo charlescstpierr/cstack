@@ -7,6 +7,9 @@ ou une reprise (`SessionStart`). Il ne parle que dans une conversation où l'uti
 la machine (`mode.py auto on`). Ailleurs, il n'écrit rien. Il ne lit jamais le transcript et ne garde
 que des identifiants de session hachés sous `PLUGIN_DATA`. Toute erreur donne une sortie vide : le hook
 ne bloque jamais un message.
+
+Les rappels visent le coordinateur. Le hook ne détermine pas le rôle de la session ;
+la portée reste une consigne dans le texte, pas un filtrage technique des enfants.
 """
 
 import os
@@ -19,9 +22,9 @@ CLAUDE_ACTIVATE = "/cstack:cstack"
 # reste au jugement du modèle, que le rappel invite déjà à ne pas appliquer cstack sur demande d'arrêt.
 STOP_VERBS = ("arrête", "arrete", "stop", "stoppe", "désactive", "desactive", "quitte")
 # Un pointeur vers les règles, pas une copie : `references/runtime/base.md` reste la source.
-REMINDER = "Mode cstack actif : tâche nouvelle ou en cours → applique `$cstack:cstack` ; tour anodin ou arrêt demandé → non."
+REMINDER = "Mode cstack actif : si tu coordonnes une tâche → applique `$cstack:cstack` ; brief délégué, tour anodin ou arrêt demandé → non."
 AFTER_SUMMARY = (
-    "Mode cstack actif et contexte résumé : relis `references/runtime/base.md` de `$cstack:cstack` "
+    "Mode cstack actif et contexte résumé : si tu reçois un brief délégué, suis-le sans charger le routeur. Sinon, relis `references/runtime/base.md` de `$cstack:cstack` "
     "et le point de reprise de la tâche active dont le résumé nomme le chemin sous `.cstack/` "
     "(voir `references/runtime/etat.md`) avant de continuer."
 )
@@ -29,10 +32,14 @@ AFTER_SUMMARY = (
 
 # Réglage de la machine, éteint par défaut : seul `mode.py auto on`, lancé à la demande de l'utilisateur, l'active.
 AUTO_START = (
-    "Démarrage automatique de cstack : l'utilisateur l'a activé sur cette machine, ce qui vaut invocation "
-    "explicite de `$cstack:cstack`. Quand la tâche touche plus d'un fichier ou une signature appelée ailleurs, "
-    "demande un choix de conception, ou porte sur un bug de cause inconnue ou une lenteur, ouvre en entier "
-    "`{skill}` et suis-le. Pour une question, une édition d'une ligne ou un changement contenu dans un fichier "
+    "Démarrage automatique de cstack : l'utilisateur l'a activé sur cette machine. Cette consigne s'adresse "
+    "seulement à la session coordinatrice. Si un brief te confie une tranche déléguée, ne charge pas le routeur "
+    "cstack ni ses playbooks : suis seulement ce brief et ses consignes de délégué. Pour la session coordinatrice, "
+    "quand la tâche touche plus "
+    "d'un fichier ou une signature appelée ailleurs, demande un choix de conception, ou porte sur un bug de cause "
+    "inconnue ou une lenteur, ouvre en entier `{skill}` et suis-le, avec une livraison locale vérifiée : "
+    "push et PR exigent une autorisation de l'utilisateur dans cette conversation ou son invocation explicite "
+    "de `$cstack:cstack`, et ce réglage n'en donne aucune. Pour une question, une édition d'une ligne ou un changement contenu dans un fichier "
     "avec un test évident, travaille directement, sans cstack. Les instructions de l'utilisateur et du projet "
     "priment, et « arrête cstack » l'éteint pour cette conversation."
 )

@@ -1,6 +1,6 @@
 # Workers CLI
 
-Dans une tâche cstack explicitement invoquée dans T3, le [contrat T3](runtime/t3.md) prime sur les règles autonomes de ce document.
+Dans une tâche cstack activée explicitement ou par démarrage automatique dans T3, le [contrat T3](runtime/t3.md) prime sur les règles autonomes de ce document.
 
 
 Le coordinateur reste dans Codex App ou CLI. Une sélection sans `runtime` utilise ses sous-agents natifs. Les sélections explicites `codex-cli`, `claude-code`, `cursor-agent` et `grok` lancent les binaires officiels correspondants. Chaque worker reçoit une tâche bornée ; le parent collecte les résultats, vérifie les artefacts et rend une synthèse unique. Aucun serveur, SDK fournisseur ou protocole ACP n’est requis.

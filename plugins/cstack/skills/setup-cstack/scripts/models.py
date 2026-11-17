@@ -7,6 +7,7 @@ import json
 import os
 from pathlib import Path
 import re
+import subprocess
 import sys
 import tempfile
 
@@ -190,6 +191,61 @@ def machine_sheet():
     return (Path(base) if os.path.isabs(base) else Path.home() / ".config") / "cstack" / "models.json"
 
 
+def _project_git(workspace, *args):
+    env = {key: value for key, value in os.environ.items() if not key.startswith("GIT_")}
+    try:
+        return subprocess.run(["git", "-C", str(workspace), *args], capture_output=True,
+                              check=True, env=env, timeout=10).stdout
+    except (OSError, subprocess.SubprocessError) as error:
+        raise ValueError("BLOCKED: métadonnées Git illisibles; aucune feuille de repli sélectionnée") from error
+
+
+def t3_checkout(workspace):
+    workspace = workspace.resolve()
+    if not any((parent / ".git").exists() or (parent / ".git").is_symlink()
+               for parent in (workspace, *workspace.parents)):
+        return None
+    root = _project_git(workspace, "rev-parse", "--show-toplevel").removesuffix(b"\n")
+    if not root or not Path(os.fsdecode(root)).is_absolute():
+        raise ValueError("BLOCKED: racine du checkout Git non vérifiée")
+    return Path(os.fsdecode(root)).resolve()
+
+
+def _broken_config_link(path):
+    return any(part.is_symlink() and not part.exists() for part in (path, *path.parents))
+
+
+def project_sheet(workspace):
+    """Feuille projet T3 : celle du checkout, sinon celle du checkout principal quand c’est un worktree lié du même dépôt.
+
+    `.cstack/` est ignoré par Git, donc un worktree lié ne voit pas la feuille du checkout principal sans ce relais.
+    """
+    checkout = t3_checkout(workspace)
+    workspace = checkout or workspace
+    local = workspace / ".cstack" / "models.json"
+    try:
+        local.stat()
+    except FileNotFoundError:
+        if _broken_config_link(local):
+            return local
+    except OSError:
+        return local
+    else:
+        return local
+    if checkout is None:
+        return local
+    git_dir = Path(os.fsdecode(_project_git(workspace, "rev-parse", "--absolute-git-dir").removesuffix(b"\n"))).resolve()
+    common = Path(workspace, os.fsdecode(_project_git(workspace, "rev-parse", "--git-common-dir").removesuffix(b"\n"))).resolve()
+    if git_dir == common:
+        return local
+    first = _project_git(workspace, "worktree", "list", "--porcelain", "-z").split(b"\0\0")[0].split(b"\0")
+    if not first or not first[0].startswith(b"worktree "):
+        raise ValueError("BLOCKED: checkout principal Git non vérifié")
+    if b"bare" in first:
+        return local
+    return Path(os.fsdecode(first[0][len(b"worktree "):])) / ".cstack" / "models.json"
+
+
 def t3_direct(catalog):
     return isinstance(catalog, dict) and catalog.get("schema") == "cstack.t3-direct/1"
 
@@ -203,6 +259,8 @@ def _t3_providers(catalog, host, context):
 
 
 def _t3_options(model):
+    if isinstance(model, dict) and isinstance(model.get("invalid"), str):
+        raise ValueError(model["invalid"])
     declared = model.get("options") if isinstance(model, dict) else None
     if not isinstance(declared, dict):
         raise ValueError("BLOCKED: options du modèle non vérifiées")
@@ -217,6 +275,17 @@ def _t3_options(model):
     return declared
 
 
+def _t3_can_launch(providers, name, coordinator):
+    provider = providers.get(name)
+    if not isinstance(provider, dict) or (provider.get("enabled") is False or provider.get("canRunChildTask") is not True or provider.get("constraints") != []):
+        raise ValueError("BLOCKED: providerInstanceId indisponible ou non vérifié: " + name)
+    if "runtimeModes" in provider:
+        modes = provider["runtimeModes"]
+        if (not isinstance(modes, list) or not all(t3_identifier(mode) for mode in modes)
+                or coordinator["runtimeMode"] not in modes):
+            raise ValueError("BLOCKED: runtimeModes non vérifiés ou mode non pris en charge: " + name)
+
+
 def _t3_target(chosen, providers, coordinator):
     source = coordinator["providerInstanceId"]
     if chosen["providerInstanceId"] != source and any(
@@ -225,14 +294,7 @@ def _t3_target(chosen, providers, coordinator):
             for name in (source, chosen["providerInstanceId"])):
         raise ValueError("BLOCKED: capacité cross-provider requise chez cible et coordinator")
     for name in dict.fromkeys((source, chosen["providerInstanceId"])):
-        provider = providers.get(name)
-        if not isinstance(provider, dict) or (provider.get("enabled") is False or provider.get("canRunChildTask") is not True or provider.get("constraints") != []):
-            raise ValueError("BLOCKED: providerInstanceId indisponible ou non vérifié: " + name)
-        if "runtimeModes" in provider:
-            modes = provider["runtimeModes"]
-            if (not isinstance(modes, list) or not all(t3_identifier(mode) for mode in modes)
-                    or coordinator["runtimeMode"] not in modes):
-                raise ValueError("BLOCKED: runtimeModes non vérifiés ou mode non pris en charge: " + name)
+        _t3_can_launch(providers, name, coordinator)
     provider = providers[chosen["providerInstanceId"]]
     if type(provider.get("modelsComplete")) is not bool:
         raise ValueError("BLOCKED: complétude catalogue inconnue")
@@ -260,6 +322,13 @@ def t3_position(chosen, catalog, context):
     if chosen and chosen.get("runtime") != "t3":
         raise ValueError("BLOCKED: sélection native explicite non exprimable; aperçu de migration T3 requis")
     providers = _t3_providers(catalog, "t3", context)
+    if not chosen and t3_direct(catalog):
+        coordinator = catalog["coordinator"]
+        _t3_can_launch(providers, coordinator["providerInstanceId"], coordinator)
+        model = providers[coordinator["providerInstanceId"]]["models"].get(coordinator["model"])
+        if model is not None:
+            _t3_options(model)
+        return {"dispatch": "delegate_task", "inherit": True}
     if not chosen:
         scope = catalog["coordinator"]
         chosen = selection({"runtime": "t3", **{k: scope[k] for k in ("providerInstanceId", "model", "options")}})
@@ -420,8 +489,14 @@ def read_catalog(path):
 
 
 def read_config(path):
-    raw = path.read_bytes() if path.exists() else b""
-    config = json.loads(raw) if raw or path.exists() else {}
+    try:
+        raw = path.read_bytes()
+    except FileNotFoundError as error:
+        if _broken_config_link(path):
+            raise ValueError("BLOCKED: feuille en lien cassé: " + str(path)) from error
+        raw, config = b"", {}
+    else:
+        config = json.loads(raw)
     validate(config)
     return config, hashlib.sha256(raw).hexdigest()
 
@@ -613,9 +688,11 @@ def main():
             parser.exit(2, f"modèles cstack: {error}\n")
         print(json.dumps(result, indent=2, ensure_ascii=False))
         return 0
-    path = args.workspace / ".cstack" / "models.json"
-    has_agents = (args.workspace / ".codex" / "agents").is_dir()
     try:
+        if args.host == "t3":
+            args.workspace = t3_checkout(args.workspace) or args.workspace
+        path = args.workspace / ".cstack" / "models.json"
+        has_agents = (args.workspace / ".codex" / "agents").is_dir()
         if args.capabilities:
             if args.host != "t3" or args.catalog or args.host_context:
                 raise ValueError("--capabilities exige --host t3, sans --catalog ni --host-context")
@@ -629,13 +706,15 @@ def main():
         context = read_bounded_json(args.host_context, "contexte")
         config, digest = read_config(path)
         machine, machine_digest = read_config(machine_sheet()) if args.host == "t3" else ({}, None)
-        effective = {**machine, **config}
+        project = project_sheet(args.workspace) if args.host == "t3" else path
+        effective = {**machine, **(config if project == path else read_config(project)[0])}
         if args.command == "show":
             tiers = dict(item.partition("=")[::2] for item in args.tier)
             result = preview(effective, digest, catalog, args.claude_ready, args.host, context, tiers)
             if args.host == "t3":
                 result["saved"] = config
                 result["machine"] = {"path": str(machine_sheet()), "saved": machine, "sha256": machine_digest}
+                result["project"] = str(project)
             # Les agents natifs gérés suivent models.json : l’aperçu dit lesquels seront alignés.
             result["managed_agents"] = project_helper().managed_agents(args.workspace) if has_agents else []
         elif args.command == "resolve":
@@ -649,6 +728,9 @@ def main():
                                   args.expected_sha256, catalog, args.host, context)
             result = {"saved": saved, "path": str(machine_sheet())}
         else:
+            if args.host == "t3" and project != path and project.exists():
+                raise ValueError("feuille héritée du checkout principal : applique les choix depuis ce checkout "
+                                 "ou sélectionne explicitement --machine; aucune feuille locale n’a été créée")
             result = project_helper().apply_model_choices(args.workspace, json.loads(args.choices.read_text()),
                                                           args.expected_sha256, catalog, args.host, context)
     except (OSError, ValueError, KeyError, TypeError) as error:
