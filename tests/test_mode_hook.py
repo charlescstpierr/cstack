@@ -56,18 +56,26 @@ class ModeHookTests(unittest.TestCase):
         self.assertTrue((self.data / "config/cstack/auto-start").is_file())
         for source in ("startup", "clear", "compact", "resume"):
             text = self.start(source)
-            self.assertIn("vaut invocation explicite", text, source)
+            self.assertIn("Démarrage automatique de cstack", text, source)
             self.assertIn(str(ROOT / "plugins/cstack/skills/cstack/SKILL.md"), text)
         self.assertEqual(self.prompt("Corrige ce bug."), "", "aucun rappel par message sans invocation")
         self.assertEqual(self.switch("auto", "off").returncode, 0)
         self.assertEqual(self.switch("auto", "off").returncode, 0, "éteindre deux fois reste sans erreur")
         self.assertEqual(self.start("startup"), "")
 
+    def test_automatic_start_bounds_delivery_to_local_commits(self):
+        self.switch("auto", "on")
+        for source in ("startup", "compact"):
+            text = self.start(source, session=source)
+            self.assertNotIn("invocation explicite de `$cstack:cstack`", text.split("push et PR")[0], source)
+            self.assertIn("livraison locale vérifiée", text, source)
+            self.assertIn("push et PR exigent", text, source)
+
     def test_automatic_start_keeps_the_resume_reminder_of_an_invoked_session(self):
         self.switch("auto", "on")
         self.prompt("$cstack:cstack Corrige ce bug.")
         self.assertIn("contexte résumé", self.start("compact"))
-        self.assertIn("vaut invocation explicite", self.start("startup", session="s2"))
+        self.assertIn("Démarrage automatique de cstack", self.start("startup", session="s2"))
 
     def test_stop_holds_through_a_summary_when_automatic_start_is_on(self):
         self.switch("auto", "on")
@@ -77,7 +85,7 @@ class ModeHookTests(unittest.TestCase):
             self.assertEqual(self.start(source), "", source)
         self.assertEqual(self.prompt("arrête cstack", session="jamais-invoquée"), "")
         self.assertEqual(self.start("compact", session="jamais-invoquée"), "")
-        self.assertIn("vaut invocation explicite", self.start("compact", session="autre"))
+        self.assertIn("Démarrage automatique de cstack", self.start("compact", session="autre"))
         self.assertIn("Mode cstack actif", self.prompt("$cstack:cstack Reprends."))
         self.assertIn("contexte résumé", self.start("compact"))
 

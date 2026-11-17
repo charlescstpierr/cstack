@@ -64,7 +64,7 @@ Ce réglage est éteint par défaut. Pour l'activer, demandez-le une fois dans u
 $cstack:setup-cstack Active le démarrage automatique.
 ```
 
-Dans chaque nouvelle session de cette machine, cstack s'applique alors de lui-même aux tâches qui touchent plusieurs fichiers, demandent un choix de conception ou portent sur un bug de cause inconnue. Une question ou une petite édition reste hors cstack. « arrête cstack » l'éteint pour une conversation. Pour l'éteindre sur la machine, demandez au setup de désactiver le démarrage automatique.
+Dans chaque nouvelle session de cette machine, cstack s'applique alors de lui-même aux tâches qui touchent plusieurs fichiers, demandent un choix de conception ou portent sur un bug de cause inconnue. Une question ou une petite édition reste hors cstack. Ces tâches s'arrêtent aux commits locaux vérifiés : pour un push ou une PR, demandez-le dans le fil, ou commencez le message par `$cstack:cstack`. « arrête cstack » l'éteint pour une conversation. Pour l'éteindre sur la machine, demandez au setup de désactiver le démarrage automatique.
 
 Le réglage dépend du hook de l'étape 2. Dans Codex, il ne s'applique pas tant que ce hook n'est pas approuvé. Si un autre plugin démarre aussi de lui-même sur les mêmes tâches, comme pstack, éteignez l'un des deux : sinon chaque session reçoit deux consignes concurrentes.
 
@@ -90,7 +90,7 @@ Le setup propose une feuille en trois paliers, vérifiée sur les modèles que v
 | `judgment` | `claude-opus-5-5` | Jugement et prose. |
 | `hard` | `gpt-6-astra` | Tâches les plus dures. |
 
-Les panels de candidats et de reviewers prennent une position par palier, donc deux familles de modèles quand Codex et Claude sont connectés. Si un modèle proposé manque chez vous, le setup le dit et ne le remplace pas à votre place. Rien n'est écrit avant votre accord. Les choix acceptés vont dans la feuille de la machine, `~/.config/cstack/models.json`. Tous vos projets et worktrees la lisent dans T3 Code. Un `.cstack/models.json` dans un projet prime, rôle par rôle, pour un choix propre à ce projet.
+Les panels de candidats et de reviewers prennent une position par palier, donc deux familles de modèles quand Codex et Claude sont connectés. Si un modèle proposé manque chez vous, le setup le dit et ne le remplace pas à votre place. Rien n'est écrit avant votre accord. Les choix acceptés vont dans la feuille de la machine, `~/.config/cstack/models.json`. Tous vos projets et worktrees la lisent dans T3 Code. Un `.cstack/models.json` dans un projet prime, rôle par rôle, pour un choix propre à ce projet. Un worktree T3 qui n'a pas le sien lit celui du checkout principal du même dépôt.
 
 Pour utiliser un autre modèle, y compris un modèle que T3 Code vient d'ajouter, nommez-le avec son palier :
 

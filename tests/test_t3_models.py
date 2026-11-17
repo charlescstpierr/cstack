@@ -657,6 +657,54 @@ class T3DirectTests(unittest.TestCase):
         self.assertEqual(report['resolved']['judgment and prose'][0]['target']['model'], 'claude-sonnet-5-5')
         self.assertEqual(report['resolved']['bug-fix'][0]['target']['model'], 'gpt-6.1-sol')
 
+    def test_a_linked_worktree_reads_the_project_sheet_of_its_primary_checkout(self):
+        def git(*args, cwd):
+            subprocess.run(['git', '-c', 'user.name=cstack', '-c', 'user.email=cstack@example.invalid', *args],
+                           cwd=cwd, check=True, capture_output=True, env={k: v for k, v in os.environ.items() if not k.startswith('GIT_')})
+
+        def write(workspace, choices):
+            (workspace / '.cstack').mkdir(exist_ok=True)
+            (workspace / '.cstack/models.json').write_text(json.dumps(choices))
+
+        def model(workspace, host=('--host', 't3')):
+            code, report, error = self.run_cli('preflight', 'judgment and prose', workspace=workspace, host=host)
+            return report['positions']['judgment and prose'][0] if host else (code, report, error)
+
+        opus = {'runtime': 't3', 'providerInstanceId': 'claudeAgent', 'model': 'claude-opus-5-5', 'options': {'effort': 'high'}}
+        sonnet = dict(opus, model='claude-sonnet-5-5')
+        fable = dict(opus, model='claude-fable-5-1')
+        self.assertEqual(self.apply_machine({'judgment and prose': opus})[0], 0)
+        primary, linked = self.root / 'primary', self.root / 'linked'
+        primary.mkdir()
+        git('init', '-q', cwd=primary)
+        git('commit', '-q', '--allow-empty', '-m', 'init', cwd=primary)
+        git('worktree', 'add', '-q', str(linked), cwd=primary)
+        self.assertEqual(model(linked)['target']['model'], 'claude-opus-5-5', 'sans feuille projet : la machine')
+
+        write(primary, {'judgment and prose': 'gpt-native-model'})
+        row = model(linked)
+        self.assertEqual(row['status'], 'blocked', 'une entrée projet non exprimable bloque, sans repli machine')
+        self.assertNotIn('target', row)
+        (primary / '.cstack/models.json').write_text('{')
+        code, _, error = self.run_cli('preflight', 'judgment and prose', workspace=linked)
+        self.assertEqual(code, 2, 'une feuille primaire illisible échoue fermé')
+        self.assertIn('modèles cstack', error)
+        write(primary, {'judgment and prose': sonnet})
+        self.assertEqual(model(linked)['target']['model'], 'claude-sonnet-5-5')
+        write(linked, {'judgment and prose': fable})
+        self.assertEqual(model(linked)['target']['model'], 'claude-fable-5-1', 'la feuille du worktree lié prime')
+        (linked / '.cstack/models.json').unlink()
+
+        clone = self.root / 'clone'
+        git('clone', '-q', str(primary), str(clone), cwd=self.root)
+        self.assertEqual(model(clone)['target']['model'], 'claude-opus-5-5', 'aucun repli vers un autre dépôt')
+        outside = self.root / 'outside'
+        outside.mkdir()
+        self.assertEqual(model(outside)['target']['model'], 'claude-opus-5-5')
+        write(primary, {'judgment and prose': 'gpt-native-model'})
+        code, report, error = model(linked, host=())
+        self.assertEqual((code, report['resolved']['judgment and prose']), (0, [{}]), 'hors T3, aucun effet')
+
     def test_the_machine_sheet_is_read_and_written_only_in_t3(self):
         sol = {'runtime': 't3', 'providerInstanceId': 'codex', 'model': 'gpt-6.1-sol', 'options': {'reasoningEffort': 'medium'}}
         self.assertEqual(self.apply_machine({'bug-fix': sol})[0], 0)
@@ -712,6 +760,87 @@ class T3DirectTests(unittest.TestCase):
         next(row for row in partial['providers'] if row['providerInstanceId'] == 'claudeAgent')['omittedModels'] = 9
         merged = helper.direct([json.dumps(first).encode(), json.dumps(partial).encode()])['providers']['claudeAgent']
         self.assertEqual((merged['modelsComplete'], 'omittedModels' in merged), (False, False))
+
+    def test_search_captures_that_disagree_on_a_model_block_only_that_model(self):
+        helper = models.t3_catalog_helper()
+
+        def capture(change):
+            caps = copy.deepcopy(self.caps)
+            claude = next(row for row in caps['providers'] if row['providerInstanceId'] == 'claudeAgent')
+            change(next(row for row in claude['models'] if row['id'] == 'claude-opus-5-5'))
+            return json.dumps(caps).encode()
+
+        def effort(model):
+            return next(row for row in model['options'] if row['id'] == 'effort')
+
+        def ready(catalog):
+            opus = {'runtime': 't3', 'providerInstanceId': 'claudeAgent', 'model': 'claude-opus-5-5', 'options': {'effort': 'high'}}
+            sonnet = dict(opus, model='claude-sonnet-5-5')
+            report = models.preflight({'judgment and prose': opus, 'bug-fix': sonnet},
+                                      ['judgment and prose', 'bug-fix'], catalog, 't3')
+            return report['positions']['judgment and prose'][0], report['positions']['bug-fix'][0]
+
+        base = capture(lambda model: None)
+        alone = helper.direct([base])['providers']['claudeAgent']['models']
+        conflicts = {
+            'values': lambda model: effort(model).update(values=['low', 'medium', 'xhigh']),
+            'default': lambda model: effort(model).update(default='high'),
+            'type': lambda model: model['options'][1].update(values=['false', 'true']),
+            'added option': lambda model: model['options'].append({'id': 'thinking', 'values': [True, False]}),
+            'invalid': lambda model: effort(model).update(values=['low', True]),
+        }
+        for name, change in conflicts.items():
+            other = capture(change)
+            catalogs = [helper.direct([base, other]), helper.direct([other, base])]
+            with self.subTest(conflict=name):
+                self.assertEqual(catalogs[0], catalogs[1], 'le rejet ne dépend pas de l’ordre des captures')
+                for catalog in catalogs:
+                    models_ = catalog['providers']['claudeAgent']['models']
+                    self.assertIn('contradictoires', models_['claude-opus-5-5']['invalid'])
+                    self.assertEqual(models_['claude-sonnet-5-5'], alone['claude-sonnet-5-5'])
+                    opus, sonnet = ready(catalog)
+                    self.assertEqual(opus['status'], 'blocked')
+                    self.assertIn('contradictoires', opus['error'])
+                    self.assertEqual(sonnet['status'], 'ready')
+
+        def reorder(model):
+            effort(model)['values'].reverse()
+            model['options'].reverse()
+        for name, other in (('identical', base), ('same choices in another order', capture(reorder))):
+            with self.subTest(duplicate=name):
+                for captures in ([base, other], [other, base]):
+                    merged = helper.direct(captures)['providers']['claudeAgent']['models']['claude-opus-5-5']
+                    self.assertNotIn('invalid', merged)
+                    self.assertEqual(ready(helper.direct(captures))[0]['status'], 'ready')
+                self.assertEqual(helper.direct([base, other])['providers']['claudeAgent']['models']['claude-opus-5-5'],
+                                 alone['claude-opus-5-5'], 'la première capture garde son ordre')
+
+    def test_direct_inheritance_omits_target_but_keeps_coordinator_restrictions(self):
+        helper = models.t3_catalog_helper()
+        base = json.loads((Path(__file__).parent / 'fixtures/t3-normalizer/capabilities-grok-filtered.json').read_text())
+        grok = {'runtime': 't3', 'providerInstanceId': 'grok', 'model': 'grok-4.7', 'options': {'reasoningEffort': 'high'}}
+        absent = dict(grok, model='grok-absent-from-short-list')
+
+        def rows(cap, *panel):
+            catalog = helper.direct([json.dumps(cap).encode()])
+            self.assertEqual(catalog['providers']['codex']['models'], {}, 'le modèle du fil manque à la capture filtrée')
+            report = models.preflight({'interrogate reviewers': list(panel)}, ['interrogate reviewers'], catalog, 't3')
+            return report['positions']['interrogate reviewers']
+
+        inherited, explicit, missing = rows(base, 'inherit-parent', grok, absent)
+        self.assertEqual(inherited, {'position': 0, 'status': 'ready', 'dispatch': 'delegate_task', 'inherit': True})
+        self.assertEqual(explicit['target'], {k: grok[k] for k in ('providerInstanceId', 'model', 'options')})
+        self.assertEqual(missing['status'], 'blocked')
+        self.assertIn('ne prouve pas son inexistence', missing['error'])
+        for restriction in ({'enabled': False}, {'canRunChildTask': False},
+                            {'constraints': ['blocked by host']}, {'runtimeModes': ['approval-required']}):
+            with self.subTest(restriction=restriction):
+                cap = copy.deepcopy(base)
+                next(p for p in cap['output']['providers'] if p['providerInstanceId'] == 'codex').update(restriction)
+                row = rows(cap, 'inherit-parent')[0]
+                self.assertEqual(row['status'], 'blocked')
+                self.assertIn('codex', row['error'])
+                self.assertNotIn('target', row)
 
     def test_a_direct_catalog_cannot_enter_through_the_audited_inputs(self):
         direct = models.t3_catalog_helper().direct([json.dumps(self.caps).encode()])

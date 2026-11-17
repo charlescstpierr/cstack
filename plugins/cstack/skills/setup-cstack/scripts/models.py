@@ -7,6 +7,7 @@ import json
 import os
 from pathlib import Path
 import re
+import subprocess
 import sys
 import tempfile
 
@@ -190,6 +191,28 @@ def machine_sheet():
     return (Path(base) if os.path.isabs(base) else Path.home() / ".config") / "cstack" / "models.json"
 
 
+def project_sheet(workspace):
+    """Feuille projet T3 : celle du checkout, sinon celle du checkout principal quand c’est un worktree lié du même dépôt.
+
+    `.cstack/` est ignoré par Git, donc un worktree lié ne voit pas la feuille du checkout principal sans ce relais.
+    """
+    local = workspace / ".cstack" / "models.json"
+    if local.exists() or local.is_symlink():
+        return local
+    env = {key: value for key, value in os.environ.items() if not key.startswith("GIT_")}
+    def git(*args):
+        return subprocess.run(["git", "-C", str(workspace), *args], capture_output=True, text=True,
+                              check=True, env=env).stdout
+    try:
+        git_dir, common = (Path(workspace, line).resolve() for line in git("rev-parse", "--git-dir", "--git-common-dir").splitlines())
+        first = git("worktree", "list", "--porcelain").split("\n\n")[0].splitlines()
+    except (OSError, ValueError, subprocess.CalledProcessError):
+        return local
+    if git_dir == common or not first or "bare" in first or not first[0].startswith("worktree "):
+        return local
+    return Path(first[0][len("worktree "):]) / ".cstack" / "models.json"
+
+
 def t3_direct(catalog):
     return isinstance(catalog, dict) and catalog.get("schema") == "cstack.t3-direct/1"
 
@@ -203,6 +226,8 @@ def _t3_providers(catalog, host, context):
 
 
 def _t3_options(model):
+    if isinstance(model, dict) and isinstance(model.get("invalid"), str):
+        raise ValueError(model["invalid"])
     declared = model.get("options") if isinstance(model, dict) else None
     if not isinstance(declared, dict):
         raise ValueError("BLOCKED: options du modèle non vérifiées")
@@ -217,6 +242,17 @@ def _t3_options(model):
     return declared
 
 
+def _t3_can_launch(providers, name, coordinator):
+    provider = providers.get(name)
+    if not isinstance(provider, dict) or (provider.get("enabled") is False or provider.get("canRunChildTask") is not True or provider.get("constraints") != []):
+        raise ValueError("BLOCKED: providerInstanceId indisponible ou non vérifié: " + name)
+    if "runtimeModes" in provider:
+        modes = provider["runtimeModes"]
+        if (not isinstance(modes, list) or not all(t3_identifier(mode) for mode in modes)
+                or coordinator["runtimeMode"] not in modes):
+            raise ValueError("BLOCKED: runtimeModes non vérifiés ou mode non pris en charge: " + name)
+
+
 def _t3_target(chosen, providers, coordinator):
     source = coordinator["providerInstanceId"]
     if chosen["providerInstanceId"] != source and any(
@@ -225,14 +261,7 @@ def _t3_target(chosen, providers, coordinator):
             for name in (source, chosen["providerInstanceId"])):
         raise ValueError("BLOCKED: capacité cross-provider requise chez cible et coordinator")
     for name in dict.fromkeys((source, chosen["providerInstanceId"])):
-        provider = providers.get(name)
-        if not isinstance(provider, dict) or (provider.get("enabled") is False or provider.get("canRunChildTask") is not True or provider.get("constraints") != []):
-            raise ValueError("BLOCKED: providerInstanceId indisponible ou non vérifié: " + name)
-        if "runtimeModes" in provider:
-            modes = provider["runtimeModes"]
-            if (not isinstance(modes, list) or not all(t3_identifier(mode) for mode in modes)
-                    or coordinator["runtimeMode"] not in modes):
-                raise ValueError("BLOCKED: runtimeModes non vérifiés ou mode non pris en charge: " + name)
+        _t3_can_launch(providers, name, coordinator)
     provider = providers[chosen["providerInstanceId"]]
     if type(provider.get("modelsComplete")) is not bool:
         raise ValueError("BLOCKED: complétude catalogue inconnue")
@@ -260,6 +289,10 @@ def t3_position(chosen, catalog, context):
     if chosen and chosen.get("runtime") != "t3":
         raise ValueError("BLOCKED: sélection native explicite non exprimable; aperçu de migration T3 requis")
     providers = _t3_providers(catalog, "t3", context)
+    if not chosen and t3_direct(catalog):
+        # Sans target, T3 reprend le fournisseur, le modèle et les options du fil, même absents d'une liste courte.
+        _t3_can_launch(providers, catalog["coordinator"]["providerInstanceId"], catalog["coordinator"])
+        return {"dispatch": "delegate_task", "inherit": True}
     if not chosen:
         scope = catalog["coordinator"]
         chosen = selection({"runtime": "t3", **{k: scope[k] for k in ("providerInstanceId", "model", "options")}})
@@ -629,13 +662,15 @@ def main():
         context = read_bounded_json(args.host_context, "contexte")
         config, digest = read_config(path)
         machine, machine_digest = read_config(machine_sheet()) if args.host == "t3" else ({}, None)
-        effective = {**machine, **config}
+        project = project_sheet(args.workspace) if args.host == "t3" else path
+        effective = {**machine, **(config if project == path else read_config(project)[0])}
         if args.command == "show":
             tiers = dict(item.partition("=")[::2] for item in args.tier)
             result = preview(effective, digest, catalog, args.claude_ready, args.host, context, tiers)
             if args.host == "t3":
                 result["saved"] = config
                 result["machine"] = {"path": str(machine_sheet()), "saved": machine, "sha256": machine_digest}
+                result["project"] = str(project)
             # Les agents natifs gérés suivent models.json : l’aperçu dit lesquels seront alignés.
             result["managed_agents"] = project_helper().managed_agents(args.workspace) if has_agents else []
         elif args.command == "resolve":

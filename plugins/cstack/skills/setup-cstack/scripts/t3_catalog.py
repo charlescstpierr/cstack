@@ -187,6 +187,14 @@ def capabilities(raw):
     return data
 
 
+def declaration(model):
+    """Sens d'une déclaration normalisée : l'ordre des options et des valeurs offertes n'en fait pas partie."""
+    if 'options' not in model:
+        return model
+    return {key: {**option, 'values': sorted((type(v).__name__, v) for v in option['values'])}
+            for key, option in model['options'].items()}
+
+
 def direct(raws):
     """Catalogue du chemin direct. Les captures suivantes, issues de `search`, ajoutent leurs modèles à la première."""
     scope, providers = None, {}
@@ -204,7 +212,13 @@ def direct(raws):
             if known is not None:
                 if any(known.get(key) != provider.get(key) for key in PROVIDER_LIMITS):
                     fail('captures contradictoires pour le fournisseur ' + name)
-                provider['models'] = {**known['models'], **provider['models']}
+                models = dict(known['models'])
+                for model_id, model in provider['models'].items():
+                    if model_id not in models:
+                        models[model_id] = model
+                    elif declaration(models[model_id]) != declaration(model):
+                        models[model_id] = {'invalid': 'BLOCKED: captures contradictoires pour le modèle ' + name + '/' + model_id}
+                provider['models'] = models
                 provider['modelsComplete'] = known['modelsComplete'] and provider['modelsComplete']
                 if known.get('omittedModels') != provider.get('omittedModels'):
                     provider.pop('omittedModels', None)

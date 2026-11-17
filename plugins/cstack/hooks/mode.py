@@ -29,10 +29,11 @@ AFTER_SUMMARY = (
 
 # Réglage de la machine, éteint par défaut : seul `mode.py auto on`, lancé à la demande de l'utilisateur, l'active.
 AUTO_START = (
-    "Démarrage automatique de cstack : l'utilisateur l'a activé sur cette machine, ce qui vaut invocation "
-    "explicite de `$cstack:cstack`. Quand la tâche touche plus d'un fichier ou une signature appelée ailleurs, "
-    "demande un choix de conception, ou porte sur un bug de cause inconnue ou une lenteur, ouvre en entier "
-    "`{skill}` et suis-le. Pour une question, une édition d'une ligne ou un changement contenu dans un fichier "
+    "Démarrage automatique de cstack : l'utilisateur l'a activé sur cette machine. Quand la tâche touche plus "
+    "d'un fichier ou une signature appelée ailleurs, demande un choix de conception, ou porte sur un bug de cause "
+    "inconnue ou une lenteur, ouvre en entier `{skill}` et suis-le, avec une livraison locale vérifiée : "
+    "push et PR exigent une autorisation de l'utilisateur dans cette conversation ou son invocation explicite "
+    "de `$cstack:cstack`, et ce réglage n'en donne aucune. Pour une question, une édition d'une ligne ou un changement contenu dans un fichier "
     "avec un test évident, travaille directement, sans cstack. Les instructions de l'utilisateur et du projet "
     "priment, et « arrête cstack » l'éteint pour cette conversation."
 )
