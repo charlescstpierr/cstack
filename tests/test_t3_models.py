@@ -712,6 +712,36 @@ class T3DirectTests(unittest.TestCase):
         code, report, error = model(linked, host=())
         self.assertEqual((code, report['resolved']['judgment and prose']), (0, [{}]), 'hors T3, aucun effet')
 
+    def test_broken_model_sheet_links_block_before_reading_or_writing(self):
+        primary, linked = self.root / 'primary', self.root / 'linked'
+        primary.mkdir()
+        env = {k: v for k, v in os.environ.items() if not k.startswith('GIT_')}
+        for args in (['init', '-q'], ['-c', 'user.name=cstack', '-c', 'user.email=cstack@example.invalid',
+                                     'commit', '-q', '--allow-empty', '-m', 'init'],
+                     ['worktree', 'add', '-q', str(linked)]):
+            subprocess.run(['git', *args], cwd=primary, env=env, check=True, capture_output=True)
+        for checkout in (primary, linked):
+            (checkout / '.cstack').mkdir()
+        primary_sheet, local_sheet = (root / '.cstack/models.json' for root in (primary, linked))
+        valid = json.dumps({'judgment and prose': 'inherit-parent'})
+        primary_sheet.write_text(valid)
+        choices = self.root / 'choices.json'
+        choices.write_text(json.dumps({'bug-fix': 'inherit-parent'}))
+        for sheet in (local_sheet, primary_sheet):
+            if sheet.exists():
+                sheet.unlink()
+            sheet.symlink_to(self.root / 'missing')
+            for args in (('show',), ('preflight', 'judgment and prose'),
+                         ('apply', '--choices', str(choices), '--expected-sha256', hashlib.sha256(b'').hexdigest())):
+                with self.subTest(sheet=sheet, command=args[0]):
+                    code, _, error = self.run_cli(*args, workspace=linked)
+                    self.assertEqual(code, 2, error)
+                    self.assertTrue(sheet.is_symlink(), 'aucune feuille illisible ne doit être remplacée')
+            sheet.unlink()
+            primary_sheet.write_text(valid)
+            if local_sheet.exists():
+                local_sheet.unlink()
+
     def test_t3_subdirectories_use_the_checkout_sheet(self):
         primary, linked = self.root / 'primary', self.root / 'linked'
         primary.mkdir()

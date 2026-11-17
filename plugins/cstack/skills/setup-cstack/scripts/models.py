@@ -478,8 +478,14 @@ def read_catalog(path):
 
 
 def read_config(path):
-    raw = path.read_bytes() if path.exists() else b""
-    config = json.loads(raw) if raw or path.exists() else {}
+    try:
+        raw = path.read_bytes()
+    except FileNotFoundError:
+        if path.is_symlink():
+            raise
+        raw, config = b"", {}
+    else:
+        config = json.loads(raw)
     validate(config)
     return config, hashlib.sha256(raw).hexdigest()
 
