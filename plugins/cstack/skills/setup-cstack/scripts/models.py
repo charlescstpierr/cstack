@@ -211,6 +211,10 @@ def t3_checkout(workspace):
     return Path(os.fsdecode(root)).resolve()
 
 
+def _broken_config_link(path):
+    return any(part.is_symlink() and not part.exists() for part in (path, *path.parents))
+
+
 def project_sheet(workspace):
     """Feuille projet T3 : celle du checkout, sinon celle du checkout principal quand c’est un worktree lié du même dépôt.
 
@@ -219,7 +223,7 @@ def project_sheet(workspace):
     checkout = t3_checkout(workspace)
     workspace = checkout or workspace
     local = workspace / ".cstack" / "models.json"
-    if local.exists() or local.is_symlink():
+    if local.exists() or _broken_config_link(local):
         return local
     if checkout is None:
         return local
@@ -481,7 +485,7 @@ def read_config(path):
     try:
         raw = path.read_bytes()
     except FileNotFoundError:
-        if path.is_symlink():
+        if _broken_config_link(path):
             raise
         raw, config = b"", {}
     else:

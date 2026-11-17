@@ -742,6 +742,44 @@ class T3DirectTests(unittest.TestCase):
             if local_sheet.exists():
                 local_sheet.unlink()
 
+    def test_broken_ancestors_of_project_and_machine_sheets_block(self):
+        primary, linked = self.root / 'primary', self.root / 'linked'
+        primary.mkdir()
+        env = {k: v for k, v in os.environ.items() if not k.startswith('GIT_')}
+        for args in (['init', '-q'], ['-c', 'user.name=cstack', '-c', 'user.email=cstack@example.invalid',
+                                     'commit', '-q', '--allow-empty', '-m', 'init'],
+                     ['worktree', 'add', '-q', str(linked)]):
+            subprocess.run(['git', *args], cwd=primary, env=env, check=True, capture_output=True)
+        machine = self.root / 'config/cstack'
+        machine.mkdir(parents=True)
+        (primary / '.cstack').mkdir()
+        (linked / '.cstack').mkdir()
+        opus = {'runtime': 't3', 'providerInstanceId': 'claudeAgent', 'model': 'claude-opus-5-5', 'options': {'effort': 'high'}}
+        (primary / '.cstack/models.json').write_text(json.dumps({'judgment and prose': dict(opus, model='claude-sonnet-5-5')}))
+        (machine / 'models.json').write_text(json.dumps({'judgment and prose': opus}))
+        choices = self.root / 'choices.json'
+        choices.write_text(json.dumps({'judgment and prose': 'inherit-parent'}))
+        folders = [linked / '.cstack', primary / '.cstack', machine, self.root / 'config']
+        for index, folder in enumerate(folders):
+            backup = self.root / ('backup-' + str(index))
+            folder.rename(backup)
+            folder.symlink_to(self.root / 'missing')
+            try:
+                if index == 0:
+                    with self.subTest(folder=folder, command='project_sheet'):
+                        self.assertEqual(models.project_sheet(linked), linked / '.cstack/models.json')
+                for args in (('show',), ('preflight', 'judgment and prose'),
+                             ('apply', '--choices', str(choices), '--expected-sha256', hashlib.sha256(b'').hexdigest())):
+                    with self.subTest(folder=folder, command=args[0]):
+                        code, _, error = self.run_cli(*args, workspace=linked)
+                        self.assertEqual(code, 2, error)
+            finally:
+                folder.unlink()
+                backup.rename(folder)
+                local = linked / '.cstack/models.json'
+                if local.exists():
+                    local.unlink()
+
     def test_t3_subdirectories_use_the_checkout_sheet(self):
         primary, linked = self.root / 'primary', self.root / 'linked'
         primary.mkdir()
