@@ -1,0 +1,6 @@
+interface:
+  display_name: "correct"
+  short_description: "Rendre impossibles les erreurs répétées des agents"
+  default_prompt: "Utilise $cstack:correct pour cette tâche. Délègue la collecte des commentaires de revue, commits et reverts à des sous-agents natifs en parallèle, puis corrige chaque classe répétée au niveau le plus haut."
+policy:
+  allow_implicit_invocation: false

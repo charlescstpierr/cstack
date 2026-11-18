@@ -19,6 +19,10 @@ Les versions suivent SemVer. Le format suit [Keep a Changelog](https://keepachan
 - Le contrat T3 sépare le chemin audité dans `t3-audite.md`, lu seulement pour ce chemin. Les restrictions de fournisseur valent pour les deux chemins. Un délégué T3, avec ou sans bundle, lit son brief, ses consignes et les skills nommées, sans routeur ni playbook. Un coordinateur racine corrige un petit finding dans le worktree de l'enfant terminé, jamais à la racine.
 - Les playbooks Bug fix, Perf issue et Hillclimb prennent par défaut leur propre rôle (`bug-fix`, `perf-issue`, `hillclimb`). `architect` se déclenche pour un choix non tranché de contrat, d'état partagé ou de propriété, pas pour une extraction mécanique. Interrogate exige une reproduction rejouée pour un bug exécutable et distingue la preuve par le code d'une hypothèse non vérifiée.
 
+## [0.9.0]
+
+- La compétence `$cstack:correct` repère les erreurs qui se répètent entre tâches et demande un contrôle qui échoue sur une erreur historique. Elle est adaptée de pstack 0.15.36 (`236e548`). Le [catalogue de départ](docs/evidence/agent-errors.md) analyse 199 constats de revue.
+
 ## [0.8.0] - 2026-10-02
 
 - Guide et preuves : le guide décrit les nouveautés de cette version (point de reprise après un résumé, recall par index et `<private>`, vérification des candidats d'Arena, lentilles d'Interrogate, sources versionnées, verdicts de pilotage et bug bash, corps de PR et doc contre diff, arrêt de `watch-pr` sur une barrière, hygiène de `reflect`, règle testée contre une base sans elle). `docs/VERIFICATION.md` « État 0.8.0 » et `docs/evidence/0.8.0.json` enregistrent les contrôles de la version.
