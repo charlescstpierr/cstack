@@ -13,7 +13,7 @@ Quatre décisions distinctes acheminent une tâche dans cstack. Les nommer sépa
 | 2 | Quels principles et skills auxiliaires ? | `skills/cstack/SKILL.md`, sections communes, plus les appels internes aux playbooks |
 | 3 | Quel rôle, donc quel modèle ? | `.cstack/models.json` dans le projet de scénario |
 
-La couche 0 est fermée mécaniquement : les 29 skills distribués portent `allow_implicit_invocation: false`. Les 23 principles ne sont pas des skills d'entrée ; ils vivent sous `skills/cstack/references/principles/*.md`. Les couches 1 et 2 restent une classification en langage naturel effectuée par le modèle à la lecture du routeur.
+La couche 0 est fermée mécaniquement : les 30 skills distribués portent `allow_implicit_invocation: false`. Les 23 principles ne sont pas des skills d'entrée ; ils vivent sous `skills/cstack/references/principles/*.md`. Les couches 1 et 2 restent une classification en langage naturel effectuée par le modèle à la lecture du routeur.
 
 ## Méthode
 

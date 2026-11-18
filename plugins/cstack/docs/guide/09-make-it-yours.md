@@ -18,6 +18,14 @@ $cstack:reflect cette tâche a pris trop longtemps. Propose une règle qui évit
 
 [`$cstack:reflect`](../../skills/reflect/SKILL.md) transforme les observations en propositions concrètes. Une leçon devient une règle seulement si elle change une décision future. Avant d'écrire, il vérifie le fichier d'instructions : la leçon va dans le fichier que Codex charge vraiment pour ce dossier, respecte le budget `project_doc_max_bytes`, remplace une règle qu'elle contredit au lieu de s'y ajouter, et n'est pas écrite si le code la montre déjà.
 
+## Rendre impossibles les erreurs répétées avec `$cstack:correct`
+
+```text
+$cstack:correct les revues de PR relèvent encore des rollbacks incomplets dans install.sh.
+```
+
+[`$cstack:correct`](../../skills/correct/SKILL.md) lit les commentaires de revue, les commits de correction et les reverts, puis groupe les erreurs en classes. Une classe compte dès sa deuxième occurrence. Chaque classe est corrigée au niveau le plus haut qui fonctionne : architecture, types, lint, test, et une règle écrite seulement pour un jugement. Chaque nouveau contrôle doit échouer sur une vraie erreur passée. Là où `reflect` regarde une tâche, `correct` regarde ce qui revient d'une tâche à l'autre.
+
 ## Écrire une compétence ciblée
 
 ```text

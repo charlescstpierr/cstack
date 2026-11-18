@@ -26,7 +26,7 @@ Le repin 0.15.0 vers 0.15.2 apporte trois commits amont. `f8abedd` exige que cha
 
 Les 47 entrées issues du premier portage incluent la notice `make-bot-ui`. La version 0.3.0 ajoute quatre préparations explicites : 51 entrées au total, dont 50 compétences utilisables et une note de limite.
 
-Le catalogue a ensuite réduit ces 51 entrées à 28 en déplaçant les 23 principes dans les références internes. 0.4.0 ajoute `deslop`. Le catalogue courant compte 29 compétences. Les anciennes commandes de principes sont retirées ; les demandes nomment le principe dans `$cstack:cstack`. Les références conservent leur provenance et leurs règles, avec des chemins explicites depuis les consommateurs. Les autres compétences et leurs politiques d'invocation restent disponibles. Les tâches ordinaires peuvent s'exécuter directement, avec exploration, conception et délégation lorsque leur coût est justifié par le travail.
+Le catalogue a ensuite réduit ces 51 entrées à 28 en déplaçant les 23 principes dans les références internes. 0.4.0 ajoute `deslop`. `correct` s’ajoute ensuite, adapté d’une révision amont plus récente que le pin. Le catalogue courant compte 30 compétences. Les anciennes commandes de principes sont retirées ; les demandes nomment le principe dans `$cstack:cstack`. Les références conservent leur provenance et leurs règles, avec des chemins explicites depuis les consommateurs. Les autres compétences et leurs politiques d'invocation restent disponibles. Les tâches ordinaires peuvent s'exécuter directement, avec exploration, conception et délégation lorsque leur coût est justifié par le travail.
 
 ## Compléments de Matt Pocock
 
