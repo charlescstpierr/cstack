@@ -50,6 +50,10 @@ def tree_hash(root: Path) -> str:
         for name in names:
             if (path / name).is_symlink():
                 raise ValueError(f"empreinte non prise en charge pour un dossier symbolique: {path / name}")
+        relative = path.relative_to(root).as_posix().encode()
+        mode = path.stat().st_mode
+        digest.update((stat.S_IFMT(mode) | stat.S_IMODE(mode)).to_bytes(2, "big")
+                      + len(relative).to_bytes(8, "big") + relative)
         for filename in sorted(filenames):
             item = path / filename
             try:
@@ -77,6 +81,57 @@ def case_hash(case: dict[str, Any]) -> str:
     canonical = json.dumps(case_configuration(case), sort_keys=True, separators=(",", ":"),
                            ensure_ascii=False, allow_nan=False)
     return hashlib.sha256(canonical.encode()).hexdigest()
+
+
+def git_hash(project: Path) -> str:
+    command = ["git", "--no-optional-locks", "-c", "core.fsmonitor=false", "-C", str(project)]
+
+    def read(args: list[str], allowed: tuple[int, ...] = (0,)) -> tuple[int, bytes]:
+        result = subprocess.run(command + args, capture_output=True, stdin=subprocess.DEVNULL, timeout=10)
+        if result.returncode not in allowed:
+            raise ValueError(f"état Git inaccessible: {project}")
+        return result.returncode, result.stdout
+
+    try:
+        code, discovered = read(["rev-parse", "--show-toplevel"], (0, 128))
+        snapshot = None
+        if code:
+            if (project / ".git").exists():
+                raise ValueError(f"état Git inaccessible: {project}")
+        else:
+            if Path(os.fsdecode(discovered).rstrip("\n")).resolve() != project.resolve():
+                raise ValueError(f"la racine Git doit être celle de la fixture: {project}")
+            markers = ("MERGE_HEAD", "CHERRY_PICK_HEAD", "REVERT_HEAD", "rebase-merge", "rebase-apply",
+                       "sequencer", "BISECT_LOG", "BISECT_START")
+            _, paths = read(["rev-parse", *[arg for marker in markers for arg in ("--git-path", marker)]])
+            paths = paths.splitlines()
+            if len(paths) != len(markers):
+                raise ValueError(f"état Git inaccessible: {project}")
+            if any((project / os.fsdecode(path)).exists() or (project / os.fsdecode(path)).is_symlink() for path in paths):
+                raise ValueError(f"opération Git en cours non prise en charge: {project}")
+            ref_code, head_ref = read(["symbolic-ref", "-q", "HEAD"], (0, 1))
+            head_code, head = read(["rev-parse", "--verify", "HEAD^{commit}"], (0, 128))
+            if head_code:
+                ref = os.fsdecode(head_ref).rstrip("\n")
+                if ref_code or not ref.startswith("refs/heads/"):
+                    raise ValueError(f"état Git inaccessible: {project}")
+                read(["check-ref-format", ref])
+                exists, _ = read(["show-ref", "--verify", "--quiet", ref], (0, 1))
+                if exists == 0:
+                    raise ValueError(f"état Git inaccessible: {project}")
+            snapshot = {"head": head.hex() if head_code == 0 else None,
+                        "head_ref": head_ref.hex() if ref_code == 0 else None}
+            for key, args, allowed in (
+                ("refs", ["for-each-ref", "--format=%(refname)%00%(objectname)%00%(symref)"], (0,)),
+                ("index", ["ls-files", "--stage", "-v", "-z"], (0,)),
+                ("staged_diff", ["diff", "--cached", "--raw", "-z", "--no-abbrev", "--no-renames", "--no-ext-diff", "--no-textconv"], (0,)),
+            ):
+                code, value = read(args, allowed)
+                snapshot[key] = value.hex() if code == 0 else None
+        canonical = json.dumps(snapshot, sort_keys=True, separators=(",", ":"))
+        return hashlib.sha256(canonical.encode()).hexdigest()
+    except (OSError, subprocess.SubprocessError) as error:
+        raise ValueError(f"état Git inaccessible: {project}") from error
 
 
 def copy_bundle(source: Path, output: Path, label: str) -> Path:
@@ -172,6 +227,7 @@ def register(
     expectation: dict[str, Any] = {
         "id": case_id,
         "case_sha256": case_hash(case),
+        "git_sha256": git_hash(project),
         "project_sha256": tree_hash(project),
         "hash_algorithm": TREE_HASH_ALGORITHM,
         "source_sha256": {
