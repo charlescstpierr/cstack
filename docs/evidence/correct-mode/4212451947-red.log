@@ -1,0 +1,72 @@
+FFFFFFF
+======================================================================
+FAIL: test_historical_refusals_and_session_lifecycle (test_mode_corpus.ModeCorpusTests.test_historical_refusals_and_session_lifecycle) (case='quoted-19', finding=4212451947)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-mode-1109/tests/test_mode_corpus.py", line 32, in test_historical_refusals_and_session_lifecycle
+    self.assertEqual(submit(case["prompt"]), case["expected_active"], case["prompt"])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False != True : $cstack:cstack Ajoute au README la phrase « ne pas utiliser cstack »
+
+======================================================================
+FAIL: test_historical_refusals_and_session_lifecycle (test_mode_corpus.ModeCorpusTests.test_historical_refusals_and_session_lifecycle) (case='quoted-20', finding=4212451947)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-mode-1109/tests/test_mode_corpus.py", line 32, in test_historical_refusals_and_session_lifecycle
+    self.assertEqual(submit(case["prompt"]), case["expected_active"], case["prompt"])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False != True : $cstack:cstack Ajoute au README la phrase "do not activate cstack"
+
+======================================================================
+FAIL: test_historical_refusals_and_session_lifecycle (test_mode_corpus.ModeCorpusTests.test_historical_refusals_and_session_lifecycle) (case='quoted-21', finding=4212451947)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-mode-1109/tests/test_mode_corpus.py", line 32, in test_historical_refusals_and_session_lifecycle
+    self.assertEqual(submit(case["prompt"]), case["expected_active"], case["prompt"])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False != True : $cstack:cstack Ajoute au README la phrase 'do not activate cstack'
+
+======================================================================
+FAIL: test_historical_refusals_and_session_lifecycle (test_mode_corpus.ModeCorpusTests.test_historical_refusals_and_session_lifecycle) (case='quoted-22', finding=4212451947)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-mode-1109/tests/test_mode_corpus.py", line 32, in test_historical_refusals_and_session_lifecycle
+    self.assertEqual(submit(case["prompt"]), case["expected_active"], case["prompt"])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False != True : $cstack:cstack Ajoute au README la phrase “do not activate cstack”
+
+======================================================================
+FAIL: test_historical_refusals_and_session_lifecycle (test_mode_corpus.ModeCorpusTests.test_historical_refusals_and_session_lifecycle) (case='quoted-23', finding=4212451947)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-mode-1109/tests/test_mode_corpus.py", line 32, in test_historical_refusals_and_session_lifecycle
+    self.assertEqual(submit(case["prompt"]), case["expected_active"], case["prompt"])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False != True : $cstack:cstack Ajoute au README la phrase `do not activate cstack`
+
+======================================================================
+FAIL: test_historical_refusals_and_session_lifecycle (test_mode_corpus.ModeCorpusTests.test_historical_refusals_and_session_lifecycle) (case='quoted-24', finding=4212451947)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-mode-1109/tests/test_mode_corpus.py", line 32, in test_historical_refusals_and_session_lifecycle
+    self.assertEqual(submit(case["prompt"]), case["expected_active"], case["prompt"])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False != True : $cstack:cstack Ajoute au README la phrase ```
+do not activate cstack
+```
+
+======================================================================
+FAIL: test_historical_refusals_and_session_lifecycle (test_mode_corpus.ModeCorpusTests.test_historical_refusals_and_session_lifecycle) (case='quoted-25', finding=4212451947)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-mode-1109/tests/test_mode_corpus.py", line 32, in test_historical_refusals_and_session_lifecycle
+    self.assertEqual(submit(case["prompt"]), case["expected_active"], case["prompt"])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False != True : $cstack:cstack Ajoute au README la phrase ~~~text
+do not activate cstack
+~~~
+
+----------------------------------------------------------------------
+Ran 1 test in 0.556s
+
+FAILED (failures=7)

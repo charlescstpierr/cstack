@@ -152,6 +152,49 @@ class ModeHookTests(unittest.TestCase):
         # Le rappel reste court, comme le `reminder:` de pstack, bien sous la limite d'injection.
         self.assertLess(len(first.split()), 30)
 
+    def test_inline_code_targets_and_quoted_refusals(self):
+        examples = (
+            ("$cstack:cstack Pour expliquer le mode, ne pas utiliser `cstack`.", False),
+            ("$cstack:cstack Explain it. Don't use ``$cstack:cstack``.", False),
+            ("/cstack:cstack Explain it. Do not use `/cstack:cstack`.", False),
+            ("$cstack:cstack Explique, mais ne pas l’appliquer.", False),
+            ("$cstack:cstack Lis :\n> exemple\nNe pas utiliser cstack.", False),
+            ("$cstack:cstack Copie `` ne pas utiliser `cstack` ``.", True),
+            ("$cstack:cstack Copie :\n````md\n```\ndo not use cstack\n```\n````", True),
+            ("$cstack:cstack Copie «ne pas utiliser `cstack`».", True),
+            ("$cstack:cstack Do not activate `debug mode`. Then explain cstack.", True),
+            ("$cstack:cstack Copie :\r\n> ne pas utiliser cstack\r\nMerci.", True),
+            ("$cstack:cstack Explique \\>. Ne pas utiliser cstack.", False),
+            ("$cstack:cstack Lis :\n```text\nexemple\n````\nNe pas utiliser cstack.", False),
+            ("$cstack:cstack Explain this example: ```first line\nsecond line```. Do not use cstack.", False),
+            ("$cstack:cstack Explique ce délimiteur ```. Ne pas utiliser cstack.", False),
+            ("$cstack:cstack Explain it. Don't use ``\n$cstack:cstack\n``.", False),
+            ("$cstack:cstack Corrige ce bug. Ne pas utiliser le skill watch-pr.", True),
+            ("$cstack:cstack Corrige ce bug. Ne pas utiliser la compétence de revue.", True),
+            ("$cstack:cstack Corrige ce bug. Ne pas utiliser cstack-helper.", True),
+            ("$cstack:cstack Corrige ce bug. Ne pas utiliser le skill `watch-pr`.", True),
+            ("$cstack:cstack Copie :\n```text\nDo not use cstack.", True),
+            ("$cstack:cstack Copie :\n```text```. Do not use cstack: explain it.", False),
+            ("$cstack:cstack Explain it. Do not use this skill for the explanation.", False),
+            ("$cstack:cstack Compare ~~~ and the other delimiter. Do not use cstack. End with ~~~.", False),
+            ("$cstack:cstack Explain `path\\`. Do not use cstack. Then describe `example`.", False),
+            ("/cstack:cstack Corrige. Ne pas utiliser le skill\nwatch-pr.", True),
+            ("$cstack:cstack Explain the single backtick ` character.\n\nDo not activate cstack.\n\nThen describe `filename`.", False),
+            ("$cstack:cstack Explain ~~~text\r\n \r\nDo not use cstack.\r\n\r\n~~~md\r\nexample\r\n~~~", False),
+            ("/cstack:cstack Fix this. Do not use the skill\nwatch-pr.", True),
+            ("$cstack:cstack Quote this:\n~~~text\nfirst paragraph\n\nDo not use cstack.\n~~~", True),
+            ("$cstack:cstack Explain this. Do not use this skill to answer.", False),
+            ("$cstack:cstack Explain this. Do not use this skill and answer directly.", False),
+            ('$cstack:cstack Explain the " character.\n\nDo not activate cstack.\n\nThen describe "filename".', False),
+            ("$cstack:cstack Explain it. Do not use the skill cstack.", False),
+        )
+        for index, (prompt, active) in enumerate(examples):
+            with self.subTest(prompt=prompt):
+                session = f"quote-{index}"
+                self.assertEqual(bool(self.prompt(prompt, session)), active)
+                self.assertEqual(bool(self.prompt("Continue.", session)), active)
+                self.assertEqual(bool(self.start("resume", session)), active)
+
     def test_claude_code_slash_command_activates_with_its_own_data_directory(self):
         event = {"hook_event_name": "UserPromptSubmit", "session_id": "claude", "prompt": "/cstack:cstack Corrige ce bug."}
         first = self.run_hook(event, data_variable="CLAUDE_PLUGIN_DATA")

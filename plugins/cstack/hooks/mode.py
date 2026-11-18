@@ -64,6 +64,70 @@ def _stop_requested(prompt: str) -> bool:
     return len(words) == 2 and words[0] in STOP_VERBS and words[1] == "cstack"
 
 
+def _instruction_text(text: str, target) -> str:
+    import re
+
+    blank_line = r"(?:\r\n|\n|\r(?!\n))[ \t]*(?:\r\n|\n|\r(?!\n))"
+    tokens = list(re.finditer(blank_line + r"""|(?<=[\r\n])[ \t]{0,3}>|`+|~{3,}|["'«»“”‘’\r\n]""", text))
+    escaped_starts = {run.end() for run in re.finditer(r"\\+", text) if len(run.group()) % 2}
+    paired_quotes = {"«": "»", "“": "”", "‘": "’", "'": "'", '"': '"'}
+    next_closer = {}
+    next_fence = {}
+    language_tag = re.compile(r"[A-Za-z][\w.+-]*[ \t]*")
+    spans = [None] * len(tokens)
+    line_end = len(text)
+    paragraph_end = len(text)
+    # Index closing delimiters once so unmatched quotes cannot make the hook rescan the prompt.
+    for index in range(len(tokens) - 1, -1, -1):
+        token = tokens[index]
+        mark = token.group()
+        if mark[0] in "\r\n":
+            line_end = token.start()
+            if len(mark) > 1:
+                paragraph_end = token.start()
+        elif mark.lstrip(" \t") == ">":
+            spans[index] = (line_end, None)
+        elif token.start() not in escaped_starts and (mark[0] in "`~" or mark in paired_quotes) and not (
+                mark == "'" and token.start() > 0 and re.match(r"\w", text[token.start() - 1])):
+            close = next_closer.get(paired_quotes.get(mark, mark))
+            line_fence = False
+            if mark.startswith(("```", "~~~")):
+                prefix = text[max(0, token.start() - 4):token.start()]
+                if re.search(r"[\r\n][ \t]{0,3}$", prefix):
+                    info = text[token.end():line_end]
+                    line_fence = mark[0] != "`" or "`" not in info
+            if line_fence:
+                close = next_fence.get((mark[0], len(mark)))
+                if not info.strip(" \t"):
+                    for size in range(3, len(mark) + 1):
+                        next_fence[mark[0], size] = token
+            elif mark[0] == "~":
+                close = (next_fence.get(("~", len(mark)))
+                         if language_tag.fullmatch(text, token.end(), line_end) else None)
+            if not line_fence and close is not None and close.start() >= paragraph_end:
+                close = None
+            if close is not None and (mark != "'" or close.start() < line_end):
+                inline_end = close.start() if mark.startswith("`") and not line_fence else None
+                spans[index] = (close.end(), inline_end)
+            elif line_fence:
+                spans[index] = (len(text), None)
+        if mark[0] == "`" or (token.start() not in escaped_starts
+                and (mark not in ("'", "’") or not re.match(r"\w", text[token.end():token.end() + 1]))):
+            next_closer[mark] = token
+
+    parts = []
+    cursor = 0
+    for token, span in zip(tokens, spans):
+        if span is None or token.start() < cursor:
+            continue
+        end, inline_end = span
+        content = text[token.end():inline_end].strip() if inline_end is not None else ""
+        parts.extend((text[cursor:token.start()], content if target.fullmatch(content) else "\0"))
+        cursor = end
+    parts.append(text[cursor:])
+    return "".join(parts)
+
+
 def _activation_requested(prompt: str) -> bool:
     import re
 
@@ -79,13 +143,20 @@ def _activation_requested(prompt: str) -> bool:
     path = invocation.group("path")
     if path and not path.strip("<>").endswith("/skills/cstack/SKILL.md"):
         return False
-    # Un refus qui cible cstack reste prioritaire, même plus loin dans le message.
+    tool = r"(?:cstack|[$/]cstack:cstack)(?![\w/-]|:\w)"
+    generic_end = r"(?=\s*(?:[.!?,;:]|$))"
+    french_target = (fr"(?:{tool}|(?:ce|le)\s+skill\s+{tool}|"
+                     fr"(?:(?:cette|la)\s+comp[ée]tence|(?:ce|le)\s+skill){generic_end})")
+    english_end = fr"(?:{generic_end}|(?=\s+(?:for|in|on|at|here|now|today|please)\b))"
+    english_target = (fr"(?:it\b|{tool}|this\s+skill\b|the\s+skill{english_end}|"
+                      fr"(?:this|the)\s+(?:cstack\s+skill\b|skill\s+{tool}))")
+    inline_target = re.compile(fr"(?:{french_target}|{english_target})", re.IGNORECASE)
     refusal = re.search(
         r"\b(?:ne\s+l['’](?:activ|utilis|appliqu)\w*\s+pas\b"
-        r"|(?:ne\s+|n['’])activ\w*\s+pas\s+(?:cstack|\$cstack:cstack)\b"
-        r"|(?:do\s+not|don['’]t)\s+(?:activate|use|invoke)\s+"
-        r"(?:it|cstack|\$cstack:cstack|(?:this|the)\s+(?:cstack\s+)?skill)\b)",
-        prompt[invocation.end():],
+        fr"|(?:ne\s+|n['’])(?:activ|utilis|appliqu)\w*\s+pas\s+{french_target}"
+        fr"|ne\s+pas\s+(?:l['’](?:activer|utiliser|appliquer)\b|(?:activer|utiliser|appliquer)\s+{french_target})"
+        fr"|(?:do\s+not|don['’]t)\s+(?:activate|use|invoke)\s+{english_target})",
+        _instruction_text(prompt[invocation.end():], inline_target),
         re.IGNORECASE,
     )
     return refusal is None

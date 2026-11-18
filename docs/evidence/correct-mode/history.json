@@ -1,0 +1,92 @@
+{
+  "collected": "2026-11-09",
+  "base": "48f8d04a6fa90596f4dd40e47ffadafe0cc9fdc2",
+  "catalogue_pr": 114,
+  "catalogue_ref": "8bc2eb1c58350170c203415fa2a0c8b05670c407",
+  "catalogue_findings": 199,
+  "api_bot_findings": 199,
+  "same_comment_ids": true,
+  "class_findings": 6,
+  "class_prs": [
+    70,
+    90,
+    91,
+    92
+  ],
+  "comments": [
+    {
+      "pr": 70,
+      "priority": "P2",
+      "file": "mode.py",
+      "title": "Ignore negated stop phrases",
+      "class": "parsing-langage-naturel",
+      "comment_id": 4113802959,
+      "url": "https://github.com/charlescstpierr/cstack/pull/70#discussion_r4113802959",
+      "reviewed_commit": "f013dba91872db1fb37edd02c472fc153e97bae0",
+      "body": "**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  Ignore negated stop phrases**\n\nIf the user says something like `N'arrête pas cstack` or `don't stop cstack`, `STOP.search(prompt)` still matches `arrête`/`stop` followed by `cstack`, so this branch deletes the session marker despite the user explicitly asking to keep the mode active. Subsequent turns then receive no reminder; stop detection should distinguish affirmative requests from common negated forms.\n\nUseful? React with 👍 / 👎."
+    },
+    {
+      "pr": 90,
+      "priority": "P2",
+      "file": "mode.py",
+      "title": "Scope activation refusals to cstack",
+      "class": "parsing-langage-naturel",
+      "comment_id": 4208736383,
+      "url": "https://github.com/charlescstpierr/cstack/pull/90#discussion_r4208736383",
+      "reviewed_commit": "84c02ea31c2e5bc80e5476321b5ed2acd7b660de",
+      "body": "**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  Scope activation refusals to cstack**\n\nWhen an explicit invocation also contains an unrelated prohibition such as `$cstack:cstack fix this, but do not activate debug mode`, the bare `do not activate` alternative matches even though it does not refer to cstack. The hook therefore creates no session marker and omits reminders on later prompts or resumes despite the explicit invocation; require the refusal to name `it` or `cstack`, as the `use`/`invoke` alternatives already do.\n\nAGENTS.md reference: [AGENTS.md:L7-L7](https://github.com/charlescstpierr/cstack/blob/84c02ea31c2e5bc80e5476321b5ed2acd7b660de/AGENTS.md#L7-L7)\n\nUseful? React with 👍 / 👎."
+    },
+    {
+      "pr": 91,
+      "priority": "P2",
+      "file": "mode.py",
+      "title": "Keep explicit “this skill” refusals inactive",
+      "class": "parsing-langage-naturel",
+      "comment_id": 4210984706,
+      "url": "https://github.com/charlescstpierr/cstack/pull/91#discussion_r4210984706",
+      "reviewed_commit": "f16ad37e081e615c932be24702faf4d38b77f06b",
+      "body": "**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  Keep explicit “this skill” refusals inactive**\n\nWhen the prompt explicitly says `$cstack:cstack Explain it, but do not activate this skill`, the narrowed English branch no longer matches because it accepts only `it`, `cstack`, or the literal command after `activate`; `_activation_requested` consequently returns true and persists cstack mode despite the user's refusal. The previous expression recognized this `do not activate` form, so the target-aware matcher should also recognize unambiguous noun phrases such as `this/the cstack skill`.\n\nAGENTS.md reference: [AGENTS.md:L7-L7](https://github.com/charlescstpierr/cstack/blob/f16ad37e081e615c932be24702faf4d38b77f06b/AGENTS.md#L7-L7)\n\nUseful? React with 👍 / 👎."
+    },
+    {
+      "pr": 91,
+      "priority": "P2",
+      "file": "mode.py",
+      "title": "Recognize infinitive French activation refusals",
+      "class": "parsing-langage-naturel",
+      "comment_id": 4211983060,
+      "url": "https://github.com/charlescstpierr/cstack/pull/91#discussion_r4211983060",
+      "reviewed_commit": "e41552f324fdf0b0f2521a85c7ade177827d03f2",
+      "body": "**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  Recognize infinitive French activation refusals**\n\nAlthough the updated matcher now covers the previously missed English `this skill` form, the new French branch still misses the common infinitive construction `$cstack:cstack explique la compétence, mais ne pas activer cstack`: it requires `pas` after the `activ...` verb, so `_activation_requested` returns true and persists cstack mode despite the explicit refusal. Accept `ne pas activer/utiliser/appliquer cstack` alongside the finite forms.\n\nAGENTS.md reference: [AGENTS.md:L7-L7](https://github.com/charlescstpierr/cstack/blob/e41552f324fdf0b0f2521a85c7ade177827d03f2/AGENTS.md#L7-L7)\n\nUseful? React with 👍 / 👎."
+    },
+    {
+      "pr": 92,
+      "priority": "P2",
+      "file": "mode.py",
+      "title": "Ignore quoted refusal text after an explicit invocation",
+      "class": "parsing-langage-naturel",
+      "comment_id": 4212451947,
+      "url": "https://github.com/charlescstpierr/cstack/pull/92#discussion_r4212451947",
+      "reviewed_commit": "98427161bbb182aacafece037fed610291eaf3a6",
+      "body": "**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  Ignore quoted refusal text after an explicit invocation**\n\nWhen an explicitly invoked task asks to write or test refusal text—for example, `$cstack:cstack Ajoute au README la phrase « ne pas utiliser cstack »`—the new suffix-wide alternative matches the quoted phrase and returns `False`, so the session marker and reminder are never created despite the explicit invocation. Exclude quoted/code spans from refusal detection, or otherwise require the negation to be an instruction rather than requested content.\n\nAGENTS.md reference: [AGENTS.md:L7-L7](https://github.com/charlescstpierr/cstack/blob/98427161bbb182aacafece037fed610291eaf3a6/AGENTS.md#L7-L7)\n\nUseful? React with 👍 / 👎."
+    },
+    {
+      "pr": 92,
+      "priority": "P2",
+      "file": "mode.py",
+      "title": "Exclude Markdown blockquotes from refusal detection",
+      "class": "parsing-langage-naturel",
+      "comment_id": 4212756301,
+      "url": "https://github.com/charlescstpierr/cstack/pull/92#discussion_r4212756301",
+      "reviewed_commit": "686b721ce0819eaf6592ea239fd5dd9e992ff692",
+      "body": "**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  Exclude Markdown blockquotes from refusal detection**\n\nThe current quote-stripping fix still leaves Markdown blockquote bodies in the instruction text, so an explicitly invoked prompt such as `$cstack:cstack Explain this example:\\n> Do not activate cstack` is classified as a refusal and never creates the session marker. This is fresh evidence beyond the earlier quoted-string case: the new regex handles delimiter-based quotes and code spans but not the standard `>` quotation form. Strip blockquoted content before applying the refusal regex.\n\nAGENTS.md reference: [AGENTS.md:L7-L7](https://github.com/charlescstpierr/cstack/blob/686b721ce0819eaf6592ea239fd5dd9e992ff692/AGENTS.md#L7-L7)\n\nUseful? React with 👍 / 👎."
+    }
+  ],
+  "named_reverts": [],
+  "path_history": [
+    "48f8d04a6fa90596f4dd40e47ffadafe0cc9fdc2 feat(install): installer cstack dans Codex et Claude Code pour T3 Code (#115)",
+    "8f50de116a1bb9d437de45d93c971203d0fded9f fix(cstack): vérifier la provenance et bloquer les livraisons incomplètes (#91)",
+    "90bbcd225bccb12cf5edd27b1006dc6e0f2a775f fix(cstack): fiabiliser les modèles, l’activation et les preuves de validation (#90)",
+    "17f6c2dfe03e940713393934f10ff8b14463760d Contexte et mémoire : point de reprise après résumé, hygiène de reflect, recall par index (#85)",
+    "da60ab4c7c09c3c3a77586616f17cdefbeb8f1c2 feat(hooks): rappel du mode cstack à chaque message et après un résumé (#70)"
+  ]
+}
