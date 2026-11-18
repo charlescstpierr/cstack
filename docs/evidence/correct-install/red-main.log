@@ -1,0 +1,909 @@
+FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+======================================================================
+FAIL: test_claude_failure_matrix (test_install_transactions.InstallTransactionTests.test_claude_failure_matrix) (host='claude', initial='fresh', stage='trial-add')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-install-1110/tests/test_install_transactions.py", line 211, in matrix
+    self.scenario(host, stage, initial)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-install-1110/tests/test_install_transactions.py", line 169, in scenario
+    self.assertNotEqual(code, 0, stdout + stderr)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 0 == 0 :
+cstack est prêt. Ouvrez une nouvelle tâche, dans T3 Code, Codex ou Claude Code, puis tapez :
+  /cstack:cstack   (Claude)
+
+
+======================================================================
+FAIL: test_claude_failure_matrix (test_install_transactions.InstallTransactionTests.test_claude_failure_matrix) (host='claude', initial='fresh', stage='trial-plugin')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-install-1110/tests/test_install_transactions.py", line 211, in matrix
+    self.scenario(host, stage, initial)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-install-1110/tests/test_install_transactions.py", line 169, in scenario
+    self.assertNotEqual(code, 0, stdout + stderr)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 0 == 0 :
+cstack est prêt. Ouvrez une nouvelle tâche, dans T3 Code, Codex ou Claude Code, puis tapez :
+  /cstack:cstack   (Claude)
+
+
+======================================================================
+FAIL: test_claude_failure_matrix (test_install_transactions.InstallTransactionTests.test_claude_failure_matrix) (host='claude', initial='fresh', stage='real-add')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-install-1110/tests/test_install_transactions.py", line 211, in matrix
+    self.scenario(host, stage, initial)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-install-1110/tests/test_install_transactions.py", line 182, in scenario
+    self.assertEqual(self.observe(state_file, cache), before, stdout + stderr)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: {'present': True, 'installed': False, 'enabled': True[42 chars]new'} != {'present': False, 'installed': False, 'enabled': Tru[42 chars]None}
+  {'enabled': True,
+   'installed': False,
+   'installed_version': None,
+-  'present': True,
+?             ^^^
+
++  'present': False,
+?             ^^^^
+
+-  'snapshot': 'new'}
+?              ^  --
+
++  'snapshot': None}
+?              ^^
+ : injected real-add
+cstack : ajout du catalogue dans Claude Code impossible.
+
+
+======================================================================
+FAIL: test_claude_failure_matrix (test_install_transactions.InstallTransactionTests.test_claude_failure_matrix) (host='claude', initial='fresh', stage='real-plugin')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-install-1110/tests/test_install_transactions.py", line 211, in matrix
+    self.scenario(host, stage, initial)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-install-1110/tests/test_install_transactions.py", line 182, in scenario
+    self.assertEqual(self.observe(state_file, cache), before, stdout + stderr)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: {'pre[22 chars]ed': True, 'enabled': True, 'installed_version[22 chars]None} != {'pre[22 chars]ed': False, 'enabled': True, 'installed_versio[22 chars]None}
+  {'enabled': True,
+-  'installed': True,
+?               ^^^
+
++  'installed': False,
+?               ^^^^
+
+-  'installed_version': 'new',
+?                       ^  --
+
++  'installed_version': None,
+?                       ^^
+
+   'present': False,
+   'snapshot': None} : injected real-plugin
+cstack : installation dans Claude Code impossible.
+
+
+======================================================================
+FAIL: test_claude_failure_matrix (test_install_transactions.InstallTransactionTests.test_claude_failure_matrix) (host='claude', initial='installed', stage='remove')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-install-1110/tests/test_install_transactions.py", line 211, in matrix
+    self.scenario(host, stage, initial)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-install-1110/tests/test_install_transactions.py", line 182, in scenario
+    self.assertEqual(self.observe(state_file, cache), before, stdout + stderr)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: {'present': False, 'installed': True, 'enabled': True[42 chars]None} != {'present': True, 'installed': True, 'enabled': True,[42 chars]old'}
+  {'enabled': True,
+   'installed': True,
+   'installed_version': 'old',
+-  'present': False,
+?             ^^^^
+
++  'present': True,
+?             ^^^
+
+-  'snapshot': None}
+?              ^ ^^
+
++  'snapshot': 'old'}
+?              ^ ^^^
+ : Claude Code, changement de source : charlescstpierr/cstack#new
+injected remove
+
+
+======================================================================
+FAIL: test_claude_failure_matrix (test_install_transactions.InstallTransactionTests.test_claude_failure_matrix) (host='claude', initial='installed', stage='real-add')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-install-1110/tests/test_install_transactions.py", line 211, in matrix
+    self.scenario(host, stage, initial)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-install-1110/tests/test_install_transactions.py", line 182, in scenario
+    self.assertEqual(self.observe(state_file, cache), before, stdout + stderr)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: {'pre[32 chars]'enabled': True, 'installed_version': 'new', 'snapshot': 'new'} != {'pre[32 chars]'enabled': True, 'installed_version': 'old', 'snapshot': 'old'}
+  {'enabled': True,
+   'installed': True,
+-  'installed_version': 'new',
+?                        ^^^
+
++  'installed_version': 'old',
+?                        ^^^
+
+   'present': True,
+-  'snapshot': 'new'}
+?               ^^^
+
++  'snapshot': 'old'}
+?               ^^^
+ : Claude Code, changement de source : charlescstpierr/cstack#new
+injected real-add
+cstack : échec dans Claude Code ; l'ancienne source (owner/repo) est restaurée.
+
+
+======================================================================
+FAIL: test_claude_failure_matrix (test_install_transactions.InstallTransactionTests.test_claude_failure_matrix) (host='claude', initial='installed', stage='real-plugin')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-install-1110/tests/test_install_transactions.py", line 211, in matrix
+    self.scenario(host, stage, initial)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-install-1110/tests/test_install_transactions.py", line 182, in scenario
+    self.assertEqual(self.observe(state_file, cache), before, stdout + stderr)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: {'pre[32 chars]'enabled': True, 'installed_version': 'new', 'snapshot': 'new'} != {'pre[32 chars]'enabled': True, 'installed_version': 'old', 'snapshot': 'old'}
+  {'enabled': True,
+   'installed': True,
+-  'installed_version': 'new',
+?                        ^^^
+
++  'installed_version': 'old',
+?                        ^^^
+
+   'present': True,
+-  'snapshot': 'new'}
+?               ^^^
+
++  'snapshot': 'old'}
+?               ^^^
+ : Claude Code, changement de source : charlescstpierr/cstack#new
+injected real-plugin
+cstack : échec dans Claude Code ; l'ancienne source (owner/repo) est restaurée.
+
+
+======================================================================
+FAIL: test_claude_failure_matrix (test_install_transactions.InstallTransactionTests.test_claude_failure_matrix) (host='claude', initial='uninstalled', stage='remove')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-install-1110/tests/test_install_transactions.py", line 211, in matrix
+    self.scenario(host, stage, initial)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-install-1110/tests/test_install_transactions.py", line 182, in scenario
+    self.assertEqual(self.observe(state_file, cache), before, stdout + stderr)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: {'present': False, 'installed': False, 'enabled': Tru[42 chars]None} != {'present': True, 'installed': False, 'enabled': True[42 chars]old'}
+  {'enabled': True,
+   'installed': False,
+   'installed_version': None,
+-  'present': False,
+?             ^^^^
+
++  'present': True,
+?             ^^^
+
+-  'snapshot': None}
+?              ^ ^^
+
++  'snapshot': 'old'}
+?              ^ ^^^
+ : Claude Code, changement de source : charlescstpierr/cstack#new
+injected remove
+
+
+======================================================================
+FAIL: test_claude_failure_matrix (test_install_transactions.InstallTransactionTests.test_claude_failure_matrix) (host='claude', initial='uninstalled', stage='real-add')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-install-1110/tests/test_install_transactions.py", line 211, in matrix
+    self.scenario(host, stage, initial)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-install-1110/tests/test_install_transactions.py", line 182, in scenario
+    self.assertEqual(self.observe(state_file, cache), before, stdout + stderr)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: {'pre[32 chars] 'enabled': True, 'installed_version': None, 'snapshot': 'new'} != {'pre[32 chars] 'enabled': True, 'installed_version': None, 'snapshot': 'old'}
+  {'enabled': True,
+   'installed': False,
+   'installed_version': None,
+   'present': True,
+-  'snapshot': 'new'}
+?               ^^^
+
++  'snapshot': 'old'}
+?               ^^^
+ : Claude Code, changement de source : charlescstpierr/cstack#new
+injected real-add
+cstack : échec dans Claude Code ; l'ancienne source (owner/repo) est restaurée.
+
+
+======================================================================
+FAIL: test_claude_failure_matrix (test_install_transactions.InstallTransactionTests.test_claude_failure_matrix) (host='claude', initial='uninstalled', stage='real-plugin')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-install-1110/tests/test_install_transactions.py", line 211, in matrix
+    self.scenario(host, stage, initial)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-install-1110/tests/test_install_transactions.py", line 182, in scenario
+    self.assertEqual(self.observe(state_file, cache), before, stdout + stderr)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: {'pre[21 chars]ed': True, 'enabled': True, 'installed_version[23 chars]new'} != {'pre[21 chars]ed': False, 'enabled': True, 'installed_versio[23 chars]old'}
+  {'enabled': True,
+-  'installed': True,
+?               ^^^
+
++  'installed': False,
+?               ^^^^
+
+-  'installed_version': 'new',
+?                       ^  --
+
++  'installed_version': None,
+?                       ^^
+
+   'present': True,
+-  'snapshot': 'new'}
+?               ^^^
+
++  'snapshot': 'old'}
+?               ^^^
+ : Claude Code, changement de source : charlescstpierr/cstack#new
+injected real-plugin
+cstack : échec dans Claude Code ; l'ancienne source (owner/repo) est restaurée.
+
+
+======================================================================
+FAIL: test_claude_local_snapshot (test_install_transactions.InstallTransactionTests.test_claude_local_snapshot)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-install-1110/tests/test_install_transactions.py", line 223, in test_claude_local_snapshot
+    self.scenario('claude', 'real-plugin', 'installed', local=True)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-install-1110/tests/test_install_transactions.py", line 182, in scenario
+    self.assertEqual(self.observe(state_file, cache), before, stdout + stderr)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: {'pre[32 chars]'enabled': True, 'installed_version': 'new', 'snapshot': 'new'} != {'pre[32 chars]'enabled': True, 'installed_version': 'old', 'snapshot': 'old'}
+  {'enabled': True,
+   'installed': True,
+-  'installed_version': 'new',
+?                        ^^^
+
++  'installed_version': 'old',
+?                        ^^^
+
+   'present': True,
+-  'snapshot': 'new'}
+?               ^^^
+
++  'snapshot': 'old'}
+?               ^^^
+ : Claude Code, changement de source : charlescstpierr/cstack#new
+injected real-plugin
+cstack : échec dans Claude Code ; l'ancienne source (/tmp/tmp7pghj0jn/local-source) est restaurée.
+
+
+======================================================================
+FAIL: test_claude_term_preserves_state (test_install_transactions.InstallTransactionTests.test_claude_term_preserves_state)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-install-1110/tests/test_install_transactions.py", line 229, in test_claude_term_preserves_state
+    self.scenario('claude', 'signal', 'installed', signal_case=True)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-install-1110/tests/test_install_transactions.py", line 182, in scenario
+    self.assertEqual(self.observe(state_file, cache), before, stdout + stderr)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: {'pre[32 chars]'enabled': True, 'installed_version': 'new', 'snapshot': 'new'} != {'pre[32 chars]'enabled': True, 'installed_version': 'old', 'snapshot': 'old'}
+  {'enabled': True,
+   'installed': True,
+-  'installed_version': 'new',
+?                        ^^^
+
++  'installed_version': 'old',
+?                        ^^^
+
+   'present': True,
+-  'snapshot': 'new'}
+?               ^^^
+
++  'snapshot': 'old'}
+?               ^^^
+ : Claude Code, changement de source : charlescstpierr/cstack#new
+
+
+======================================================================
+FAIL: test_codex_failure_matrix_4114031723 (test_install_transactions.InstallTransactionTests.test_codex_failure_matrix_4114031723) (host='codex', initial='fresh', stage='trial-add')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-install-1110/tests/test_install_transactions.py", line 211, in matrix
+    self.scenario(host, stage, initial)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-install-1110/tests/test_install_transactions.py", line 169, in scenario
+    self.assertNotEqual(code, 0, stdout + stderr)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 0 == 0 :
+
+cstack est prêt. Ouvrez une nouvelle tâche, dans T3 Code, Codex ou Claude Code, puis tapez :
+  $cstack:cstack   (Codex)
+
+
+======================================================================
+FAIL: test_codex_failure_matrix_4114031723 (test_install_transactions.InstallTransactionTests.test_codex_failure_matrix_4114031723) (host='codex', initial='fresh', stage='trial-plugin')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-install-1110/tests/test_install_transactions.py", line 211, in matrix
+    self.scenario(host, stage, initial)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-install-1110/tests/test_install_transactions.py", line 169, in scenario
+    self.assertNotEqual(code, 0, stdout + stderr)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 0 == 0 :
+
+cstack est prêt. Ouvrez une nouvelle tâche, dans T3 Code, Codex ou Claude Code, puis tapez :
+  $cstack:cstack   (Codex)
+
+
+======================================================================
+FAIL: test_codex_failure_matrix_4114031723 (test_install_transactions.InstallTransactionTests.test_codex_failure_matrix_4114031723) (host='codex', initial='fresh', stage='real-add')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-install-1110/tests/test_install_transactions.py", line 211, in matrix
+    self.scenario(host, stage, initial)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-install-1110/tests/test_install_transactions.py", line 182, in scenario
+    self.assertEqual(self.observe(state_file, cache), before, stdout + stderr)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: {'present': True, 'installed': False, 'enabled': True[42 chars]new'} != {'present': False, 'installed': False, 'enabled': Tru[42 chars]None}
+  {'enabled': True,
+   'installed': False,
+   'installed_version': None,
+-  'present': True,
+?             ^^^
+
++  'present': False,
+?             ^^^^
+
+-  'snapshot': 'new'}
+?              ^  --
+
++  'snapshot': None}
+?              ^^
+ : injected real-add
+
+
+======================================================================
+FAIL: test_codex_failure_matrix_4114031723 (test_install_transactions.InstallTransactionTests.test_codex_failure_matrix_4114031723) (host='codex', initial='fresh', stage='real-plugin')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-install-1110/tests/test_install_transactions.py", line 211, in matrix
+    self.scenario(host, stage, initial)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-install-1110/tests/test_install_transactions.py", line 182, in scenario
+    self.assertEqual(self.observe(state_file, cache), before, stdout + stderr)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: {'pre[22 chars]ed': True, 'enabled': True, 'installed_version[22 chars]None} != {'pre[22 chars]ed': False, 'enabled': True, 'installed_versio[22 chars]None}
+  {'enabled': True,
+-  'installed': True,
+?               ^^^
+
++  'installed': False,
+?               ^^^^
+
+-  'installed_version': 'new',
+?                       ^  --
+
++  'installed_version': None,
+?                       ^^
+
+   'present': False,
+   'snapshot': None} :
+injected real-plugin
+cstack : installation du plugin impossible.
+
+
+======================================================================
+FAIL: test_codex_failure_matrix_4114031723 (test_install_transactions.InstallTransactionTests.test_codex_failure_matrix_4114031723) (host='codex', initial='installed', stage='remove')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-install-1110/tests/test_install_transactions.py", line 211, in matrix
+    self.scenario(host, stage, initial)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-install-1110/tests/test_install_transactions.py", line 182, in scenario
+    self.assertEqual(self.observe(state_file, cache), before, stdout + stderr)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: {'present': False, 'installed': True, 'enabled': True[42 chars]None} != {'present': True, 'installed': True, 'enabled': True,[42 chars]old'}
+  {'enabled': True,
+   'installed': True,
+   'installed_version': 'old',
+-  'present': False,
+?             ^^^^
+
++  'present': True,
+?             ^^^
+
+-  'snapshot': None}
+?              ^ ^^
+
++  'snapshot': 'old'}
+?              ^ ^^^
+ : Changement de source : charlescstpierr/cstack --ref new
+injected remove
+
+
+======================================================================
+FAIL: test_codex_failure_matrix_4114031723 (test_install_transactions.InstallTransactionTests.test_codex_failure_matrix_4114031723) (host='codex', initial='uninstalled', stage='remove')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-install-1110/tests/test_install_transactions.py", line 211, in matrix
+    self.scenario(host, stage, initial)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-install-1110/tests/test_install_transactions.py", line 182, in scenario
+    self.assertEqual(self.observe(state_file, cache), before, stdout + stderr)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: {'present': False, 'installed': False, 'enabled': Tru[42 chars]None} != {'present': True, 'installed': False, 'enabled': True[42 chars]old'}
+  {'enabled': True,
+   'installed': False,
+   'installed_version': None,
+-  'present': False,
+?             ^^^^
+
++  'present': True,
+?             ^^^
+
+-  'snapshot': None}
+?              ^ ^^
+
++  'snapshot': 'old'}
+?              ^ ^^^
+ : Changement de source : charlescstpierr/cstack --ref new
+injected remove
+
+
+======================================================================
+FAIL: test_codex_failure_matrix_4114031723 (test_install_transactions.InstallTransactionTests.test_codex_failure_matrix_4114031723) (host='codex', initial='uninstalled', stage='real-plugin')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-install-1110/tests/test_install_transactions.py", line 211, in matrix
+    self.scenario(host, stage, initial)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-install-1110/tests/test_install_transactions.py", line 182, in scenario
+    self.assertEqual(self.observe(state_file, cache), before, stdout + stderr)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: {'pre[21 chars]ed': True, 'enabled': True, 'installed_version[23 chars]old'} != {'pre[21 chars]ed': False, 'enabled': True, 'installed_versio[23 chars]old'}
+  {'enabled': True,
+-  'installed': True,
+?               ^^^
+
++  'installed': False,
+?               ^^^^
+
+-  'installed_version': 'new',
+?                       ^  --
+
++  'installed_version': None,
+?                       ^^
+
+   'present': True,
+   'snapshot': 'old'} : Changement de source : charlescstpierr/cstack --ref new
+injected real-plugin
+cstack : échec ; l'ancienne source (owner/repo --ref oldsha) est restaurée à son commit précédent. Pour suivre de nouveau une branche : install.sh install --ref <branche>
+
+
+======================================================================
+FAIL: test_codex_local_snapshot_4114185309 (test_install_transactions.InstallTransactionTests.test_codex_local_snapshot_4114185309)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-install-1110/tests/test_install_transactions.py", line 220, in test_codex_local_snapshot_4114185309
+    self.scenario('codex', 'real-plugin', 'installed', local=True)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-install-1110/tests/test_install_transactions.py", line 182, in scenario
+    self.assertEqual(self.observe(state_file, cache), before, stdout + stderr)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: {'pre[32 chars]'enabled': True, 'installed_version': 'new', 'snapshot': 'new'} != {'pre[32 chars]'enabled': True, 'installed_version': 'old', 'snapshot': 'old'}
+  {'enabled': True,
+   'installed': True,
+-  'installed_version': 'new',
+?                        ^^^
+
++  'installed_version': 'old',
+?                        ^^^
+
+   'present': True,
+-  'snapshot': 'new'}
+?               ^^^
+
++  'snapshot': 'old'}
+?               ^^^
+ : Changement de source : charlescstpierr/cstack --ref new
+injected real-plugin
+cstack : échec ; l'ancienne source locale (/tmp/tmp3ksmimuc/local-source) est restaurée, recopiée depuis l'état actuel du clone.
+
+
+======================================================================
+FAIL: test_codex_term_preserves_state (test_install_transactions.InstallTransactionTests.test_codex_term_preserves_state)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-install-1110/tests/test_install_transactions.py", line 226, in test_codex_term_preserves_state
+    self.scenario('codex', 'signal', 'installed', signal_case=True)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-install-1110/tests/test_install_transactions.py", line 182, in scenario
+    self.assertEqual(self.observe(state_file, cache), before, stdout + stderr)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: {'pre[32 chars]'enabled': True, 'installed_version': 'new', 'snapshot': 'new'} != {'pre[32 chars]'enabled': True, 'installed_version': 'old', 'snapshot': 'old'}
+  {'enabled': True,
+   'installed': True,
+-  'installed_version': 'new',
+?                        ^^^
+
++  'installed_version': 'old',
+?                        ^^^
+
+   'present': True,
+-  'snapshot': 'new'}
+?               ^^^
+
++  'snapshot': 'old'}
+?               ^^^
+ : Changement de source : charlescstpierr/cstack --ref new
+
+
+======================================================================
+FAIL: test_disabled_or_unknown_states_never_mutate (test_install_transactions.InstallTransactionTests.test_disabled_or_unknown_states_never_mutate) (host='codex', state='orphan')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-install-1110/tests/test_install_transactions.py", line 248, in test_disabled_or_unknown_states_never_mutate
+    self.scenario(host, 'real-plugin', 'orphan')
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-install-1110/tests/test_install_transactions.py", line 182, in scenario
+    self.assertEqual(self.observe(state_file, cache), before, stdout + stderr)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: {'pre[32 chars] 'enabled': True, 'installed_version': 'new', 'snapshot': None} != {'pre[32 chars] 'enabled': True, 'installed_version': 'old', 'snapshot': None}
+  {'enabled': True,
+   'installed': True,
+-  'installed_version': 'new',
+?                        ^^^
+
++  'installed_version': 'old',
+?                        ^^^
+
+   'present': False,
+   'snapshot': None} :
+injected real-plugin
+cstack : installation du plugin impossible.
+
+
+======================================================================
+FAIL: test_disabled_or_unknown_states_never_mutate (test_install_transactions.InstallTransactionTests.test_disabled_or_unknown_states_never_mutate) (host='codex', state='unknown', shape='shape')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-install-1110/tests/test_install_transactions.py", line 251, in test_disabled_or_unknown_states_never_mutate
+    self.scenario(host, 'real-plugin', 'installed', bad_status=shape)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-install-1110/tests/test_install_transactions.py", line 182, in scenario
+    self.assertEqual(self.observe(state_file, cache), before, stdout + stderr)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: {'pre[32 chars]'enabled': True, 'installed_version': 'new', 'snapshot': 'old'} != {'pre[32 chars]'enabled': True, 'installed_version': 'old', 'snapshot': 'old'}
+  {'enabled': True,
+   'installed': True,
+-  'installed_version': 'new',
+?                        ^^^
+
++  'installed_version': 'old',
+?                        ^^^
+
+   'present': True,
+   'snapshot': 'old'} : Changement de source : charlescstpierr/cstack --ref new
+injected real-plugin
+cstack : échec ; l'ancienne source (owner/repo --ref oldsha) est restaurée à son commit précédent. Pour suivre de nouveau une branche : install.sh install --ref <branche>
+
+
+======================================================================
+FAIL: test_disabled_or_unknown_states_never_mutate (test_install_transactions.InstallTransactionTests.test_disabled_or_unknown_states_never_mutate) (host='codex', state='unknown', shape='enabled')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-install-1110/tests/test_install_transactions.py", line 251, in test_disabled_or_unknown_states_never_mutate
+    self.scenario(host, 'real-plugin', 'installed', bad_status=shape)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-install-1110/tests/test_install_transactions.py", line 186, in scenario
+    self.assertFalse((root / 'fired').exists(), 'active profile was changed before rejecting the state')
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: True is not false : active profile was changed before rejecting the state
+
+======================================================================
+FAIL: test_disabled_or_unknown_states_never_mutate (test_install_transactions.InstallTransactionTests.test_disabled_or_unknown_states_never_mutate) (host='codex', state='unknown', shape='version')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-install-1110/tests/test_install_transactions.py", line 251, in test_disabled_or_unknown_states_never_mutate
+    self.scenario(host, 'real-plugin', 'installed', bad_status=shape)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-install-1110/tests/test_install_transactions.py", line 186, in scenario
+    self.assertFalse((root / 'fired').exists(), 'active profile was changed before rejecting the state')
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: True is not false : active profile was changed before rejecting the state
+
+======================================================================
+FAIL: test_disabled_or_unknown_states_never_mutate (test_install_transactions.InstallTransactionTests.test_disabled_or_unknown_states_never_mutate) (host='claude', state='disabled')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-install-1110/tests/test_install_transactions.py", line 246, in test_disabled_or_unknown_states_never_mutate
+    self.scenario(host, 'real-plugin', 'disabled')
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-install-1110/tests/test_install_transactions.py", line 182, in scenario
+    self.assertEqual(self.observe(state_file, cache), before, stdout + stderr)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: {'pre[33 chars]enabled': True, 'installed_version': 'new', 'snapshot': 'new'} != {'pre[33 chars]enabled': False, 'installed_version': 'old', 'snapshot': 'old'}
+- {'enabled': True,
+?             ^^^
+
++ {'enabled': False,
+?             ^^^^
+
+   'installed': True,
+-  'installed_version': 'new',
+?                        ^^^
+
++  'installed_version': 'old',
+?                        ^^^
+
+   'present': True,
+-  'snapshot': 'new'}
+?               ^^^
+
++  'snapshot': 'old'}
+?               ^^^
+ : Claude Code, changement de source : charlescstpierr/cstack#new
+injected real-plugin
+cstack : échec dans Claude Code ; l'ancienne source (owner/repo) est restaurée.
+
+
+======================================================================
+FAIL: test_disabled_or_unknown_states_never_mutate (test_install_transactions.InstallTransactionTests.test_disabled_or_unknown_states_never_mutate) (host='claude', state='orphan')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-install-1110/tests/test_install_transactions.py", line 248, in test_disabled_or_unknown_states_never_mutate
+    self.scenario(host, 'real-plugin', 'orphan')
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-install-1110/tests/test_install_transactions.py", line 182, in scenario
+    self.assertEqual(self.observe(state_file, cache), before, stdout + stderr)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: {'pre[32 chars] 'enabled': True, 'installed_version': 'new', 'snapshot': None} != {'pre[32 chars] 'enabled': True, 'installed_version': 'old', 'snapshot': None}
+  {'enabled': True,
+   'installed': True,
+-  'installed_version': 'new',
+?                        ^^^
+
++  'installed_version': 'old',
+?                        ^^^
+
+   'present': False,
+   'snapshot': None} : injected real-plugin
+cstack : installation dans Claude Code impossible.
+
+
+======================================================================
+FAIL: test_disabled_or_unknown_states_never_mutate (test_install_transactions.InstallTransactionTests.test_disabled_or_unknown_states_never_mutate) (host='claude', state='unknown', shape='shape')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-install-1110/tests/test_install_transactions.py", line 251, in test_disabled_or_unknown_states_never_mutate
+    self.scenario(host, 'real-plugin', 'installed', bad_status=shape)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-install-1110/tests/test_install_transactions.py", line 182, in scenario
+    self.assertEqual(self.observe(state_file, cache), before, stdout + stderr)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: {'pre[32 chars]'enabled': True, 'installed_version': 'new', 'snapshot': 'new'} != {'pre[32 chars]'enabled': True, 'installed_version': 'old', 'snapshot': 'old'}
+  {'enabled': True,
+   'installed': True,
+-  'installed_version': 'new',
+?                        ^^^
+
++  'installed_version': 'old',
+?                        ^^^
+
+   'present': True,
+-  'snapshot': 'new'}
+?               ^^^
+
++  'snapshot': 'old'}
+?               ^^^
+ : Claude Code, changement de source : charlescstpierr/cstack#new
+injected real-plugin
+cstack : échec dans Claude Code ; l'ancienne source (owner/repo) est restaurée.
+
+
+======================================================================
+FAIL: test_disabled_or_unknown_states_never_mutate (test_install_transactions.InstallTransactionTests.test_disabled_or_unknown_states_never_mutate) (host='claude', state='unknown', shape='enabled')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-install-1110/tests/test_install_transactions.py", line 251, in test_disabled_or_unknown_states_never_mutate
+    self.scenario(host, 'real-plugin', 'installed', bad_status=shape)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-install-1110/tests/test_install_transactions.py", line 182, in scenario
+    self.assertEqual(self.observe(state_file, cache), before, stdout + stderr)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: {'pre[32 chars]'enabled': True, 'installed_version': 'new', 'snapshot': 'new'} != {'pre[32 chars]'enabled': True, 'installed_version': 'old', 'snapshot': 'old'}
+  {'enabled': True,
+   'installed': True,
+-  'installed_version': 'new',
+?                        ^^^
+
++  'installed_version': 'old',
+?                        ^^^
+
+   'present': True,
+-  'snapshot': 'new'}
+?               ^^^
+
++  'snapshot': 'old'}
+?               ^^^
+ : Claude Code, changement de source : charlescstpierr/cstack#new
+injected real-plugin
+cstack : échec dans Claude Code ; l'ancienne source (owner/repo) est restaurée.
+
+
+======================================================================
+FAIL: test_disabled_or_unknown_states_never_mutate (test_install_transactions.InstallTransactionTests.test_disabled_or_unknown_states_never_mutate) (host='claude', state='unknown', shape='version')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-install-1110/tests/test_install_transactions.py", line 251, in test_disabled_or_unknown_states_never_mutate
+    self.scenario(host, 'real-plugin', 'installed', bad_status=shape)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-install-1110/tests/test_install_transactions.py", line 182, in scenario
+    self.assertEqual(self.observe(state_file, cache), before, stdout + stderr)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: {'pre[32 chars]'enabled': True, 'installed_version': 'new', 'snapshot': 'new'} != {'pre[32 chars]'enabled': True, 'installed_version': 'old', 'snapshot': 'old'}
+  {'enabled': True,
+   'installed': True,
+-  'installed_version': 'new',
+?                        ^^^
+
++  'installed_version': 'old',
+?                        ^^^
+
+   'present': True,
+-  'snapshot': 'new'}
+?               ^^^
+
++  'snapshot': 'old'}
+?               ^^^
+ : Claude Code, changement de source : charlescstpierr/cstack#new
+injected real-plugin
+cstack : échec dans Claude Code ; l'ancienne source (owner/repo) est restaurée.
+
+
+======================================================================
+FAIL: test_failed_rollback_retains_recovery_snapshot (test_install_transactions.InstallTransactionTests.test_failed_rollback_retains_recovery_snapshot) (host='codex')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-install-1110/tests/test_install_transactions.py", line 241, in test_failed_rollback_retains_recovery_snapshot
+    self.scenario(host, 'real-plugin', 'installed', rollback_fails=True)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-install-1110/tests/test_install_transactions.py", line 178, in scenario
+    self.assertIn('restauration impossible', stderr)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'restauration impossible' not found in "injected real-plugin\ncstack : échec ; l'ancienne source (owner/repo --ref oldsha) est restaurée à son commit précédent. Pour suivre de nouveau une branche : install.sh install --ref <branche>\n"
+
+======================================================================
+FAIL: test_failed_rollback_retains_recovery_snapshot (test_install_transactions.InstallTransactionTests.test_failed_rollback_retains_recovery_snapshot) (host='claude')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-install-1110/tests/test_install_transactions.py", line 241, in test_failed_rollback_retains_recovery_snapshot
+    self.scenario(host, 'real-plugin', 'installed', rollback_fails=True)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-install-1110/tests/test_install_transactions.py", line 178, in scenario
+    self.assertIn('restauration impossible', stderr)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'restauration impossible' not found in "injected real-plugin\ncstack : échec dans Claude Code ; l'ancienne source (owner/repo) est restaurée.\n"
+
+======================================================================
+FAIL: test_missing_snapshot_never_mutates (test_install_transactions.InstallTransactionTests.test_missing_snapshot_never_mutates) (host='codex')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-install-1110/tests/test_install_transactions.py", line 234, in test_missing_snapshot_never_mutates
+    self.scenario(host, 'real-plugin', 'installed', missing_snapshot=True)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-install-1110/tests/test_install_transactions.py", line 182, in scenario
+    self.assertEqual(self.observe(state_file, cache), before, stdout + stderr)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: {'pre[32 chars]'enabled': True, 'installed_version': 'old', 'snapshot': 'old'} != {'pre[32 chars]'enabled': True, 'installed_version': 'old', 'snapshot': None}
+  {'enabled': True,
+   'installed': True,
+   'installed_version': 'old',
+   'present': True,
+-  'snapshot': 'old'}
+?              ^ ^^^
+
++  'snapshot': None}
+?              ^ ^^
+ : Changement de source : charlescstpierr/cstack --ref new
+injected real-plugin
+cstack : échec ; l'ancienne source (owner/repo --ref oldsha) est restaurée à son commit précédent. Pour suivre de nouveau une branche : install.sh install --ref <branche>
+
+
+======================================================================
+FAIL: test_missing_snapshot_never_mutates (test_install_transactions.InstallTransactionTests.test_missing_snapshot_never_mutates) (host='codex', missing='installed-cache')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-install-1110/tests/test_install_transactions.py", line 236, in test_missing_snapshot_never_mutates
+    self.scenario(host, 'real-plugin', 'installed', missing_installed_cache=True)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-install-1110/tests/test_install_transactions.py", line 186, in scenario
+    self.assertFalse((root / 'fired').exists(), 'active profile was changed before rejecting the state')
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: True is not false : active profile was changed before rejecting the state
+
+======================================================================
+FAIL: test_missing_snapshot_never_mutates (test_install_transactions.InstallTransactionTests.test_missing_snapshot_never_mutates) (host='claude')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-install-1110/tests/test_install_transactions.py", line 234, in test_missing_snapshot_never_mutates
+    self.scenario(host, 'real-plugin', 'installed', missing_snapshot=True)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-install-1110/tests/test_install_transactions.py", line 182, in scenario
+    self.assertEqual(self.observe(state_file, cache), before, stdout + stderr)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: {'pre[32 chars]'enabled': True, 'installed_version': 'new', 'snapshot': 'new'} != {'pre[32 chars]'enabled': True, 'installed_version': 'old', 'snapshot': None}
+  {'enabled': True,
+   'installed': True,
+-  'installed_version': 'new',
+?                        ^^^
+
++  'installed_version': 'old',
+?                        ^^^
+
+   'present': True,
+-  'snapshot': 'new'}
+?              ^  --
+
++  'snapshot': None}
+?              ^^
+ : Claude Code, changement de source : charlescstpierr/cstack#new
+injected real-plugin
+cstack : échec dans Claude Code ; l'ancienne source (owner/repo) est restaurée.
+
+
+======================================================================
+FAIL: test_missing_snapshot_never_mutates (test_install_transactions.InstallTransactionTests.test_missing_snapshot_never_mutates) (host='claude', missing='installed-cache')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-install-1110/tests/test_install_transactions.py", line 236, in test_missing_snapshot_never_mutates
+    self.scenario(host, 'real-plugin', 'installed', missing_installed_cache=True)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-install-1110/tests/test_install_transactions.py", line 182, in scenario
+    self.assertEqual(self.observe(state_file, cache), before, stdout + stderr)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: {'pre[32 chars]'enabled': True, 'installed_version': 'new', 'snapshot': 'new'} != {'pre[32 chars]'enabled': True, 'installed_version': 'old', 'snapshot': 'old'}
+  {'enabled': True,
+   'installed': True,
+-  'installed_version': 'new',
+?                        ^^^
+
++  'installed_version': 'old',
+?                        ^^^
+
+   'present': True,
+-  'snapshot': 'new'}
+?               ^^^
+
++  'snapshot': 'old'}
+?               ^^^
+ : Claude Code, changement de source : charlescstpierr/cstack#new
+injected real-plugin
+cstack : échec dans Claude Code ; l'ancienne source (owner/repo) est restaurée.
+
+
+----------------------------------------------------------------------
+Ran 9 tests in 28.351s
+
+FAILED (failures=36)

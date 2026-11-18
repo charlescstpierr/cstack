@@ -1,0 +1,9 @@
+WARNING: proceeding, even though we could not create PATH aliases: Refusing to create helper binaries under temporary dir "/tmp" (codex_home: AbsolutePathBuf("/tmp/cstack-native-codex-ju88veqo/profile"))
+Added marketplace `cstack` from /tmp/cstack-native-codex-ju88veqo/previous.
+Installed marketplace root: /tmp/cstack-native-codex-ju88veqo/previous
+WARNING: proceeding, even though we could not create PATH aliases: Refusing to create helper binaries under temporary dir "/tmp" (codex_home: AbsolutePathBuf("/tmp/cstack-native-codex-ju88veqo/profile"))
+Added plugin `cstack` from marketplace `cstack`.
+Installed plugin root: /tmp/cstack-native-codex-ju88veqo/profile/plugins/cache/cstack/cstack/0.8.0
+
+cstack est prêt. Ouvrez une nouvelle tâche, dans T3 Code, Codex ou Claude Code, puis tapez :
+  $cstack:cstack   (Codex)

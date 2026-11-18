@@ -146,7 +146,8 @@ def main():
                     result = subprocess.run([sys.executable, str(paths[name]), "--workspace", str(root),
                                              "--host", "t3", "--catalog", str(catalog_path),
                                              "--host-context", str(context_path), "show"],
-                                            capture_output=True, text=True, timeout=30, check=True)
+                                            capture_output=True, text=True, timeout=30, check=True,
+                                            env={**os.environ, "XDG_CONFIG_HOME": str(root)})
                     seconds = time.perf_counter() - started
                     output_hash = check(json.loads(result.stdout), values)
                     if cli_expected is None:

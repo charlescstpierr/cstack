@@ -156,6 +156,53 @@ class ProvenanceTests(unittest.TestCase):
             self.git(root, "commit", "-m", "first commit")
             self.assertNotEqual(before, self.fingerprints(root))
 
+    def test_staging_an_empty_intent_to_add_changes_the_fingerprint(self):
+        for commit in (False, True):
+            with self.subTest(commit=commit), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                self.repo(root, commit=commit)
+                (root / "empty").touch()
+                self.git(root, "add", "-N", "empty")
+                before = self.fingerprints(root)
+                self.git(root, "add", "empty")
+                self.assertNotEqual(before, self.fingerprints(root))
+
+    def test_invalid_head_is_rejected(self):
+        for corruption in ("invalid-head", "malformed-ref", "missing-object", "blob"):
+            with self.subTest(corruption=corruption), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                self.repo(root)
+                if corruption == "invalid-head":
+                    (root / ".git/HEAD").write_text("not a HEAD\n")
+                else:
+                    values = {"malformed-ref": "malformed", "missing-object": "f" * 40,
+                              "blob": self.git(root, "rev-parse", "HEAD:file").decode()}
+                    (root / ".git/refs/heads/main").write_text(values[corruption] + "\n")
+                self.rejected(root)
+
+    def test_repository_must_use_the_attested_worktree(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            original = root / "original"
+            original.mkdir()
+            self.repo(original)
+            self.git(original, "config", "core.worktree", str(original))
+            copied = root / "copied"
+            shutil.copytree(original, copied)
+            self.rejected(copied)
+
+    def test_index_cache_refresh_does_not_change_the_fingerprint(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self.repo(root)
+            index = root / ".git/index"
+            original = index.read_bytes()
+            before = self.fingerprints(root)
+            self.assertEqual(original, index.read_bytes())
+            os.utime(root / "file", (1, 1))
+            self.git(root, "update-index", "--refresh")
+            self.assertEqual(before, self.fingerprints(root))
+
     def test_4212756294_nested_git_repository(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

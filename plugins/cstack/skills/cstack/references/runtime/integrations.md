@@ -1,6 +1,6 @@
 # Intégrations externes et autorisation
 
-Dans une tâche cstack explicitement invoquée dans T3, le [contrat T3](t3.md) prime sur les règles autonomes de ce document.
+Dans une tâche cstack activée explicitement ou par démarrage automatique dans T3, le [contrat T3](t3.md) prime sur les règles autonomes de ce document.
 
 
 Aucune intégration externe n’est requise pour le travail de code de base. Découvre GitHub, tracker d’issues, documentation, navigateur et autres outils connectés seulement quand la tâche en a besoin. Les connecteurs manquants sont des écarts de preuve explicites ; n’installe pas automatiquement de plugins et ne demande pas de comptes non liés.

@@ -7,6 +7,7 @@ import json
 import os
 from pathlib import Path
 import re
+import subprocess
 import sys
 import tempfile
 
@@ -38,6 +39,22 @@ RUNTIMES = {"codex-cli", "claude-code", "cursor-agent", "grok"}
 # Trois entrées comme les panels par défaut : deux héritent du runtime natif, une passe par Claude Code.
 MIXED_PANEL_ROLES = ("arena runners", "architect runners", "interrogate reviewers")
 CODEX_NATIVE = "codex-native"
+# Feuille proposée dans T3 : trois paliers, chacun nommé par un modèle que le catalogue vivant doit lister.
+# Pour changer de modèle, modifier une ligne ici ou passer `show --tier palier=[fournisseur/]modèle[@effort]`.
+T3_TIERS = {"work": "gpt-6.1-sol", "judgment": "claude-opus-5-5", "hard": "gpt-6-astra"}
+T3_EFFORT = "medium"
+# Options d’hôte qui règlent l’effort de raisonnement. Une autre option qui offre la même valeur n’est jamais touchée.
+T3_EFFORT_OPTIONS = ("reasoningEffort", "effort", "variant")
+T3_PANEL = ["work@high", "judgment@high", "hard@high"]
+T3_GROUPS = {
+    "everyday work": {role: "work" for role in (
+        "feature, refactoring", "bug-fix", "perf-issue", "hillclimb", "simple edits", "how explorer",
+        "how explainer", "why investigators", "reflect tooling", "swarm workers")},
+    "judgment": {role: "judgment" for role in (
+        "judgment and prose", "documentation", "reflect judgment, divergent, synthesizer")},
+    "hard decisions": {"hardest tasks": "hard@high", "why synthesizer": "hard"},
+    "mixed panels": {**{role: T3_PANEL for role in MIXED_PANEL_ROLES}, "arena cross-judge pool": T3_PANEL[1:]},
+}
 
 
 def mixed_panels():
@@ -167,14 +184,84 @@ def t3_catalog_helper():
     return module
 
 
+def machine_sheet():
+    """Feuille de la machine : lue dans T3 par tous les projets et worktrees, sous les rôles du projet."""
+    base = os.environ.get("XDG_CONFIG_HOME", "")
+    # Un chemin XDG relatif changerait de feuille avec le dossier courant : la spécification XDG demande de l’ignorer.
+    return (Path(base) if os.path.isabs(base) else Path.home() / ".config") / "cstack" / "models.json"
+
+
+def _project_git(workspace, *args):
+    env = {key: value for key, value in os.environ.items() if not key.startswith("GIT_")}
+    try:
+        return subprocess.run(["git", "-C", str(workspace), *args], capture_output=True,
+                              check=True, env=env, timeout=10).stdout
+    except (OSError, subprocess.SubprocessError) as error:
+        raise ValueError("BLOCKED: métadonnées Git illisibles; aucune feuille de repli sélectionnée") from error
+
+
+def t3_checkout(workspace):
+    workspace = workspace.resolve()
+    if not any((parent / ".git").exists() or (parent / ".git").is_symlink()
+               for parent in (workspace, *workspace.parents)):
+        return None
+    root = _project_git(workspace, "rev-parse", "--show-toplevel").removesuffix(b"\n")
+    if not root or not Path(os.fsdecode(root)).is_absolute():
+        raise ValueError("BLOCKED: racine du checkout Git non vérifiée")
+    return Path(os.fsdecode(root)).resolve()
+
+
+def _broken_config_link(path):
+    return any(part.is_symlink() and not part.exists() for part in (path, *path.parents))
+
+
+def project_sheet(workspace):
+    """Feuille projet T3 : celle du checkout, sinon celle du checkout principal quand c’est un worktree lié du même dépôt.
+
+    `.cstack/` est ignoré par Git, donc un worktree lié ne voit pas la feuille du checkout principal sans ce relais.
+    """
+    checkout = t3_checkout(workspace)
+    workspace = checkout or workspace
+    local = workspace / ".cstack" / "models.json"
+    try:
+        local.stat()
+    except FileNotFoundError:
+        if _broken_config_link(local):
+            return local
+    except OSError:
+        return local
+    else:
+        return local
+    if checkout is None:
+        return local
+    git_dir = Path(os.fsdecode(_project_git(workspace, "rev-parse", "--absolute-git-dir").removesuffix(b"\n"))).resolve()
+    common = Path(workspace, os.fsdecode(_project_git(workspace, "rev-parse", "--git-common-dir").removesuffix(b"\n"))).resolve()
+    if git_dir == common:
+        return local
+    first = _project_git(workspace, "worktree", "list", "--porcelain", "-z").split(b"\0\0")[0].split(b"\0")
+    if not first or not first[0].startswith(b"worktree "):
+        raise ValueError("BLOCKED: checkout principal Git non vérifié")
+    if b"bare" in first:
+        return local
+    return Path(os.fsdecode(first[0][len(b"worktree "):])) / ".cstack" / "models.json"
+
+
+def t3_direct(catalog):
+    return isinstance(catalog, dict) and catalog.get("schema") == "cstack.t3-direct/1"
+
+
 def _t3_providers(catalog, host, context):
     if host != "t3":
         raise ValueError("BLOCKED: sélection t3 hors hôte T3; aucun agent ou CLI de repli")
+    if t3_direct(catalog) and context is None:
+        return catalog["providers"]
     return t3_catalog_helper().validate_context(catalog, context)
 
 
 def _t3_options(model):
-    declared = model.get("options")
+    if isinstance(model, dict) and isinstance(model.get("invalid"), str):
+        raise ValueError(model["invalid"])
+    declared = model.get("options") if isinstance(model, dict) else None
     if not isinstance(declared, dict):
         raise ValueError("BLOCKED: options du modèle non vérifiées")
     types = {"string": str, "boolean": bool}
@@ -188,6 +275,17 @@ def _t3_options(model):
     return declared
 
 
+def _t3_can_launch(providers, name, coordinator):
+    provider = providers.get(name)
+    if not isinstance(provider, dict) or (provider.get("enabled") is False or provider.get("canRunChildTask") is not True or provider.get("constraints") != []):
+        raise ValueError("BLOCKED: providerInstanceId indisponible ou non vérifié: " + name)
+    if "runtimeModes" in provider:
+        modes = provider["runtimeModes"]
+        if (not isinstance(modes, list) or not all(t3_identifier(mode) for mode in modes)
+                or coordinator["runtimeMode"] not in modes):
+            raise ValueError("BLOCKED: runtimeModes non vérifiés ou mode non pris en charge: " + name)
+
+
 def _t3_target(chosen, providers, coordinator):
     source = coordinator["providerInstanceId"]
     if chosen["providerInstanceId"] != source and any(
@@ -196,14 +294,7 @@ def _t3_target(chosen, providers, coordinator):
             for name in (source, chosen["providerInstanceId"])):
         raise ValueError("BLOCKED: capacité cross-provider requise chez cible et coordinator")
     for name in dict.fromkeys((source, chosen["providerInstanceId"])):
-        provider = providers.get(name)
-        if not isinstance(provider, dict) or (provider.get("enabled") is False or provider.get("canRunChildTask") is not True or provider.get("constraints") != []):
-            raise ValueError("BLOCKED: providerInstanceId indisponible ou non vérifié: " + name)
-        if "runtimeModes" in provider:
-            modes = provider["runtimeModes"]
-            if (not isinstance(modes, list) or not all(t3_identifier(mode) for mode in modes)
-                    or coordinator["runtimeMode"] not in modes):
-                raise ValueError("BLOCKED: runtimeModes non vérifiés ou mode non pris en charge: " + name)
+        _t3_can_launch(providers, name, coordinator)
     provider = providers[chosen["providerInstanceId"]]
     if type(provider.get("modelsComplete")) is not bool:
         raise ValueError("BLOCKED: complétude catalogue inconnue")
@@ -231,12 +322,86 @@ def t3_position(chosen, catalog, context):
     if chosen and chosen.get("runtime") != "t3":
         raise ValueError("BLOCKED: sélection native explicite non exprimable; aperçu de migration T3 requis")
     providers = _t3_providers(catalog, "t3", context)
+    if not chosen and t3_direct(catalog):
+        coordinator = catalog["coordinator"]
+        _t3_can_launch(providers, coordinator["providerInstanceId"], coordinator)
+        model = providers[coordinator["providerInstanceId"]]["models"].get(coordinator["model"])
+        if model is not None:
+            _t3_options(model)
+        return {"dispatch": "delegate_task", "inherit": True}
     if not chosen:
         scope = catalog["coordinator"]
         chosen = selection({"runtime": "t3", **{k: scope[k] for k in ("providerInstanceId", "model", "options")}})
     target = _t3_target(chosen, providers, catalog["coordinator"])
+    if t3_direct(catalog):
+        return {"dispatch": "delegate_task", "target": target}
     return {"dispatch": "delegate_task", "target": target,
             "binding": {"coordinatorScope": catalog["coordinator"], "catalogSha256": catalog["sha256"], "target": target}}
+
+
+def _t3_tier(spec, providers):
+    """Lire `[fournisseur/]modèle[@effort]` sur le catalogue observé. Une seule lecture doit exister."""
+    def lists(provider, model):
+        entry = providers.get(provider)
+        models = entry.get("models") if isinstance(entry, dict) else None
+        return isinstance(models, dict) and model in models
+    head, _, tail = spec.rpartition("@")
+    readings = set()
+    for name, effort in ((spec, None), (head, tail)) if head and tail else ((spec, None),):
+        readings.update((provider, name, effort) for provider in providers if lists(provider, name))
+        provider, _, model = name.partition("/")
+        if lists(provider, model):
+            readings.add((provider, model, effort))
+    if len(readings) == 1:
+        return readings.pop()
+    if readings:
+        found = "; ".join(sorted(f"{provider}/{model}" + (f" en effort {effort}" if effort else "")
+                                 for provider, model, effort in readings))
+        raise ValueError(f"{spec}: plusieurs lectures possibles ({found}); écrire fournisseur/modèle, "
+                         "ou la sélection complète avec ses options")
+    raise ValueError(f"{spec}: modèle absent du catalogue T3 observé; le chercher avec orchestrator_capabilities "
+                     "et son paramètre search, puis ajouter cette capture par un second --capabilities")
+
+
+def _t3_choice(row, tiers, providers):
+    name, _, level = row.partition("@")
+    if isinstance(tiers[name], ValueError):
+        raise tiers[name]
+    provider, model, effort = tiers[name]
+    declared = _t3_options(providers[provider]["models"][model])
+    level = effort or level or T3_EFFORT
+    keys = [key for key in T3_EFFORT_OPTIONS
+            if key in declared and declared[key]["type"] == "string" and level in declared[key]["values"]]
+    if len(keys) > 1 or (effort and not keys):
+        raise ValueError(f"{provider}/{model}: effort {level} offert par {len(keys)} option parmi "
+                         f"{', '.join(T3_EFFORT_OPTIONS)}; écrire la sélection complète avec ses options")
+    return {"runtime": "t3", "providerInstanceId": provider, "model": model,
+            "options": {keys[0]: level} if keys else {}}
+
+
+def t3_recommendations(catalog, providers, context, overrides):
+    unknown = sorted(set(overrides) - set(T3_TIERS))
+    if unknown or not all(overrides.values()):
+        raise ValueError(f"--tier attend palier=[fournisseur/]modèle[@effort] avec un palier parmi {', '.join(T3_TIERS)}"
+                         + (f"; palier inconnu: {', '.join(unknown)}" if unknown else ""))
+    tiers = {}
+    for name, spec in {**T3_TIERS, **overrides}.items():
+        try:
+            tiers[name] = _t3_tier(spec, providers)
+        except ValueError as error:
+            tiers[name] = error
+    groups = {}
+    for group, rows in T3_GROUPS.items():
+        choices, problem = {}, None
+        try:
+            for role, value in rows.items():
+                choices[role] = ([_t3_choice(row, tiers, providers) for row in value]
+                                 if isinstance(value, list) else _t3_choice(value, tiers, providers))
+            validate(choices, catalog, check_available=True, host="t3", context=context)
+        except ValueError as error:
+            choices, problem = {}, str(error)
+        groups[group] = {"choices": choices, "unavailable": problem}
+    return groups
 
 
 def runtime_catalog(catalog, runtime):
@@ -296,6 +461,8 @@ def read_catalog(path):
     data = read_bounded_json(path, "catalogue")
     if path is None:
         return None
+    if t3_direct(data):
+        raise ValueError("le catalogue direct vient seulement de --capabilities, jamais de --catalog")
     if isinstance(data, dict) and data.get("host") == "t3":
         return data
     # Accepter la sortie codex debug models ou un mapping transcrit depuis le schéma actuel.
@@ -322,13 +489,21 @@ def read_catalog(path):
 
 
 def read_config(path):
-    raw = path.read_bytes() if path.exists() else b""
-    config = json.loads(raw) if raw or path.exists() else {}
+    try:
+        raw = path.read_bytes()
+    except FileNotFoundError as error:
+        if _broken_config_link(path):
+            raise ValueError("BLOCKED: feuille en lien cassé: " + str(path)) from error
+        raw, config = b"", {}
+    else:
+        config = json.loads(raw)
     validate(config)
     return config, hashlib.sha256(raw).hexdigest()
 
 
-def preview(config, digest, catalog, claude_ready=False, host="codex", context=None):
+def preview(config, digest, catalog, claude_ready=False, host="codex", context=None, tiers=None):
+    if host != "t3" and tiers:
+        raise ValueError("--tier exige --host t3")
     if host == "t3":
         supported, unavailable = {}, {}
         try:
@@ -355,7 +530,10 @@ def preview(config, digest, catalog, claude_ready=False, host="codex", context=N
                             for key, option in options.items()}
                     except ValueError as error:
                         unavailable[label] = str(error)
-        return {"saved": config, "sha256": digest, "recommendations": {},
+        recommendations = (t3_recommendations(catalog, providers, context, tiers or {})
+                           if "catalog" not in unavailable else {})
+        return {"saved": config, "sha256": digest, "recommendations": recommendations,
+                "tiers": {**T3_TIERS, **(tiers or {})},
                 "supported": supported, "unavailable": unavailable,
                 "inheritance": catalog.get("coordinator") if isinstance(catalog, dict) else None,
                 "warning": "Entrée t3: TOUT le fichier illisible aux anciennes versions; rôle bloqué hors T3; providerInstanceId non portable. Aperçu seulement, sélection explicite requise.",
@@ -473,11 +651,15 @@ def main():
     parser.add_argument("--catalog", type=Path)
     parser.add_argument("--host", choices=("codex", "t3"), default="codex")
     parser.add_argument("--host-context", type=Path)
+    parser.add_argument("--capabilities", type=Path, action="append",
+                        help="chemin direct T3 : sortie de orchestrator_capabilities ; répéter pour une capture search")
     commands = parser.add_subparsers(dest="command", required=True, title="commandes", parser_class=FrenchArgumentParser)
     show = commands.add_parser("show", add_help=False)
     show.add_argument("-h", "--help", action="help", help="afficher ce message d’aide et quitter")
     show.add_argument("--claude-ready", action="store_true",
                       help="Claude Code est détecté et connecté : proposer aussi les panels mixtes")
+    show.add_argument("--tier", action="append", default=[], metavar="PALIER=MODÈLE",
+                      help="T3 : remplacer le modèle d’un palier, work, judgment ou hard, par [fournisseur/]modèle[@effort]")
     resolver = commands.add_parser("resolve", add_help=False)
     resolver.add_argument("-h", "--help", action="help", help="afficher ce message d’aide et quitter")
     resolver.add_argument("role", choices=sorted(ROLES))
@@ -489,6 +671,8 @@ def main():
     writer.add_argument("-h", "--help", action="help", help="afficher ce message d’aide et quitter")
     writer.add_argument("--choices", type=Path, required=True)
     writer.add_argument("--expected-sha256", required=True)
+    writer.add_argument("--machine", action="store_true",
+                        help="T3 : enregistrer dans la feuille de la machine, lue par tous les projets et worktrees")
     normalizer = commands.add_parser("normalize")
     normalizer.add_argument("--capabilities-trace", type=Path, required=True)
     normalizer.add_argument("--thread-trace", type=Path, required=True)
@@ -504,21 +688,49 @@ def main():
             parser.exit(2, f"modèles cstack: {error}\n")
         print(json.dumps(result, indent=2, ensure_ascii=False))
         return 0
-    path = args.workspace / ".cstack" / "models.json"
-    has_agents = (args.workspace / ".codex" / "agents").is_dir()
     try:
-        catalog = read_catalog(args.catalog)
+        if args.host == "t3":
+            args.workspace = t3_checkout(args.workspace) or args.workspace
+        path = args.workspace / ".cstack" / "models.json"
+        has_agents = (args.workspace / ".codex" / "agents").is_dir()
+        if args.capabilities:
+            if args.host != "t3" or args.catalog or args.host_context:
+                raise ValueError("--capabilities exige --host t3, sans --catalog ni --host-context")
+            captures = []
+            for capture_path in args.capabilities:
+                with capture_path.open("rb") as stream:
+                    captures.append(stream.read(1024 * 1024 + 1))
+            catalog = t3_catalog_helper().direct(captures)
+        else:
+            catalog = read_catalog(args.catalog)
         context = read_bounded_json(args.host_context, "contexte")
         config, digest = read_config(path)
+        machine, machine_digest = read_config(machine_sheet()) if args.host == "t3" else ({}, None)
+        project = project_sheet(args.workspace) if args.host == "t3" else path
+        effective = {**machine, **(config if project == path else read_config(project)[0])}
         if args.command == "show":
-            result = preview(config, digest, catalog, args.claude_ready, args.host, context)
+            tiers = dict(item.partition("=")[::2] for item in args.tier)
+            result = preview(effective, digest, catalog, args.claude_ready, args.host, context, tiers)
+            if args.host == "t3":
+                result["saved"] = config
+                result["machine"] = {"path": str(machine_sheet()), "saved": machine, "sha256": machine_digest}
+                result["project"] = str(project)
             # Les agents natifs gérés suivent models.json : l’aperçu dit lesquels seront alignés.
             result["managed_agents"] = project_helper().managed_agents(args.workspace) if has_agents else []
         elif args.command == "resolve":
-            result = resolve(config, args.role, catalog, args.host, context)
+            result = resolve(effective, args.role, catalog, args.host, context)
         elif args.command == "preflight":
-            result = preflight(config, args.roles, catalog, args.host, context)
+            result = preflight(effective, args.roles, catalog, args.host, context)
+        elif args.machine:
+            if args.host != "t3":
+                raise ValueError("--machine exige --host t3")
+            saved = apply_choices(machine_sheet(), json.loads(args.choices.read_text()),
+                                  args.expected_sha256, catalog, args.host, context)
+            result = {"saved": saved, "path": str(machine_sheet())}
         else:
+            if args.host == "t3" and project != path and project.exists():
+                raise ValueError("feuille héritée du checkout principal : applique les choix depuis ce checkout "
+                                 "ou sélectionne explicitement --machine; aucune feuille locale n’a été créée")
             result = project_helper().apply_model_choices(args.workspace, json.loads(args.choices.read_text()),
                                                           args.expected_sha256, catalog, args.host, context)
     except (OSError, ValueError, KeyError, TypeError) as error:

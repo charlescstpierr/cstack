@@ -10,7 +10,8 @@ import subprocess
 
 TREE_HASH_ALGORITHM = "cstack-tree-sha256-v3"
 IGNORED_DIRS = {".git", "__pycache__", "node_modules"}
-GIT_OPERATIONS = ("MERGE_HEAD", "CHERRY_PICK_HEAD", "REVERT_HEAD", "rebase-merge", "rebase-apply", "sequencer", "BISECT_START")
+GIT_OPERATIONS = ("MERGE_HEAD", "CHERRY_PICK_HEAD", "REVERT_HEAD", "rebase-merge", "rebase-apply",
+                  "sequencer", "BISECT_LOG", "BISECT_START")
 
 
 def git_snapshot(root: Path):
@@ -23,21 +24,32 @@ def git_snapshot(root: Path):
     env["GIT_TERMINAL_PROMPT"] = "0"
 
     def git(*args, allowed=(0,)):
-        result = subprocess.run(["git", "--no-optional-locks", "-C", str(root), "-c", "core.fsmonitor=false", *args],
-                                env=env, capture_output=True, check=False)
+        try:
+            result = subprocess.run(["git", "--no-optional-locks", "-C", str(root), "-c", "core.fsmonitor=false", *args],
+                                    env=env, capture_output=True, stdin=subprocess.DEVNULL, timeout=10, check=False)
+        except subprocess.TimeoutExpired as error:
+            raise ValueError(f"lecture Git expirée: {' '.join(args)}") from error
         if result.returncode not in allowed:
             raise ValueError(f"état Git illisible: {' '.join(args)}")
         return result
 
-    git_dir = Path(os.fsdecode(git("rev-parse", "--absolute-git-dir").stdout.strip()))
+    toplevel = git("rev-parse", "--show-toplevel").stdout.removesuffix(b"\n")
+    if Path(os.fsdecode(toplevel)).resolve() != root:
+        raise ValueError(f"la racine Git doit être celle de la fixture: {root}")
+    git_dir = Path(os.fsdecode(git("rev-parse", "--absolute-git-dir").stdout.removesuffix(b"\n")))
     for operation in GIT_OPERATIONS:
         entry = git_dir / operation
         if entry.exists() or entry.is_symlink():
             raise ValueError(f"opération Git en cours non prise en charge: {operation}")
     head_ref = git("symbolic-ref", "-q", "HEAD", allowed=(0, 1)).stdout.strip()
-    head = git("rev-parse", "--verify", "-q", "HEAD", allowed=(0, 1))
-    if head.returncode and (not head_ref or git("show-ref", "--verify", "--quiet", os.fsdecode(head_ref), allowed=(0, 1)).returncode != 1):
-        raise ValueError("HEAD Git illisible hors branche sans commit")
+    head = git("rev-parse", "--verify", "-q", "HEAD^{commit}", allowed=(0, 1))
+    if head.returncode:
+        ref = os.fsdecode(head_ref)
+        if not ref.startswith("refs/heads/"):
+            raise ValueError("HEAD Git illisible hors branche sans commit")
+        git("check-ref-format", ref)
+        if git("show-ref", "--verify", "--quiet", ref, allowed=(0, 1)).returncode != 1:
+            raise ValueError("HEAD Git illisible hors branche sans commit")
     # Plumbing reads logical values, avoiding index timestamps and object storage layout.
     return {
         "head_ref": os.fsdecode(head_ref) or None,
@@ -45,6 +57,8 @@ def git_snapshot(root: Path):
         "refs": os.fsdecode(git("for-each-ref", "--sort=refname", "--format=%(refname)%00%(objectname)%00%(symref)").stdout),
         "index": os.fsdecode(git("ls-files", "--stage", "-z").stdout),
         "index_flags": os.fsdecode(git("ls-files", "-v", "-z").stdout),
+        "staged_diff": os.fsdecode(git("diff", "--cached", "--raw", "-z", "--no-abbrev", "--no-renames",
+                                     "--no-ext-diff", "--no-textconv").stdout),
         "config": os.fsdecode(git("config", "--local", "--null", "--list").stdout),
     }
 

@@ -4,13 +4,13 @@ Pour **installer** cstack plutôt que le développer, ne suivez pas ce fichier :
 
 cstack est un plugin autonome pour Codex App et CLI. Le coordinateur utilise les outils natifs de Codex. Les workers héritent du runtime natif, sauf sélection explicite d’un CLI officiel dans `.cstack/models.json`. N'ajoutez pas de moteur d'orchestration séparé et ne figez pas de noms de modèles pour l'exécution. Les recommandations optionnelles de la configuration peuvent nommer des modèles seulement après validation dans le catalogue vivant des modèles et des efforts de raisonnement, avant sélection.
 
-Préservez la licence MIT amont et enregistrez la provenance. Les compétences sont invoquées explicitement ; l'installation du plugin ne doit pas activer ses instructions dans des tâches sans rapport. Respectez le périmètre de l'utilisateur, les instructions du projet, le mode Plan de Codex et les permissions.
+Préservez la licence MIT amont et enregistrez la provenance. Les compétences sont invoquées explicitement ; l'installation du plugin ne doit pas activer ses instructions dans des tâches sans rapport. Le démarrage automatique est un réglage de la machine, éteint par défaut, que seul l'utilisateur active. Respectez le périmètre de l'utilisateur, les instructions du projet, le mode Plan de Codex et les permissions.
 
 Gardez le portage petit. Réutilisez les assistants amont et leurs dépendances verrouillées. Exécutez le validateur du dépôt, les tests Bun et la vérification de types avant de déclarer le travail terminé. Ne modifiez jamais le cache de plugin installé d'un utilisateur, ses instructions globales ou sa configuration de modèles comme effet de bord de la configuration.
 
 Carte du dépôt : `plugins/cstack/` est le livrable ; `scripts/` et `tests/` valident le paquet et le comportement natif ; `UPSTREAM.json` et `PORTING.json` suivent la provenance source. Les artefacts de travail appartiennent aux répertoires `.cstack/` ignorés. Les essais natifs sont distincts des contrôles déterministes et doivent rapporter les résultats réels des tâches ainsi que les lacunes de capacité.
 
-Python 3.9 ou plus récent exécute les assistants et toute la suite de tests. L'analyse du `config.toml` de Codex dans `scripts/verify-behavior.py` nécessite Python 3.11 ou plus récent.
+Python 3.9 ou plus récent exécute les assistants et toute la suite de tests. L'analyse du `config.toml` de Codex dans `scripts/verify-behavior.py` et `scripts/check-installed-loader.py` nécessite Python 3.11 ou plus récent.
 
 La commande complète de validation locale et CI est :
 
@@ -44,3 +44,4 @@ Voir `docs/agents/domain.md`.
 | Règle | Mécanisme exécuté par `scripts/check.sh` |
 |---|---|
 | Génération et vérification partagent la même empreinte ; un objet omis ne peut pas recevoir une provenance valide. Conserver les reçus si le hachage après tour échoue. | `scripts/provenance.py` fournit le format v3 : fichiers, modes, dossiers, cibles de liens internes et état Git logique. Les opérations Git en cours, dépôts imbriqués et entrées non régulières sont refusés. `tests/test_provenance.py` rejoue les types d’entrée et vérifie le reçu `unverified` après erreur. Les anciens formats exigent une régénération. |
+| Installer et mettre à jour passent par une transaction par hôte ; le rollback restaure le code capturé et l’état installé ou absent, jamais un clone source qui a avancé. | `replace_marketplace` dans `install.sh` : instantané du catalogue et du cache installé, validation isolée, application, trap de restauration et vérification de l’état. `tests/test_install_transactions.py` injecte les erreurs de validation, retrait, ajout, installation finale, SIGTERM et rollback ; états désactivés/illisibles ou cache manquant refusés avant mutation. `scripts/probe-install-rollback.py` reproduit le rollback via les CLI réelles ; le cas Codex tourne aussi en CI. Après rollback la source devient la copie locale conservée, voir `INSTALL-AGENT.md`. |

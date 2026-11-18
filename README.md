@@ -122,9 +122,13 @@ cstack s'installe sur la machine qui exécute vos agents T3, puis s'invoque dans
 2. Ouvrez un nouveau fil dans T3 Code. Un fil ouvert avant l'installation ne voit pas le plugin.
 3. Commencez votre message par `$cstack:cstack` dans un fil Codex, ou par `/cstack:cstack` dans un fil Claude, puis écrivez la demande.
 
-Le guide [Installer cstack dans T3 Code](plugins/cstack/docs/guide/12-t3-code.md) détaille les worktrees, le choix des modèles, la mise à jour et le dépannage.
+Pour vous passer de la commande, activez le démarrage automatique, éteint par défaut : cstack s'applique alors de lui-même aux tâches qui touchent plusieurs fichiers, demandent un choix de conception ou portent sur un bug de cause inconnue.
+
+Le guide [Installer cstack dans T3 Code](plugins/cstack/docs/guide/12-t3-code.md) détaille le démarrage automatique, les worktrees, le choix des modèles, la mise à jour et le dépannage.
 
 Dans T3 Code, le coordinateur utilise les outils de l'hôte pour choisir les modèles et les efforts, déléguer, isoler les checkouts et collecter les résultats. Le [contrat T3](plugins/cstack/skills/cstack/references/runtime/t3.md) prime alors sur les consignes Codex autonome. Les helpers cstack vérifient les sélections et préparent les briefs. Ils ne lancent ni moteur d'orchestration ni CLI de repli.
+
+Le setup propose une feuille de modèles en trois paliers : un modèle pour le travail courant, un pour le jugement et un pour les tâches les plus dures. Les panels prennent une position par palier, donc deux familles de modèles quand Codex et Claude sont connectés. Chaque modèle proposé doit figurer parmi ceux que votre T3 Code expose, et une phrase suffit pour en changer : « mets tel modèle pour le travail courant ». La feuille acceptée vaut pour toute la machine, donc pour chaque projet et chaque worktree.
 
 Le chargement du plugin installé est observé dans un fil Codex de T3 Code sur un serveur Linux : [reçu](docs/evidence/t3-installed-plugin-2026-11-09.json). Trois revues réelles, sur trois fournisseurs, ont suivi le pipeline T3 depuis un coordinateur Codex et renvoyé leurs findings au parent : [reçu et limites](docs/evidence/t3-council-transport-r5.json), [vérification T3](docs/T3-VERIFICATION.md). Le plugin Claude Code et son hook sont observés hors T3 ; un fil Claude de T3 Code qui charge cstack, et l'application de bureau T3 Code sur macOS et sur Windows, ne sont pas observés.
 
@@ -173,7 +177,7 @@ Les 23 principes sont des [références internes](plugins/cstack/docs/guide/08-p
 
 `$cstack:setup-cstack` demande d'abord un budget de raisonnement (illimité, large, moyen ou réduit), puis affiche sept recommandations vérifiées de modèle et d'effort pour tous les rôles et positions de panel. Il affiche ensuite la configuration actuelle et l'héritage éventuel. Vous pouvez accepter, personnaliser, conserver, choisir l'héritage pour certains rôles ou annuler. Les choix sont vérifiés dans le catalogue courant et enregistrés dans `.cstack/models.json`, sans modifier la session principale ni la configuration globale. Voir le [tableau de recommandations](plugins/cstack/docs/guide/01-setup.md#configurer-cstack).
 
-La configuration peut aussi préparer les conventions du projet : un bloc cstack dans `AGENTS.md`, un guide local et le suivi de tickets choisi. Elle montre les changements avant de les appliquer et conserve les instructions extérieures au bloc. Elle ne modifie pas `CLAUDE.md`, n'active pas cstack automatiquement et ne crée aucun ticket distant.
+La configuration peut aussi préparer les conventions du projet : un bloc cstack dans `AGENTS.md`, un guide local et le suivi de tickets choisi. Elle montre les changements avant de les appliquer et conserve les instructions extérieures au bloc. Elle ne modifie pas `CLAUDE.md`, n'active le démarrage automatique que si vous le demandez et ne crée aucun ticket distant.
 
 ## Codex et Claude ensemble
 
@@ -216,7 +220,7 @@ docker run --rm -v "$PWD:/repo:ro" -w /repo \
 git diff --check
 ```
 
-Python 3.9 ou plus récent exécute les assistants et toute la suite de tests. L'analyse du `config.toml` de Codex dans `scripts/verify-behavior.py` exige Python 3.11 ou plus récent.
+Python 3.9 ou plus récent exécute les assistants et toute la suite de tests. L'analyse du `config.toml` de Codex dans `scripts/verify-behavior.py` et `scripts/check-installed-loader.py` exige Python 3.11 ou plus récent.
 
 Le [guide](plugins/cstack/docs/guide/README.md) détaille les processus. Le [rapport de vérification](docs/VERIFICATION.md) distingue les tests effectués des limites. Le [journal des modifications](CHANGELOG.md) décrit les versions.
 

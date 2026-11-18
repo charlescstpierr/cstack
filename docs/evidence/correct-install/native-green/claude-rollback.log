@@ -1,0 +1,6 @@
+Adding marketplace…✔ Successfully added marketplace: cstack (declared in user settings)
+Installing plugin "cstack@cstack"...✔ Successfully installed plugin: cstack@cstack (scope: user)
+injected failure AFTER the real plugin install
+cstack : installation du plugin impossible dans claude.
+cstack : échec ; l'ancienne installation est restaurée dans claude.
+Source de reprise conservée : /tmp/cstack-native-claude-ttdl4jhi/state/cstack/install-rollback.MUNhD8L1/source ; source initiale : /tmp/cstack-native-claude-ttdl4jhi/previous
