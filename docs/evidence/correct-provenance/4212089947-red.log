@@ -1,0 +1,14 @@
+F
+======================================================================
+FAIL: test_4212089947_file_symlink_targets (test_provenance.ProvenanceTests.test_4212089947_file_symlink_targets)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-provenance-1109/tests/test_provenance.py", line 97, in test_4212089947_file_symlink_targets
+    self.assertNotEqual(before, self.fingerprints(root))
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'c255013d31e68ea9ce95acf764343470b8a0050e6a295fbad8a45a3d32b8b699' == 'c255013d31e68ea9ce95acf764343470b8a0050e6a295fbad8a45a3d32b8b699'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.003s
+
+FAILED (failures=1)

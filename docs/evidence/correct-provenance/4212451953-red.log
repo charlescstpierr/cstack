@@ -1,0 +1,14 @@
+F
+======================================================================
+FAIL: test_4212451953_unborn_branch (test_provenance.ProvenanceTests.test_4212451953_unborn_branch)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-provenance-1109/tests/test_provenance.py", line 157, in test_4212451953_unborn_branch
+    self.assertNotEqual(before, self.fingerprints(root))
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: '8b12efb3a77aa34be5b4e278745a7e0971f549b97f60bba5afd799091dc5d45e' == '8b12efb3a77aa34be5b4e278745a7e0971f549b97f60bba5afd799091dc5d45e'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.024s
+
+FAILED (failures=1)

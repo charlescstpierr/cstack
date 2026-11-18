@@ -1,0 +1,155 @@
+...FFFFFEFFFFFFFF.
+======================================================================
+ERROR: test_4212089956_postrun_hash_error_keeps_receipt (test_provenance.ProvenanceTests.test_4212089956_postrun_hash_error_keeps_receipt)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-provenance-1109/tests/test_provenance.py", line 209, in test_4212089956_postrun_hash_error_keeps_receipt
+    result = runner.run_case(case, output, ["fake"], None, None, 1)
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-provenance-1109/scripts/verify-behavior.py", line 935, in run_case
+    after = tree_hash(case["cwd"], output)
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-provenance-1109/scripts/verify-behavior.py", line 428, in tree_hash
+    raise HarnessError(f"entrée non régulière non prise en charge: {item}")
+verify-behavior.HarnessError: entrée non régulière non prise en charge: /tmp/tmps8bz5wce/project/created-fifo
+
+======================================================================
+FAIL: test_4211983045_git_head_index_and_refs (test_provenance.ProvenanceTests.test_4211983045_git_head_index_and_refs) (mutation='head')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-provenance-1109/tests/test_provenance.py", line 137, in test_4211983045_git_head_index_and_refs
+    self.assertNotEqual(before, self.fingerprints(root))
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: '3a37d355317935f190eaa37f87132386e2bed4849b1f1979dd9ece2dcc612ae1' == '3a37d355317935f190eaa37f87132386e2bed4849b1f1979dd9ece2dcc612ae1'
+
+======================================================================
+FAIL: test_4211983045_git_head_index_and_refs (test_provenance.ProvenanceTests.test_4211983045_git_head_index_and_refs) (mutation='index')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-provenance-1109/tests/test_provenance.py", line 137, in test_4211983045_git_head_index_and_refs
+    self.assertNotEqual(before, self.fingerprints(root))
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'fa2680cf9f962ab38aeacce526827560e9c209127c729891ec4678eafdcc326c' == 'fa2680cf9f962ab38aeacce526827560e9c209127c729891ec4678eafdcc326c'
+
+======================================================================
+FAIL: test_4211983045_git_head_index_and_refs (test_provenance.ProvenanceTests.test_4211983045_git_head_index_and_refs) (mutation='refs')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-provenance-1109/tests/test_provenance.py", line 137, in test_4211983045_git_head_index_and_refs
+    self.assertNotEqual(before, self.fingerprints(root))
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: '3a37d355317935f190eaa37f87132386e2bed4849b1f1979dd9ece2dcc612ae1' == '3a37d355317935f190eaa37f87132386e2bed4849b1f1979dd9ece2dcc612ae1'
+
+======================================================================
+FAIL: test_4211983053_directory_entries (test_provenance.ProvenanceTests.test_4211983053_directory_entries)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-provenance-1109/tests/test_provenance.py", line 72, in test_4211983053_directory_entries
+    self.assertNotEqual(before, self.fingerprints(root))
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'a88284058c67c5bc5d7c399b23b9a010600724c3f43663bca6c2112e8d8f74c2' == 'a88284058c67c5bc5d7c399b23b9a010600724c3f43663bca6c2112e8d8f74c2'
+
+======================================================================
+FAIL: test_4212089947_file_symlink_targets (test_provenance.ProvenanceTests.test_4212089947_file_symlink_targets)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-provenance-1109/tests/test_provenance.py", line 97, in test_4212089947_file_symlink_targets
+    self.assertNotEqual(before, self.fingerprints(root))
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'c255013d31e68ea9ce95acf764343470b8a0050e6a295fbad8a45a3d32b8b699' == 'c255013d31e68ea9ce95acf764343470b8a0050e6a295fbad8a45a3d32b8b699'
+
+======================================================================
+FAIL: test_4212451943_in_progress_git_operations (test_provenance.ProvenanceTests.test_4212451943_in_progress_git_operations) (operation='MERGE_HEAD')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-provenance-1109/tests/test_provenance.py", line 149, in test_4212451943_in_progress_git_operations
+    self.rejected(root)
+    ~~~~~~~~~~~~~^^^^^^
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-provenance-1109/tests/test_provenance.py", line 36, in rejected
+    with self.assertRaises(ValueError):
+         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_4212451943_in_progress_git_operations (test_provenance.ProvenanceTests.test_4212451943_in_progress_git_operations) (operation='CHERRY_PICK_HEAD')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-provenance-1109/tests/test_provenance.py", line 149, in test_4212451943_in_progress_git_operations
+    self.rejected(root)
+    ~~~~~~~~~~~~~^^^^^^
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-provenance-1109/tests/test_provenance.py", line 36, in rejected
+    with self.assertRaises(ValueError):
+         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_4212451943_in_progress_git_operations (test_provenance.ProvenanceTests.test_4212451943_in_progress_git_operations) (operation='REVERT_HEAD')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-provenance-1109/tests/test_provenance.py", line 149, in test_4212451943_in_progress_git_operations
+    self.rejected(root)
+    ~~~~~~~~~~~~~^^^^^^
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-provenance-1109/tests/test_provenance.py", line 36, in rejected
+    with self.assertRaises(ValueError):
+         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_4212451943_in_progress_git_operations (test_provenance.ProvenanceTests.test_4212451943_in_progress_git_operations) (operation='rebase-merge')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-provenance-1109/tests/test_provenance.py", line 149, in test_4212451943_in_progress_git_operations
+    self.rejected(root)
+    ~~~~~~~~~~~~~^^^^^^
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-provenance-1109/tests/test_provenance.py", line 36, in rejected
+    with self.assertRaises(ValueError):
+         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_4212451943_in_progress_git_operations (test_provenance.ProvenanceTests.test_4212451943_in_progress_git_operations) (operation='rebase-apply')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-provenance-1109/tests/test_provenance.py", line 149, in test_4212451943_in_progress_git_operations
+    self.rejected(root)
+    ~~~~~~~~~~~~~^^^^^^
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-provenance-1109/tests/test_provenance.py", line 36, in rejected
+    with self.assertRaises(ValueError):
+         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_4212451943_in_progress_git_operations (test_provenance.ProvenanceTests.test_4212451943_in_progress_git_operations) (operation='sequencer')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-provenance-1109/tests/test_provenance.py", line 149, in test_4212451943_in_progress_git_operations
+    self.rejected(root)
+    ~~~~~~~~~~~~~^^^^^^
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-provenance-1109/tests/test_provenance.py", line 36, in rejected
+    with self.assertRaises(ValueError):
+         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_4212451953_unborn_branch (test_provenance.ProvenanceTests.test_4212451953_unborn_branch)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-provenance-1109/tests/test_provenance.py", line 157, in test_4212451953_unborn_branch
+    self.assertNotEqual(before, self.fingerprints(root))
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: '3a37d355317935f190eaa37f87132386e2bed4849b1f1979dd9ece2dcc612ae1' == '3a37d355317935f190eaa37f87132386e2bed4849b1f1979dd9ece2dcc612ae1'
+
+======================================================================
+FAIL: test_4212756294_nested_git_repository (test_provenance.ProvenanceTests.test_4212756294_nested_git_repository)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-provenance-1109/tests/test_provenance.py", line 166, in test_4212756294_nested_git_repository
+    self.rejected(root)
+    ~~~~~~~~~~~~~^^^^^^
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-provenance-1109/tests/test_provenance.py", line 36, in rejected
+    with self.assertRaises(ValueError):
+         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+----------------------------------------------------------------------
+Ran 11 tests in 0.324s
+
+FAILED (failures=13, errors=1)

@@ -1,0 +1,77 @@
+FFFFFF
+======================================================================
+FAIL: test_4212451943_in_progress_git_operations (test_provenance.ProvenanceTests.test_4212451943_in_progress_git_operations) (operation='MERGE_HEAD')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-provenance-1109/tests/test_provenance.py", line 149, in test_4212451943_in_progress_git_operations
+    self.rejected(root)
+    ~~~~~~~~~~~~~^^^^^^
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-provenance-1109/tests/test_provenance.py", line 36, in rejected
+    with self.assertRaises(ValueError):
+         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_4212451943_in_progress_git_operations (test_provenance.ProvenanceTests.test_4212451943_in_progress_git_operations) (operation='CHERRY_PICK_HEAD')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-provenance-1109/tests/test_provenance.py", line 149, in test_4212451943_in_progress_git_operations
+    self.rejected(root)
+    ~~~~~~~~~~~~~^^^^^^
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-provenance-1109/tests/test_provenance.py", line 36, in rejected
+    with self.assertRaises(ValueError):
+         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_4212451943_in_progress_git_operations (test_provenance.ProvenanceTests.test_4212451943_in_progress_git_operations) (operation='REVERT_HEAD')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-provenance-1109/tests/test_provenance.py", line 149, in test_4212451943_in_progress_git_operations
+    self.rejected(root)
+    ~~~~~~~~~~~~~^^^^^^
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-provenance-1109/tests/test_provenance.py", line 36, in rejected
+    with self.assertRaises(ValueError):
+         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_4212451943_in_progress_git_operations (test_provenance.ProvenanceTests.test_4212451943_in_progress_git_operations) (operation='rebase-merge')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-provenance-1109/tests/test_provenance.py", line 149, in test_4212451943_in_progress_git_operations
+    self.rejected(root)
+    ~~~~~~~~~~~~~^^^^^^
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-provenance-1109/tests/test_provenance.py", line 36, in rejected
+    with self.assertRaises(ValueError):
+         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_4212451943_in_progress_git_operations (test_provenance.ProvenanceTests.test_4212451943_in_progress_git_operations) (operation='rebase-apply')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-provenance-1109/tests/test_provenance.py", line 149, in test_4212451943_in_progress_git_operations
+    self.rejected(root)
+    ~~~~~~~~~~~~~^^^^^^
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-provenance-1109/tests/test_provenance.py", line 36, in rejected
+    with self.assertRaises(ValueError):
+         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_4212451943_in_progress_git_operations (test_provenance.ProvenanceTests.test_4212451943_in_progress_git_operations) (operation='sequencer')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-provenance-1109/tests/test_provenance.py", line 149, in test_4212451943_in_progress_git_operations
+    self.rejected(root)
+    ~~~~~~~~~~~~~^^^^^^
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-provenance-1109/tests/test_provenance.py", line 36, in rejected
+    with self.assertRaises(ValueError):
+         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+----------------------------------------------------------------------
+Ran 1 test in 0.142s
+
+FAILED (failures=6)
