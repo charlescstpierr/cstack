@@ -1,0 +1,15 @@
+.F.....
+======================================================================
+FAIL: test_guard_accepts_private_preflight_adds_without_changing_the_default_profile (test_installed_loader.InstalledLoaderTests.test_guard_accepts_private_preflight_adds_without_changing_the_default_profile)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-install-1110/.cstack/correct/old-loader/tests/test_installed_loader.py", line 71, in test_guard_accepts_private_preflight_adds_without_changing_the_default_profile
+    self.assertEqual(result.returncode, 0, result.stderr)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 1 != 0 : BLOCKED: installer attempted a profile override
+
+
+----------------------------------------------------------------------
+Ran 7 tests in 0.278s
+
+FAILED (failures=1)

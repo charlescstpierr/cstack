@@ -48,14 +48,22 @@ Dans `doctor`, `✓` est vérifié, `!` est facultatif (Bun, `gh`) et n'empêche
 | Message | Action |
 | --- | --- |
 | `Codex CLI introuvable` | Ni Codex ni Claude Code n'est présent. Proposez `npm install -g @openai/codex` et attendez l'accord de l'utilisateur. |
-| `installation dans Claude Code impossible` ou `mise à jour dans Claude Code impossible` | Lisez l'erreur de Claude Code affichée juste avant et rapportez-la. L'installation Codex, faite avant, reste en place. |
+| `installation du plugin impossible` | Lisez l'erreur de Claude Code affichée juste avant et rapportez-la. L'installation Codex, faite avant, reste en place. |
 | `refusé à charlescstpierr/cstack` | Git ne joint le dépôt ni en HTTPS ni en SSH. Faites vérifier le réseau. Si Git passe par un compte GitHub mal connecté, l'utilisateur lance `gh auth login` puis `gh auth setup-git`. |
 | `cstack est désactivé` | L'utilisateur l'a désactivé exprès. Ne forcez rien : demandez-lui de le réactiver dans Codex, ou de choisir `install.sh uninstall` puis `install.sh install`. |
-| `source inutilisable. L'installation actuelle est conservée.` ou `source inutilisable dans Claude Code` | L'essai de la nouvelle source a échoué et rien n'a changé. Lisez l'erreur de Codex ou de Claude Code affichée juste avant : référence introuvable, réseau, permissions ou disque plein. Rapportez cette cause ; ne supposez pas une mauvaise `--ref`. |
+| `source inutilisable. L'installation actuelle est conservée.` ou `source inutilisable` | L'essai de la nouvelle source a échoué et rien n'a changé. Lisez l'erreur de Codex ou de Claude Code affichée juste avant : référence introuvable, réseau, permissions ou disque plein. Rapportez cette cause ; ne supposez pas une mauvaise `--ref`. |
 | `impossible de lire l'état de Codex` ou `état du plugin illisible` | Codex CLI ne répond pas correctement. Faites vérifier `codex --version` et la mise à jour de Codex ; ne touchez pas à ses fichiers. |
 | `épinglé sur un commit` | L'installation suit un commit fixe, souvent voulu. Demandez à l'utilisateur avant `install.sh install --ref main`. |
-| `n'a pas pu être restaurée` | Le changement de source a échoué et l'ancienne n'a pas pu être remise : cstack n'est peut-être plus installé. Relancez `install.sh doctor`, puis `install.sh install` si la ligne du plugin n'est pas `✓`, et dites-le à l'utilisateur. |
+| `restauration impossible` | La commande a échoué et le rollback aussi. Le chemin de reprise affiché conserve l’instantané précédent. Relancez `install.sh doctor`, puis utilisez les commandes officielles de l’hôte pour réinstaller depuis ce chemin ; rapportez l’échec et le chemin à l’utilisateur. |
 | `Source locale : recopie depuis le clone` | Si le code de sortie est 0, c'est une réussite, mais depuis un clone local (`install --local`) : pas forcément la dernière version. Dites-le, et demandez à l'utilisateur s'il veut mettre son clone à jour lui-même ou passer à GitHub avec `install.sh install --ref main`. |
 | `cstack n'est pas installé` | Vous avez lancé `update` trop tôt : lancez `install.sh install`. |
 
 Pour tout autre échec, montrez le message tel quel à l'utilisateur.
+
+## Reprise après une installation échouée
+
+Chaque hôte utilise une transaction : lire l’état, copier le catalogue courant et rétablir sa source cstack depuis le cache du plugin installé, valider dans un profil jetable, puis remplacer. Un refus de validation préserve le profil courant. Un échec pendant le remplacement, y compris SIGINT/SIGTERM, tente une restauration du code et de l’état installé ou absent du plugin. Un état désactivé ou illisible arrête la commande avant toute mutation.
+
+Après un rollback, le catalogue pointe vers la copie locale conservée sous `${XDG_STATE_HOME:-$HOME/.local/state}/cstack/install-rollback.*/source`. `source-before.txt` garde la source initiale et sa révision côté Codex ; `status-before.txt` garde l’état du plugin. Le chemin affiché permet de récupérer l’ancien code sans réseau. Le suivi automatique de la branche précédente n’est pas rétabli. Pour le reprendre, relancez `install.sh install --ref <branche>` ; pour un clone local, `install.sh install --local` depuis ce clone.
+
+Une restauration échouée conserve aussi cet instantané. Les commandes officielles de réparation sont `codex plugin marketplace add <chemin>/source` puis `codex plugin add cstack@cstack`, ou `claude plugin marketplace add <chemin>/source` puis `claude plugin install cstack@cstack`. Ne réinstallez le plugin que s’il était installé, selon `status-before.txt`. Une coupure par SIGKILL ou une panne machine laisse l’instantané, mais ne déclenche pas le rollback. Les transactions Codex et Claude sont indépendantes : l’échec de la seconde n’annule pas la première déjà réussie.

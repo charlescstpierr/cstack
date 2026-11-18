@@ -19,7 +19,7 @@ class ModeCorpusTests(unittest.TestCase):
         self.assertTrue(cases, "unknown historical finding")
         for case in cases:
             with self.subTest(case=case["id"], finding=case["comment_id"]), tempfile.TemporaryDirectory() as data:
-                env = dict(os.environ, PLUGIN_DATA=data)
+                env = dict(os.environ, PLUGIN_DATA=data, XDG_CONFIG_HOME=str(Path(data) / "config"))
                 def submit(prompt=None):
                     event = {"session_id": "corpus", "hook_event_name": "SessionStart" if prompt is None else "UserPromptSubmit"}
                     event.update({"source": "resume"} if prompt is None else {"prompt": prompt})

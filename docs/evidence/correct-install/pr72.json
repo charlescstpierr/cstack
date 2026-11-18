@@ -1,0 +1,237 @@
+{
+  "install_findings_pr72": 21,
+  "rollback_findings_pr72": 13,
+  "comments": [
+    {
+      "pr": 72,
+      "priority": "P2",
+      "file": "install.sh",
+      "title": "Refresh an already-selected ref during update",
+      "class": "compat-schema",
+      "comment_id": 4114105813,
+      "reviewed_commit": "14c0fa4f58181d875d853247d3115a0a5d02eff4",
+      "url": "https://github.com/charlescstpierr/cstack/pull/72#discussion_r4114105813",
+      "body": "**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  Refresh an already-selected ref during update**\n\nWhen the configured marketplace already uses the requested ref—for example, on the second `update --ref main`—this calls `marketplace add` with the identical source. I reproduced with Codex CLI 0.144.0-alpha.4 that the command succeeds with `\"alreadyAdded\": true` while leaving the checkout's `HEAD` unchanged, so the following plugin installation silently reuses the stale snapshot. The CLI help distinguishes `marketplace add` (“Add a local or Git marketplace”) from `marketplace upgrade` (“Refresh configured Git marketplace snapshots”); route this case through the validated remove/add transaction, or otherwise force a snapshot refresh.\n\nUseful? React with 👍 / 👎."
+    },
+    {
+      "pr": 72,
+      "priority": "P2",
+      "file": "install.sh",
+      "title": "Preserve the existing marketplace until replacement succeeds",
+      "class": "echec-partiel",
+      "comment_id": 4113948622,
+      "reviewed_commit": "f2d546540efe7cc812ec19cf77b078c22addd99e",
+      "url": "https://github.com/charlescstpierr/cstack/pull/72#discussion_r4113948622",
+      "body": "**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  Preserve the existing marketplace until replacement succeeds**\n\nWhen switching to `--ref` or `--local`, a nonexistent ref, transient network failure, or authentication failure makes the second `marketplace add` fail only after this line has removed the working source. The command then exits with cstack's marketplace configuration missing, so a failed update unexpectedly breaks future updates; validate the replacement first or restore the previous source when adding it fails.\n\nUseful? React with 👍 / 👎."
+    },
+    {
+      "pr": 72,
+      "priority": "P2",
+      "file": "install.sh",
+      "title": "Restore the old marketplace when the real add fails",
+      "class": "echec-partiel",
+      "comment_id": 4113983268,
+      "reviewed_commit": "1d8295e20e2445004334be6ac8eb92fa9a6b5aeb",
+      "url": "https://github.com/charlescstpierr/cstack/pull/72#discussion_r4113983268",
+      "body": "**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  Restore the old marketplace when the real add fails**\n\nAlthough 2060f38 added the disposable validation, fresh evidence remains at lines 113–114: the working marketplace is still removed before the real add completes. If that second clone fails because of a transient network or authentication problem after the trial succeeded, the script exits with cstack's marketplace absent; preserve enough source information to restore it, or use a replacement operation that does not expose this gap.\n\nUseful? React with 👍 / 👎."
+    },
+    {
+      "pr": 72,
+      "priority": "P2",
+      "file": "install.sh",
+      "title": "Fail instead of silently skipping marketplace removal",
+      "class": "echec-partiel",
+      "comment_id": 4113983276,
+      "reviewed_commit": "1d8295e20e2445004334be6ac8eb92fa9a6b5aeb",
+      "url": "https://github.com/charlescstpierr/cstack/pull/72#discussion_r4113983276",
+      "body": "**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  Fail instead of silently skipping marketplace removal**\n\n`codex plugin marketplace remove --help` describes the command as “Remove a configured marketplace source by name,” but when `plugin marketplace list --json` fails because of an unreadable configuration, CLI error, or malformed output, `codex_state` suppresses that failure and returns an empty value here. The uninstall then skips marketplace removal and prints that cstack was removed even though its source remains configured; distinguish an absent marketplace from a failed state query, or attempt an idempotent removal before reporting success.\n\nUseful? React with 👍 / 👎."
+    },
+    {
+      "pr": 72,
+      "priority": "P2",
+      "file": "install.sh",
+      "title": "Validate the plugin before replacing the marketplace",
+      "class": "echec-partiel",
+      "comment_id": 4114018143,
+      "reviewed_commit": "82bd465b93f3ac303f410b798f833b8c18bd0bc0",
+      "url": "https://github.com/charlescstpierr/cstack/pull/72#discussion_r4114018143",
+      "body": "**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  Validate the plugin before replacing the marketplace**\n\nWhen `--ref` or `--local` points to a valid marketplace that does not contain a usable `cstack` plugin, this trial succeeds, the working marketplace is removed, and the later `plugin add` at line 145 fails outside the rollback block. This leaves the replacement marketplace configured and the previously installed plugin unavailable. I reproduced this with codex-cli 0.144.0-alpha.4 using a valid local marketplace with an empty plugin list; its help likewise treats `marketplace add` (“Add a local or Git marketplace”) and `plugin add` (“Install a plugin from a configured marketplace snapshot”) as separate operations. Run `plugin add` in the disposable home as part of validation, or restore the prior marketplace if the real plugin installation fails.\n\nUseful? React with 👍 / 👎."
+    },
+    {
+      "pr": 72,
+      "priority": "P2",
+      "file": "install.sh",
+      "title": "Roll back the source when the final plugin install fails",
+      "class": "echec-partiel",
+      "comment_id": 4114031723,
+      "reviewed_commit": "31add3c760034dbd82e9e626807321a20acc34b0",
+      "url": "https://github.com/charlescstpierr/cstack/pull/72#discussion_r4114031723",
+      "body": "**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  Roll back the source when the final plugin install fails**\n\nWhen switching an existing source, if this production `plugin add` fails after disposable validation—for example because the real `CODEX_HOME` plugin cache is full or unwritable—`add_marketplace` has already removed the old marketplace and configured the replacement, but no rollback runs. The command therefore exits with a partially applied source change and potentially only the old cached plugin; fresh evidence beyond the earlier invalid-catalog issue is that this real-home installation remains outside the rollback block. I checked Codex CLI 0.144.0-alpha.4 help, which describes `plugin add` as “Install a plugin from a configured marketplace snapshot”; include this call in the source-change transaction and restore the previous source if it fails.\n\nUseful? React with 👍 / 👎."
+    },
+    {
+      "pr": 72,
+      "priority": "P2",
+      "file": "install.sh",
+      "title": "Roll back a marketplace added during a failed fresh install",
+      "class": "echec-partiel",
+      "comment_id": 4114049810,
+      "reviewed_commit": "a6d338a4071ba651a744c14b787fd055d6617fce",
+      "url": "https://github.com/charlescstpierr/cstack/pull/72#discussion_r4114049810",
+      "body": "**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  Roll back a marketplace added during a failed fresh install**\n\nWhen no `cstack` marketplace exists yet, a valid marketplace whose plugin is missing—or a cache/permission failure in this `plugin add`—leaves the newly added marketplace configured even though `install` exits unsuccessfully. I checked Codex CLI 0.144.0-alpha.4 help: `marketplace add` adds the source, while `plugin add` is the separate operation that installs from its snapshot, so the first operation is not undone automatically. Track whether this call created the marketplace and remove it if the immediately following plugin installation fails.\n\nUseful? React with 👍 / 👎."
+    },
+    {
+      "pr": 72,
+      "priority": "P2",
+      "file": "install.sh",
+      "title": "Pin the exact previous commit for rollback",
+      "class": "echec-partiel",
+      "comment_id": 4114049812,
+      "reviewed_commit": "a6d338a4071ba651a744c14b787fd055d6617fce",
+      "url": "https://github.com/charlescstpierr/cstack/pull/72#discussion_r4114049812",
+      "body": "**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  Pin the exact previous commit for rollback**\n\nWhen the existing marketplace tracks a branch whose remote has advanced since the last upgrade, and a source switch later fails after disposable validation, this prefers the symbolic branch name (for example `main`) over the checked-out commit. The rollback therefore fetches the branch's new tip instead of restoring the snapshot that was present before the command, potentially changing the installed plugin while reporting that the old source was restored. Codex CLI 0.144.0-alpha.4 documents `--ref` as the Git ref to fetch; record `rev-parse HEAD` here so rollback is pinned to the exact prior revision.\n\nUseful? React with 👍 / 👎."
+    },
+    {
+      "pr": 72,
+      "priority": "P2",
+      "file": "install.sh",
+      "title": "Abort when the previous revision cannot be pinned",
+      "class": "echec-partiel",
+      "comment_id": 4114072441,
+      "reviewed_commit": "a1689756cf70b156b336166c891e90cec70718db",
+      "url": "https://github.com/charlescstpierr/cstack/pull/72#discussion_r4114072441",
+      "body": "**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  Abort when the previous revision cannot be pinned**\n\nWhen switching away from a Git marketplace whose checkout is missing or unreadable, this fallback silently builds rollback arguments without a commit. If the real add then fails after the disposable trial and the old branch has advanced, lines 145–152 restore that branch's current tip and reinstall it rather than restoring the working snapshot, despite reporting that the previous commit was restored. Fresh evidence beyond the resolved pinning thread is the explicit successful return when `rev-parse HEAD` fails; capture `HEAD` or abort before removing the existing marketplace. I checked Codex CLI 0.144.0-alpha.4 help, which defines `--ref` as the “Git ref to fetch for Git marketplace sources.”\n\nUseful? React with 👍 / 👎."
+    },
+    {
+      "pr": 72,
+      "priority": "P2",
+      "file": "install.sh",
+      "title": "Validate upgrades before replacing the active snapshot",
+      "class": "echec-partiel",
+      "comment_id": 4114072444,
+      "reviewed_commit": "a1689756cf70b156b336166c891e90cec70718db",
+      "url": "https://github.com/charlescstpierr/cstack/pull/72#discussion_r4114072444",
+      "body": "**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  Validate upgrades before replacing the active snapshot**\n\nWhen the tracked Git branch advances to a catalog where `cstack` is absent or unusable, this replaces the active marketplace snapshot before line 199 attempts to install the plugin, and that later failure has no rollback. I reproduced this with codex-cli 0.144.0-alpha.4 by removing the plugin from the next branch revision: `update` reported the marketplace upgraded, `plugin add` failed, and the subsequent `plugin list --json --available` returned an empty `installed` list. The CLI help describes `marketplace upgrade` as “Refresh configured Git marketplace snapshots”; validate the upgraded plugin before committing the snapshot or restore the prior `HEAD` when installation fails.\n\nUseful? React with 👍 / 👎."
+    },
+    {
+      "pr": 72,
+      "priority": "P2",
+      "file": "install.sh",
+      "title": "Preserve an uninstalled plugin state during rollback",
+      "class": "echec-partiel",
+      "comment_id": 4114127345,
+      "reviewed_commit": "86da0b375676353e75b71e33b8b841daa803aa2e",
+      "url": "https://github.com/charlescstpierr/cstack/pull/72#discussion_r4114127345",
+      "body": "**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  Preserve an uninstalled plugin state during rollback**\n\nWhen the `cstack` marketplace is configured but its plugin is not installed—for example, after running only the first command from the documented manual installation—and a source switch fails after validation, this rollback unconditionally installs the plugin from the old snapshot. The failed command therefore changes an absent plugin into an installed and enabled one while claiming the previous installation was restored. I checked Codex CLI 0.144.0-alpha.4 help, which describes `plugin add` as installing a plugin from the configured snapshot; record the prior plugin state and run this step only when it was previously installed.\n\nUseful? React with 👍 / 👎."
+    },
+    {
+      "pr": 72,
+      "priority": "P2",
+      "file": "install.sh",
+      "title": "Abort when the prior plugin state cannot be read",
+      "class": "echec-partiel",
+      "comment_id": 4114148448,
+      "reviewed_commit": "d334b1164de0007985bf7493165792c4ae5077ee",
+      "url": "https://github.com/charlescstpierr/cstack/pull/72#discussion_r4114148448",
+      "body": "**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  Abort when the prior plugin state cannot be read**\n\nWhen `plugin marketplace list --json` succeeds but `plugin list --json --available` fails—for example because the plugin cache or marketplace snapshot is unreadable—the failed command substitution inside this comparison is treated as empty output, so the source switch proceeds with `was_installed` unset. If installing the replacement subsequently fails, rollback restores the old marketplace but does not reinstall the previously installed plugin; check the query's status explicitly and abort before removing the current source.\n\nUseful? React with 👍 / 👎."
+    },
+    {
+      "pr": 72,
+      "priority": "P2",
+      "file": "install.sh",
+      "title": "Preserve the disabled state when refreshing the plugin",
+      "class": "echec-partiel",
+      "comment_id": 4114148450,
+      "reviewed_commit": "d334b1164de0007985bf7493165792c4ae5077ee",
+      "url": "https://github.com/charlescstpierr/cstack/pull/72#discussion_r4114148450",
+      "body": "**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  Preserve the disabled state when refreshing the plugin**\n\nWhen `cstack@cstack` is installed but disabled, this records only that it is installed; both the replacement path and its rollback later call `plugin add`, and the local-update path does the same. With Codex CLI 0.144.0-alpha.4, whose `plugin add --help` describes the command as installing from a configured snapshot, I reproduced that calling it for an entry with `enabled = false` rewrites the entry to `enabled = true`, so an update or failed source switch unexpectedly activates a disabled plugin. Capture the enabled state separately and preserve it, or stop before switching when it cannot be restored through the supported CLI.\n\nUseful? React with 👍 / 👎."
+    },
+    {
+      "pr": 72,
+      "priority": "P2",
+      "file": "install.sh",
+      "title": "Preserve the installed local snapshot during rollback",
+      "class": "echec-partiel",
+      "comment_id": 4114185309,
+      "reviewed_commit": "dd6989480e3976c3b1304b4386471f5a8d7f3425",
+      "url": "https://github.com/charlescstpierr/cstack/pull/72#discussion_r4114185309",
+      "body": "**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  Preserve the installed local snapshot during rollback**\n\nWhen switching away from an `install --local` marketplace, this records only the mutable checkout path. If that checkout has changed since the last `plugin add` and the new source passes disposable validation but fails during the real installation—for example because the plugin cache is full—the rollback re-adds this path and copies its current contents, so the failed switch changes the installed plugin instead of restoring its prior version. Snapshot the previous local source before removal, or abort unless its exact installed state can be restored.\n\nUseful? React with 👍 / 👎."
+    },
+    {
+      "pr": 72,
+      "priority": "P3",
+      "file": "install.sh",
+      "title": "Treat a failing Codex version probe as a doctor failure",
+      "class": "non-classe",
+      "comment_id": 4113983280,
+      "reviewed_commit": "1d8295e20e2445004334be6ac8eb92fa9a6b5aeb",
+      "url": "https://github.com/charlescstpierr/cstack/pull/72#discussion_r4113983280",
+      "body": "**<sub><sub>![P3 Badge](https://img.shields.io/badge/P3-lightgrey?style=flat)</sub></sub>  Treat a failing Codex version probe as a doctor failure**\n\nWhen a `codex` executable exists but cannot run successfully, such as a broken wrapper or binary with a missing runtime dependency, `has_codex` passes and the failed command substitution does not affect the status returned by `ok`; stderr is also discarded. The diagnostic consequently prints `✓ Codex CLI :` with an empty version instead of identifying the unusable CLI, so capture and check the `--version` command's exit status before reporting success.\n\nUseful? React with 👍 / 👎."
+    },
+    {
+      "pr": 72,
+      "priority": "P2",
+      "file": "install.sh",
+      "title": "Reject an empty --ref instead of selecting the default revision",
+      "class": "non-classe",
+      "comment_id": 4114127344,
+      "reviewed_commit": "86da0b375676353e75b71e33b8b841daa803aa2e",
+      "url": "https://github.com/charlescstpierr/cstack/pull/72#discussion_r4114127344",
+      "body": "**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  Reject an empty --ref instead of selecting the default revision**\n\nWhen a caller expands an unset variable, such as `install --ref \"$REF\"` or `update --ref \"$REF\"`, this accepts the empty value; the later `-z` checks then treat the option as absent, installing the repository's default revision or updating the currently tracked branch. I checked Codex CLI 0.144.0-alpha.4 help, which defines `--ref <REF>` as the Git ref to fetch, so silently dropping an explicitly supplied empty ref can install a different revision than intended; reject an empty value here.\n\nUseful? React with 👍 / 👎."
+    },
+    {
+      "pr": 72,
+      "priority": "P2",
+      "file": "install.sh",
+      "title": "Check disabled state on the idempotent install path",
+      "class": "non-classe",
+      "comment_id": 4114164885,
+      "reviewed_commit": "719c8c2c8d37ffe43bb1d286c98bc8e2f50c8cea",
+      "url": "https://github.com/charlescstpierr/cstack/pull/72#discussion_r4114164885",
+      "body": "**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  Check disabled state on the idempotent install path**\n\nWhen the marketplace already has the requested source, `marketplace add` succeeds and this unconditional `plugin add` runs without `plugin_state_before_refresh`. For an installed but disabled plugin, Codex CLI rewrites the entry as enabled, so rerunning the documented idempotent `install` command silently activates cstack. Fresh evidence beyond the resolved source-switch/update thread is that only those paths check the disabled state; this identical-source success path still bypasses that guard. Check the state before this call just as the refresh paths do.\n\nUseful? React with 👍 / 👎."
+    },
+    {
+      "pr": 72,
+      "priority": "P3",
+      "file": "install.sh",
+      "title": "Report a missing Git executable accurately",
+      "class": "non-classe",
+      "comment_id": 4114185314,
+      "reviewed_commit": "dd6989480e3976c3b1304b4386471f5a8d7f3425",
+      "url": "https://github.com/charlescstpierr/cstack/pull/72#discussion_r4114185314",
+      "body": "**<sub><sub>![P3 Badge](https://img.shields.io/badge/P3-lightgrey?style=flat)</sub></sub>  Report a missing Git executable accurately**\n\nWhen `git` is not installed, `remote_source` detects that condition and emits a specific error, but this probe discards its output and maps every failure to an authentication error. Consequently, `doctor` tells the user to run `gh auth login` even though authentication cannot fix the missing executable; check for Git separately or preserve the diagnostic from `remote_source`.\n\nUseful? React with 👍 / 👎."
+    },
+    {
+      "pr": 72,
+      "priority": "P3",
+      "file": "install.sh",
+      "title": "Reject unsupported doctor arguments",
+      "class": "non-classe",
+      "comment_id": 4114185318,
+      "reviewed_commit": "dd6989480e3976c3b1304b4386471f5a8d7f3425",
+      "url": "https://github.com/charlescstpierr/cstack/pull/72#discussion_r4114185318",
+      "body": "**<sub><sub>![P3 Badge](https://img.shields.io/badge/P3-lightgrey?style=flat)</sub></sub>  Reject unsupported doctor arguments**\n\nWhen a caller passes an unsupported option or a typo such as `install.sh doctor --local`, `cmd_doctor` ignores every argument and can exit successfully on a healthy machine. This makes invalid scripted invocations appear valid, unlike `install`, `update`, and `uninstall`, which reject unsupported arguments; validate that the argument count is zero before running the checks.\n\nUseful? React with 👍 / 👎."
+    },
+    {
+      "pr": 72,
+      "priority": "P2",
+      "file": "install.sh",
+      "title": "Allow installations for SSH-authenticated GitHub users",
+      "class": "regle-trop-large",
+      "comment_id": 4113948627,
+      "reviewed_commit": "f2d546540efe7cc812ec19cf77b078c22addd99e",
+      "url": "https://github.com/charlescstpierr/cstack/pull/72#discussion_r4113948627",
+      "body": "**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  Allow installations for SSH-authenticated GitHub users**\n\nWhen a user has repository access configured only through SSH, this HTTPS-only probe fails and aborts before Codex even though the README calls `gh` merely recommended and describes the prerequisite as Git being connected to GitHub. I checked `codex plugin marketplace add --help` in codex-cli 0.144.0-alpha.4, which explicitly accepts an “SSH Git URL”; either fall back to the SSH repository URL or document and enforce HTTPS authentication as the actual requirement.\n\nUseful? React with 👍 / 👎."
+    },
+    {
+      "pr": 72,
+      "priority": "P1",
+      "file": "install.sh",
+      "title": "Redact credentials from rollback diagnostics",
+      "class": "secret-expose",
+      "comment_id": 4114127351,
+      "reviewed_commit": "86da0b375676353e75b71e33b8b841daa803aa2e",
+      "url": "https://github.com/charlescstpierr/cstack/pull/72#discussion_r4114127351",
+      "body": "**<sub><sub>![P1 Badge](https://img.shields.io/badge/P1-orange?style=flat)</sub></sub>  Redact credentials from rollback diagnostics**\n\nWhen an existing marketplace was configured with an authenticated HTTPS URL and a source switch fails after disposable validation, this diagnostic writes the complete previous URL to stderr, exposing its username or token in terminal and CI logs. I verified with Codex CLI 0.144.0-alpha.4 that `marketplace add` accepts `https://user:secret@host/repo.git` and `marketplace list --json` returns that userinfo verbatim, which is then retained in `previous`; redact credentials rather than interpolating the source into either rollback message.\n\nUseful? React with 👍 / 👎."
+    }
+  ]
+}

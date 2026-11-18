@@ -1,6 +1,6 @@
 # Ajouter ou mettre à jour Claude Code
 
-Après invocation dans T3, le [contrat T3](../../cstack/references/runtime/t3.md) prime pour catalogue, choix explicites et synchronisation. Le chemin T3 modèle seul utilise `models.py --host t3 --catalog ... --host-context ...`, sans conversion automatique ni CLI de repli.
+Après invocation dans T3, le [contrat T3](../../cstack/references/runtime/t3.md) prime pour catalogue, choix explicites et synchronisation. Le chemin T3 modèle seul utilise `models.py --host t3 --capabilities <sortie de orchestrator_capabilities>`, sans conversion automatique ni CLI de repli.
 
 
 Référence de [setup-cstack](../SKILL.md). À suivre avant les recommandations natives quand la demande concerne Claude Code ou un autre CLI.

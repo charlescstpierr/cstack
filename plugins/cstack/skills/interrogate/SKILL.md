@@ -48,6 +48,8 @@ Classe chaque finding dans ces seaux :
 - **Noted**. Techniquement valides mais non actionnables. Dépendants du contexte, optimisation prématurée ou faible impact au stade courant.
 - **Dismissed**. Faux, pinailleur ou manquant de contexte. Brève explication du pourquoi.
 
+Avant de classer un bug exécutable en **Act on**, rejoue sa reproduction ; une reproduction qui ne se rejoue pas descend en Consider ou Dismissed, avec la sortie observée. Une finding non exécutable établie par le code ou la spec reste admissible sans exécution. Une `hypothèse non vérifiée` ne va jamais en Act on.
+
 Pour chaque finding, inclus :
 - Quel reviewer ou quels reviewers l'ont soulevée
 - L'axe : Standards, Spec ou Cross-cutting

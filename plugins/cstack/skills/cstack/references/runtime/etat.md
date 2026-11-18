@@ -1,6 +1,6 @@
 # État, scripts helper et reprise
 
-Dans une tâche cstack explicitement invoquée dans T3, le [contrat T3](t3.md) prime sur les règles autonomes de ce document.
+Dans une tâche cstack activée explicitement ou par démarrage automatique dans T3, le [contrat T3](t3.md) prime sur les règles autonomes de ce document.
 
 
 Utilise le `.cstack/` du workspace cible pour l’état généré. Garde le point de reprise, les décisions et le store d’orchestration de chaque tâche dans un sous-répertoire séparé propre à la tâche. Utilise un ID de tâche connu ou crée un répertoire unique. Le point de reprise nomme l’objectif, les actions autorisées par la conversation, branche/worktree, commit courant, contrôles terminés, travail restant et chemins d’artéfact. N’inclus pas de credentials ni de contenu de conversation non lié.
