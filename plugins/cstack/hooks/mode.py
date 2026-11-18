@@ -67,7 +67,8 @@ def _stop_requested(prompt: str) -> bool:
 def _instruction_text(text: str, target) -> str:
     import re
 
-    tokens = list(re.finditer(r"""(?<=[\r\n])[ \t]{0,3}>|`+|~{3,}|["'«»“”‘’\r\n]""", text))
+    blank_line = r"(?:\r\n|\n|\r(?!\n))[ \t]*(?:\r\n|\n|\r(?!\n))"
+    tokens = list(re.finditer(blank_line + r"""|(?<=[\r\n])[ \t]{0,3}>|`+|~{3,}|["'«»“”‘’\r\n]""", text))
     escaped_starts = {run.end() for run in re.finditer(r"\\+", text) if len(run.group()) % 2}
     paired_quotes = {"«": "»", "“": "”", "‘": "’", "'": "'", '"': '"'}
     next_closer = {}
@@ -75,12 +76,15 @@ def _instruction_text(text: str, target) -> str:
     language_tag = re.compile(r"[A-Za-z][\w.+-]*[ \t]*")
     spans = [None] * len(tokens)
     line_end = len(text)
+    paragraph_end = len(text)
     # Index closing delimiters once so unmatched quotes cannot make the hook rescan the prompt.
     for index in range(len(tokens) - 1, -1, -1):
         token = tokens[index]
         mark = token.group()
-        if mark in ("\r", "\n"):
+        if mark[0] in "\r\n":
             line_end = token.start()
+            if len(mark) > 1:
+                paragraph_end = token.start()
         elif mark.lstrip(" \t") == ">":
             spans[index] = (line_end, None)
         elif token.start() not in escaped_starts and (mark[0] in "`~" or mark in paired_quotes) and not (
@@ -100,6 +104,8 @@ def _instruction_text(text: str, target) -> str:
             elif mark[0] == "~":
                 close = (next_fence.get(("~", len(mark)))
                          if language_tag.fullmatch(text, token.end(), line_end) else None)
+            if not line_fence and mark[0] in "`~" and close is not None and close.start() >= paragraph_end:
+                close = None
             if close is not None and (mark != "'" or close.start() < line_end):
                 inline_end = close.start() if mark.startswith("`") and not line_fence else None
                 spans[index] = (close.end(), inline_end)
@@ -141,7 +147,8 @@ def _activation_requested(prompt: str) -> bool:
     generic_end = r"(?=\s*(?:[.!?,;:]|$))"
     french_target = (fr"(?:{tool}|(?:ce|le)\s+skill\s+{tool}|"
                      fr"(?:(?:cette|la)\s+comp[ée]tence|(?:ce|le)\s+skill){generic_end})")
-    english_target = fr"(?:it\b|{tool}|(?:this|the)\s+(?:cstack\s+)?skill\b)"
+    english_end = fr"(?:{generic_end}|(?=\s+(?:for|in|on|at|here|now|today|please)\b))"
+    english_target = fr"(?:it\b|{tool}|(?:this|the)\s+(?:cstack\s+skill\b|skill{english_end}))"
     inline_target = re.compile(fr"(?:{french_target}|{english_target})", re.IGNORECASE)
     refusal = re.search(
         r"\b(?:ne\s+l['’](?:activ|utilis|appliqu)\w*\s+pas\b"
