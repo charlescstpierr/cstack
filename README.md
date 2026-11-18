@@ -220,7 +220,7 @@ docker run --rm -v "$PWD:/repo:ro" -w /repo \
 git diff --check
 ```
 
-Python 3.9 ou plus récent exécute les assistants et toute la suite de tests. L'analyse du `config.toml` de Codex dans `scripts/verify-behavior.py` exige Python 3.11 ou plus récent.
+Python 3.9 ou plus récent exécute les assistants et toute la suite de tests. L'analyse du `config.toml` de Codex dans `scripts/verify-behavior.py` et `scripts/check-installed-loader.py` exige Python 3.11 ou plus récent.
 
 Le [guide](plugins/cstack/docs/guide/README.md) détaille les processus. Le [rapport de vérification](docs/VERIFICATION.md) distingue les tests effectués des limites. Le [journal des modifications](CHANGELOG.md) décrit les versions.
 

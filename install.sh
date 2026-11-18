@@ -56,17 +56,35 @@ require_tools() {
 }
 
 read -r -d '' STATE_PARSER <<'PY' || true
-import json, sys
+import json, os, sys
 query, marketplace, plugin = sys.argv[1:]
 data = json.load(sys.stdin)
+if not isinstance(data, dict):
+    raise ValueError("invalid plugin state")
+required = ("marketplaces",) if query == "marketplace" else ("installed", "available")
+if any(not isinstance(data.get(key), list) or not all(isinstance(entry, dict) for entry in data[key]) for key in required):
+    raise ValueError("incomplete plugin state")
 if query == "marketplace":
     for entry in data.get("marketplaces", []):
         if entry.get("name") == marketplace:
             source = entry.get("marketplaceSource", {})
+            if (not isinstance(source, dict) or source.get("sourceType") not in ("git", "local")
+                    or not all(isinstance(value, str) and value for value in (source.get("source"), entry.get("root")))):
+                raise ValueError("invalid marketplace source")
             print("\t".join([source.get("sourceType", ""), source.get("source", ""), entry.get("root", "")]))
 else:
     for entry in data.get("installed", []) + data.get("available", []):
         if entry.get("pluginId") == plugin:
+            if not isinstance(entry.get("installed"), bool):
+                raise ValueError("invalid installed state")
+            if entry["installed"] and (not isinstance(entry.get("enabled"), bool) or not isinstance(entry.get("version"), str)):
+                raise ValueError("invalid plugin state")
+            if query == "plugin-cache":
+                version = entry.get("version")
+                if not entry["installed"] or not isinstance(version, str) or not version or version in (".", "..") or "/" in version or "\\" in version:
+                    raise ValueError("invalid installed version")
+                print(os.path.join(os.environ.get("CODEX_HOME") or os.path.expanduser("~/.codex"), "plugins", "cache", marketplace, "cstack", version))
+                break
             if entry.get("installed"):
                 state = "enabled" if entry.get("enabled") else "disabled"
                 print("installed, {} {}".format(state, entry.get("version", "")).strip())
@@ -83,7 +101,7 @@ codex_state() {
   local query="$1" json
   case "$query" in
     marketplace) json="$(run_codex plugin marketplace list --json 2>/dev/null)" || return 1 ;;
-    plugin-status) json="$(run_codex plugin list --json --available 2>/dev/null)" || return 1 ;;
+    plugin-status|plugin-cache) json="$(run_codex plugin list --json --available 2>/dev/null)" || return 1 ;;
   esac
   python3 -c "$STATE_PARSER" "$query" "$MARKETPLACE" "$PLUGIN" <<<"$json" 2>/dev/null
 }
@@ -138,72 +156,186 @@ add_marketplace() {
     [[ -z "$ref" ]] || source+=(--ref "$ref")
   fi
   current="$(current_marketplace)"
-  # Même relancée à l'identique, l'installation ne doit pas réactiver un plugin désactivé.
-  [[ -z "$current" ]] || plugin_state_before_refresh >/dev/null
-  if out="$(run_codex plugin marketplace add "${source[@]}" 2>&1)"; then
-    redact "$out"
-    if ! run_codex plugin add "$PLUGIN"; then
-      # Un catalogue créé par cet appel ne survit pas à l'échec de l'installation du plugin.
-      [[ -n "$current" ]] || run_codex plugin marketplace remove "$MARKETPLACE" >/dev/null 2>&1 || true
-      die "installation du plugin impossible."
-    fi
-    return
+  if [[ -n "$current" ]]; then
+    local type old_source root
+    IFS=$'\t' read -r type old_source root <<<"$current"
+    [[ "$old_source" == "${source[*]}" ]] || echo "Changement de source : $(redact "${source[@]}")"
   fi
-  # Codex refuse de changer la source (ref ou clone) d'un catalogue déjà configuré.
-  [[ -n "$current" ]] || die_with "$(redact "$out")"
-  echo "Changement de source : $(redact "${source[@]}")"
   switch_marketplace "$current" "${source[@]}"
 }
 
-# État du plugin avant une mise à jour ; arrêt s'il est illisible ou désactivé.
-# `plugin add` réactive un plugin désactivé et la CLI n'offre aucun moyen de le désactiver de nouveau.
-plugin_state_before_refresh() {
-  local status
-  status="$(codex_state plugin-status)" || die "état du plugin illisible (codex plugin list --json) ; l'installation actuelle est conservée."
-  [[ "$status" != "installed, disabled"* ]] ||
-    die "cstack est désactivé : une mise à jour le réactiverait. Réactivez-le dans Codex, ou retirez-le (install.sh uninstall), puis relancez."
-  printf '%s\n' "$status"
+switch_marketplace() {
+  local current="$1"; shift
+  replace_marketplace codex "$current" "$@"
 }
 
-# Remplace le catalogue configuré (décrit par $1) par la source qui suit, plugin compris.
-# Toute étape ratée laisse ou remet l'installation précédente, à son commit exact.
-switch_marketplace() {
-  local current="$1" out trial trial_failed="" prev line was_installed="" status
-  shift
-  local -a source=("$@") previous
-  prev="$(previous_source "$current")" || die "commit actuel illisible dans le clone de Codex ; l'installation actuelle est conservée."
-  while IFS= read -r line; do previous+=("$line"); done <<<"$prev"
-  # La restauration ne réinstalle le plugin que s'il l'était avant la commande.
-  status="$(plugin_state_before_refresh)"
-  [[ "$status" != installed* ]] || was_installed=1
-  # Essai dans un CODEX_HOME jetable : une source invalide ne doit pas coûter l'installation actuelle.
-  trial="$(mktemp -d)"
-  # L'essai installe aussi le plugin : un catalogue valide sans cstack utilisable est refusé ici.
-  out="$({ CODEX_HOME="$trial" run_codex plugin marketplace add "${source[@]}" &&
-    CODEX_HOME="$trial" run_codex plugin add "$PLUGIN"; } 2>&1)" || trial_failed=1
-  rm -rf "$trial"
-  [[ -z "$trial_failed" ]] || die_with "$(redact "$out")"$'\n'"cstack : source inutilisable. L'installation actuelle est conservée."
-  run_codex plugin marketplace remove "$MARKETPLACE" >/dev/null
-  # Catalogue et plugin forment une seule transaction : tout échec restaure l'ancienne source.
-  if ! out="$({ run_codex plugin marketplace add "${source[@]}" && run_codex plugin add "$PLUGIN"; } 2>&1)"; then
-    redact "$out" >&2
-    run_codex plugin marketplace remove "$MARKETPLACE" >/dev/null 2>&1 || true
-    { run_codex plugin marketplace add "${previous[@]}" && { [[ -z "$was_installed" ]] || run_codex plugin add "$PLUGIN"; }; } >/dev/null 2>&1 ||
-      die "échec, et l'ancienne source ($(redact "${previous[@]}")) n'a pas pu être restaurée : relancez install.sh install."
-    [[ "$current" == git$'\t'* ]] ||
-      die "échec ; l'ancienne source locale ($(redact "${previous[@]}")) est restaurée, recopiée depuis l'état actuel du clone."
-    die "échec ; l'ancienne source ($(redact "${previous[@]}")) est restaurée à son commit précédent. Pour suivre de nouveau une branche : install.sh install --ref <branche>"
-  fi
-  redact "$out"
+# Both hosts use this transaction. Only their official CLIs change active profiles.
+host_state() {
+  local host="$1" query="$2"
+  if [[ "$host" == codex ]]; then codex_state "$query"; else claude_state "$query"; fi
 }
+
+host_run() {
+  local host="$1"; shift
+  if [[ "$host" == codex ]]; then run_codex "$@"; else run_claude "$@"; fi
+}
+
+host_install_plugin() {
+  if [[ "$1" == codex ]]; then run_codex plugin add "$PLUGIN"; else run_claude plugin install "$PLUGIN"; fi
+}
+
+host_remove_plugin() {
+  if [[ "$1" == codex ]]; then run_codex plugin remove "$PLUGIN"; else run_claude plugin uninstall "$PLUGIN"; fi
+}
+
+# A local marketplace root may already differ from the installed plugin cache.
+# Rebuild that plugin's source in the recovery catalogue from its installed bytes.
+snapshot_installed_plugin() {
+  local host="$1" snapshot="$2" cache
+  cache="$(host_state "$host" plugin-cache)" || die "chemin du plugin installé illisible ; installation actuelle conservée."
+  [[ -n "$cache" && -d "$cache" ]] || die "cache du plugin installé introuvable ; installation actuelle conservée."
+  python3 - "$host" "$snapshot/source" "$cache" <<'PY'
+import json, shutil, sys
+from pathlib import Path
+host, recovery, cache = sys.argv[1:]
+root = Path(recovery)
+manifest = root / (".agents/plugins/marketplace.json" if host == "codex" else ".claude-plugin/marketplace.json")
+data = json.loads(manifest.read_text())
+entries = [entry for entry in data["plugins"] if entry.get("name") == "cstack"]
+if len(entries) != 1:
+    raise ValueError("catalogue sans source cstack unique")
+source = entries[0]["source"]
+relative = source.get("path") if isinstance(source, dict) and source.get("source") == "local" else source
+if not isinstance(relative, str) or not relative or Path(relative).is_absolute() or ".." in Path(relative).parts:
+    raise ValueError("source du plugin installé non locale : restauration exacte impossible")
+destination = root / relative
+if destination.resolve() == root.resolve() or root.resolve() not in destination.resolve().parents:
+    raise ValueError("source du plugin hors instantané")
+if destination.is_symlink():
+    destination.unlink()
+elif destination.exists():
+    shutil.rmtree(destination)
+destination.parent.mkdir(parents=True, exist_ok=True)
+shutil.copytree(cache, destination, symlinks=True)
+PY
+}
+
+replace_marketplace() (
+  # The subshell keeps traps and transaction state out of the next host's transaction.
+  local host="$1" current="$2" status root="" type old_source prev="" out trial="" snapshot="" phase=prepare
+  shift 2
+  local -a source=("$@")
+  umask 077
+  status="$(host_state "$host" plugin-status)" || die "état du plugin illisible dans $host ; l'installation actuelle est conservée."
+  [[ "$status" != "installed, disabled"* ]] || die "cstack est désactivé dans $host ; l'installation actuelle est conservée."
+  [[ -n "$current" || "$status" != installed* ]] || die "plugin installé sans catalogue attesté dans $host ; état conservé."
+
+  restore_transaction() {
+    local status_now source_now configured
+    # A failed CLI may have applied part of its operation before returning an error.
+    host_remove_plugin "$host" >/dev/null 2>&1 || true
+    host_run "$host" plugin marketplace remove "$MARKETPLACE" >/dev/null 2>&1 || true
+    if [[ -n "$current" ]]; then
+      host_run "$host" plugin marketplace add "$snapshot/source" >/dev/null 2>&1 || return 1
+      [[ "$status" != installed* ]] || host_install_plugin "$host" >/dev/null 2>&1 || return 1
+    fi
+    source_now="$(host_state "$host" marketplace)" || return 1
+    if [[ -z "$current" ]]; then
+      [[ -z "$source_now" ]] || return 1
+    elif [[ "$host" == codex ]]; then
+      IFS=$'\t' read -r _ configured _ <<<"$source_now"
+      [[ "$configured" == "$snapshot/source" ]] || return 1
+    else
+      [[ "$source_now" == "$snapshot/source" ]] || return 1
+    fi
+    status_now="$(host_state "$host" plugin-status)" || return 1
+    if [[ "$status" == installed* ]]; then
+      [[ "$status_now" == "$status" ]] || return 1
+    else
+      [[ "$status_now" != installed* ]] || return 1
+    fi
+  }
+
+  finish_transaction() {
+    local code=$?
+    trap - EXIT INT TERM
+    [[ -z "$trial" ]] || rm -rf "$trial"
+    if [[ "$phase" == apply ]]; then
+      if restore_transaction; then
+        printf "cstack : échec ; l'ancienne installation est restaurée dans %s.\n" "$host" >&2
+        if [[ -n "$snapshot" ]]; then
+          printf 'Source de reprise conservée : %s/source ; source initiale : %s\n' "$snapshot" "$(redact "$prev")" >&2
+        fi
+      else
+        printf 'cstack : restauration impossible dans %s ; reprise : %s\n' "$host" "${snapshot:-état initial absent, nettoyage manuel requis}" >&2
+      fi
+      # The restored marketplace now refers to this immutable recovery source.
+      snapshot=""
+      ((code != 0)) || code=1
+    fi
+    [[ -z "$snapshot" ]] || rm -rf "$snapshot"
+    exit "$code"
+  }
+  trap finish_transaction EXIT
+  trap 'exit 130' INT
+  trap 'exit 143' TERM
+
+  if [[ -n "$current" ]]; then
+    if [[ "$host" == codex ]]; then
+      IFS=$'\t' read -r type old_source root <<<"$current"
+      prev="$(previous_source "$current")" || die "commit actuel illisible ; l'installation actuelle est conservée."
+    else
+      [[ "$current" != "?" ]] || die "source actuelle de Claude Code illisible ; l'installation actuelle est conservée."
+      root="$(claude_state marketplace-root)" || die "racine du catalogue Claude Code illisible."
+      prev="$current"
+    fi
+    [[ -n "$root" && -d "$root" ]] || die "instantané actuel introuvable dans $host ; l'installation actuelle est conservée."
+    local state_dir="${XDG_STATE_HOME:-$HOME/.local/state}/cstack"
+    mkdir -p "$state_dir"
+    snapshot="$(mktemp -d "$state_dir/install-rollback.XXXXXXXX")"
+    cp -a "$root/." "$snapshot/source"
+    if [[ "$status" == installed* ]]; then
+      snapshot_installed_plugin "$host" "$snapshot"
+    fi
+    printf '%s\n' "$prev" > "$snapshot/source-before.txt"
+    printf '%s\n' "$status" > "$snapshot/status-before.txt"
+  fi
+
+  trial="$(mktemp -d)"
+  if ! out="$({
+    if [[ "$host" == codex ]]; then export CODEX_HOME="$trial"; else export CLAUDE_CONFIG_DIR="$trial"; fi
+    host_run "$host" plugin marketplace add "${source[@]}" && host_install_plugin "$host"
+  } 2>&1)"; then
+    die_with "$(redact "$out")"$'\n'"cstack : installation du plugin impossible, source inutilisable. L'installation actuelle est conservée."
+  fi
+  phase=apply
+  if [[ -n "$current" ]]; then
+    if ! out="$(host_run "$host" plugin marketplace remove "$MARKETPLACE" 2>&1)"; then
+      die_with "$(redact "$out")"$'\n'"cstack : retrait du catalogue dans $host impossible."
+    fi
+  fi
+  if ! out="$({ host_run "$host" plugin marketplace add "${source[@]}" && host_install_plugin "$host"; } 2>&1)"; then
+    die_with "$(redact "$out")"$'\n'"cstack : installation du plugin impossible dans $host."
+  fi
+  phase="done"
+  redact "$out"
+)
 
 read -r -d '' CLAUDE_PARSER <<'PY' || true
-import json, sys
+import json, os, sys
 query, marketplace, plugin = sys.argv[1:]
 data = json.load(sys.stdin)
-if query == "marketplace":
+if not isinstance(data, list) or not all(isinstance(entry, dict) for entry in data):
+    raise ValueError("invalid plugin state")
+if query in ("marketplace", "marketplace-root"):
     for entry in data:
         if entry.get("name") == marketplace:
+            if query == "marketplace-root":
+                root = entry.get("installLocation")
+                if not isinstance(root, str) or not root:
+                    raise ValueError("missing marketplace snapshot")
+                print(root)
+                break
             # La source telle que `claude plugin marketplace add` la reprend ; « ? » si sa forme est inconnue.
             ref = "#" + entry["ref"] if entry.get("ref") else ""
             kind = entry.get("source")
@@ -218,7 +350,15 @@ if query == "marketplace":
 else:
     for entry in data:
         if entry.get("id") == plugin:
-            print("installed, {} {}".format("enabled" if entry.get("enabled") else "disabled", entry.get("version", "")).strip())
+            if not isinstance(entry.get("enabled"), bool) or not isinstance(entry.get("version"), str):
+                raise ValueError("invalid plugin state")
+            if query == "plugin-cache":
+                cache = entry.get("installPath")
+                if not isinstance(cache, str) or not cache:
+                    raise ValueError("missing installed cache")
+                print(cache)
+            else:
+                print("installed, {} {}".format("enabled" if entry.get("enabled") else "disabled", entry.get("version", "")).strip())
 PY
 
 # État de Claude Code, lu dans sa sortie JSON.
@@ -228,8 +368,8 @@ PY
 claude_state() {
   local query="$1" json
   case "$query" in
-    marketplace) json="$(run_claude plugin marketplace list --json 2>/dev/null)" || return 1 ;;
-    plugin-status) json="$(run_claude plugin list --json 2>/dev/null)" || return 1 ;;
+    marketplace|marketplace-root) json="$(run_claude plugin marketplace list --json 2>/dev/null)" || return 1 ;;
+    plugin-status|plugin-cache) json="$(run_claude plugin list --json 2>/dev/null)" || return 1 ;;
   esac
   python3 -c "$CLAUDE_PARSER" "$query" "$MARKETPLACE" "$PLUGIN" <<<"$json" 2>/dev/null
 }
@@ -256,51 +396,28 @@ claude_install() {
   local ref="$1" local_source="$2" source current
   source="$(claude_source "$ref" "$local_source")"
   current="$(current_claude_marketplace)"
-  if [[ -n "$current" && -n "$ref$local_source" ]]; then
-    echo "Claude Code, changement de source : $(redact "$source")"
-    claude_switch "$current" "$source"
-    return
-  fi
-  run_claude plugin marketplace add "$source" || die "ajout du catalogue dans Claude Code impossible."
-  if ! run_claude plugin install "$PLUGIN"; then
-    # Un catalogue créé par cet appel ne survit pas à l'échec de l'installation du plugin.
-    [[ -n "$current" ]] || run_claude plugin marketplace remove "$MARKETPLACE" >/dev/null 2>&1 || true
-    die "installation dans Claude Code impossible."
-  fi
+  claude_switch "$current" "$source"
 }
 
-# Remplace le catalogue Claude Code ($1, sa source actuelle) par la source $2, plugin compris.
-# Comme côté Codex : essai dans un profil jetable, puis restauration de l'ancienne source si le remplacement échoue.
 claude_switch() {
-  local old_source="$1" source="$2" status was_installed="" trial out trial_failed=""
-  [[ "$old_source" != "?" ]] || die "source actuelle de Claude Code illisible ; l'installation actuelle est conservée."
-  status="$(claude_state plugin-status)" || die "état du plugin illisible dans Claude Code ; l'installation actuelle est conservée."
-  [[ -z "$status" ]] || was_installed=1
-  trial="$(mktemp -d)"
-  out="$({ CLAUDE_CONFIG_DIR="$trial" run_claude plugin marketplace add "$source" &&
-    CLAUDE_CONFIG_DIR="$trial" run_claude plugin install "$PLUGIN"; } 2>&1)" || trial_failed=1
-  rm -rf "$trial"
-  [[ -z "$trial_failed" ]] || die_with "$(redact "$out")"$'\n'"cstack : source inutilisable dans Claude Code. L'installation actuelle est conservée."
-  run_claude plugin marketplace remove "$MARKETPLACE" >/dev/null
-  if ! out="$({ run_claude plugin marketplace add "$source" && run_claude plugin install "$PLUGIN"; } 2>&1)"; then
-    redact "$out" >&2
-    run_claude plugin marketplace remove "$MARKETPLACE" >/dev/null 2>&1 || true
-    { run_claude plugin marketplace add "$old_source" && { [[ -z "$was_installed" ]] || run_claude plugin install "$PLUGIN"; }; } >/dev/null 2>&1 ||
-      die "échec dans Claude Code, et l'ancienne source ($(redact "$old_source")) n'a pas pu être restaurée : relancez install.sh install."
-    die "échec dans Claude Code ; l'ancienne source ($(redact "$old_source")) est restaurée."
-  fi
-  redact "$out"
+  replace_marketplace claude "$1" "$2"
 }
 
 claude_update() {
-  local ref="$1"
+  local ref="$1" current root branch
+  current="$(current_claude_marketplace)"
   if [[ -n "$ref" ]]; then
     claude_install "$ref" ""
+  elif [[ "$current" == /* ]]; then
+    claude_switch "$current" "$current"
   else
-    run_claude plugin marketplace update "$MARKETPLACE" && run_claude plugin update "$PLUGIN" ||
-      die "mise à jour dans Claude Code impossible."
+    root="$(claude_state marketplace-root)" || die "racine du catalogue Claude Code illisible."
+    branch="$(git -C "$root" symbolic-ref -q --short HEAD 2>/dev/null)" ||
+      die "cstack est épinglé dans Claude Code ; utilisez install.sh install --ref <branche>"
+    claude_switch "$current" "${current%%#*}#$branch"
   fi
 }
+
 
 finish() {
   echo
@@ -358,9 +475,10 @@ codex_update() {
     echo "Mise à jour : $(redact "$url") --ref ${branch}"
     switch_marketplace "$current" "$url" --ref "$branch"
   else
-    plugin_state_before_refresh >/dev/null
+    local type source root
+    IFS=$'\t' read -r type source root <<<"$current"
     echo "Source locale : recopie depuis le clone, sans mise à jour Git."
-    run_codex plugin add "$PLUGIN"
+    switch_marketplace "$current" "$source"
   fi
 }
 

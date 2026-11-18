@@ -1,0 +1,16 @@
+{
+  "status": "blocked",
+  "phase": "install-local",
+  "modelTurnsRequested": 0,
+  "codexVersion": "0.166.0",
+  "limits": [
+    "Codex CLI installed discovery only; no T3 installation claim",
+    "No model turn or ordinary-task activation behavior tested"
+  ],
+  "sourceHead": "8e7aeac3f81c5461955b8b2f300d5b029c402e89",
+  "sourceTree": "e001640ed36982ba8f87fd61d52ac85f7aec5236",
+  "cliLockSha256": "6716dd5a3d02764a36674cdc6730a4096ac6085f8126420bef7fda3ad1d85ec1",
+  "nodeVersion": "v22.23.4",
+  "error": "Blocked: command failed with exit 1: bash",
+  "cleanup": "uninstalled"
+}
