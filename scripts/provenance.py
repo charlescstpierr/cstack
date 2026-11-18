@@ -50,6 +50,7 @@ def git_snapshot(root: Path):
         git("check-ref-format", ref)
         if git("show-ref", "--verify", "--quiet", ref, allowed=(0, 1)).returncode != 1:
             raise ValueError("HEAD Git illisible hors branche sans commit")
+    git("fsck", "--connectivity-only", "--no-reflogs", "--no-dangling")
     refs = git("for-each-ref", "--sort=refname", "--format=%(refname)%00%(objectname)%00%(symref)")
     if refs.stderr:
         raise ValueError(f"énumération des refs Git incomplète: {root}")
@@ -71,7 +72,7 @@ def git_snapshot(root: Path):
     }
 
 
-def tree_hash(root, excluded=None):
+def tree_hash(root, excluded=None, *, include_git=True):
     root = Path(root).resolve()
     excluded = Path(excluded).resolve() if excluded else None
     if excluded and root not in excluded.parents:
@@ -113,7 +114,10 @@ def tree_hash(root, excluded=None):
                 reference = os.readlink(entry)
                 if Path(reference).is_absolute():
                     raise ValueError(f"lien symbolique absolu non pris en charge: {entry}")
-                target = entry.resolve(strict=True)
+                try:
+                    target = entry.resolve(strict=True)
+                except RuntimeError as error:
+                    raise ValueError(f"lien symbolique cyclique: {entry}") from error
                 if root not in target.parents:
                     raise ValueError(f"lien symbolique extérieur non pris en charge: {entry}")
                 if target.is_dir():
@@ -132,7 +136,7 @@ def tree_hash(root, excluded=None):
     try:
         if not root.is_dir():
             raise ValueError(f"racine d’empreinte introuvable: {root}")
-        snapshot = git_snapshot(root)
+        snapshot = git_snapshot(root) if include_git else None
         git_bytes = json.dumps(snapshot, sort_keys=True, separators=(",", ":"), ensure_ascii=True).encode()
         record(b"git", ".", 0, git_bytes)
         walk(root)

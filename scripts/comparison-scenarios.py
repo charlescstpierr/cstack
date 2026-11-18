@@ -20,7 +20,7 @@ import sys
 import tempfile
 import time
 
-ROOT = Path(__file__).resolve().parents[1]
+SCRIPTS = Path(__file__).resolve().parent
 
 
 def module(name, path):
@@ -30,8 +30,8 @@ def module(name, path):
     return value
 
 
-B = module('comparison_outcome', ROOT / 'scripts/outcome-bench.py')
-S = module('comparison_behavior', ROOT / 'scripts/behavior-scenarios.py')
+B = module('comparison_outcome', SCRIPTS / 'outcome-bench.py')
+S = module('comparison_behavior', SCRIPTS / 'behavior-scenarios.py')
 ARMS = ('vanilla', 'cstack', 'pstack', 'superpowers', 'tstack')
 TASKS = ('duration', 'review')
 REVIEW_FINDINGS = frozenset({'field_order', 'malformed_exit'})
@@ -148,8 +148,8 @@ def prepare(args):
                            'network': False, 'sandbox': 'workspace-write',
                            'route_trace': bool(shutil.which('strace'))},
                 'harness': {p.name: digest(p) for p in (Path(__file__), B.RUNNER_PATH,
-                            ROOT / 'scripts/outcome-bench.py', ROOT / 'scripts/behavior-scenarios.py',
-                            ROOT / 'scripts/provenance.py')},
+                            SCRIPTS / 'outcome-bench.py', SCRIPTS / 'behavior-scenarios.py',
+                            SCRIPTS / 'provenance.py')},
                 'python': {'executable': sys.executable, 'version': platform.python_version(),
                            'sha256': digest(Path(sys.executable).resolve())},
                 'machine': {'platform': platform.platform(), 'cpus': os.cpu_count(), 'load_average': list(os.getloadavg())},
@@ -160,7 +160,7 @@ def prepare(args):
     for filename in manifest['harness']:
         target = private / 'frozen-harness' / filename
         target.parent.mkdir(exist_ok=True)
-        shutil.copyfile(ROOT / 'scripts' / filename, target)
+        shutil.copyfile(SCRIPTS / filename, target)
     write(private / 'manifest.json', manifest)
     (private / 'manifest.sha256').write_text(digest(private / 'manifest.json') + '\n', encoding='utf-8')
     print(campaign)
@@ -813,7 +813,7 @@ def execute_campaign(args):
         raise Blocked('manifest changed; prepare a new campaign')
     manifest = json.loads((private / 'manifest.json').read_text(encoding='utf-8'))
     for filename, sha in manifest['harness'].items():
-        if (digest(ROOT / 'scripts' / filename) != sha
+        if (digest(SCRIPTS / filename) != sha
                 or digest(private / 'frozen-harness' / filename) != sha):
             raise Blocked('harness changed; prepare a new campaign')
     for arm, source in manifest['sources'].items():

@@ -204,11 +204,12 @@ class ProvenanceTests(unittest.TestCase):
             self.assertEqual(before, self.fingerprints(root))
 
     def test_invalid_ref_outside_head_is_rejected(self):
-        with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
-            self.repo(root)
-            (root / ".git/refs/heads/broken").write_text("not an object ID\n")
-            self.rejected(root)
+        for value in ("not an object ID", "f" * 40, "ref: refs/heads/absent"):
+            with self.subTest(value=value), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                self.repo(root)
+                (root / ".git/refs/heads/broken").write_text(value + "\n")
+                self.rejected(root)
 
     def test_per_worktree_configuration_changes_the_fingerprint(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -247,8 +248,46 @@ class ProvenanceTests(unittest.TestCase):
             (root / "absolute").symlink_to(root / "target")
             self.rejected(root)
 
-    @unittest.skipUnless(hasattr(os, "mkfifo"), "POSIX entries required")
-    def test_4212089956_postrun_hash_error_keeps_receipt(self):
+    def test_runner_allows_git_operations_only_without_a_project_fingerprint(self):
+        for operation in ("merge", "cherry-pick"):
+            with self.subTest(operation=operation), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                project = root / "project"
+                project.mkdir()
+                self.repo(project)
+                expected = self.fingerprints(project)
+                self.git(project, "switch", "-c", "side")
+                (project / "file").write_text("side")
+                self.git(project, "commit", "-am", "side")
+                self.git(project, "switch", "main")
+                if operation == "merge":
+                    self.git(project, "merge", "--no-ff", "--no-commit", "side")
+                else:
+                    (project / "file").write_text("main")
+                    self.git(project, "commit", "-am", "main")
+                    result = subprocess.run(["git", "-C", str(project), "cherry-pick", "side"], capture_output=True)
+                    self.assertEqual(result.returncode, 1, result.stderr)
+                cases = root / "cases.json"
+                cases.write_text(json.dumps([{"id": "one", "cwd": str(project), "prompts": ["Resolve operation"]}]))
+                normalized = runner.read_cases(cases)[0]
+                expectations = root / "expectations.json"
+                expectations.write_text(json.dumps({"schema_version": 1, "cases": [{
+                    "id": "one", "hash_algorithm": runner.TREE_HASH_ALGORITHM,
+                    "case_sha256": runner.case_hash(normalized), "project_sha256": expected,
+                }]}))
+                with patch.object(runner, "AppServer", self.completed_server()), \
+                        patch.object(runner, "build_command", return_value=["fake"]):
+                    with self.assertRaisesRegex(runner.HarnessError, "opération Git"):
+                        runner.main(["--cases", str(cases), "--output", str(root / "attested"),
+                                     "--expectations", str(expectations)])
+                    self.assertFalse((root / "attested").exists())
+                    output = root / "legacy"
+                    self.assertEqual(runner.main(["--cases", str(cases), "--output", str(output)]), 0)
+                    saved = json.loads((output / "summary.json").read_text())["cases"][0]
+                    self.assertEqual(saved["status"], "completed")
+                    self.assertIsNone(saved["before_project_hash"]["git_sha256"])
+
+    def completed_server(self, during_turn=None):
         class Server:
             def __init__(self, command, cwd, raw, stderr):
                 self.cwd = cwd
@@ -258,7 +297,8 @@ class ProvenanceTests(unittest.TestCase):
                 if method == "thread/start":
                     return {"thread": {"id": "parent"}}
                 if method == "turn/start":
-                    os.mkfifo(self.cwd / fifo_name)
+                    if during_turn:
+                        during_turn(self.cwd)
                     return {"turn": {"id": "turn"}}
                 if method == "thread/read":
                     return {"thread": {"id": "parent", "model": "fixture"}}
@@ -269,21 +309,31 @@ class ProvenanceTests(unittest.TestCase):
                 return {"method": "turn/completed", "params": {"threadId": "parent", "turn": {"id": "turn", "status": "completed"}}}
             def close(self):
                 pass
-        for fifo_name in ("created-fifo", os.fsdecode(b"created-fifo-\xff")):
-            with self.subTest(fifo_name=fifo_name), tempfile.TemporaryDirectory() as directory:
+        return Server
+
+    @unittest.skipUnless(hasattr(os, "mkfifo"), "POSIX entries required")
+    def test_4212089956_postrun_hash_error_keeps_receipt(self):
+        for name in ("created-fifo", os.fsdecode(b"created-fifo-\xff"), "cycle"):
+            with self.subTest(name=name), tempfile.TemporaryDirectory() as directory:
                 root = Path(directory)
                 project = root / "project"
                 project.mkdir()
                 output = root / "results"
                 cases = root / "cases.json"
                 cases.write_text(json.dumps([{"id": "one", "cwd": str(project), "prompts": ["Create fifo"]}]))
-                with patch.object(runner, "AppServer", Server), patch.object(runner, "build_command", return_value=["fake"]):
+                def during_turn(cwd):
+                    if name == "cycle":
+                        (cwd / name).symlink_to(name)
+                    else:
+                        os.mkfifo(cwd / name)
+                with patch.object(runner, "AppServer", self.completed_server(during_turn)), \
+                        patch.object(runner, "build_command", return_value=["fake"]):
                     self.assertEqual(runner.main(["--cases", str(cases), "--output", str(output)]), 2)
                 saved = json.loads((output / "summary.json").read_text())["cases"][0]
                 self.assertEqual(saved["status"], "completed")
                 self.assertIsNone(saved["after_project_hash"])
                 self.assertIsNone(saved["project_hash_changed"])
-                self.assertIn(fifo_name, saved["project_hash_error"])
+                self.assertIn(name, saved["project_hash_error"])
                 self.assertEqual(saved["verdicts"]["workflow"]["status"], "unverified")
                 self.assertEqual(saved["verdicts"]["outcome"]["status"], "unverified")
                 self.assertEqual(saved["turns"][0]["status"], "completed")

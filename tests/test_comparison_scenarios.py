@@ -383,9 +383,11 @@ class ComparisonTests(unittest.TestCase):
             for filename, sha in manifest['harness'].items():
                 self.assertEqual(C.digest(args.campaign/'private/frozen-harness'/filename), sha)
             archived = args.campaign/'private/frozen-harness'
-            result = subprocess.run([sys.executable, str(archived/'verify-behavior.py'), '--help'],
-                                    capture_output=True, text=True, timeout=10)
-            self.assertEqual(result.returncode, 0, result.stderr)
+            for script in ('comparison-scenarios.py', 'outcome-bench.py', 'behavior-scenarios.py', 'verify-behavior.py'):
+                with self.subTest(script=script):
+                    result = subprocess.run([sys.executable, str(archived/script), '--help'],
+                                            capture_output=True, text=True, timeout=10)
+                    self.assertEqual(result.returncode, 0, result.stderr)
             snapshots = {case.id: [] for case in C.case_specs('behavior-controls', 19)}
 
             def candidate(case, output, command, model, effort, timeout):

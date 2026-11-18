@@ -400,9 +400,9 @@ def project_metadata(value):
     }
 
 
-def tree_hash(root, excluded):
+def tree_hash(root, excluded, *, include_git=True):
     try:
-        return _PROVENANCE["tree_hash"](root, excluded)
+        return _PROVENANCE["tree_hash"](root, excluded, include_git=include_git)
     except ValueError as error:
         raise HarnessError(str(error)) from error
 
@@ -595,7 +595,7 @@ def verify_provenance(case, expectation, execution_case=None):
     if "case_sha256" in expectation:
         matches("configuration de cas", case_hash(execution_case or case), expectation["case_sha256"])
     try:
-        project_hash = tree_hash(case["cwd"], None)["sha256"]
+        project_hash = tree_hash(case["cwd"], None, include_git="project_sha256" in expectation)["sha256"]
         if "project_sha256" in expectation:
             matches("projet", project_hash, expectation["project_sha256"])
         bundle = case.get("bundle")
@@ -603,7 +603,7 @@ def verify_provenance(case, expectation, execution_case=None):
             return
         if bundle is None:
             raise HarnessError(f"{case['id']}: empreintes source exigent un bundle explicite")
-        bundle_hash = tree_hash(bundle, None)["sha256"]
+        bundle_hash = tree_hash(bundle, None, include_git="bundle" in source)["sha256"]
         if "bundle" in source:
             matches("bundle", bundle_hash, source["bundle"])
         if "skill" in source:
@@ -822,7 +822,8 @@ def run_case(case, output, command, model, effort, timeout, trace_routes=False):
         "actual_commands": [], "token_usage": [], "token_usage_keys": set(),
         "after_turn_actual_metadata": [], "turns": [], "current_turn": None,
     }
-    before = tree_hash(case["cwd"], output)
+    include_git = case.get("include_git", True)
+    before = tree_hash(case["cwd"], output, include_git=include_git)
     started = time.monotonic()
     server = None
     status = "completed"
@@ -896,7 +897,7 @@ def run_case(case, output, command, model, effort, timeout, trace_routes=False):
             server.close()
     hash_error = None
     try:
-        after = tree_hash(case["cwd"], output)
+        after = tree_hash(case["cwd"], output, include_git=include_git)
     except (HarnessError, OSError) as exc:
         after = None
         hash_error = str(exc)
@@ -1005,7 +1006,7 @@ def main(argv=None):
         workflow_requested = any(key in expectation for key in
                                  ("routing", "expected_children", "min_children", "expected_artifacts"))
         for repeat in range(1, args.repeats + 1):
-            run = dict(case)
+            run = dict(case, include_git="project_sha256" in expectation)
             if args.repeats > 1:
                 run["id"] = f"{case['id']}__run_{repeat:02d}"
                 run["cwd"] = output / "isolated-projects" / run["id"]
