@@ -203,6 +203,22 @@ class ProvenanceTests(unittest.TestCase):
             self.git(root, "update-index", "--refresh")
             self.assertEqual(before, self.fingerprints(root))
 
+    def test_invalid_ref_outside_head_is_rejected(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self.repo(root)
+            (root / ".git/refs/heads/broken").write_text("not an object ID\n")
+            self.rejected(root)
+
+    def test_per_worktree_configuration_changes_the_fingerprint(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self.repo(root)
+            self.git(root, "config", "--local", "extensions.worktreeConfig", "true")
+            before = self.fingerprints(root)
+            self.git(root, "config", "--worktree", "core.fileMode", "false")
+            self.assertNotEqual(before, self.fingerprints(root))
+
     def test_4212756294_nested_git_repository(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -224,6 +240,13 @@ class ProvenanceTests(unittest.TestCase):
             shutil.copytree(original, copied, symlinks=True)
             self.assertEqual(self.fingerprints(original), self.fingerprints(copied))
 
+    def test_absolute_symlink_to_internal_file_is_rejected_before_any_copy(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "target").touch()
+            (root / "absolute").symlink_to(root / "target")
+            self.rejected(root)
+
     @unittest.skipUnless(hasattr(os, "mkfifo"), "POSIX entries required")
     def test_4212089956_postrun_hash_error_keeps_receipt(self):
         class Server:
@@ -235,7 +258,7 @@ class ProvenanceTests(unittest.TestCase):
                 if method == "thread/start":
                     return {"thread": {"id": "parent"}}
                 if method == "turn/start":
-                    os.mkfifo(self.cwd / "created-fifo")
+                    os.mkfifo(self.cwd / fifo_name)
                     return {"turn": {"id": "turn"}}
                 if method == "thread/read":
                     return {"thread": {"id": "parent", "model": "fixture"}}
@@ -246,28 +269,25 @@ class ProvenanceTests(unittest.TestCase):
                 return {"method": "turn/completed", "params": {"threadId": "parent", "turn": {"id": "turn", "status": "completed"}}}
             def close(self):
                 pass
-        with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
-            project = root / "project"
-            project.mkdir()
-            output = root / "results"
-            case = {"id": "one", "cwd": project, "sandbox": "workspace-write", "prompts": ["Create fifo"], "bundle": None}
-            with patch.object(runner, "AppServer", Server):
-                result = runner.run_case(case, output, ["fake"], None, None, 1)
-            self.assertEqual(result["status"], "completed")
-            self.assertIsNone(result["after_project_hash"])
-            self.assertIsNone(result["project_hash_changed"])
-            self.assertTrue(result["project_hash_error"])
-            verdict = runner.evaluate_case(result, {"expected_children": 0})
-            self.assertEqual(verdict["turn"], "completed")
-            self.assertEqual(verdict["workflow"]["status"], "unverified")
-            self.assertEqual(verdict["outcome"]["status"], "unverified")
-            self.assertEqual(result["turns"][0]["status"], "completed")
-            self.assertTrue(Path(result["raw_stream"]).read_text())
-            runner.write_summary(output, [result], ["one"])
-            saved = json.loads((output / "summary.json").read_text())["cases"][0]
-            self.assertEqual(saved["status"], "completed")
-            self.assertTrue(saved["project_hash_error"])
+        for fifo_name in ("created-fifo", os.fsdecode(b"created-fifo-\xff")):
+            with self.subTest(fifo_name=fifo_name), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                project = root / "project"
+                project.mkdir()
+                output = root / "results"
+                cases = root / "cases.json"
+                cases.write_text(json.dumps([{"id": "one", "cwd": str(project), "prompts": ["Create fifo"]}]))
+                with patch.object(runner, "AppServer", Server), patch.object(runner, "build_command", return_value=["fake"]):
+                    self.assertEqual(runner.main(["--cases", str(cases), "--output", str(output)]), 2)
+                saved = json.loads((output / "summary.json").read_text())["cases"][0]
+                self.assertEqual(saved["status"], "completed")
+                self.assertIsNone(saved["after_project_hash"])
+                self.assertIsNone(saved["project_hash_changed"])
+                self.assertIn(fifo_name, saved["project_hash_error"])
+                self.assertEqual(saved["verdicts"]["workflow"]["status"], "unverified")
+                self.assertEqual(saved["verdicts"]["outcome"]["status"], "unverified")
+                self.assertEqual(saved["turns"][0]["status"], "completed")
+                self.assertTrue(Path(saved["raw_stream"]).read_text())
 
 
 if __name__ == "__main__":

@@ -929,7 +929,8 @@ def write_summary(output, results, selected_case_ids):
         "selected_case_ids": selected_case_ids,
         "output": str(output),
     })
-    (output / "summary.json").write_text(json.dumps(summary, ensure_ascii=False, indent=2) + "\n")
+    (output / "summary.json").write_text(json.dumps(summary, ensure_ascii=False, indent=2) + "\n",
+                                         encoding="utf-8", errors="backslashreplace")
 
 
 def main(argv=None):

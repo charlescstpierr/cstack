@@ -50,16 +50,24 @@ def git_snapshot(root: Path):
         git("check-ref-format", ref)
         if git("show-ref", "--verify", "--quiet", ref, allowed=(0, 1)).returncode != 1:
             raise ValueError("HEAD Git illisible hors branche sans commit")
+    refs = git("for-each-ref", "--sort=refname", "--format=%(refname)%00%(objectname)%00%(symref)")
+    if refs.stderr:
+        raise ValueError(f"énumération des refs Git incomplète: {root}")
+    worktree_config = git_dir / "config.worktree"
+    has_worktree_config = git("config", "--local", "--bool", "--get", "extensions.worktreeConfig",
+                              allowed=(0, 1)).stdout == b"true\n"
     # Plumbing reads logical values, avoiding index timestamps and object storage layout.
     return {
         "head_ref": os.fsdecode(head_ref) or None,
         "head_oid": os.fsdecode(head.stdout.strip()) or None,
-        "refs": os.fsdecode(git("for-each-ref", "--sort=refname", "--format=%(refname)%00%(objectname)%00%(symref)").stdout),
+        "refs": os.fsdecode(refs.stdout),
         "index": os.fsdecode(git("ls-files", "--stage", "-z").stdout),
         "index_flags": os.fsdecode(git("ls-files", "-v", "-z").stdout),
         "staged_diff": os.fsdecode(git("diff", "--cached", "--raw", "-z", "--no-abbrev", "--no-renames",
                                      "--no-ext-diff", "--no-textconv").stdout),
         "config": os.fsdecode(git("config", "--local", "--null", "--list").stdout),
+        "worktree_config": os.fsdecode(git("config", "--worktree", "--null", "--list").stdout)
+        if has_worktree_config and (worktree_config.exists() or worktree_config.is_symlink()) else None,
     }
 
 
@@ -102,13 +110,16 @@ def tree_hash(root, excluded=None):
             info = entry.lstat()
             relative = entry.relative_to(root).as_posix()
             if stat.S_ISLNK(info.st_mode):
+                reference = os.readlink(entry)
+                if Path(reference).is_absolute():
+                    raise ValueError(f"lien symbolique absolu non pris en charge: {entry}")
                 target = entry.resolve(strict=True)
+                if root not in target.parents:
+                    raise ValueError(f"lien symbolique extérieur non pris en charge: {entry}")
                 if target.is_dir():
                     raise ValueError(f"dossier symbolique non pris en charge: {entry}")
                 mode, content = file_content(target)
-                if root not in target.parents:
-                    raise ValueError(f"lien symbolique extérieur non pris en charge: {entry}")
-                record(b"symlink", relative, stat.S_IMODE(info.st_mode), os.fsencode(os.readlink(entry)))
+                record(b"symlink", relative, stat.S_IMODE(info.st_mode), os.fsencode(reference))
                 record(b"target", relative, mode, content)
             elif stat.S_ISDIR(info.st_mode):
                 walk(entry)
