@@ -176,6 +176,9 @@ class ModeHookTests(unittest.TestCase):
             ("$cstack:cstack Copie :\n```text\nDo not use cstack.", True),
             ("$cstack:cstack Copie :\n```text```. Do not use cstack: explain it.", False),
             ("$cstack:cstack Explain it. Do not use this skill for the explanation.", False),
+            ("$cstack:cstack Compare ~~~ and the other delimiter. Do not use cstack. End with ~~~.", False),
+            ("$cstack:cstack Explain `path\\`. Do not use cstack. Then describe `example`.", False),
+            ("/cstack:cstack Corrige. Ne pas utiliser le skill\nwatch-pr.", True),
         )
         for index, (prompt, active) in enumerate(examples):
             with self.subTest(prompt=prompt):

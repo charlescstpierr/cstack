@@ -67,10 +67,12 @@ def _stop_requested(prompt: str) -> bool:
 def _instruction_text(text: str, target) -> str:
     import re
 
-    tokens = list(re.finditer(r"""(?<=[\r\n])[ \t]{0,3}>|`+|~{3,}|\\[^\r\n]|["'«»“”‘’\r\n]""", text))
+    tokens = list(re.finditer(r"""(?<=[\r\n])[ \t]{0,3}>|`+|~{3,}|["'«»“”‘’\r\n]""", text))
+    escaped_starts = {run.end() for run in re.finditer(r"\\+", text) if len(run.group()) % 2}
     paired_quotes = {"«": "»", "“": "”", "‘": "’", "'": "'", '"': '"'}
     next_closer = {}
     next_fence = {}
+    language_tag = re.compile(r"[A-Za-z][\w.+-]*[ \t]*")
     spans = [None] * len(tokens)
     line_end = len(text)
     # Index closing delimiters once so unmatched quotes cannot make the hook rescan the prompt.
@@ -81,7 +83,7 @@ def _instruction_text(text: str, target) -> str:
             line_end = token.start()
         elif mark.lstrip(" \t") == ">":
             spans[index] = (line_end, None)
-        elif (mark[0] in "`~" or mark in paired_quotes) and not (
+        elif token.start() not in escaped_starts and (mark[0] in "`~" or mark in paired_quotes) and not (
                 mark == "'" and token.start() > 0 and re.match(r"\w", text[token.start() - 1])):
             close = next_closer.get(paired_quotes.get(mark, mark))
             line_fence = False
@@ -95,12 +97,16 @@ def _instruction_text(text: str, target) -> str:
                 if not info.strip(" \t"):
                     for size in range(3, len(mark) + 1):
                         next_fence[mark[0], size] = token
+            elif mark[0] == "~":
+                close = (next_fence.get(("~", len(mark)))
+                         if language_tag.fullmatch(text, token.end(), line_end) else None)
             if close is not None and (mark != "'" or close.start() < line_end):
                 inline_end = close.start() if mark.startswith("`") and not line_fence else None
                 spans[index] = (close.end(), inline_end)
             elif line_fence:
                 spans[index] = (len(text), None)
-        if mark not in ("'", "’") or not re.match(r"\w", text[token.end():token.end() + 1]):
+        if mark[0] == "`" or (token.start() not in escaped_starts
+                and (mark not in ("'", "’") or not re.match(r"\w", text[token.end():token.end() + 1]))):
             next_closer[mark] = token
 
     parts = []
@@ -132,7 +138,7 @@ def _activation_requested(prompt: str) -> bool:
     if path and not path.strip("<>").endswith("/skills/cstack/SKILL.md"):
         return False
     tool = r"(?:cstack|[$/]cstack:cstack)(?![\w/-]|:\w)"
-    generic_end = r"(?=[ \t]*(?:[.!?,;:\r\n]|$))"
+    generic_end = r"(?=\s*(?:[.!?,;:]|$))"
     french_target = (fr"(?:{tool}|(?:ce|le)\s+skill\s+{tool}|"
                      fr"(?:(?:cette|la)\s+comp[ée]tence|(?:ce|le)\s+skill){generic_end})")
     english_target = fr"(?:it\b|{tool}|(?:this|the)\s+(?:cstack\s+)?skill\b)"
