@@ -219,7 +219,7 @@ class BehaviorScenarioGeneratorTests(unittest.TestCase):
 
     @unittest.skipUnless(hasattr(os, "mkfifo") and hasattr(socket, "AF_UNIX"), "Unix entries required")
     def test_nonregular_entries_are_rejected_by_hashes_and_before_launch(self):
-        for kind in ("fifo", "socket", "linked-device"):
+        for kind in ("fifo", "socket", "linked-fifo"):
             for scope in ("project", "bundle"):
                 with self.subTest(kind=kind, scope=scope), tempfile.TemporaryDirectory() as directory:
                     root = Path(directory)
@@ -240,7 +240,8 @@ class BehaviorScenarioGeneratorTests(unittest.TestCase):
                             live_socket = socket.socket(socket.AF_UNIX)
                             live_socket.bind(str(entry))
                         else:
-                            entry.symlink_to("/dev/null")
+                            os.mkfifo(entry.parent / "z-fifo")
+                            entry.symlink_to("z-fifo")
                         case_path, expected_path = root / "cases.json", root / "expectations.json"
                         case_path.write_text(json.dumps(cases))
                         expected_path.write_text(json.dumps({"schema_version": 1, "cases": expectations}))
