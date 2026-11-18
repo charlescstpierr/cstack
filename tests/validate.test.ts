@@ -148,6 +148,8 @@ test("le paquet charge 30 skills et rejette les distributions dangereuses ou inc
       ["plugins/cstack/.codex-plugin/plugin.json", (text: string) => text.replace(/"version": "\d+\.\d+\.\d+"/, '"version": "9.9.9"'), /journal des modifications ou preuve manquants/],
       ["plugins/cstack/sources/matt-pocock.json", (text: string) => text.replace("3cca18b368ae95cdbdebbff572ccafa662551015", "unknown"), /provenance des sources de Matt/],
       ["plugins/cstack/skills/horizon/agents/openai.yaml", (text: string) => text.replace("allow_implicit_invocation: false", "allow_implicit_invocation: true"), /invocation explicite/],
+      ["plugins/cstack/skills/correct/SKILL.md", (text: string) => text.replace(/^disable-model-invocation: true\r?\n/m, ""), /invocation explicite dans Claude Code/],
+      ["plugins/cstack/skills/correct/SKILL.md", (text: string) => text.replace("disable-model-invocation: true", "disable-model-invocation: false"), /invocation explicite dans Claude Code/],
       ["PORTING.json", (text: string) => text.replace(
         "plugins/cstack/skills/cstack/references/principles/prove-it-works.md",
         "plugins/cstack/skills/cstack/references/principles/fix-root-causes.md",

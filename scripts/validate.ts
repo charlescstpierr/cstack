@@ -404,7 +404,10 @@ export function validate(root: string): { skills: number; sourceFiles: number } 
     const invocation = `\\$cstack:${name}(?![a-z0-9-])`;
     requireValue(new RegExp(invocation).test(metadata.description), `${path}: la description doit citer son invocation canonique $cstack:${name}`);
     requireValue(new RegExp(`^À utiliser pour ${invocation}`).test(metadata.description), `${path}: la description doit commencer par « À utiliser pour $cstack:${name} »`);
-    requireValue(Object.keys(metadata).every((key) => ["name", "description", "license", "allowed-tools", "metadata"].includes(key)), `${path}: en-tête YAML du skill non pris en charge`);
+    requireValue(Object.keys(metadata).every((key) => ["name", "description", "license", "allowed-tools", "metadata", "disable-model-invocation"].includes(key)), `${path}: en-tête YAML du skill non pris en charge`);
+    const disableModelInvocation = metadata["disable-model-invocation"];
+    requireValue(disableModelInvocation === true || (name !== "correct" && disableModelInvocation === undefined),
+      `${path}: le skill doit imposer une invocation explicite dans Claude Code`);
     const policyPath = join(dirname(path), "agents/openai.yaml");
     const policy: unknown = Bun.YAML.parse(readFileSync(policyPath, "utf8"));
     requireValue(record(policy) && record(policy.policy) && policy.policy.allow_implicit_invocation === false, `${path}: le skill doit imposer une invocation explicite`);

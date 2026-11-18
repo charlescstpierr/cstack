@@ -1,6 +1,7 @@
 ---
 name: correct
-description: "À utiliser pour $cstack:correct, ou quand l'opérateur corrige encore une erreur d'agent déjà vue dans ce dépôt. Trouve les classes d'erreurs que les agents répètent et rend chacune impossible : architecture d'abord, puis types, lint dont l'erreur nomme le correctif, test, et règle écrite en dernier. Prouve que chaque contrôle échoue sur une vraie erreur passée."
+description: "À utiliser pour $cstack:correct afin de repérer les erreurs d'agent qui se répètent dans un dépôt. Corrige leur cause au niveau le plus haut qui fonctionne, de l'architecture à la règle écrite. Prouve que chaque contrôle échoue sur une vraie erreur passée."
+disable-model-invocation: true
 ---
 
 # Correct

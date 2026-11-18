@@ -83,4 +83,4 @@ Des extensions de format ont perdu les anciennes formes : fichiers de frontière
 - Les erreurs que l'opérateur a corrigées sans commentaire de revue.
 - Les PR d'agents dans d'autres dépôts. L'accès GitHub de cette session est limité aux dépôts attachés.
 
-`$cstack:correct` reprend ce relevé à chaque exécution et l'étend à ces sources quand elles sont accessibles.
+Ce relevé est un exemple de collecte. Lorsqu’elle est invoquée, la compétence `$cstack:correct` collecte les preuves du dépôt en cours.
