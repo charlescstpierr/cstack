@@ -24,7 +24,7 @@ Une sélection de worker ou vérificateur avec `runtime` suit le [dispatch CLI](
 
 #### Disposition de l’état
 
-Crée `.cstack/orchestrate/<project-slug>/` dans le workspace cible. Chaque fichier a un rédacteur. Les propriétaires publient les faits et les lecteurs les agrègent. Résous la racine du plugin, puis lance le helper comme `bash <plugin-root>/scripts/run-tool.sh orch/orch.ts <command>`. Le lanceur met en scène les sources verrouillées sous `.cstack/tools/`.
+Crée `.cstack/orchestrate/<project-slug>/` dans le workspace cible. Chaque fichier a un rédacteur. Les propriétaires publient les faits et les lecteurs les agrègent. Résous la racine du plugin, puis lance le helper comme `bash <plugin-root>/scripts/run-tool.sh orch/orch.ts <command>`. Le lanceur met en scène les sources verrouillées sous `~/.cache/cstack/stages/`.
 
 - `preferences.md` contient les ordres permanents numérotés, une contrainte par ligne.
 - `overview.md` enregistre les faits durables de PR et d’issue. Ajouter plutôt que réécrire l’historique.

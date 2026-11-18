@@ -1232,6 +1232,10 @@
       "reason": "Guide pratique original des workers CLI, des skills communs et du contexte partagé."
     },
     {
+      "path": "plugins/cstack/docs/guide/12-t3-code.md",
+      "reason": "Guide pratique original d'installation et de premier fil dans T3 Code."
+    },
+    {
       "path": "plugins/cstack/skills/cstack/references/regression.md",
       "reason": "Comparaison conditionnelle originale des observations base/candidat, sans autorité de livraison."
     },
@@ -1311,12 +1315,16 @@
       "derived_from": "pstack/skills/interrogate/SKILL.md"
     },
     {
+      "path": "plugins/cstack/.claude-plugin/plugin.json",
+      "reason": "Claude Code manifest for the same plugin, so Claude Code and T3 Code Claude tasks load the skills; name, version and license must match the Codex manifest; not present in pstack."
+    },
+    {
       "path": "plugins/cstack/hooks/hooks.json",
-      "reason": "Codex plugin hooks declaring the cstack mode reminder (UserPromptSubmit and SessionStart compact/resume), the Codex equivalent of pstack's Cursor `reminder:`; not present in pstack."
+      "reason": "Plugin hooks declaring the cstack mode reminder (UserPromptSubmit and SessionStart compact/resume), the Codex and Claude Code equivalent of pstack's Cursor `reminder:`; one command resolves the plugin root on both hosts; not present in pstack."
     },
     {
       "path": "plugins/cstack/hooks/mode.py",
-      "reason": "Mode reminder hook script: silent outside conversations that invoked $cstack:cstack, stores only hashed session ids under PLUGIN_DATA; not present in pstack."
+      "reason": "Mode reminder hook script: silent outside conversations that invoked $cstack:cstack or /cstack:cstack, stores only hashed session ids under PLUGIN_DATA or CLAUDE_PLUGIN_DATA; not present in pstack."
     },
     {
       "path": "plugins/cstack/skills/maintain-verification-skill/references/bug-bash.md",
@@ -1344,7 +1352,11 @@
     },
     {
       "path": "plugins/cstack/skills/cstack/references/runtime/t3.md",
-      "reason": "Contrat T3 original consolidé V5, activé seulement sur invocation explicite."
+      "reason": "Contrat T3 original consolidé V5, applicable aux tâches activées explicitement ou par démarrage automatique ; permissions de livraison distinctes."
+    },
+    {
+      "path": "plugins/cstack/skills/cstack/references/runtime/t3-audite.md",
+      "reason": "Détail original du chemin audité T3, extrait du contrat T3 et lu seulement pour ce chemin."
     },
     {
       "path": "plugins/cstack/skills/cstack/scripts/runtime/prepare.ts",

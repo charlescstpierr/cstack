@@ -68,7 +68,7 @@ Pour chaque finding, fournis :
    - `warning` : préoccupation de conception, risque de maintenabilité ou problème d'exactitude pas immédiatement cassé mais douloureux plus tard
    - `nit` : style, nommage, amélioration mineure. Inclus seulement les nits réellement utiles, pas pour remplir.
 3. **Finding** : le problème en termes concrets. Référence lignes/fonctions précises.
-4. **Evidence** : pourquoi tu crois que c'est un problème. Cite le code fourni, le standard ou l'exigence approuvée. N'affirme pas seulement.
+4. **Evidence** : pourquoi tu crois que c'est un problème. Pour un bug exécutable, donne une reproduction observable : commande, test ou entrée, avec la sortie attendue et la sortie obtenue. Pour un problème non exécutable (contrat, spec, sécurité, maintenabilité), cite le code, le standard ou l'exigence approuvée qui l'établit ; un exploit exécuté n'est pas exigé. Sans l'une ni l'autre, étiquette la finding `hypothèse non vérifiée`.
 5. **Suggestion** (optionnel) : ce que tu ferais à la place, si tu as une alternative concrète. Saute si tu n'as pas de correction claire.
 
 ## Ce qui fait une bonne finding

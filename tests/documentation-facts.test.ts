@@ -19,7 +19,7 @@ function runValidator(directory: string) {
 function fixture() {
   const directory = mkdtempSync(join(tmpdir(), "cstack-facts-"));
   mkdirSync(join(directory, "scripts"), { recursive: true });
-  for (const path of ["UPSTREAM.json", "PORTING.json", "README.md", "CHANGELOG.md", "docs", ".agents", "plugins/cstack"]) {
+  for (const path of ["UPSTREAM.json", "PORTING.json", "README.md", "CHANGELOG.md", "docs", ".agents", ".claude-plugin", "plugins/cstack"]) {
     cpSync(join(root, path), join(directory, path), {
       recursive: true,
       filter: (source) => !source.split("/").some((part) => [".git", "node_modules", "__pycache__"].includes(part)),

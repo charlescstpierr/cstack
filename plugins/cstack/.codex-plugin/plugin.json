@@ -20,7 +20,7 @@
   "interface": {
     "displayName": "cstack",
     "shortDescription": "Investiguer, construire et livrer du code vérifié",
-    "longDescription": "Invoquez $cstack:cstack dans une tâche : il choisit le guide d'exécution adapté (bug, fonctionnalité, revue, livraison), délègue aux sous-agents natifs de Codex ou à des workers Codex CLI et Claude Code, exige une preuve (TDD, revue indépendante) et annonce ses limites au lieu de simuler un résultat. 29 compétences spécialisées, sans activation automatique.",
+    "longDescription": "Invoquez $cstack:cstack dans une tâche : il choisit le guide d'exécution adapté (bug, fonctionnalité, revue, livraison), délègue aux sous-agents natifs de Codex ou à des workers Codex CLI et Claude Code, exige une preuve (TDD, revue indépendante) et annonce ses limites au lieu de simuler un résultat. 30 compétences spécialisées, sans activation automatique.",
     "developerName": "charlescstpierr",
     "websiteURL": "https://github.com/charlescstpierr/cstack",
     "category": "Developer Tools",

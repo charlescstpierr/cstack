@@ -1,0 +1,35 @@
+F
+======================================================================
+FAIL: test_codex_local_snapshot_4114185309 (test_install_transactions.InstallTransactionTests.test_codex_local_snapshot_4114185309)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-install-1110/tests/test_install_transactions.py", line 220, in test_codex_local_snapshot_4114185309
+    self.scenario('codex', 'real-plugin', 'installed', local=True)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-install-1110/tests/test_install_transactions.py", line 182, in scenario
+    self.assertEqual(self.observe(state_file, cache), before, stdout + stderr)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: {'pre[32 chars]'enabled': True, 'installed_version': 'new', 'snapshot': 'new'} != {'pre[32 chars]'enabled': True, 'installed_version': 'old', 'snapshot': 'old'}
+  {'enabled': True,
+   'installed': True,
+-  'installed_version': 'new',
+?                        ^^^
+
++  'installed_version': 'old',
+?                        ^^^
+
+   'present': True,
+-  'snapshot': 'new'}
+?               ^^^
+
++  'snapshot': 'old'}
+?               ^^^
+ : Changement de source : charlescstpierr/cstack --ref new
+injected real-plugin
+cstack : échec ; l'ancienne source (/tmp/tmpyoqsuh_t/local-source) est restaurée à son commit précédent. Pour suivre de nouveau une branche : install.sh install --ref <branche>
+
+
+----------------------------------------------------------------------
+Ran 1 test in 1.126s
+
+FAILED (failures=1)

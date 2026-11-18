@@ -1,0 +1,77 @@
+{
+  "kind": "observed-t3-direct-path",
+  "observedAt": "2026-11-09",
+  "method": "Scénarios sur papier donnés à des enfants GPT-6.1 Sol (effort high) lancés par delegate_task depuis un fil Claude de T3 Code. Chaque enfant lit un dossier de règles au nom opaque et liste les appels et commandes d'un coordinateur Codex jusqu'au lancement des délégués. Les helpers sont exécutés réellement sur la sortie de orchestrator_capabilities de cette machine. Aucun contenu de conversation n'est conservé ici.",
+  "pressureTest": {
+    "scenario": "Revue indépendante avant PR, cible d'un autre fournisseur, coordinateur Codex gpt-6.1-sol",
+    "model": "gpt-6.1-sol",
+    "base": {
+      "commit": "48f8d04",
+      "stepsUntilReviewer": [
+        16,
+        15
+      ],
+      "dispatchPreparation": "orchestrator_capabilities, t3_thread_read, deux enveloppes, normalize, contexte, preflight avec binding, brief et fichiers empreintés, requête, runtime.ts prepare, comparaison du binding",
+      "finalCall": "delegate_task vers claudeAgent/claude-opus-5-5, effort high, dans les deux essais"
+    },
+    "branch": {
+      "firstRules": {
+        "commit": "0e6dcbf",
+        "stepsUntilReviewer": [
+          8,
+          10
+        ],
+        "dispatchPreparation": "orchestrator_capabilities, enregistrement de la sortie, preflight avec --capabilities"
+      },
+      "finalRules": {
+        "stepsUntilReviewer": [
+          8,
+          7
+        ],
+        "dispatchPreparation": "orchestrator_capabilities seulement ; la cible est lue dans la configuration",
+        "finalCall": "delegate_task vers claudeAgent/claude-opus-5-5, effort high, brief autonome avec chemins absolus, dans les deux essais",
+        "notUsed": [
+          "helper models.py",
+          "t3_thread_read",
+          "normalize",
+          "contexte",
+          "runtime.ts prepare"
+        ]
+      },
+      "worktreeScenario": {
+        "setup": "worktree T3 sans .cstack/, feuille de la machine seule, un travail d'implémentation et un panel de revue",
+        "trials": 1,
+        "result": "feuille de la machine lue ; implémentation lancée sur codex/gpt-6.1-sol en effort medium avec isolation worktree ; trois reviewers lancés dans l'ordre sur codex/gpt-6.1-sol, claudeAgent/claude-opus-5-5 et codex/gpt-6-astra en effort high"
+      }
+    },
+    "limits": "Exercices sur papier, deux essais par version de règles et un seul pour le worktree, un seul modèle coordinateur. Les enfants de T3 Code ne peuvent pas appeler delegate_task : un coordinateur Codex qui exécute réellement ce chemin n'est pas observé."
+  },
+  "helpers": {
+    "capture": "sortie réelle de orchestrator_capabilities, dix fournisseurs dont deux capables de lancer un enfant, coordinateur claudeAgent/claude-fable-5-2",
+    "show": "code 0, quatre groupes disponibles couvrant les 19 rôles : work sur codex/gpt-6.1-sol, judgment sur claudeAgent/claude-opus-5-5, hard sur codex/gpt-6-astra, panels à une position par palier",
+    "apply": "code 0 pour la feuille entière dans un workspace jetable",
+    "preflight": "ready en 0,13 s pour `interrogate reviewers`, `judgment and prose` et `documentation` ; chaque position rend dispatch delegate_task et son target exact",
+    "search": "orchestrator_capabilities avec search ne rend que les modèles trouvés : une capture search s'ajoute par un second --capabilities",
+    "machineSheet": "apply --machine écrit la feuille sous XDG_CONFIG_HOME ; un workspace sans .cstack/ résout ensuite ses rôles depuis cette feuille"
+  },
+  "host": {
+    "inheritance": "delegate_task lancé sans target depuis un fil claudeAgent/claude-fable-5-2 en effort xhigh : l'enfant reçoit ce fournisseur, ce modèle et cette option",
+    "worktrees": "les worktrees créés par T3 Code sous ~/.t3/worktrees/ ne contiennent pas le dossier .cstack/ ignoré par Git",
+    "realDispatch": "un fil Claude a résolu `hardest tasks` par le helper puis lancé le reviewer avec la cible rendue, codex/gpt-6-astra en effort high"
+  },
+  "review": {
+    "reviewer": "gpt-6-astra, effort high, autre famille que l'auteur",
+    "commit": "0e6dcbf",
+    "findings": 9,
+    "blocking": 2,
+    "fixed": "les neuf, chacun avec un test : fusion de captures contradictoires refusée, catalogue direct refusé par --catalog, lecture unique exigée pour --tier, effort limité aux options d'effort, effort vide refusé, modèle malformé sans trace Python, complétude après fusion",
+    "second": {
+      "reviewer": "gpt-6-astra, effort high",
+      "commit": "115f84d",
+      "firstFindings": "les neuf reproduits sur 0e6dcbf puis constatés corrigés",
+      "newFindings": 3,
+      "fixed": "chemin XDG relatif ignoré avec un test, replis de `simple edits` et `documentation` nommés dans la règle, pool de juge croisé exclu de « lancer chaque position » ; ces trois corrections ne sont pas relues par un tiers"
+    }
+  },
+  "inspiration": "chhoumann/t3-pstack (MIT), commit f344cb6 lu le 9 novembre 2026 : feuille de modèles par machine et lancement direct depuis l'entrée de la feuille. Idées reprises, aucun texte ni code copié."
+}

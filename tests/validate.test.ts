@@ -8,7 +8,7 @@ test("le paquet charge 30 skills et rejette les distributions dangereuses ou inc
   const root = resolve(import.meta.dir, "..");
   const copy = mkdtempSync(join(tmpdir(), "cstack-package-"));
   try {
-    for (const path of ["plugins", ".agents", "UPSTREAM.json", "PORTING.json"]) {
+    for (const path of ["plugins", ".agents", ".claude-plugin", "UPSTREAM.json", "PORTING.json"]) {
       cpSync(join(root, path), join(copy, path), {
         recursive: true,
         filter: (source) => !source.split("/").some((part) => ["node_modules", "__pycache__"].includes(part)),
@@ -53,10 +53,12 @@ test("le paquet charge 30 skills et rejette les distributions dangereuses ou inc
       ["plugins/cstack/sources/pstack-claude.json", (text: string) => text.replace(/"sha256": "[a-f0-9]+"/, '"sha256": "invalid"'), /empreinte pstack-claude invalide/],
       ["plugins/cstack/sources/pstack-claude.json", (text: string) => text.replace(/"target": "[^"]+"/, '"target": "../../README.md"'), /cible pstack-claude invalide/],
       ["plugins/cstack/.codex-plugin/plugin.json", (text: string) => text.replace('"name": "cstack"', '"name": "other"'), /identité du manifeste/],
+      ["plugins/cstack/.claude-plugin/plugin.json", (text: string) => text.replace(/"version": "[^"]+"/, '"version": "0.0.1"'), /manifeste Claude Code diverge/],
+      [".claude-plugin/marketplace.json", (text: string) => text.replace('"./plugins/cstack"', '"./plugins/other"'), /catalogue Claude Code doit contenir uniquement cstack/],
       ["plugins/cstack/skills/cstack/agents/openai.yaml", (text: string) => text.replace("allow_implicit_invocation: false", "allow_implicit_invocation: true"), /invocation explicite/],
       ["plugins/cstack/skills/tdd/SKILL.md", (text: string) => text + " mot".repeat(3000), /tdd: \d+ mots dépassent le plafond/],
       ["plugins/cstack/hooks/hooks.json", (text: string) => text.replace('"SessionStart"', '"Stop"'), /diffère du seul rappel de mode permis/],
-      ["plugins/cstack/hooks/hooks.json", (text: string) => text.replace('"compact|resume"', '"startup"'), /diffère du seul rappel de mode permis/],
+      ["plugins/cstack/hooks/hooks.json", (text: string) => text.replace('"startup|clear|compact|resume"', '"startup"'), /diffère du seul rappel de mode permis/],
       ["PORTING.json", (text: string) => text.replace('"derived_from": "pstack/skills/interrogate/SKILL.md"', '"derived_from": "pstack/skills/absent/SKILL.md"'), /source amont dérivée inconnue/],
       ["plugins/cstack/skills/cstack/SKILL.md", (text: string) => text + " mot".repeat(300), /cstack: \d+ mots dépassent le budget de lecture initiale/],
       ["plugins/cstack/skills/cstack/agents/openai.yaml", (text: string) => text.replace("$cstack:cstack", "$cstack"), /invocation canonique/],
@@ -114,6 +116,16 @@ test("le paquet charge 30 skills et rejette les distributions dangereuses ou inc
       ["plugins/cstack/skills/make-bot-ui/SKILL.md", (text: string) => `${text}\nInjectez-le dans le HTML.\n`, /le token de page ne doit pas être injecté dans le HTML/],
       ["plugins/cstack/skills/make-bot-ui/SKILL.md", (text: string) => text.replace("N'utilisez pas `resume --last`", "Utilisez `resume --last`"), /reprise interdite avec resume --last/],
       ["plugins/cstack/skills/make-bot-ui/SKILL.md", (text: string) => text.replaceAll('PROMPT_TEXT=$(<"$PROMPT_FILE")', 'PROMPT_PATH="$PROMPT_FILE"').replaceAll('"$PROMPT_TEXT"', '"$PROMPT"'), /lecture du contenu du prompt file manquante/],
+      ...["bug-fix", "perf-issue", "hillclimb"].map((role) => [`plugins/cstack/skills/cstack/playbooks/${role}.md`, (text: string) => text.replace(`Utilise \`${role}\``, "Utilise `feature, refactoring`"), new RegExp(`${role}: le playbook ne prend pas son propre rôle par défaut`)] as [string, (text: string) => string, RegExp]),
+      ["plugins/cstack/skills/cstack/references/runtime/t3.md", (text: string) => text.replace("activées explicitement ou par démarrage automatique", "explicitement invoquées seulement"), /t3: contrat exclut le démarrage automatique/],
+      ["plugins/cstack/skills/cstack/references/runtime/t3.md", (text: string) => text.replace("Le démarrage automatique n’accorde ni push ni PR", "Le démarrage automatique permet une livraison distante"), /t3: le contrat prioritaire ne borne pas la livraison automatique/],
+      ["plugins/cstack/skills/cstack/references/runtime/t3.md", (text: string) => text.replace("le contrôle préalable du helper est la seule source des cibles", "recopier la cible de la feuille"), /t3: cible recopiée depuis la feuille/],
+      ["plugins/cstack/skills/cstack/references/runtime/t3.md", (text: string) => text.replace("Même sans feuille, lance le contrôle préalable", "Sans feuille, hérite sans contrôle"), /t3: absence de feuille décidée sans contrôle préalable/],
+      ["plugins/cstack/skills/cstack/references/runtime/t3.md", (text: string) => text.replace("Ces restrictions valent pour le chemin direct et le chemin audité", "Ces restrictions valent pour le chemin audité"), /t3: restrictions de fournisseur limitées au chemin audité/],
+      ["plugins/cstack/skills/cstack/references/runtime/t3.md", (text: string) => text.replace("jamais à la racine", "à la racine"), /t3: petit finding bloqué au coordinateur racine/],
+      ["plugins/cstack/skills/cstack/references/agents/cstack-agent.md", (text: string) => text.replace("Dans T3, avec ou sans bundle préparé", "Dans un bundle T3"), /délégué: chemin T3 direct sans bundle non couvert/],
+      ["plugins/cstack/skills/interrogate/SKILL.md", (text: string) => text.replace("rejoue sa reproduction", "lis sa reproduction"), /interrogate: bug exécutable classé sans rejouer/],
+      ["plugins/cstack/skills/interrogate/references/reviewer-prompt.md", (text: string) => text.replace("`hypothèse non vérifiée`", "finding"), /interrogate: preuve de finding non distinguée/],
       ["plugins/cstack/skills/cstack/playbooks/feature.md", (text: string) => text.replace(/^### /, "## "), /le guide opérationnel doit commencer par un titre ###/],
       ["plugins/cstack/skills/cstack/playbooks/feature.md", (text: string) => text.replace(/^Suivez \[le contrat d.+codex-runtime\.md\).*$/m, "Ignorer le contrat."), /le guide opérationnel n’a pas de ligne de contrat d’exécution/],
       ["plugins/cstack/skills/cstack/playbooks/feature.md", (text: string) => text.replace(/\*\*Réponse\s*:\*\*/, "**Résultat :**"), /le guide opérationnel n’a pas de bloc Réponse/],

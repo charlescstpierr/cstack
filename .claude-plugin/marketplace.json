@@ -1,0 +1,11 @@
+{
+  "name": "cstack",
+  "owner": { "name": "charlescstpierr" },
+  "plugins": [
+    {
+      "name": "cstack",
+      "source": "./plugins/cstack",
+      "category": "development"
+    }
+  ]
+}

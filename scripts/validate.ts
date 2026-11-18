@@ -177,6 +177,14 @@ export function validate(root: string): { skills: number; sourceFiles: number } 
   requireValue(record(entry) && entry.name === "cstack" && record(entry.source), "plugin du catalogue invalide");
   requireValue(entry.source.source === "local" && entry.source.path === "./plugins/cstack", "la source du catalogue ne pointe pas vers cstack");
   requireValue(record(entry.policy) && entry.policy.installation === "AVAILABLE" && entry.policy.authentication === "ON_INSTALL", "politique du catalogue invalide");
+  // Claude Code lit ses propres manifestes : ils doivent décrire le même plugin que celui de Codex.
+  const claudeManifest = json(join(plugin, ".claude-plugin/plugin.json"));
+  requireValue(claudeManifest.name === manifest.name && claudeManifest.version === manifest.version && claudeManifest.license === manifest.license,
+    "le manifeste Claude Code diverge du manifeste Codex (nom, version ou licence)");
+  const claudeMarketplace = json(join(root, ".claude-plugin/marketplace.json"));
+  const claudeEntry: unknown = Array.isArray(claudeMarketplace.plugins) && claudeMarketplace.plugins.length === 1 ? claudeMarketplace.plugins[0] : undefined;
+  requireValue(claudeMarketplace.name === "cstack" && record(claudeEntry) && claudeEntry.name === "cstack" && claudeEntry.source === "./plugins/cstack",
+    "le catalogue Claude Code doit contenir uniquement cstack, depuis ./plugins/cstack");
 
   const inventory = json(join(root, "UPSTREAM.json"));
   const coverage = json(join(root, "PORTING.json"));
@@ -295,6 +303,21 @@ export function validate(root: string): { skills: number; sourceFiles: number } 
     requireValue(/Suivez \[le contrat d[’\x27]exécution Codex\]\([^)\n]*codex-runtime.md\)/.test(text), `${posix(root, path)}: le guide opérationnel n’a pas de ligne de contrat d’exécution`);
     requireValue(/\*\*Réponse\s*:\*\*/.test(text), `${posix(root, path)}: le guide opérationnel n’a pas de bloc Réponse`);
   }
+  for (const role of ["bug-fix", "perf-issue", "hillclimb"]) {
+    const text = readFileSync(join(plugin, `skills/cstack/playbooks/${role}.md`), "utf8");
+    requireValue(text.includes(`Utilise \`${role}\` quand aucun rôle n’a été sélectionné`), `${role}: le playbook ne prend pas son propre rôle par défaut`);
+  }
+  const t3Contract = readFileSync(join(plugin, "skills/cstack/references/runtime/t3.md"), "utf8");
+  requireValue(t3Contract.includes("activées explicitement ou par démarrage automatique"), "t3: contrat exclut le démarrage automatique");
+  requireValue(t3Contract.includes("Le démarrage automatique n’accorde ni push ni PR"), "t3: le contrat prioritaire ne borne pas la livraison automatique");
+  requireValue(t3Contract.includes("le contrôle préalable du helper est la seule source des cibles"), "t3: cible recopiée depuis la feuille au lieu du contrôle préalable");
+  requireValue(t3Contract.includes("Même sans feuille, lance le contrôle préalable"), "t3: absence de feuille décidée sans contrôle préalable");
+  requireValue(t3Contract.includes("Ces restrictions valent pour le chemin direct et le chemin audité"), "t3: restrictions de fournisseur limitées au chemin audité");
+  requireValue(t3Contract.includes("dans le worktree de l'enfant qui a terminé") && t3Contract.includes("jamais à la racine"), "t3: petit finding bloqué au coordinateur racine");
+  const workerPrompt = readFileSync(join(plugin, "skills/cstack/references/agents/cstack-agent.md"), "utf8");
+  requireValue(workerPrompt.includes("Dans T3, avec ou sans bundle préparé"), "délégué: chemin T3 direct sans bundle non couvert");
+  const interrogate = readFileSync(join(plugin, "skills/interrogate/SKILL.md"), "utf8");
+  requireValue(interrogate.includes("rejoue sa reproduction"), "interrogate: bug exécutable classé sans rejouer sa reproduction");
   const mainSkill = readFileSync(join(plugin, "skills/cstack/SKILL.md"), "utf8");
   requireValue(mainSkill.includes("deux lectures raisonnables") && mainSkill.includes("Ne choisis pas silencieusement la lecture la plus probable") && mainSkill.includes("avant toute addition de fonctionnalité ou modification"), "cstack: porte de clarification d’alignement manquante");
   for (const target of principleTargets) {
@@ -322,6 +345,7 @@ export function validate(root: string): { skills: number; sourceFiles: number } 
   requireValue(rubric.includes("Un défaut voulu et correct"), "interrogate: défaut correct d’un ensemble non exclu");
   const reviewerPrompt = readFileSync(join(plugin, "skills/interrogate/references/reviewer-prompt.md"), "utf8");
   requireValue(reviewerPrompt.includes("Zéro finding reste une réponse valide."), "interrogate: méthode pistes puis preuve manquante");
+  requireValue(reviewerPrompt.includes("donne une reproduction observable") && reviewerPrompt.includes("`hypothèse non vérifiée`"), "interrogate: preuve de finding non distinguée d'une hypothèse");
   const createVerification = readFileSync(join(plugin, "skills/create-verification-skill/SKILL.md"), "utf8");
   requireValue(createVerification.includes("ce n'est jamais un succès"), "create-verification-skill: verdict non concluant manquant");
   requireValue(createVerification.includes("observation neuve en lecture seule"), "create-verification-skill: juge indépendant manquant");
@@ -475,8 +499,9 @@ export function validate(root: string): { skills: number; sourceFiles: number } 
     }
   }
   // Les hooks du plugin se limitent au rappel du mode cstack : une seule forme permise.
-  const reminderHook = { type: "command", command: 'python3 -S "${PLUGIN_ROOT}/hooks/mode.py"', timeout: 5 };
-  const expectedHooks = { hooks: { UserPromptSubmit: [{ hooks: [reminderHook] }], SessionStart: [{ matcher: "compact|resume", hooks: [reminderHook] }] } };
+  // Claude Code fournit CLAUDE_PLUGIN_ROOT ; Codex remplace ${PLUGIN_ROOT}. Une seule commande sert les deux hôtes.
+  const reminderHook = { type: "command", command: 'python3 -S "${CLAUDE_PLUGIN_ROOT:-${PLUGIN_ROOT}}/hooks/mode.py"', timeout: 5 };
+  const expectedHooks = { hooks: { UserPromptSubmit: [{ hooks: [reminderHook] }], SessionStart: [{ matcher: "startup|clear|compact|resume", hooks: [reminderHook] }] } };
   requireValue(JSON.stringify(json(join(plugin, "hooks/hooks.json"))) === JSON.stringify(expectedHooks), "hooks: hooks.json diffère du seul rappel de mode permis");
   for (const rel of EXECUTABLES) {
     const path = join(plugin, rel);

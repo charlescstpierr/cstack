@@ -1,0 +1,10 @@
+WARNING: proceeding, even though we could not create PATH aliases: Refusing to create helper binaries under temporary dir "/tmp" (codex_home: AbsolutePathBuf("/tmp/cstack-native-codex-ij_cdh4m/profile"))
+WARNING: proceeding, even though we could not create PATH aliases: Refusing to create helper binaries under temporary dir "/tmp" (codex_home: AbsolutePathBuf("/tmp/cstack-native-codex-ij_cdh4m/profile"))
+{"host": "codex", "cli_version": "codex-cli 0.166.0", "plugin_state_before": {"installed": true, "enabled": true, "version": "0.8.0"}, "plugin_state_after": {"installed": true, "enabled": true, "version": "0.8.0"}, "workspace": "/tmp/cstack-native-codex-ij_cdh4m", "cli": "/home/ubuntu/cstack/.cstack/correct-20261109/install/codex-ci/node_modules/.bin/codex", "before": "OLD", "after": "NEW", "mutable_source": "NEW", "returncode": 1, "injected": true, "installer_sha256": "fad172c412515f01e4d68340ddfb4132c376485cc353a5725cf162c5cc7df206"}
+Traceback (most recent call last):
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-install-1110/scripts/probe-install-rollback.py", line 101, in <module>
+    sys.exit(main())
+             ~~~~^^
+  File "/home/ubuntu/cstack/.cstack/worktrees/correct-install-1110/scripts/probe-install-rollback.py", line 96, in main
+    raise AssertionError(f'{host}: failed transaction changed the installed snapshot')
+AssertionError: codex: failed transaction changed the installed snapshot

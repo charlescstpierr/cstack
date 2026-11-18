@@ -1,0 +1,4 @@
+Codex 0.166.0, isolated profile: different bytes, preserved TOML values and types
+before sha256: b1285c2feafb59f326d0b06935f0d09e39efc01a8a416195f613dc667763cc37
+after sha256: 9cff5e5a792b6535e7d6b66298f548614d5407b4f135907a5dbc1966521b240f
+PASS

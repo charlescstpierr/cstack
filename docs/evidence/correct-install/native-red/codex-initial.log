@@ -1,0 +1,8 @@
+WARNING: proceeding, even though we could not create PATH aliases: Refusing to create helper binaries under temporary dir "/tmp" (codex_home: AbsolutePathBuf("/tmp/cstack-native-codex-ij_cdh4m/profile"))
+Added marketplace `cstack` from /tmp/cstack-native-codex-ij_cdh4m/previous.
+Installed marketplace root: /tmp/cstack-native-codex-ij_cdh4m/previous
+Added plugin `cstack` from marketplace `cstack`.
+Installed plugin root: /tmp/cstack-native-codex-ij_cdh4m/profile/plugins/cache/cstack/cstack/0.8.0
+
+cstack est prêt. Ouvrez une nouvelle tâche Codex, puis tapez $cstack:cstack.
+WARNING: proceeding, even though we could not create PATH aliases: Refusing to create helper binaries under temporary dir "/tmp" (codex_home: AbsolutePathBuf("/tmp/cstack-native-codex-ij_cdh4m/profile"))

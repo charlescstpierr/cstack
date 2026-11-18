@@ -1,14 +1,14 @@
 ---
 name: cstack
-description: "À utiliser pour $cstack:cstack, seulement sur invocation explicite de l'utilisateur. Route le travail vers une prose concise, des sous-agents Codex natifs délibérés, du code simple et du travail vérifié."
+description: "À utiliser pour $cstack:cstack ou les tâches désignées par le démarrage automatique activé par l'utilisateur. Route le travail vers les workflows cstack."
 ---
 
-Après invocation, T3 utilise le [contrat prioritaire](references/runtime/t3.md).
+Dans T3, utilise le [contrat prioritaire](references/runtime/t3.md).
 
 
 # cstack
 
-Applique cstack à la tâche qui a explicitement invoqué `$cstack:cstack` jusqu’à ce que la tâche soit terminée ou que l’utilisateur arrête cstack. Ne fais pas persister ces instructions dans du travail non lié, ni un mode actif dans l’`AGENTS.md` global ou la config. Cette compétence coordonne la préparation, l’exécution, la revue et la vérification ; sélectionne toi-même les compétences nécessaires, sans faire approuver chaque transition de phase.
+Applique cstack à la tâche qui a invoqué `$cstack:cstack`, ou que le démarrage automatique désigne, jusqu’à sa fin ou l’arrêt par l’utilisateur. Ne fais pas persister ces instructions dans du travail non lié, ni un mode actif dans l’`AGENTS.md` global ou la config. Cette compétence coordonne la préparation, l’exécution, la revue et la vérification ; sélectionne toi-même les compétences nécessaires, sans faire approuver chaque transition de phase.
 
 Le [contrat d’exécution Codex](references/codex-runtime.md) est un index court : ne le lis pas d’avance. Ouvre seulement la partie qu’un déclencheur ci-dessous nomme, au moment où il se présente. Résous les chemins relativement à ce fichier et utilise les outils natifs exposés par la session ; ne suppose pas qu’un agent nommé, un planificateur, un navigateur, un modèle ou une intégration externe existe.
 
@@ -27,7 +27,7 @@ Deux des [règles communes](references/runtime/base.md) valent toujours. Tout ce
 - **Avant toute implémentation de bug ou de fonctionnalité qui change un comportement** → `../tdd/SKILL.md`, transmis aux builders. Les changements sans effet comportemental et les impossibilités réelles suivent ses exceptions ; vérifie ses preuves avant toute livraison.
 - **Explication seule d’un écart CStack** → diagnostic `../reflect/SKILL.md`, remplace Investigation. Sinon : changement non trivial ou architecture → `../how/SKILL.md` ; motivation, régression ou décision inexpliquée → `../why/SKILL.md` ; enseignement → `../teach/SKILL.md`.
 - **Avant d’écrire du code avec état ou branches** → nomme la forme de données et lis [Modéliser le domaine](references/principles/model-the-domain.md).
-- **Avant que le code traverse une nouvelle frontière** de fonction ou de module → `../architect/SKILL.md`.
+- **Frontière à contrat, état partagé ou propriété non tranchés** → `../architect/SKILL.md`.
 - **Conception disputée** → `../interrogate/SKILL.md`, relecteurs en sous-agents natifs ; sinon [Orchestration requise](references/runtime/orchestration.md) avec `route: Review`. Pas d’opinion de premier plan à la place de la comparaison.
 - **Fichiers `.ts` ou `.tsx`** → `../typescript-best-practices/SKILL.md` avant d’écrire les types.
 - **Avant de changer un symbole largement utilisé, une frontière de module ou un contrat partagé** → `../blast-radius/SKILL.md`.
@@ -39,7 +39,7 @@ Deux des [règles communes](references/runtime/base.md) valent toujours. Tout ce
 - **Avant de dire prêt pour PR ou merge** → un verdict d’un acteur qui ne l’a pas écrit. Un parent qui relit le diff d’un délégué suffit ; un parent auteur du code a besoin d’un reviewer séparé, sinon [Orchestration requise](references/runtime/orchestration.md) avec `route: Review`. Réutilise un verdict seulement pour le même périmètre et un patch inchangé. Jamais d’auto-revue appelée indépendante.
 - **Diff qui ajoute ou change des commentaires** → `../no-comments/SKILL.md`, passe confiée à un acteur qui ne les a pas écrits. Garde un commentaire seulement pour une raison non évidente ; préserve licences, contrats publics, justifications d’accessibilité et contraintes d’outil vérifiées. Une demande dédiée de revue de commentaires exécute le même flux ; son prompt est `references/agents/comment-reviewer.md`.
 - **Toute prose, y compris la réponse** → `../unslop/SKILL.md`. Documentation, plans, texte de PR et de commit → `../technical-writing/SKILL.md`.
-- **Livraison** → une demande `$cstack:cstack` d’implémentation se termine par défaut par commits vérifiés, push de la branche et PR prête (`playbooks/opening-a-pr.md`), sauf limite explicite ; portée exacte dans l’[activation](references/runtime/activation.md). Après une livraison vérifiée et fusionnée, lance sans autre confirmation de phase le mode **Après une livraison terminée** du [nettoyage de worktree](playbooks/worktree-cleanup.md) avant le transfert final ; les délégués rapportent la libération, ne suppriment pas leurs worktrees actifs, et les worktrees demandés par l’utilisateur sont conservés avec leur raison.
+- **Livraison** → une demande `$cstack:cstack` d’implémentation se termine par défaut par commits vérifiés, push de la branche et PR prête (`playbooks/opening-a-pr.md`), sauf limite explicite ou démarrage automatique (commits locaux) ; portée exacte dans l’[activation](references/runtime/activation.md). Après une livraison vérifiée et fusionnée, lance sans autre confirmation de phase le mode **Après une livraison terminée** du [nettoyage de worktree](playbooks/worktree-cleanup.md) avant le transfert final ; les délégués rapportent la libération, ne suppriment pas leurs worktrees actifs, et les worktrees demandés par l’utilisateur sont conservés avec leur raison.
 - **Travail long, autonome ou multi-phase** → `../show-me-your-work/SKILL.md`, trace sous `.cstack/`. Réflexion demandée ou fin de phase d’un programme → `../reflect/SKILL.md`.
 - **Code ou explication dépendant de la version d’un framework ou d’une bibliothèque** → avant d’écrire, les sources versionnées des [intégrations](references/runtime/integrations.md).
 - **PR, CI, commentaires de bots, action externe, vérification UI ou merge-and-deliver** → [intégrations](references/runtime/integrations.md) : un statut ou une revue n’autorise jamais le merge, une preuve CI ou de revue manquante échoue fermée, et une capture ou un test non produits ne sont jamais revendiqués.
@@ -88,7 +88,7 @@ Lis un principe seulement quand son déclencheur s’applique ou que l’utilisa
 
 Utilise les workers pour du travail indépendant qui améliore la vitesse, les preuves ou la séparation de revue ; le chemin natif reste le défaut. Donne à chaque sous-agent une tâche bornée, une propriété de fichiers, des critères d’acceptation et les instructions de `references/agents/cstack-agent.md`. Le parent intègre et vérifie. Pour les workers CLI, transmets le bundle de skills commun avec `skills` et les faits ou rapports de pairs avec `context_files` ; relaie les erreurs de vérification aux tentatives suivantes. Ne parallélise que le travail indépendant : un seul acteur écrit une branche ou un fichier partagé à la fois.
 
-Sans `.cstack/models.json` ni surcharge, hérite directement : un panel vaut trois tentatives indépendantes, un pool cross-judge un juge, en modèle hérité. Sinon, résous chaque rôle selon les [modèles](references/runtime/modeles.md) et garde `model` et `reasoning_effort` jusqu’au dispatch final. Limite les panels à la capacité disponible (plafonds du contrat des workers CLI pour les CLI) et lance l’excédent par vagues. Si un playbook demande plus de voies que le travail ne justifie, préserve chaque scénario distinct et marque les voies redondantes `n/a` avec une raison.
+Dans T3, suis le [contrat T3](references/runtime/t3.md) ; un fichier local absent n’exclut pas une feuille principale ou machine. Hors T3, sans `.cstack/models.json` ni surcharge, un panel vaut trois tentatives héritées, un pool cross-judge un juge. Sinon, résous les [modèles](references/runtime/modeles.md), avec `model` et `reasoning_effort` jusqu’au dispatch. Limite les panels à la capacité disponible (plafonds du contrat des workers CLI pour les CLI) et lance l’excédent par vagues. Si un playbook demande plus de voies que le travail ne justifie, préserve chaque scénario distinct et marque les voies redondantes `n/a` avec une raison.
 
 Rôles : `simple edits` pour les petits changements bornés, `documentation` pour les délégués limités à la documentation, `judgment and prose` pour la revue ou le jugement générique, `hardest tasks` seulement pour une architecture explicitement complexe, `feature, refactoring` pour les autres implémentations, `bug-fix`, `perf-issue` ou `hillclimb` pour le débogage selon le cas. Les investigateurs, synthétiseurs et panels spécialisés gardent leurs rôles nommés. Passe le rôle choisi à Swarm pour que son défaut `swarm workers` ne le remplace pas.
 
