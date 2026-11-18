@@ -166,6 +166,16 @@ class ModeHookTests(unittest.TestCase):
             ("$cstack:cstack Copie :\r\n> ne pas utiliser cstack\r\nMerci.", True),
             ("$cstack:cstack Explique \\>. Ne pas utiliser cstack.", False),
             ("$cstack:cstack Lis :\n```text\nexemple\n````\nNe pas utiliser cstack.", False),
+            ("$cstack:cstack Explain this example: ```first line\nsecond line```. Do not use cstack.", False),
+            ("$cstack:cstack Explique ce délimiteur ```. Ne pas utiliser cstack.", False),
+            ("$cstack:cstack Explain it. Don't use ``\n$cstack:cstack\n``.", False),
+            ("$cstack:cstack Corrige ce bug. Ne pas utiliser le skill watch-pr.", True),
+            ("$cstack:cstack Corrige ce bug. Ne pas utiliser la compétence de revue.", True),
+            ("$cstack:cstack Corrige ce bug. Ne pas utiliser cstack-helper.", True),
+            ("$cstack:cstack Corrige ce bug. Ne pas utiliser le skill `watch-pr`.", True),
+            ("$cstack:cstack Copie :\n```text\nDo not use cstack.", True),
+            ("$cstack:cstack Copie :\n```text```. Do not use cstack: explain it.", False),
+            ("$cstack:cstack Explain it. Do not use this skill for the explanation.", False),
         )
         for index, (prompt, active) in enumerate(examples):
             with self.subTest(prompt=prompt):

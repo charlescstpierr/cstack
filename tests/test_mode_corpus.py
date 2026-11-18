@@ -1,4 +1,3 @@
-"""Historical refusals, unrelated constraints and quotations through the real hook."""
 import json
 import os
 from pathlib import Path

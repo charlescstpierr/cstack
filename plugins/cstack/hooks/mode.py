@@ -84,18 +84,21 @@ def _instruction_text(text: str, target) -> str:
         elif (mark[0] in "`~" or mark in paired_quotes) and not (
                 mark == "'" and token.start() > 0 and re.match(r"\w", text[token.start() - 1])):
             close = next_closer.get(paired_quotes.get(mark, mark))
+            line_fence = False
             if mark.startswith(("```", "~~~")):
-                if close is None or close.start() > line_end:
-                    close = next_fence.get((mark[0], len(mark)))
                 prefix = text[max(0, token.start() - 4):token.start()]
-                if (re.search(r"(?:^|[\r\n])[ \t]{0,3}$", prefix)
-                        and not text[token.end():line_end].strip(" \t")):
+                if re.search(r"[\r\n][ \t]{0,3}$", prefix):
+                    info = text[token.end():line_end]
+                    line_fence = mark[0] != "`" or "`" not in info
+            if line_fence:
+                close = next_fence.get((mark[0], len(mark)))
+                if not info.strip(" \t"):
                     for size in range(3, len(mark) + 1):
                         next_fence[mark[0], size] = token
             if close is not None and (mark != "'" or close.start() < line_end):
-                inline_end = close.start() if mark.startswith("`") and close.start() <= line_end else None
+                inline_end = close.start() if mark.startswith("`") and not line_fence else None
                 spans[index] = (close.end(), inline_end)
-            elif mark.startswith(("```", "~~~")):
+            elif line_fence:
                 spans[index] = (len(text), None)
         if mark not in ("'", "’") or not re.match(r"\w", text[token.end():token.end() + 1]):
             next_closer[mark] = token
@@ -128,15 +131,17 @@ def _activation_requested(prompt: str) -> bool:
     path = invocation.group("path")
     if path and not path.strip("<>").endswith("/skills/cstack/SKILL.md"):
         return False
-    tool = r"(?:cstack|[$/]cstack:cstack)"
-    french_target = fr"(?:{tool}|(?:cette|la)\s+comp[ée]tence|(?:ce|le)\s+skill(?:\s+cstack)?)"
-    english_target = fr"(?:it|{tool}|(?:this|the)\s+(?:cstack\s+)?skill)"
+    tool = r"(?:cstack|[$/]cstack:cstack)(?![\w/-]|:\w)"
+    generic_end = r"(?=[ \t]*(?:[.!?,;:\r\n]|$))"
+    french_target = (fr"(?:{tool}|(?:ce|le)\s+skill\s+{tool}|"
+                     fr"(?:(?:cette|la)\s+comp[ée]tence|(?:ce|le)\s+skill){generic_end})")
+    english_target = fr"(?:it\b|{tool}|(?:this|the)\s+(?:cstack\s+)?skill\b)"
     inline_target = re.compile(fr"(?:{french_target}|{english_target})", re.IGNORECASE)
     refusal = re.search(
         r"\b(?:ne\s+l['’](?:activ|utilis|appliqu)\w*\s+pas\b"
-        fr"|(?:ne\s+|n['’])(?:activ|utilis|appliqu)\w*\s+pas\s+{french_target}\b"
-        fr"|ne\s+pas\s+(?:l['’](?:activer|utiliser|appliquer)|(?:activer|utiliser|appliquer)\s+{french_target})\b"
-        fr"|(?:do\s+not|don['’]t)\s+(?:activate|use|invoke)\s+{english_target}\b)",
+        fr"|(?:ne\s+|n['’])(?:activ|utilis|appliqu)\w*\s+pas\s+{french_target}"
+        fr"|ne\s+pas\s+(?:l['’](?:activer|utiliser|appliquer)\b|(?:activer|utiliser|appliquer)\s+{french_target})"
+        fr"|(?:do\s+not|don['’]t)\s+(?:activate|use|invoke)\s+{english_target})",
         _instruction_text(prompt[invocation.end():], inline_target),
         re.IGNORECASE,
     )
