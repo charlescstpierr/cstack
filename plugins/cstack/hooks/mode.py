@@ -104,7 +104,7 @@ def _instruction_text(text: str, target) -> str:
             elif mark[0] == "~":
                 close = (next_fence.get(("~", len(mark)))
                          if language_tag.fullmatch(text, token.end(), line_end) else None)
-            if not line_fence and mark[0] in "`~" and close is not None and close.start() >= paragraph_end:
+            if not line_fence and close is not None and close.start() >= paragraph_end:
                 close = None
             if close is not None and (mark != "'" or close.start() < line_end):
                 inline_end = close.start() if mark.startswith("`") and not line_fence else None
@@ -148,7 +148,8 @@ def _activation_requested(prompt: str) -> bool:
     french_target = (fr"(?:{tool}|(?:ce|le)\s+skill\s+{tool}|"
                      fr"(?:(?:cette|la)\s+comp[ée]tence|(?:ce|le)\s+skill){generic_end})")
     english_end = fr"(?:{generic_end}|(?=\s+(?:for|in|on|at|here|now|today|please)\b))"
-    english_target = fr"(?:it\b|{tool}|(?:this|the)\s+(?:cstack\s+skill\b|skill{english_end}))"
+    english_target = (fr"(?:it\b|{tool}|this\s+skill\b|the\s+skill{english_end}|"
+                      fr"(?:this|the)\s+(?:cstack\s+skill\b|skill\s+{tool}))")
     inline_target = re.compile(fr"(?:{french_target}|{english_target})", re.IGNORECASE)
     refusal = re.search(
         r"\b(?:ne\s+l['’](?:activ|utilis|appliqu)\w*\s+pas\b"

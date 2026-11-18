@@ -183,6 +183,10 @@ class ModeHookTests(unittest.TestCase):
             ("$cstack:cstack Explain ~~~text\r\n \r\nDo not use cstack.\r\n\r\n~~~md\r\nexample\r\n~~~", False),
             ("/cstack:cstack Fix this. Do not use the skill\nwatch-pr.", True),
             ("$cstack:cstack Quote this:\n~~~text\nfirst paragraph\n\nDo not use cstack.\n~~~", True),
+            ("$cstack:cstack Explain this. Do not use this skill to answer.", False),
+            ("$cstack:cstack Explain this. Do not use this skill and answer directly.", False),
+            ('$cstack:cstack Explain the " character.\n\nDo not activate cstack.\n\nThen describe "filename".', False),
+            ("$cstack:cstack Explain it. Do not use the skill cstack.", False),
         )
         for index, (prompt, active) in enumerate(examples):
             with self.subTest(prompt=prompt):

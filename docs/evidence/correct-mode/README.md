@@ -1,6 +1,6 @@
 # Refus d’activation : corpus historique bilingue
 
-Six findings dans quatre PR : #70, #90, #91, #92. Le catalogue de #114 et l’API ont les mêmes 199 IDs. `history.json` garde les commentaires et les commits revus ; son historique de chemin complète le relevé. Aucun commit explicitement nommé revert n’a été trouvé dans les refs disponibles. Les PR #92 et #114 sont encore ouvertes ; cette branche part de main, sans reprendre leurs autres modifications.
+Six constats dans quatre PR (#70, #90, #91 et #92). Le catalogue de #114 et l’API ont les mêmes 199 identifiants. `history.json` conserve les commentaires et les commits revus. Aucun commit explicitement nommé revert n’a été trouvé dans les refs consultées lors de la collecte.
 
 Niveau choisi : tests de comportement, avec un corpus de 33 cas français et anglais. L’architecture ne peut supprimer l’analyse des refus sans changer le comportement autorisé : le jeton canonique suivi de « do not activate this skill » doit rester inactif. Les types ne peuvent pas représenter une intention absente des données du hook. Un lint syntaxique ne peut pas classer la prose. Le corpus couvre les erreurs connues ; il ne prétend pas interpréter toute phrase possible.
 
