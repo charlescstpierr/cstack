@@ -48,7 +48,7 @@ Pour une classe trop large pour un seul changement, propose le plan au lieu de l
 
 ## 4. Tenir la table des règles
 
-Garde, dans le fichier d'instructions que Codex charge pour ce dossier, une table qui associe chaque règle à ce qui l'impose. Applique l'hygiène de cible de `$cstack:reflect` avant d'y écrire : fichier réellement chargé, budget `project_doc_max_bytes`, remplacement d'une règle contredite.
+Garde la table dans un fichier d'instructions versionné que l'hôte actif charge pour le dossier concerné. Sous Codex, applique la résolution de cible de `$cstack:reflect`, dont la priorité de `AGENTS.override.md` et le budget `project_doc_max_bytes`. Sous Claude Code, vérifie les fichiers chargés et leurs imports, par exemple avec `/context all`. Un `CLAUDE.md` chargé peut être la cible. Utilise `AGENTS.md` seulement si l'hôte le charge ou si un import actif le rend visible. Sans cible confirmée, propose la règle dans le relevé. [Chargement des instructions par Claude Code](https://code.claude.com/docs/en/memory#when-claude-code-reads-agentsmd)
 
 Quand l'opérateur te corrige, corrige l'erreur et ajoute la règle. Si la règle existait déjà et que rien ne l'imposait, c'est une répétition : corrige-la au niveau le plus haut dans le même changement. Retire une règle quand son erreur ne peut plus arriver.
 

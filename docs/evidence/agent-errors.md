@@ -1,6 +1,6 @@
 # Erreurs répétées des agents dans cstack
 
-Ce catalogue classe les 199 findings que `chatgpt-codex-connector[bot]` a laissés sur les PR de cstack, de #6 à #110, collectés le 2026-11-09. Les PR sont écrites par des agents. Les 132 réponses montrent que presque tous les findings ont été acceptés : 127 réponses annoncent une correction. Les données sont dans [agent-errors.json](agent-errors.json).
+Ce catalogue classe les 199 constats que `chatgpt-codex-connector[bot]` a laissés sur les PR de cstack, de #6 à #110, collectés le 2026-11-09. Les PR sont écrites par des agents. La collecte comprend 132 réponses, dont des annonces de correction et des décisions de laisser le comportement en place ou de le traiter plus tard. Les données sont dans [agent-errors.json](agent-errors.json).
 
 La classification est inférée : un tri par mots-clés sur les titres, puis une relecture à la main. 58 findings restent non classés. Les transcripts T3 et les PR d'agents d'autres dépôts n'entrent pas dans ce relevé.
 
