@@ -164,6 +164,8 @@ class ModeHookTests(unittest.TestCase):
             ("$cstack:cstack Copie «ne pas utiliser `cstack`».", True),
             ("$cstack:cstack Do not activate `debug mode`. Then explain cstack.", True),
             ("$cstack:cstack Copie :\r\n> ne pas utiliser cstack\r\nMerci.", True),
+            ("$cstack:cstack Explique \\>. Ne pas utiliser cstack.", False),
+            ("$cstack:cstack Lis :\n```text\nexemple\n````\nNe pas utiliser cstack.", False),
         )
         for index, (prompt, active) in enumerate(examples):
             with self.subTest(prompt=prompt):

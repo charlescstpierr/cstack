@@ -70,6 +70,7 @@ def _instruction_text(text: str, target) -> str:
     tokens = list(re.finditer(r"""(?<=[\r\n])[ \t]{0,3}>|`+|~{3,}|\\[^\r\n]|["'«»“”‘’\r\n]""", text))
     paired_quotes = {"«": "»", "“": "”", "‘": "’", "'": "'", '"': '"'}
     next_closer = {}
+    next_fence = {}
     spans = [None] * len(tokens)
     line_end = len(text)
     # Index closing delimiters once so unmatched quotes cannot make the hook rescan the prompt.
@@ -78,11 +79,19 @@ def _instruction_text(text: str, target) -> str:
         mark = token.group()
         if mark in ("\r", "\n"):
             line_end = token.start()
-        elif mark.endswith(">"):
+        elif mark.lstrip(" \t") == ">":
             spans[index] = (line_end, None)
         elif (mark[0] in "`~" or mark in paired_quotes) and not (
                 mark == "'" and token.start() > 0 and re.match(r"\w", text[token.start() - 1])):
             close = next_closer.get(paired_quotes.get(mark, mark))
+            if mark.startswith(("```", "~~~")):
+                if close is None or close.start() > line_end:
+                    close = next_fence.get((mark[0], len(mark)))
+                prefix = text[max(0, token.start() - 4):token.start()]
+                if (re.search(r"(?:^|[\r\n])[ \t]{0,3}$", prefix)
+                        and not text[token.end():line_end].strip(" \t")):
+                    for size in range(3, len(mark) + 1):
+                        next_fence[mark[0], size] = token
             if close is not None and (mark != "'" or close.start() < line_end):
                 inline_end = close.start() if mark.startswith("`") and close.start() <= line_end else None
                 spans[index] = (close.end(), inline_end)
